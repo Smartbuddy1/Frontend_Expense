@@ -3,7 +3,6 @@ import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-d
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { LanguageProvider } from './context/LanguageContext';
 import Layout from './components/Layout';
-import Login from './pages/Login';
 import Dashboard from './pages/Dashboard';
 import OperationsDashboard from './pages/OperationsDashboard';
 
@@ -12,7 +11,10 @@ const ProtectedRoute = ({ children }) => {
   const { user, loading } = useAuth();
   
   if (loading) return <div className="flex h-screen items-center justify-center">Loading...</div>;
-  if (!user) return <Navigate to="/login" replace />;
+  if (!user) {
+    window.location.href = '/';
+    return null;
+  }
   
   return children;
 };
@@ -23,9 +25,6 @@ function App() {
       <LanguageProvider>
         <Router basename="/operations">
           <Routes>
-            {/* Public Routes */}
-            <Route path="/login" element={<Login />} />
-            
             {/* Protected Layout Routes */}
             <Route path="/" element={<Layout />}>
               {/* Redirect / to /operations */}

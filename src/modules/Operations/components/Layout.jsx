@@ -65,7 +65,7 @@ const Layout = () => {
 
   const handleLogout = () => {
     logout();
-    navigate('/login');
+    window.location.href = '/';
   };
 
   const navigation = [
@@ -74,42 +74,42 @@ const Layout = () => {
       href: '/operations?tab=overview',
       icon: LayoutDashboard,
       tab: 'overview',
-      roles: ['Admin', 'User']
+      roles: ['Admin', 'User', 'Operational', 'Operations_Head', 'Operations']
     },
     {
       name: 'Create & Manage Projects',
       href: '/operations?tab=projects',
       icon: Folder,
       tab: 'projects',
-      roles: ['Admin', 'User']
+      roles: ['Admin', 'User', 'Operational', 'Operations_Head', 'Operations']
     },
     {
       name: 'Site Supervisors',
       href: '/operations?tab=team',
       icon: Users,
       tab: 'team',
-      roles: ['Admin', 'User']
+      roles: ['Admin', 'User', 'Operational', 'Operations_Head', 'Operations']
     },
     {
       name: 'Bill Approve',
       href: '/operations?tab=expenses',
       icon: CreditCard,
       tab: 'expenses',
-      roles: ['Admin', 'User']
+      roles: ['Admin', 'User', 'Operational', 'Operations_Head', 'Operations']
     },
     {
       name: 'Cash & Advance',
       href: '/operations?tab=cashadvance',
       icon: IndianRupee,
       tab: 'cashadvance',
-      roles: ['Admin', 'User']
+      roles: ['Admin', 'User', 'Operational', 'Operations_Head', 'Operations']
     },
     {
       name: 'Request Advance',
       href: '/operations?tab=reconciliation',
       icon: Scale,
       tab: 'reconciliation',
-      roles: ['Admin', 'User']
+      roles: ['Admin', 'User', 'Operational', 'Operations_Head', 'Operations']
     },
   ];
 
@@ -122,7 +122,7 @@ const Layout = () => {
       ></div>
 
       {/* Sidebar */}
-      <aside className={`sidebar ${isSidebarOpen ? 'open' : ''}`} style={{ fontFamily: "'Cambria', Georgia, serif", backgroundColor: '#0b132b', paddingTop: 0 }}>
+      <aside className={`sidebar ${isSidebarOpen ? 'open' : ''}`}>
         {/* Logo Section - Exact 60px Height Matching Dashboard Header Line */}
         <div style={{
           height: '60px',

@@ -1,8 +1,174 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import AdminApp from './modules/Admin/App';
 import AccountantApp from './modules/Accountant/App';
 import SupervisorApp from './modules/SiteSupervisor/App';
 import OperationsApp from './modules/Operations/App';
+import { Smartphone, Lock, Eye, EyeOff, Sun, Moon, AlertCircle, ArrowRight, FileText } from 'lucide-react';
+import logoImg from './modules/Admin/assets/logo.png';
+
+function GlobalLogin() {
+  const [username, setUsername] = useState('');
+  const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
+  const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
+
+  const [theme, setTheme] = useState(localStorage.getItem('theme') || 'light');
+
+  useEffect(() => {
+    document.documentElement.setAttribute('data-theme', theme);
+    localStorage.setItem('theme', theme);
+  }, [theme]);
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    setError('');
+    setLoading(true);
+
+    // Dummy authentication routing based on username
+    setTimeout(() => {
+      setLoading(false);
+      const user = username.toLowerCase();
+      let role = '';
+      if (user.includes('admin')) {
+        role = 'Admin';
+        window.location.href = '/admin';
+      } else if (user.includes('accountant')) {
+        role = 'Accountant';
+        window.location.href = '/accountant';
+      } else if (user.includes('supervisor') || user.includes('site')) {
+        role = 'Site_Supervisor';
+        window.location.href = '/supervisor';
+      } else if (user.includes('operations') || user.includes('op')) {
+        role = 'Operations';
+        window.location.href = '/operations';
+      } else {
+        setError('Invalid role. Try entering "admin", "accountant", "supervisor", or "operations".');
+        return;
+      }
+      
+      // Set dummy token and user to bypass the local module login screens
+      localStorage.setItem('token', 'dummy-token-12345');
+      localStorage.setItem('user', JSON.stringify({ 
+        id: 1, 
+        name: 'Mock User', 
+        mobile: username, 
+        role: role 
+      }));
+    }, 800);
+  };
+
+  return (
+    <div className="auth-split-container" style={{ padding: '1rem', minHeight: '100vh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', boxSizing: 'border-box', overflow: 'hidden' }}>
+      <div className="auth-bg-shape-1"></div>
+      <div className="auth-bg-shape-2"></div>
+
+      <button 
+        type="button"
+        className="auth-theme-toggle"
+        onClick={() => setTheme(theme === 'light' ? 'dark' : 'light')}
+        title={`Switch to ${theme === 'light' ? 'Dark' : 'Light'} Mode`}
+      >
+        {theme === 'light' ? <Moon size={20} /> : <Sun size={20} />}
+      </button>
+      
+      <div className="auth-card" style={{ width: '100%', maxWidth: '400px', backgroundColor: theme === 'dark' ? 'var(--surface-bg)' : '#ffffff', borderRadius: '24px', overflow: 'hidden', border: '1px solid var(--border-color)', boxShadow: '0 20px 40px -15px rgba(0, 0, 0, 0.08)', zIndex: 10, padding: '2.5rem 2rem' }}>
+        <div style={{ textAlign: 'center', marginBottom: '2rem' }}>
+          <img 
+            src={logoImg} 
+            alt="ASEMS Logo" 
+            style={{ 
+              height: '80px', 
+              width: 'auto',
+              maxWidth: '100%',
+              margin: '0 auto 1.25rem auto', 
+              display: 'block',
+              objectFit: 'contain',
+              backgroundColor: theme === 'dark' ? '#ffffff' : 'transparent',
+              padding: theme === 'dark' ? '8px 16px' : '0',
+              borderRadius: theme === 'dark' ? '12px' : '0'
+            }} 
+          />
+          <h1 style={{ fontSize: '1.65rem', fontWeight: '800', color: 'var(--text-primary)', marginBottom: '0.3rem', letterSpacing: '-0.02em' }}>ASEMS Portal</h1>
+          <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', fontWeight: '500' }}>Login to access your dashboard</p>
+        </div>
+
+        <div>
+          {error && (
+            <div style={{ backgroundColor: 'var(--bg-danger, rgba(239, 68, 68, 0.1))', borderLeft: '4px solid var(--danger-color, #ef4444)', color: 'var(--danger-color, #ef4444)', padding: '0.6rem 0.85rem', borderRadius: '0 6px 6px 0', fontSize: '0.85rem', marginBottom: '1.25rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+              <AlertCircle size={18} />
+              {error}
+            </div>
+          )}
+          
+          <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1.15rem' }}>
+            <div className="form-group" style={{ marginBottom: 0 }}>
+              <label className="form-label" style={{ fontWeight: '600', fontSize: '0.85rem', color: 'var(--text-primary)', marginBottom: '0.4rem' }}>Username / Role</label>
+              <div className="input-with-icon" style={{ position: 'relative' }}>
+                <Smartphone size={18} className="input-icon" style={{ position: 'absolute', left: '1rem', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-secondary)' }} />
+                <input
+                  type="text"
+                  className="form-input"
+                  style={{ paddingLeft: '2.75rem', height: '3.25rem', fontSize: '1rem', backgroundColor: 'var(--surface-bg)' }}
+                  placeholder="e.g. admin, accountant..."
+                  value={username}
+                  onChange={(e) => setUsername(e.target.value)}
+                  required
+                />
+              </div>
+            </div>
+
+            <div className="form-group" style={{ marginBottom: 0 }}>
+              <label className="form-label" style={{ fontWeight: '600', fontSize: '0.85rem', color: 'var(--text-primary)', marginBottom: '0.4rem' }}>Password</label>
+              <div className="input-with-icon" style={{ position: 'relative' }}>
+                <Lock size={18} className="input-icon" style={{ position: 'absolute', left: '1rem', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-secondary)' }} />
+                <input
+                  type={showPassword ? 'text' : 'password'}
+                  className="form-input"
+                  style={{ paddingLeft: '2.75rem', height: '3.25rem', fontSize: '1rem', backgroundColor: 'var(--surface-bg)' }}
+                  placeholder="Password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  required
+                />
+                <button
+                  type="button"
+                  style={{ position: 'absolute', right: '1rem', top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-secondary)', display: 'flex', alignItems: 'center' }}
+                  onClick={() => setShowPassword(!showPassword)}
+                >
+                  {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                </button>
+              </div>
+            </div>
+
+            <button 
+              type="submit" 
+              className="btn btn-primary btn-block"
+              style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', height: '3.25rem', fontSize: '1rem', marginTop: '0.5rem' }}
+              disabled={loading}
+            >
+              {loading ? (
+                'Logging in...'
+              ) : (
+                <>
+                  Login to Continue
+                  <ArrowRight size={18} />
+                </>
+              )}
+            </button>
+          </form>
+
+          <div style={{ marginTop: '2rem', textAlign: 'center' }}>
+            <a href="/supervisor/expense-form" style={{ display: 'inline-flex', alignItems: 'center', gap: '0.5rem', color: 'var(--primary-color)', textDecoration: 'none', fontWeight: '600' }}>
+              <FileText size={18} />
+              Submit Public Expense Form
+            </a>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
 
 function App() {
   const path = window.location.pathname;
@@ -20,52 +186,8 @@ function App() {
     return <OperationsApp />;
   }
 
-  // Aarya Site Expense Management System (ASEMS) Landing Page
-  return (
-    <div style={{ padding: '2rem', fontFamily: 'system-ui, sans-serif' }}>
-      <header style={{ marginBottom: '2rem' }}>
-        <h1>Aarya Site Expense Management System (ASEMS)</h1>
-        <p>Select a module to continue:</p>
-      </header>
-      
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '1rem' }}>
-        <a href="/admin" style={cardStyle}>
-          <h2>Admin Dashboard</h2>
-          <p>System configuration, user management, and overall view.</p>
-        </a>
-        
-        <a href="/operations" style={cardStyle}>
-          <h2>Operations Dashboard</h2>
-          <p>Project creation, tracking, and operational approvals.</p>
-        </a>
-        
-        <a href="/accountant" style={cardStyle}>
-          <h2>Accountant Dashboard</h2>
-          <p>Budget allocation, expense verification, and settlements.</p>
-        </a>
-        
-        <a href="/supervisor" style={cardStyle}>
-          <h2>Site Supervisor</h2>
-          <p>Daily expenses, advance requests, and bill uploads.</p>
-        </a>
-        
-        <a href="/supervisor/expense-form" style={{...cardStyle, backgroundColor: '#f0fdf4', borderColor: '#bbf7d0'}}>
-          <h2>Public Expense Form</h2>
-          <p>Submit expenses without logging in.</p>
-        </a>
-      </div>
-    </div>
-  );
+  // Render Global Login Page instead of landing page
+  return <GlobalLogin />;
 }
-
-const cardStyle = {
-  border: '1px solid #e5e7eb',
-  borderRadius: '0.5rem',
-  padding: '1.5rem',
-  textDecoration: 'none',
-  color: '#333',
-  display: 'block',
-  boxShadow: '0 1px 3px rgba(0,0,0,0.1)'
-};
 
 export default App;
