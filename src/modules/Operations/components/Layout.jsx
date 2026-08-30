@@ -74,42 +74,36 @@ const Layout = () => {
       href: '/operations?tab=overview',
       icon: LayoutDashboard,
       tab: 'overview',
-      roles: ['Admin', 'User', 'Operational', 'Operations_Head', 'Operations']
     },
     {
       name: 'Create & Manage Projects',
       href: '/operations?tab=projects',
       icon: Folder,
       tab: 'projects',
-      roles: ['Admin', 'User', 'Operational', 'Operations_Head', 'Operations']
     },
     {
       name: 'Site Supervisors',
       href: '/operations?tab=team',
       icon: Users,
       tab: 'team',
-      roles: ['Admin', 'User', 'Operational', 'Operations_Head', 'Operations']
     },
     {
       name: 'Bill Approve',
       href: '/operations?tab=expenses',
       icon: CreditCard,
       tab: 'expenses',
-      roles: ['Admin', 'User', 'Operational', 'Operations_Head', 'Operations']
     },
     {
       name: 'Cash & Advance',
       href: '/operations?tab=cashadvance',
       icon: IndianRupee,
       tab: 'cashadvance',
-      roles: ['Admin', 'User', 'Operational', 'Operations_Head', 'Operations']
     },
     {
       name: 'Request Advance',
       href: '/operations?tab=reconciliation',
       icon: Scale,
       tab: 'reconciliation',
-      roles: ['Admin', 'User', 'Operational', 'Operations_Head', 'Operations']
     },
   ];
 
@@ -169,8 +163,6 @@ const Layout = () => {
 
           <div style={{ display: 'flex', flexDirection: 'column', gap: '1.35rem', marginTop: '0.35rem' }}>
             {navigation.map((item) => {
-              if (item.roles && user?.role && !item.roles.includes(user.role)) return null;
-
               const Icon = item.icon;
               const isActive = location.pathname.includes('/operations')
                 ? (location.search.includes(`tab=${item.tab}`) || (!location.search && item.tab === 'overview'))

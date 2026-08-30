@@ -67,11 +67,11 @@ const Layout = () => {
   const currentTab = new URLSearchParams(location.search).get('tab') || (location.pathname === '/dashboard' || location.pathname === '/operations' ? 'overview' : '');
 
   const navigation = [
-    { name: 'Dashboard', href: '/operations?tab=overview', tab: 'overview', icon: LayoutDashboard, roles: ['Admin', 'User', 'Field_Tech', 'Maintenance_Head'] },
-    { name: 'Operational Head', href: '/operations?tab=operational-head', tab: 'operational-head', icon: ShieldCheck, roles: ['Admin', 'User', 'Maintenance_Head'] },
-    { name: 'Site Projects', href: '/operations?tab=projects', tab: 'projects', icon: HardHat, roles: ['Admin', 'User', 'Maintenance_Head'] },
-    { name: 'Site Supervisor', href: '/operations?tab=supervisors', tab: 'supervisors', icon: Users, roles: ['Admin', 'User', 'Maintenance_Head'] },
-    { name: 'Accountant', href: '/operations?tab=accountant', tab: 'accountant', icon: Briefcase, roles: ['Admin', 'User', 'Maintenance_Head'] },
+    { name: 'Dashboard', href: '/operations?tab=overview', tab: 'overview', icon: LayoutDashboard },
+    { name: 'Operational Head', href: '/operations?tab=operational-head', tab: 'operational-head', icon: ShieldCheck },
+    { name: 'Site Projects', href: '/operations?tab=projects', tab: 'projects', icon: HardHat },
+    { name: 'Site Supervisor', href: '/operations?tab=supervisors', tab: 'supervisors', icon: Users },
+    { name: 'Accountant', href: '/operations?tab=accountant', tab: 'accountant', icon: Briefcase },
   ];
 
   const currentNav = navigation.find(n => (n.tab && currentTab === n.tab) || location.pathname === n.href) || navigation[0];
@@ -109,8 +109,6 @@ const Layout = () => {
           </div>
           <nav>
             {navigation.map((item) => {
-              if (item.roles && !item.roles.includes(user?.role || 'Admin')) return null;
-
               const isActive = (item.tab && currentTab === item.tab) || (!item.tab && location.pathname === item.href);
               const Icon = item.icon;
 
