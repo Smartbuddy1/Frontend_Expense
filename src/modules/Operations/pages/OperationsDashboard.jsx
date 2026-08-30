@@ -64,6 +64,37 @@ const mapTeamMember = (t) => ({
   status: t.status,
 });
 
+const EXPENSE_STATUS_TO_DISPLAY = {
+  submitted: 'Pending',
+  ops_approved: 'Approved',
+  ops_rejected: 'Rejected',
+  accounts_paid: 'Approved',
+};
+
+const mapExpense = (e) => {
+  const created = new Date(e.createdAt);
+  return {
+    id: e.id,
+    voucherNo: `EXP-${e.id.slice(0, 8).toUpperCase()}`,
+    date: created.toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }),
+    time: created.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' }),
+    projectId: e.projectId,
+    projectName: e.project?.name || 'Unknown Project',
+    supervisorId: e.submittedById,
+    supervisorName: e.submittedBy?.name || 'Unknown',
+    submittedBy: e.submittedBy?.name || 'Unknown',
+    category: e.category?.name || 'Uncategorized',
+    description: e.description,
+    title: e.description,
+    vendorName: e.vendorName || '',
+    vendor: e.vendorName || '',
+    amount: Number(e.amount),
+    status: EXPENSE_STATUS_TO_DISPLAY[e.status] || 'Pending',
+    billPhotoUrl: e.receiptUrl || null,
+    reviewNotes: e.opsRemarks || '',
+  };
+};
+
 import OperationsOverview from '../components/operations/OperationsOverview';
 import LiveOpsPanel from '../components/operations/LiveOpsPanel';
 import ProjectsTab from '../components/operations/ProjectsTab';
@@ -105,22 +136,25 @@ const OperationsDashboard = () => {
   const [projects, setProjects] = useState([]);
   const [supervisors, setSupervisors] = useState([]);
   const [teamMembers, setTeamMembers] = useState([]);
+  const [expenses, setExpenses] = useState([]);
   const [loadingCore, setLoadingCore] = useState(true);
 
-  // Projects, supervisors, and team members come from the real backend now.
-  // Expenses/site logs below are still the original mock data — see
+  // Projects, supervisors, team members, and expenses all come from the real
+  // backend now. Site logs below are still the original mock data — see
   // docs/03-frontend-status.md for what's real vs not yet.
   const fetchCore = useCallback(async () => {
     setLoadingCore(true);
     try {
-      const [projRes, supRes, teamRes] = await Promise.all([
+      const [projRes, supRes, teamRes, expRes] = await Promise.all([
         axios.get(`${API}/projects`, { params: { pageSize: 100 } }),
         axios.get(`${API}/users`, { params: { role: 'site_supervisor' } }),
         axios.get(`${API}/team-members`),
+        axios.get(`${API}/expenses`, { params: { pageSize: 100 } }),
       ]);
       setProjects(projRes.data.projects.map(mapProject));
       setSupervisors(supRes.data.users.map(mapSupervisor));
       setTeamMembers(teamRes.data.teamMembers.map(mapTeamMember));
+      setExpenses(expRes.data.expenses.map(mapExpense));
     } catch (err) {
       toast.error('Could not load live operations data from the server');
       console.error(err);
@@ -131,33 +165,12 @@ const OperationsDashboard = () => {
 
   useEffect(() => { fetchCore(); }, [fetchCore]);
 
-  const [expenses, setExpenses] = useState(() => {
-    const saved = localStorage.getItem('asems_ops_v2_expenses');
-    const list = saved ? JSON.parse(saved) : initialExpenses;
-    return list.filter(e => e.id !== 'EXP-SGM-004').map(e => {
-      const d = (e.description || e.title || '').toLowerCase();
-      let desc = e.description;
-      if (d.includes('cement') || d.includes('pvc') || d.includes('pipe') || d.includes('foundation') || d.includes('bags')) {
-        desc = 'Cement & Pipes';
-      } else if (d.includes('tempo') || d.includes('freight') || d.includes('swargate') || d.includes('travel') || d.includes('transport')) {
-        desc = 'Tempo / Transport';
-      } else if (d.includes('excavation') || d.includes('labor') || d.includes('helper') || d.includes('wages') || d.includes('workers')) {
-        desc = 'Labor Wages';
-      }
-      return { ...e, description: desc };
-    });
-  });
-
   const [siteLogs, setSiteLogs] = useState(() => {
     const saved = localStorage.getItem('asems_ops_v2_sitelogs');
     return saved ? JSON.parse(saved) : initialSiteLogs;
   });
 
-  // Save changes to localStorage (expenses/site logs only — projects/supervisors/team are real now)
-  useEffect(() => {
-    localStorage.setItem('asems_ops_v2_expenses', JSON.stringify(expenses));
-  }, [expenses]);
-
+  // Save changes to localStorage (site logs only — everything else is real now)
   useEffect(() => {
     localStorage.setItem('asems_ops_v2_sitelogs', JSON.stringify(siteLogs));
   }, [siteLogs]);
@@ -301,61 +314,55 @@ const OperationsDashboard = () => {
     }
   };
 
-  const handleApproveExpense = (expenseId, notes, targetStatus = 'Approved') => {
-    setExpenses(prev => prev.map(e => {
-      if (e.id === expenseId) {
-        return {
-          ...e,
-          status: targetStatus,
-          reviewedBy: targetStatus === 'Pending' ? null : 'Operations Manager',
-          reviewedAt: targetStatus === 'Pending' ? null : new Date().toLocaleString(),
-          reviewNotes: notes
-        };
-      }
-      return e;
-    }));
-    if (targetStatus === 'Approved') {
+  const handleApproveExpense = async (expenseId, notes, targetStatus = 'Approved') => {
+    if (targetStatus === 'Pending') {
+      toast.error('Resetting an approved expense back to Pending isn\'t supported — reject it instead if it needs correction.');
+      return;
+    }
+    try {
+      await axios.patch(`${API}/expenses/${expenseId}/approve`);
       toast.success(`Expense ${expenseId} approved for disbursement!`);
-    } else if (targetStatus === 'Pending') {
-      toast.success(`Expense ${expenseId} reset to Pending!`);
+      await fetchCore();
+    } catch (err) {
+      toast.error(err.response?.data?.error || 'Could not approve the expense');
     }
   };
 
-  const handleRejectExpense = (expenseId, notes) => {
-    setExpenses(prev => prev.map(e => {
-      if (e.id === expenseId) {
-        return {
-          ...e,
-          status: 'Rejected',
-          reviewedBy: 'Operations Manager',
-          reviewedAt: new Date().toLocaleString(),
-          reviewNotes: notes
-        };
-      }
-      return e;
-    }));
-    toast.error(`Expense ${expenseId} rejected with audit remarks.`);
+  const handleRejectExpense = async (expenseId, notes) => {
+    try {
+      await axios.patch(`${API}/expenses/${expenseId}/reject`, { remarks: notes });
+      toast.error(`Expense ${expenseId} rejected with audit remarks.`);
+      await fetchCore();
+    } catch (err) {
+      toast.error(err.response?.data?.error || 'Could not reject the expense');
+    }
   };
 
-  const handleForwardExpense = (expenseId, forwardTo = 'Accounts & Finance', notes = '') => {
-    setExpenses(prev => prev.map(e => {
-      if (e.id === expenseId) {
-        return {
-          ...e,
-          status: 'Forwarded',
-          forwardedTo: forwardTo,
-          forwardedAt: new Date().toLocaleString(),
-          forwardNotes: notes
-        };
-      }
-      return e;
-    }));
-    toast.success(`Expense ${expenseId} forwarded to ${forwardTo}!`);
+  // "Forward to Accounts" is the same real action as approve — Operations
+  // approving an expense already makes it visible to Accounts' Live Payments.
+  const handleForwardExpense = async (expenseId, forwardTo = 'Accounts & Finance', notes = '') => {
+    try {
+      await axios.patch(`${API}/expenses/${expenseId}/approve`);
+      toast.success(`Expense ${expenseId} forwarded to ${forwardTo}!`);
+      await fetchCore();
+    } catch (err) {
+      toast.error(err.response?.data?.error || 'Could not forward the expense');
+    }
   };
 
-  const handleSubmitNewExpense = (newExpense) => {
-    setExpenses(prev => [newExpense, ...prev]);
-    toast.success(`Expense claim ${newExpense.id} submitted for approval!`);
+  const handleSubmitNewExpense = async (newExpense) => {
+    try {
+      await axios.post(`${API}/expenses`, {
+        projectId: newExpense.projectId,
+        description: newExpense.title || newExpense.description,
+        vendorName: newExpense.vendor || newExpense.vendorName,
+        amount: newExpense.amount,
+      });
+      toast.success(`Expense claim submitted for approval!`);
+      await fetchCore();
+    } catch (err) {
+      toast.error(err.response?.data?.error || 'Could not submit the expense claim');
+    }
   };
 
   const handleUpdateProgress = (updateData) => {
