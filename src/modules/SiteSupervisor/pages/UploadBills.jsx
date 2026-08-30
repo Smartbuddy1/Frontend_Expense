@@ -1,13 +1,33 @@
 import React, { useState } from 'react';
 import { UploadCloud, FileText, Image, CheckCircle2, Clock, Trash2, Eye, ShieldCheck, Sparkles, Search, X } from 'lucide-react';
+import { useWallet } from '../context/WalletContext';
+
+// Infers a rough file-type label from the receipt's name so the archive still
+// shows something like "PDF Invoice" without WalletContext needing to track it.
+const inferFileType = (receiptName) => {
+  const ext = (receiptName || '').split('.').pop()?.toLowerCase();
+  if (ext === 'pdf') return 'PDF Invoice';
+  if (ext === 'png') return 'PNG Photo';
+  if (ext === 'jpg' || ext === 'jpeg') return 'JPG Slip';
+  return 'Receipt Attached';
+};
 
 const UploadBills = () => {
-  const [bills, setBills] = useState([
-    { id: 'BILL-801', title: 'UltraTech Cement Tax Invoice', vendor: 'Shree Sai Traders', amount: 14500, date: '19 Aug 2026', type: 'PDF Invoice', status: 'Verified' },
-    { id: 'BILL-800', title: 'Diesel Delivery Receipt (100L)', vendor: 'HP Auto Fuel', amount: 9200, date: '18 Aug 2026', type: 'PNG Photo', status: 'Verified' },
-    { id: 'BILL-798', title: 'JCB Machine 4-Hour Rent Voucher', vendor: 'Om Earthmovers', amount: 6000, date: '17 Aug 2026', type: 'JPG Slip', status: 'Under Review' },
-    { id: 'BILL-795', title: 'Electrical PVC Wire Roll Voucher', vendor: 'Havells Electricals', amount: 3450, date: '15 Aug 2026', type: 'PDF Invoice', status: 'Verified' },
-  ]);
+  const { expensesList, recordExpense } = useWallet();
+
+  // A "bill" here is just any wallet expense that has a receipt attached —
+  // shared with Daily Expenses / Balance Settlement instead of a separate list.
+  const bills = expensesList
+    .filter((exp) => exp.receipt)
+    .map((exp) => ({
+      id: exp.id,
+      title: exp.receiptName || exp.category,
+      vendor: exp.paidTo || 'Site Vendor',
+      amount: exp.amount,
+      date: exp.date,
+      type: inferFileType(exp.receiptName),
+      status: exp.status === 'Approved' ? 'Verified' : 'Under Review',
+    }));
 
   const [searchTerm, setSearchTerm] = useState('');
   const [uploadTitle, setUploadTitle] = useState('');
@@ -29,17 +49,12 @@ const UploadBills = () => {
   const handleUpload = (e) => {
     e.preventDefault();
     if (!uploadTitle || !amount) return;
-    const newBill = {
-      id: `BILL-${Math.floor(800 + Math.random() * 200)}`,
-      title: uploadTitle,
-      category: category,
-      vendor: vendor || 'Site Vendor',
+    recordExpense({
+      category,
+      paidTo: vendor || 'Site Vendor',
       amount: parseFloat(amount),
-      date: 'Today',
-      type: 'PNG Photo',
-      status: 'Under Review'
-    };
-    setBills([newBill, ...bills]);
+      receiptName: uploadTitle,
+    });
     setUploadTitle('');
     setCategory('Travel');
     setVendor('');
