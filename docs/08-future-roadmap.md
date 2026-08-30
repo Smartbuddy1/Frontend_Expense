@@ -6,7 +6,7 @@ This is what comes after the core plan in docs 02–07 is working: real auth, re
 
 ## Phase A — Get the current prototype onto real infrastructure
 (This is docs 02–07, restated as one line each, for tracking)
-1. Shared GitHub repo + branch workflow live, 4 collaborators active
+1. Shared GitHub repos (frontend + backend) + branch workflow live, 4 collaborators active
 2. Backend built through Phase 4 of [04-backend-plan.md](04-backend-plan.md) (auth, projects, expenses, accounts)
 3. Frontend's fake login/mock data replaced with real API calls, module by module
 4. Deployed to AWS staging, then production

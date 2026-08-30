@@ -30,7 +30,7 @@ The full, file-by-file breakdown of what's genuinely done vs. broken vs. missing
 
 ## Where the project is going
 
-1. Put the existing prototype and this documentation into one shared **GitHub repo** the 4-person team works in — process in [02-git-workflow.md](02-git-workflow.md).
+1. Run the project out of two shared GitHub repos ([Frontend_Expense](https://github.com/Smartbuddy1/Frontend_Expense), which also holds this documentation, and [Backend_Expense](https://github.com/Smartbuddy1/Backend_Expense)) the 4-person team works in — process in [02-git-workflow.md](02-git-workflow.md).
 2. Build a real **backend + database** — [04-backend-plan.md](04-backend-plan.md), [05-database-schema.md](05-database-schema.md).
 3. Wire the 4 existing frontends to it with real **auth and role-based access** — [06-security.md](06-security.md).
 4. **Deploy to AWS** — [07-aws-deployment.md](07-aws-deployment.md).

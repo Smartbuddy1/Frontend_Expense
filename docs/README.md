@@ -5,7 +5,7 @@ This folder is the single source of truth for the ASEMS (Aarya Site Expense Mana
 ## Reading order
 
 1. [01-project-overview.md](01-project-overview.md) — what ASEMS is, the 4 roles, current status, recommended tech stack
-2. [02-git-workflow.md](02-git-workflow.md) — GitHub repo setup and branching strategy for the 4-person team, start to finish
+2. [02-git-workflow.md](02-git-workflow.md) — GitHub repo setup and branching strategy across the two repos (frontend + backend) for the 4-person team, start to finish
 3. [03-frontend-status.md](03-frontend-status.md) — honest audit of what's built, what's broken, what's missing in the existing React frontend
 4. [04-backend-plan.md](04-backend-plan.md) — how to start the backend from zero, folder structure, phased build order, API endpoint list
 5. [05-database-schema.md](05-database-schema.md) — proposed PostgreSQL schema (tables, fields, relationships)

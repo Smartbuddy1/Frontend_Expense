@@ -2,26 +2,26 @@
 
 _Last updated: 2026-08-30_
 
-There is currently **no backend at all**. This doc is the step-by-step for building one that the existing frontend can actually plug into with minimal frontend rework, since `AuthContext.jsx` and a few other files already assume a specific API shape.
+Phase 1 below (auth + user creation) is done — see [09-local-setup.md](09-local-setup.md) to run it. This doc is the step-by-step for the rest, built so the existing frontend can plug into it with minimal frontend rework, since `AuthContext.jsx` and a few other files already assumed a specific API shape before the backend existed.
 
 ## 1. Repo layout
 
-Keep the backend in the **same repo**, as a sibling to `src/`, so the 4-person team works out of one place and PRs can touch frontend+backend together when a feature needs both:
+The backend lives in its **own repo**, [Backend_Expense](https://github.com/Smartbuddy1/Backend_Expense), cloned as a sibling folder to the frontend repo (see [09-local-setup.md](09-local-setup.md)) — not nested inside it. A PR that needs both a backend change and the frontend code that calls it means one PR in each repo (see [02-git-workflow.md](02-git-workflow.md)).
 
 ```
-ASEMS/
-  src/            (existing frontend, unchanged)
-  server/         (new — backend lives here)
-    src/
-      routes/
-      controllers/
-      services/
-      middleware/     (auth, error handling, validation)
-      prisma/         (schema.prisma, migrations/)
-      utils/
-    .env.example
-    package.json
-  docs/
+Backend_Expense/
+  src/
+    routes/
+    middleware/     (auth, error handling, validation)
+    utils/
+    index.js
+  prisma/           (schema.prisma, migrations/)
+  .env.example
+  package.json
+
+Frontend_Expense/
+  src/              (unchanged)
+  docs/             (this doc and the rest of the shared documentation)
 ```
 
 ## 2. Stack (see [01-project-overview.md](01-project-overview.md) for the "why")
@@ -32,19 +32,20 @@ Node.js + Express + Prisma + MySQL + JWT. Validate request bodies with `zod`. Us
 
 Build in this order — each phase should be its own set of PRs, and each phase should be demoable before moving to the next.
 
-### Phase 0 — Project setup
-- `server/` scaffold, Express app, `.env.example`, connect to a local MySQL instance, health-check route (`GET /health`)
-- Prisma init, first migration with just a `users` table
+### Phase 0 — Project setup — **done**
+- ~~`server/` scaffold~~ Express app, `.env.example`, MySQL connection, health-check route (`GET /health`) all live in the [Backend_Expense](https://github.com/Smartbuddy1/Backend_Expense) repo
+- Prisma set up (pinned to 6.12.0 — see the note in [09-local-setup.md](09-local-setup.md) about why not `latest`), first migration with the `users` table
 - CORS configured to allow the Vite dev server origin only
 
-### Phase 1 — Auth & users
-- `POST /auth/login` — accepts `{ mobile, password }` (matches what `AuthContext.jsx` already sends), returns `{ token, refreshToken, user }`
-- `POST /auth/refresh`, `POST /auth/logout`
-- `GET /auth/me` — returns the logged-in user from the token
-- Auth middleware that verifies the JWT and attaches `req.user`
-- Role-guard middleware (`requireRole('admin', 'operations')` etc.) — see [06-security.md](06-security.md)
-- User CRUD is admin-only: `POST /users` (create supervisor/accountant/operational-head/team-member — this replaces the password fields already being collected client-side in Admin's `Create*Modal` components, which currently go nowhere)
-- **Frontend work in this phase**: wire the real `GlobalLogin` (in `src/App.jsx`) and each module's already-written `AuthContext.login()` to this endpoint, replacing the fake keyword-guessing login. Turn on the `ProtectedRoute`s that already exist but are currently unused.
+### Phase 1 — Auth & users — **mostly done**
+- [x] `POST /auth/login` — accepts `{ mobile, password }`, returns `{ token, user }`, rate-limited (5/15min per IP)
+- [x] `GET /auth/me` — returns the logged-in user from the token
+- [x] Auth middleware (`requireAuth`) that verifies the JWT and attaches `req.user`
+- [x] Role-guard middleware (`requireRole('admin', 'operations')` etc.) — see [06-security.md](06-security.md)
+- [x] `POST /users` (admin-only) — create operations/accountant/site_supervisor/admin accounts; `GET /users` lists them
+- [x] **Frontend work**: root `GlobalLogin` (in `src/App.jsx`, Frontend_Expense) calls the real endpoint and redirects by the role the backend returns; `ProtectedRoute` is wired into every module's routes with a role check
+- [ ] Not built yet: `POST /auth/refresh` / `POST /auth/logout` (tokens are just 7-day JWTs for now, no refresh/revoke flow) — add if session length becomes a real problem
+- [ ] Not built yet: an admin-facing "create user" UI wired to `POST /users` — the endpoint exists, but Admin's `Create*Modal` components still don't call it (see [03-frontend-status.md](03-frontend-status.md))
 
 ### Phase 2 — Organizations, projects, teams (Admin + Operations)
 - `GET/POST/PATCH /organizations`
