@@ -20,6 +20,7 @@ export const OrganizationsTab = ({
   onOpenCreateOperationalHead,
   onEditOperationalHead,
   onDeleteOperationalHead,
+  onSaveOperationalHead,
   onNavigateTab
 }) => {
   const { language } = useLanguage();
@@ -82,6 +83,10 @@ export const OrganizationsTab = ({
   };
 
   const handleSaveHead = (headToSave) => {
+    if (onSaveOperationalHead) {
+      onSaveOperationalHead(headToSave);
+      return;
+    }
     setHeadsList(prev => {
       const exists = prev.some(h => h.id === headToSave.id);
       if (exists) {

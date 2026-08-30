@@ -1,19 +1,94 @@
-import React, { useState, useEffect } from 'react';
-import { 
-  Building2, Users, IndianRupee, TrendingUp, LayoutDashboard, 
-  Plus, CheckCircle2, XCircle, Sparkles, RefreshCw, AlertCircle 
+import React, { useState, useEffect, useCallback } from 'react';
+import axios from 'axios';
+import {
+  Building2, Users, IndianRupee, TrendingUp, LayoutDashboard,
+  Plus, CheckCircle2, XCircle, Sparkles, RefreshCw, AlertCircle
 } from 'lucide-react';
 import toast, { Toaster } from 'react-hot-toast';
 
-import { 
-  initialProjects, 
-  initialSupervisors, 
-  initialTeamMembers, 
-  initialAccountants,
-  initialExpenses, 
-  initialSiteLogs,
-  initialOrganizations
+import {
+  initialExpenses,
+  initialSiteLogs
 } from '../data/operationsData';
+
+const API = import.meta.env.VITE_API_BASE_URL;
+
+const STATUS_TO_DISPLAY = { planned: 'Planned', active: 'In Progress', on_hold: 'On Hold', completed: 'Completed' };
+const DISPLAY_TO_STATUS = { Planned: 'planned', 'In Progress': 'active', 'On Hold': 'on_hold', Completed: 'completed' };
+const HEALTH_TO_DISPLAY = { on_track: 'On Track', at_risk: 'At Risk', delayed: 'Delayed' };
+const DISPLAY_TO_HEALTH = { 'On Track': 'on_track', 'At Risk': 'at_risk', Delayed: 'delayed' };
+
+const mapProject = (p) => ({
+  id: p.id,
+  code: p.code,
+  name: p.name,
+  client: p.organization?.name || '',
+  location: p.site || p.location || '',
+  category: p.category || 'Infrastructure & Civil',
+  budget: Number(p.budget) || 0,
+  spent: 0,
+  startDate: p.startDate ? p.startDate.split('T')[0] : '',
+  endDate: p.endDate ? p.endDate.split('T')[0] : '',
+  status: STATUS_TO_DISPLAY[p.status] || 'In Progress',
+  health: HEALTH_TO_DISPLAY[p.health] || 'On Track',
+  progress: p.progress || 0,
+  supervisorId: p.supervisorId || '',
+  supervisorName: p.supervisor?.name || 'Unassigned',
+  supervisorPhone: p.supervisor?.mobile || '',
+  teamCount: (p.teamAssignments || []).length,
+  description: p.description || '',
+  milestones: (p.milestones || []).map(m => ({ id: m.id, title: m.title, status: m.status, targetDate: m.targetDate || '' })),
+  assignedTeam: (p.teamAssignments || []).map(a => a.teamMemberId),
+});
+
+const mapSupervisor = (u) => ({
+  id: u.id,
+  name: u.name,
+  phone: u.mobile,
+  email: u.email || '',
+  specialization: 'Site Operations & Field Lead',
+  avatarColor: 'bg-blue-600',
+  status: u.status === 'active' ? 'Available' : 'Inactive',
+  experience: '—',
+  activeProjects: [],
+  advanceAmount: 0,
+});
+
+const mapTeamMember = (t) => ({
+  id: t.id,
+  name: t.name,
+  role: t.role || '',
+  phone: t.phone || '',
+  skills: t.skills || [],
+  status: t.status,
+});
+
+const mapAccountant = (u) => ({
+  id: u.id,
+  name: u.name,
+  phone: u.mobile,
+  email: u.email || '',
+  role: 'Accountant',
+  branch: 'Head Office',
+  status: u.status === 'active' ? 'Active' : 'Inactive',
+});
+
+const mapOrganization = (o) => ({
+  id: o.id,
+  name: o.name,
+  phone: o.phone || '',
+  contactPerson: o.contactPerson || '',
+  email: o.email || '',
+});
+
+const mapOperationalHead = (h) => ({
+  id: h.id,
+  name: h.name,
+  phone: h.phone || '',
+  email: h.email || '',
+  role: h.department || 'Operational Head',
+  password: '',
+});
 
 import OperationsOverview from '../components/operations/OperationsOverview';
 import LiveOpsPanel from '../components/operations/LiveOpsPanel';
@@ -59,32 +134,43 @@ const OperationsDashboard = () => {
     setSearchParams({ tab });
   };
 
-  // Persistent State (ASEMS Operations Data - Projects Roster)
-  const [projects, setProjects] = useState(() => {
-    const saved = localStorage.getItem('asems_v2_projects');
-    return saved ? JSON.parse(saved) : initialProjects;
-  });
+  // Projects, supervisors, team members, organizations, and accountants all
+  // come from the real backend now. Expenses/site logs below are still the
+  // original mock data — see docs/03-frontend-status.md for what's real vs not.
+  const [projects, setProjects] = useState([]);
+  const [supervisors, setSupervisors] = useState([]);
+  const [teamMembers, setTeamMembers] = useState([]);
+  const [organizations, setOrganizations] = useState([]);
+  const [accountants, setAccountants] = useState([]);
+  const [operationalHeads, setOperationalHeads] = useState([]);
+  const [loadingCore, setLoadingCore] = useState(true);
 
-  const [supervisors, setSupervisors] = useState(() => {
-    const saved = localStorage.getItem('asems_v2_supervisors');
-    const list = saved ? JSON.parse(saved) : initialSupervisors;
-    return list.map(sup => {
-      let p = (sup.phone || '').trim();
-      if (!p || p.length < 8 || p === '98' || p === '+91 98') {
-        const nameLower = (sup.name || '').toLowerCase();
-        if (nameLower.includes('rohit')) p = '+91 98220 11223';
-        else if (nameLower.includes('amit')) p = '+91 98230 45678';
-        else if (nameLower.includes('sagar')) p = '+91 94220 88990';
-        else p = '+91 98220 55443';
-      }
-      return { ...sup, phone: p };
-    });
-  });
+  const fetchCore = useCallback(async () => {
+    setLoadingCore(true);
+    try {
+      const [projRes, supRes, teamRes, orgRes, accRes, headsRes] = await Promise.all([
+        axios.get(`${API}/projects`, { params: { pageSize: 100 } }),
+        axios.get(`${API}/users`, { params: { role: 'site_supervisor' } }),
+        axios.get(`${API}/team-members`),
+        axios.get(`${API}/organizations`),
+        axios.get(`${API}/users`, { params: { role: 'accountant' } }),
+        axios.get(`${API}/operational-heads`),
+      ]);
+      setProjects(projRes.data.projects.map(mapProject));
+      setSupervisors(supRes.data.users.map(mapSupervisor));
+      setTeamMembers(teamRes.data.teamMembers.map(mapTeamMember));
+      setOrganizations(orgRes.data.organizations.map(mapOrganization));
+      setAccountants(accRes.data.users.map(mapAccountant));
+      setOperationalHeads(headsRes.data.operationalHeads.map(mapOperationalHead));
+    } catch (err) {
+      toast.error('Could not load live operations data from the server');
+      console.error(err);
+    } finally {
+      setLoadingCore(false);
+    }
+  }, []);
 
-  const [teamMembers, setTeamMembers] = useState(() => {
-    const saved = localStorage.getItem('asems_v2_team');
-    return saved ? JSON.parse(saved) : initialTeamMembers;
-  });
+  useEffect(() => { fetchCore(); }, [fetchCore]);
 
   const [expenses, setExpenses] = useState(() => {
     const saved = localStorage.getItem('asems_v2_expenses');
@@ -102,32 +188,7 @@ const OperationsDashboard = () => {
     return saved ? JSON.parse(saved) : initialSiteLogs;
   });
 
-  const [organizations, setOrganizations] = useState(() => {
-    const saved = localStorage.getItem('asems_v2_organizations');
-    return saved ? JSON.parse(saved) : initialOrganizations;
-  });
-
-  // Save changes to localStorage
-  useEffect(() => {
-    try {
-      localStorage.setItem('asems_v2_projects', JSON.stringify(projects));
-    } catch (e) {
-      console.error(e);
-    }
-  }, [projects]);
-
-  useEffect(() => {
-    localStorage.setItem('asems_v2_organizations', JSON.stringify(organizations));
-  }, [organizations]);
-
-  useEffect(() => {
-    localStorage.setItem('asems_v2_supervisors', JSON.stringify(supervisors));
-  }, [supervisors]);
-
-  useEffect(() => {
-    localStorage.setItem('asems_v2_team', JSON.stringify(teamMembers));
-  }, [teamMembers]);
-
+  // Save changes to localStorage (expenses/site logs only — the rest is real now)
   useEffect(() => {
     localStorage.setItem('asems_v2_expenses', JSON.stringify(expenses));
   }, [expenses]);
@@ -163,324 +224,273 @@ const OperationsDashboard = () => {
   const [isCreateTeamMemberOpen, setIsCreateTeamMemberOpen] = useState(false);
   const [editingTeamMember, setEditingTeamMember] = useState(null);
 
-  const [accountants, setAccountants] = useState(() => {
-    const saved = localStorage.getItem('asems_v2_accountants');
-    return saved ? JSON.parse(saved) : initialAccountants;
-  });
-
   const [isCreateAccountantOpen, setIsCreateAccountantOpen] = useState(false);
   const [editingAccountant, setEditingAccountant] = useState(null);
 
-  const handleSaveAccountant = (accData) => {
-    const isEdit = Boolean(accData.id && accountants.some(a => a.id === accData.id));
-    setAccountants(prev => {
-      const updated = isEdit 
-        ? prev.map(a => a.id === accData.id ? { ...a, ...accData } : a)
-        : [accData, ...prev];
-      try {
-        localStorage.setItem('asems_v2_accountants', JSON.stringify(updated));
-      } catch (err) {
-        console.error('Storage error', err);
-      }
-      return updated;
-    });
-
-    toast.success(isEdit ? `Accountant ${accData.name} updated!` : `Accountant ${accData.name} registered successfully!`);
+  const handleSaveAccountant = async (accData) => {
+    if (accData.id) {
+      toast.error('Editing an existing accountant account is not supported yet.');
+      return;
+    }
+    const mobile = (accData.phone || '').replace(/\D/g, '');
+    if (mobile.length < 10) {
+      toast.error('A valid 10-digit mobile number is required to create a real login');
+      return;
+    }
+    const password = accData.password || 'changeme123';
+    try {
+      await axios.post(`${API}/users`, {
+        name: accData.name,
+        mobile,
+        password,
+        role: 'accountant',
+        email: accData.email || undefined,
+      });
+      toast.success(`Accountant "${accData.name}" created! Login: ${mobile} / ${password}`, { duration: 8000 });
+      await fetchCore();
+    } catch (err) {
+      toast.error(err.response?.data?.error || 'Could not create accountant');
+    }
   };
 
-  const handleDeleteAccountant = (accId) => {
-    if (!window.confirm('Are you sure you want to remove this accountant?')) return;
-    setAccountants(prev => {
-      const updated = prev.filter(a => a.id !== accId);
-      try {
-        localStorage.setItem('asems_v2_accountants', JSON.stringify(updated));
-      } catch (err) {
-        console.error('Storage error', err);
-      }
-      return updated;
-    });
-    toast.success('Accountant removed');
+  const handleDeleteAccountant = () => {
+    toast.error('Removing an accountant account isn\'t supported yet — deactivate them with an admin instead of deleting, since their approval history has to stay intact.');
   };
 
   const [isTransferAdvanceOpen, setIsTransferAdvanceOpen] = useState(false);
   const [isPhotoGalleryOpen, setIsPhotoGalleryOpen] = useState(false);
 
-  const handleSaveTeamMember = (memberData) => {
-    const isEdit = Boolean(memberData.id && teamMembers.some(m => m.id === memberData.id));
-    setTeamMembers(prev => {
-      const updated = isEdit 
-        ? prev.map(m => m.id === memberData.id ? { ...m, ...memberData } : m)
-        : [memberData, ...prev];
-      try {
-        localStorage.setItem('asems_v2_team', JSON.stringify(updated));
-      } catch (err) {
-        console.error('Storage error', err);
+  const handleSaveTeamMember = async (memberData) => {
+    try {
+      if (memberData.id) {
+        await axios.patch(`${API}/team-members/${memberData.id}`, {
+          name: memberData.name,
+          role: memberData.role,
+          phone: memberData.phone,
+        });
+        toast.success(`Team member ${memberData.name} updated!`);
+      } else {
+        await axios.post(`${API}/team-members`, {
+          name: memberData.name,
+          role: memberData.role,
+          phone: memberData.phone,
+          skills: memberData.skills ? String(memberData.skills).split(',').map(s => s.trim()).filter(Boolean) : undefined,
+        });
+        toast.success(`Team member ${memberData.name} registered!`);
       }
-      return updated;
-    });
-
-    toast.success(isEdit ? `Team member ${memberData.name} updated!` : `Team member ${memberData.name} registered!`);
+      await fetchCore();
+    } catch (err) {
+      toast.error(err.response?.data?.error || 'Could not save the team member');
+    }
   };
 
-  const handleDeleteTeamMember = (memberId) => {
-    setTeamMembers(prev => {
-      const updated = prev.filter(m => m.id !== memberId);
-      try {
-        localStorage.setItem('asems_v2_team', JSON.stringify(updated));
-      } catch (err) {
-        console.error('Storage error', err);
-      }
-      return updated;
-    });
-    toast.success('Team member removed.');
+  const handleDeleteTeamMember = async (memberId) => {
+    try {
+      await axios.delete(`${API}/team-members/${memberId}`);
+      toast.success('Team member removed.');
+      await fetchCore();
+    } catch (err) {
+      toast.error(err.response?.data?.error || 'Could not remove the team member');
+    }
   };
 
-  // Advance Transfer Handler
-  const handleTransferAdvance = (advData) => {
-    setSupervisors(prev => {
-      const updated = prev.map(s => {
-        if (s.id === advData.supervisorId) {
-          const currentAdv = Number(s.advanceAmount) || 0;
-          return { ...s, advanceAmount: currentAdv + Number(advData.amount) };
-        }
-        return s;
+  // Advance Transfer Handler — hands a supervisor cash on the spot (auto-approved,
+  // still needs Accounts to actually disburse it).
+  const handleTransferAdvance = async (advData) => {
+    try {
+      await axios.post(`${API}/advances/transfer`, {
+        projectId: advData.projectId,
+        supervisorId: advData.supervisorId,
+        amount: advData.amount,
+        purpose: advData.purpose || 'Direct transfer by Admin',
       });
-      try {
-        localStorage.setItem('asems_v2_supervisors', JSON.stringify(updated));
-      } catch (e) {
-        console.error(e);
-      }
-      return updated;
-    });
-
-    toast.success(`₹${Number(advData.amount).toLocaleString('en-IN')} ॲडव्हान्स ${advData.supervisorName} यांच्या खात्यात जोडला गेला!`);
+      toast.success(`₹${Number(advData.amount).toLocaleString('en-IN')} ॲडव्हान्स ${advData.supervisorName} यांच्या खात्यात जोडला गेला!`);
+      await fetchCore();
+    } catch (err) {
+      toast.error(err.response?.data?.error || 'Could not transfer the advance');
+    }
   };
 
   // Handlers
-  const handleSaveSupervisor = (supData) => {
-    const isEdit = Boolean(supData.id && supervisors.some(s => s.id === supData.id));
-    const newId = supData.id || `sup-${Date.now()}`;
+  const handleSaveSupervisor = async (supData) => {
     const fullName = supData.name || [supData.firstName, supData.surname].filter(Boolean).join(' ').trim() || 'Supervisor';
 
-    const supervisorObj = {
-      id: newId,
-      name: fullName,
-      phone: supData.phone || '+91 98000 00000',
-      email: supData.email || `${fullName.toLowerCase().replace(/\s+/g, '.')}@aaryainnovtech.com`,
-      specialization: supData.specialization || 'Site Operations & Field Lead',
-      avatarColor: 'bg-blue-600',
-      status: supData.assignedProjectId ? 'On-Site' : 'Available',
-      experience: supData.experience || '5+ Years',
-      activeProjects: supData.assignedProjectId ? [supData.assignedProjectId] : [],
-      advanceAmount: Number(supData.advanceAmount) || 50000
-    };
-
-    setSupervisors(prev => {
-      const updated = isEdit 
-        ? prev.map(s => s.id === newId ? { ...s, ...supervisorObj } : s)
-        : [supervisorObj, ...prev];
-      try {
-        localStorage.setItem('asems_v2_supervisors', JSON.stringify(updated));
-      } catch (err) {
-        console.error('Storage error', err);
-      }
-      return updated;
-    });
-
-    if (supData.assignedProjectId) {
-      setProjects(prev => {
-        const updatedProjects = prev.map(p => {
-          if (p.id === supData.assignedProjectId) {
-            return {
-              ...p,
-              supervisorId: newId,
-              supervisorName: fullName,
-              supervisorPhone: supData.phone || '+91 98000 00000'
-            };
-          }
-          return p;
-        });
-        try {
-          localStorage.setItem('asems_v2_projects', JSON.stringify(updatedProjects));
-        } catch (err) {
-          console.error('Storage error', err);
-        }
-        return updatedProjects;
-      });
+    if (supData.id) {
+      toast.error('Editing an existing supervisor account is not supported yet — remove and re-create if details are wrong.');
+      return;
     }
+    const mobile = (supData.phone || '').replace(/\D/g, '');
+    if (mobile.length < 10) {
+      toast.error('A valid 10-digit mobile number is required to create a real login');
+      return;
+    }
+    const password = supData.password || 'changeme123';
 
-    toast.success(isEdit ? `Supervisor "${fullName}" updated successfully!` : `Supervisor "${fullName}" created successfully!`);
+    try {
+      const { data } = await axios.post(`${API}/users`, {
+        name: fullName,
+        mobile,
+        password,
+        role: 'site_supervisor',
+        email: supData.email || undefined,
+      });
+
+      if (supData.assignedProjectId) {
+        await axios.patch(`${API}/projects/${supData.assignedProjectId}`, { supervisorId: data.user.id });
+      }
+
+      toast.success(`Supervisor "${fullName}" created! Login: ${mobile} / ${password}`, { duration: 8000 });
+      await fetchCore();
+    } catch (err) {
+      toast.error(err.response?.data?.error || 'Could not create supervisor');
+    }
     setEditingSupervisor(null);
   };
 
-  const handleDeleteSupervisor = (supervisorId) => {
-    setSupervisors(prev => {
-      const updated = prev.filter(s => s.id !== supervisorId);
-      try {
-        localStorage.setItem('asems_v2_supervisors', JSON.stringify(updated));
-      } catch (err) {
-        console.error('Storage error', err);
-      }
-      return updated;
-    });
-
-    // Also unassign from any project if currently assigned
-    setProjects(prev => {
-      const updatedProjects = prev.map(p => {
-        if (p.supervisorId === supervisorId) {
-          return {
-            ...p,
-            supervisorId: '',
-            supervisorName: 'Unassigned',
-            supervisorPhone: ''
-          };
-        }
-        return p;
-      });
-      try {
-        localStorage.setItem('asems_v2_projects', JSON.stringify(updatedProjects));
-      } catch (err) {
-        console.error('Storage error', err);
-      }
-      return updatedProjects;
-    });
-    toast.success('Supervisor removed from roster.');
+  const handleDeleteSupervisor = () => {
+    toast.error('Removing a supervisor account isn\'t supported yet — deactivate them with an admin instead of deleting, since their expense history has to stay intact.');
   };
 
-  const handleSaveOrganization = (orgData) => {
-    setOrganizations(prev => {
-      const exists = prev.some(o => o.id === orgData.id);
-      let updated;
-      if (exists) {
-        updated = prev.map(o => o.id === orgData.id ? orgData : o);
+  const handleSaveOrganization = async (orgData) => {
+    try {
+      const payload = {
+        name: orgData.name,
+        phone: orgData.phone || undefined,
+        contactPerson: orgData.contactPerson || undefined,
+        email: orgData.email || undefined,
+      };
+      if (orgData.id && organizations.some(o => o.id === orgData.id)) {
+        await axios.patch(`${API}/organizations/${orgData.id}`, payload);
+        toast.success(`Organization "${orgData.name}" updated!`);
       } else {
-        updated = [orgData, ...prev];
+        await axios.post(`${API}/organizations`, payload);
+        toast.success(`Organization "${orgData.name}" created!`);
       }
-      try {
-        localStorage.setItem('asems_v2_organizations', JSON.stringify(updated));
-      } catch (err) {
-        console.error('Storage error', err);
-      }
-      return updated;
-    });
+      await fetchCore();
+    } catch (err) {
+      toast.error(err.response?.data?.error || 'Could not save the organization');
+    }
     setEditingOrg(null);
   };
 
-  const handleDeleteOrganization = (orgId) => {
-    if (window.confirm('Are you sure you want to delete this organization?')) {
-      setOrganizations(prev => {
-        const updated = prev.filter(o => o.id !== orgId);
-        try {
-          localStorage.setItem('asems_v2_organizations', JSON.stringify(updated));
-        } catch (err) {
-          console.error('Storage error', err);
-        }
-        return updated;
-      });
+  const handleDeleteOrganization = async (orgId) => {
+    if (!window.confirm('Are you sure you want to delete this organization?')) return;
+    try {
+      await axios.delete(`${API}/organizations/${orgId}`);
       toast.success('Organization removed');
+      await fetchCore();
+    } catch (err) {
+      toast.error(err.response?.data?.error || 'Could not delete the organization');
     }
   };
 
-  const handleSaveProject = (projectData) => {
-    setProjects(prev => {
-      const exists = prev.some(p => p.id === projectData.id);
-      const updated = exists 
-        ? prev.map(p => p.id === projectData.id ? { ...p, ...projectData } : p)
-        : [projectData, ...prev];
-      try {
-        localStorage.setItem('asems_v2_projects', JSON.stringify(updated));
-      } catch (err) {
-        console.error('Storage error', err);
+  const handleSaveOperationalHead = async (headData) => {
+    try {
+      const payload = {
+        name: headData.name,
+        phone: headData.phone || undefined,
+        email: headData.email || undefined,
+        department: headData.role || undefined,
+      };
+      if (headData.id && operationalHeads.some(h => h.id === headData.id)) {
+        await axios.patch(`${API}/operational-heads/${headData.id}`, payload);
+        toast.success(`Operational Head "${headData.name}" updated!`);
+      } else {
+        await axios.post(`${API}/operational-heads`, payload);
+        toast.success(`Operational Head "${headData.name}" added!`);
       }
-      return updated;
-    });
+      await fetchCore();
+    } catch (err) {
+      toast.error(err.response?.data?.error || 'Could not save the operational head');
+    }
+  };
 
-    const isEdit = Boolean(editingProject || projects.some(p => p.id === projectData.id));
-    if (isEdit) {
-      toast.success(`Project "${projectData.name}" updated successfully!`);
-    } else {
-      toast.success(`Project "${projectData.name}" launched successfully!`);
+  const handleDeleteOperationalHead = async (headId) => {
+    try {
+      await axios.delete(`${API}/operational-heads/${headId}`);
+      toast.success('Operational Head removed');
+      await fetchCore();
+    } catch (err) {
+      toast.error(err.response?.data?.error || 'Could not delete the operational head');
+    }
+  };
+
+  const handleSaveProject = async (projectData) => {
+    try {
+      let organizationId;
+      if (projectData.client) {
+        const { data: orgData } = await axios.get(`${API}/organizations`);
+        const existingOrg = orgData.organizations.find(o => o.name.toLowerCase() === projectData.client.toLowerCase());
+        if (existingOrg) {
+          organizationId = existingOrg.id;
+        } else {
+          const { data: created } = await axios.post(`${API}/organizations`, {
+            name: projectData.client,
+            phone: projectData.phone || undefined,
+            email: projectData.email || undefined,
+          });
+          organizationId = created.organization.id;
+        }
+      }
+
+      const payload = {
+        name: projectData.name,
+        site: projectData.location,
+        organizationId,
+        supervisorId: projectData.supervisorId || undefined,
+        budget: Number(projectData.budget) || undefined,
+        category: projectData.category,
+        description: projectData.description,
+        status: DISPLAY_TO_STATUS[projectData.status] || 'active',
+        startDate: projectData.startDate || undefined,
+        endDate: projectData.endDate || undefined,
+      };
+
+      const isEdit = Boolean(editingProject);
+      if (isEdit) {
+        await axios.patch(`${API}/projects/${editingProject.id}`, payload);
+        toast.success(`Project "${projectData.name}" updated successfully!`);
+      } else {
+        await axios.post(`${API}/projects`, { ...payload, code: projectData.id });
+        toast.success(`Project "${projectData.name}" launched successfully!`);
+      }
+      await fetchCore();
+    } catch (err) {
+      toast.error(err.response?.data?.error || 'Could not save the project');
     }
     setEditingProject(null);
   };
 
-  const handleDeleteProject = (projectId) => {
-    setProjects(prev => {
-      const updated = prev.filter(p => p.id !== projectId);
-      try {
-        localStorage.setItem('asems_v2_projects', JSON.stringify(updated));
-      } catch (err) {
-        console.error('Storage error', err);
-      }
-      return updated;
-    });
-    toast.success(`Project removed from active operations.`);
+  const handleDeleteProject = async (projectId) => {
+    try {
+      await axios.delete(`${API}/projects/${projectId}`);
+      toast.success('Project removed.');
+      await fetchCore();
+    } catch (err) {
+      toast.error(err.response?.data?.error || 'Could not delete the project');
+    }
   };
 
-  const handleAssignTeam = (assignmentData) => {
-    const { projectId, supervisorId, supervisorName, supervisorPhone, assignedTeam, teamCount } = assignmentData;
-    
-    // Update project
-    setProjects(prev => {
-      const updated = prev.map(p => {
-        if (p.id === projectId) {
-          return {
-            ...p,
-            supervisorId,
-            supervisorName,
-            supervisorPhone,
-            assignedTeam,
-            teamCount: Number(teamCount) || 8
-          };
-        }
-        return p;
-      });
-      try {
-        localStorage.setItem('asems_v2_projects', JSON.stringify(updated));
-      } catch (err) {
-        console.error('Storage error', err);
-      }
-      return updated;
-    });
+  const handleAssignTeam = async (assignmentData) => {
+    const { projectId, supervisorId, assignedTeam, teamCount } = assignmentData;
+    try {
+      await axios.patch(`${API}/projects/${projectId}`, { supervisorId: supervisorId || undefined });
 
-    // Update supervisor active projects & status
-    setSupervisors(prev => {
-      const updated = prev.map(sup => {
-        if (sup.id === supervisorId) {
-          const currentProjects = sup.activeProjects || [];
-          return {
-            ...sup,
-            status: 'On-Site',
-            activeProjects: currentProjects.includes(projectId) ? currentProjects : [...currentProjects, projectId]
-          };
-        }
-        return sup;
-      });
-      try {
-        localStorage.setItem('asems_v2_supervisors', JSON.stringify(updated));
-      } catch (err) {
-        console.error('Storage error', err);
-      }
-      return updated;
-    });
+      const currentProject = projects.find(p => p.id === projectId);
+      const currentTeam = currentProject?.assignedTeam || [];
+      const toAdd = (assignedTeam || []).filter(id => !currentTeam.includes(id));
+      const toRemove = currentTeam.filter(id => !(assignedTeam || []).includes(id));
 
-    // Update team members assignedProject
-    setTeamMembers(prev => {
-      const updated = prev.map(member => {
-        if (assignedTeam.includes(member.id)) {
-          return { ...member, assignedProject: projectId, status: 'Active' };
-        }
-        return member;
-      });
-      try {
-        localStorage.setItem('asems_v2_team_members', JSON.stringify(updated));
-      } catch (err) {
-        console.error('Storage error', err);
-      }
-      return updated;
-    });
+      await Promise.all([
+        ...toAdd.map(teamMemberId => axios.post(`${API}/projects/${projectId}/team`, { teamMemberId })),
+        ...toRemove.map(teamMemberId => axios.delete(`${API}/projects/${projectId}/team/${teamMemberId}`)),
+      ]);
 
-    toast.success(`Supervisor & Field Crew (${teamCount} Members) assigned successfully!`);
+      toast.success(`Supervisor & Field Crew (${teamCount || (assignedTeam || []).length} Members) assigned successfully!`);
+      await fetchCore();
+    } catch (err) {
+      toast.error(err.response?.data?.error || 'Could not save the team assignment');
+    }
   };
 
   const handleApproveExpense = (expenseId, notes) => {
@@ -588,9 +598,12 @@ const OperationsDashboard = () => {
         <OrganizationsTab
           organizations={organizations}
           projects={projects}
+          operationalHeads={operationalHeads}
           onOpenCreateOrganization={() => { setEditingOrg(null); setIsCreateOrgOpen(true); }}
           onEditOrganization={(org) => { setEditingOrg(org); setIsCreateOrgOpen(true); }}
           onDeleteOrganization={handleDeleteOrganization}
+          onSaveOperationalHead={handleSaveOperationalHead}
+          onDeleteOperationalHead={handleDeleteOperationalHead}
           onNavigateTab={handleTabChange}
         />
       )}
