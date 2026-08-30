@@ -51,12 +51,12 @@ const OperationsDashboard = () => {
 
   // Persistent State (ASEMS Operations Data - Projects Roster)
   const [projects, setProjects] = useState(() => {
-    const saved = localStorage.getItem('asems_v2_projects');
+    const saved = localStorage.getItem('asems_ops_v2_projects');
     return saved ? JSON.parse(saved) : initialProjects;
   });
 
   const [supervisors, setSupervisors] = useState(() => {
-    const saved = localStorage.getItem('asems_v2_supervisors');
+    const saved = localStorage.getItem('asems_ops_v2_supervisors');
     const list = saved ? JSON.parse(saved) : initialSupervisors;
     return list.map(sup => {
       let p = (sup.phone || '').trim();
@@ -72,12 +72,12 @@ const OperationsDashboard = () => {
   });
 
   const [teamMembers, setTeamMembers] = useState(() => {
-    const saved = localStorage.getItem('asems_v2_team');
+    const saved = localStorage.getItem('asems_ops_v2_team');
     return saved ? JSON.parse(saved) : initialTeamMembers;
   });
 
   const [expenses, setExpenses] = useState(() => {
-    const saved = localStorage.getItem('asems_v2_expenses');
+    const saved = localStorage.getItem('asems_ops_v2_expenses');
     const list = saved ? JSON.parse(saved) : initialExpenses;
     return list.filter(e => e.id !== 'EXP-SGM-004').map(e => {
       const d = (e.description || e.title || '').toLowerCase();
@@ -94,33 +94,33 @@ const OperationsDashboard = () => {
   });
 
   const [siteLogs, setSiteLogs] = useState(() => {
-    const saved = localStorage.getItem('asems_v2_sitelogs');
+    const saved = localStorage.getItem('asems_ops_v2_sitelogs');
     return saved ? JSON.parse(saved) : initialSiteLogs;
   });
 
   // Save changes to localStorage
   useEffect(() => {
     try {
-      localStorage.setItem('asems_v2_projects', JSON.stringify(projects));
+      localStorage.setItem('asems_ops_v2_projects', JSON.stringify(projects));
     } catch (e) {
       console.error(e);
     }
   }, [projects]);
 
   useEffect(() => {
-    localStorage.setItem('asems_v2_supervisors', JSON.stringify(supervisors));
+    localStorage.setItem('asems_ops_v2_supervisors', JSON.stringify(supervisors));
   }, [supervisors]);
 
   useEffect(() => {
-    localStorage.setItem('asems_v2_team', JSON.stringify(teamMembers));
+    localStorage.setItem('asems_ops_v2_team', JSON.stringify(teamMembers));
   }, [teamMembers]);
 
   useEffect(() => {
-    localStorage.setItem('asems_v2_expenses', JSON.stringify(expenses));
+    localStorage.setItem('asems_ops_v2_expenses', JSON.stringify(expenses));
   }, [expenses]);
 
   useEffect(() => {
-    localStorage.setItem('asems_v2_sitelogs', JSON.stringify(siteLogs));
+    localStorage.setItem('asems_ops_v2_sitelogs', JSON.stringify(siteLogs));
   }, [siteLogs]);
 
   // Modal States
@@ -168,7 +168,7 @@ const OperationsDashboard = () => {
         ? prev.map(s => s.id === newId ? { ...s, ...supervisorObj } : s)
         : [supervisorObj, ...prev];
       try {
-        localStorage.setItem('asems_v2_supervisors', JSON.stringify(updated));
+        localStorage.setItem('asems_ops_v2_supervisors', JSON.stringify(updated));
       } catch (err) {
         console.error('Storage error', err);
       }
@@ -189,7 +189,7 @@ const OperationsDashboard = () => {
           return p;
         });
         try {
-          localStorage.setItem('asems_v2_projects', JSON.stringify(updatedProjects));
+          localStorage.setItem('asems_ops_v2_projects', JSON.stringify(updatedProjects));
         } catch (err) {
           console.error('Storage error', err);
         }
@@ -205,7 +205,7 @@ const OperationsDashboard = () => {
     setSupervisors(prev => {
       const updated = prev.filter(s => s.id !== supervisorId);
       try {
-        localStorage.setItem('asems_v2_supervisors', JSON.stringify(updated));
+        localStorage.setItem('asems_ops_v2_supervisors', JSON.stringify(updated));
       } catch (err) {
         console.error('Storage error', err);
       }
@@ -226,7 +226,7 @@ const OperationsDashboard = () => {
         return p;
       });
       try {
-        localStorage.setItem('asems_v2_projects', JSON.stringify(updatedProjects));
+        localStorage.setItem('asems_ops_v2_projects', JSON.stringify(updatedProjects));
       } catch (err) {
         console.error('Storage error', err);
       }
@@ -243,7 +243,7 @@ const OperationsDashboard = () => {
         ? prev.map(p => p.id === projectData.id ? { ...p, ...projectData } : p)
         : [projectData, ...prev];
       try {
-        localStorage.setItem('asems_v2_projects', JSON.stringify(updated));
+        localStorage.setItem('asems_ops_v2_projects', JSON.stringify(updated));
       } catch (err) {
         console.error('Storage error', err);
       }
@@ -263,7 +263,7 @@ const OperationsDashboard = () => {
     setProjects(prev => {
       const updated = prev.filter(p => p.id !== projectId);
       try {
-        localStorage.setItem('asems_v2_projects', JSON.stringify(updated));
+        localStorage.setItem('asems_ops_v2_projects', JSON.stringify(updated));
       } catch (err) {
         console.error('Storage error', err);
       }
@@ -291,7 +291,7 @@ const OperationsDashboard = () => {
         return p;
       });
       try {
-        localStorage.setItem('asems_v2_projects', JSON.stringify(updated));
+        localStorage.setItem('asems_ops_v2_projects', JSON.stringify(updated));
       } catch (err) {
         console.error('Storage error', err);
       }
@@ -312,7 +312,7 @@ const OperationsDashboard = () => {
         return sup;
       });
       try {
-        localStorage.setItem('asems_v2_supervisors', JSON.stringify(updated));
+        localStorage.setItem('asems_ops_v2_supervisors', JSON.stringify(updated));
       } catch (err) {
         console.error('Storage error', err);
       }
@@ -328,7 +328,7 @@ const OperationsDashboard = () => {
         return member;
       });
       try {
-        localStorage.setItem('asems_v2_team_members', JSON.stringify(updated));
+        localStorage.setItem('asems_ops_v2_team_members', JSON.stringify(updated));
       } catch (err) {
         console.error('Storage error', err);
       }
