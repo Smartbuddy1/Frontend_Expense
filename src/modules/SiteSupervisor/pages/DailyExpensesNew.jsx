@@ -29,7 +29,7 @@ import { useLanguage } from '../context/LanguageContext';
 import { exportToExcel, triggerPrint, exportToPDF } from '../utils/exportUtils';
 
 const DailyExpenses = () => {
-  const { walletBalance, expensesList, recordExpense, recordMultipleExpenses, todaySpend } = useWallet();
+  const { walletBalance, expensesList, recordExpense, todaySpend } = useWallet();
   const { t, language } = useLanguage();
 
   const [searchTerm, setSearchTerm] = useState('');
@@ -37,6 +37,7 @@ const DailyExpenses = () => {
   const [selectedSite, setSelectedSite] = useState('All');
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [viewReceiptModal, setViewReceiptModal] = useState(null);
+  const [submitting, setSubmitting] = useState(false);
 
   // Form State
   const [formData, setFormData] = useState({
@@ -46,7 +47,8 @@ const DailyExpenses = () => {
     paidTo: '',
     description: '',
     receiptName: '',
-    previewUrl: null
+    previewUrl: null,
+    receiptFile: null
   });
 
   const fileInputRef = useRef(null);
@@ -77,14 +79,15 @@ const DailyExpenses = () => {
       setFormData({
         ...formData,
         receiptName: file.name,
-        previewUrl: preview
+        previewUrl: preview,
+        receiptFile: file
       });
     }
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    
+
     if (!formData.site) {
       alert(language === 'mr' ? 'कृपया साइट लोकेशन निवडा!' : 'Please select a Site Location!');
       return;
@@ -106,28 +109,36 @@ const DailyExpenses = () => {
       return;
     }
 
-    recordExpense({
-      category: formData.category,
-      site: formData.site,
-      amount: parseFloat(formData.amount),
-      paidTo: formData.paidTo.trim(),
-      receiptName: formData.receiptName,
-      receiptUrl: formData.previewUrl || null,
-      receipt: true
-    });
+    setSubmitting(true);
+    try {
+      await recordExpense({
+        category: formData.category,
+        site: formData.site,
+        amount: parseFloat(formData.amount),
+        paidTo: formData.paidTo.trim(),
+        receiptName: formData.receiptName,
+        receiptUrl: formData.previewUrl || null,
+        file: formData.receiptFile
+      });
 
-    setFormData({
-      category: 'Travel',
-      site: 'Metro Line 3 - Station #4B',
-      amount: '',
-      paidTo: '',
-      description: '',
-      receiptName: '',
-      previewUrl: null
-    });
+      setFormData({
+        category: 'Travel',
+        site: 'Metro Line 3 - Station #4B',
+        amount: '',
+        paidTo: '',
+        description: '',
+        receiptName: '',
+        previewUrl: null,
+        receiptFile: null
+      });
 
-    setIsAddModalOpen(false);
-    alert(language === 'mr' ? 'खर्च आणि बिलाचा पुरावा यशस्वीरीत्या नोंदवला गेला!' : 'Expense and bill proof recorded successfully!');
+      setIsAddModalOpen(false);
+      alert(language === 'mr' ? 'खर्च आणि बिलाचा पुरावा यशस्वीरीत्या नोंदवला गेला!' : 'Expense and bill proof recorded successfully!');
+    } catch (err) {
+      alert(err.response?.data?.error || (language === 'mr' ? 'खर्च नोंदवण्यात अडचण आली, पुन्हा प्रयत्न करा.' : 'Could not save the expense, please try again.'));
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   // Filtered List
@@ -872,7 +883,7 @@ const DailyExpenses = () => {
                     </div>
                     <button
                       type="button"
-                      onClick={() => setFormData({ ...formData, receiptName: '', previewUrl: null })}
+                      onClick={() => setFormData({ ...formData, receiptName: '', previewUrl: null, receiptFile: null })}
                       style={{
                         background: 'none',
                         border: 'none',
@@ -893,6 +904,7 @@ const DailyExpenses = () => {
               {/* Submit Button */}
               <button
                 type="submit"
+                disabled={submitting}
                 style={{
                   width: '100%',
                   padding: '0.85rem',
@@ -902,12 +914,13 @@ const DailyExpenses = () => {
                   border: 'none',
                   fontWeight: '700',
                   fontSize: '0.95rem',
-                  cursor: 'pointer',
+                  cursor: submitting ? 'not-allowed' : 'pointer',
+                  opacity: submitting ? 0.7 : 1,
                   marginTop: '0.5rem',
                   boxShadow: '0 6px 18px rgba(99, 102, 241, 0.4)'
                 }}
               >
-                {t('saveExpenseBtn')}
+                {submitting ? (language === 'mr' ? 'सेव्ह होत आहे...' : 'Saving...') : t('saveExpenseBtn')}
               </button>
             </form>
           </div>

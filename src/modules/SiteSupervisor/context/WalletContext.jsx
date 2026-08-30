@@ -1,173 +1,179 @@
-import React, { createContext, useState, useContext, useEffect } from 'react';
+import React, { createContext, useState, useContext, useEffect, useCallback } from 'react';
+import axios from 'axios';
+import { useAuth } from './AuthContext';
 
 const WalletContext = createContext(null);
 
-const DEFAULT_EXPENSES = [
-  { id: 'EXP-1007', category: 'Purchase', site: 'Metro Line 3 - Station #4B', amount: 4800, date: '20 Aug 2026', time: '09:30 AM', status: 'Approved', paidTo: 'Patil Building Materials', receiptName: 'Ultratech_Invoice_801.pdf', receipt: true },
-  { id: 'EXP-1006', category: 'Lodging and Boarding', site: 'Metro Line 3 - Station #4B', amount: 750, date: '20 Aug 2026', time: '08:15 AM', status: 'Pending', paidTo: 'Site Canteen & Mess', receiptName: 'Canteen_Slip.jpg', receipt: true },
-  { id: 'EXP-1005', category: 'Local Conveyance', site: 'City Mall Phase 2 Extension', amount: 2400, date: '19 Aug 2026', time: '04:20 PM', status: 'Approved', paidTo: 'Auto / Taxi Transit', receiptName: 'Fuel_Receipt_100L.png', receipt: true },
-  { id: 'EXP-1004', category: 'Transport', site: 'Metro Line 3 - Station #4B', amount: 1650, date: '18 Aug 2026', time: '11:00 AM', status: 'Approved', paidTo: 'Tempo & Logistics Delivery', receiptName: null, receipt: false },
-  { id: 'EXP-1003', category: 'Labour', site: 'Metro Line 3 - Station #4B', amount: 3200, date: '17 Aug 2026', time: '02:45 PM', status: 'Approved', paidTo: 'Daily Mason Wages', receiptName: 'Muster_Wages_Slip.pdf', receipt: true },
-  { id: 'EXP-1002', category: 'Travel', site: 'City Mall Phase 2 Extension', amount: 1850, date: '16 Aug 2026', time: '10:15 AM', status: 'Approved', paidTo: 'Train & Outstation Bus', receiptName: 'Ticket_Invoice.pdf', receipt: true },
-  { id: 'EXP-1001', category: 'Miscellaneous', site: 'Green Valley Flyover', amount: 950, date: '15 Aug 2026', time: '05:30 PM', status: 'Approved', paidTo: 'Hardware Petty Expenses', receiptName: 'Petty_Receipt.jpg', receipt: true }
-];
+const API = import.meta.env.VITE_API_BASE_URL;
 
-// Helper to ensure all expenses have clean, unbroken sequential IDs
-const ensureSequentialIds = (list) => {
-  if (!Array.isArray(list) || list.length === 0) return DEFAULT_EXPENSES;
-  const count = list.length;
-  return list.map((item, idx) => ({
-    ...item,
-    id: `EXP-${1000 + (count - idx)}`
-  }));
-};
+// Local-only fallback for when there's no logged-in supervisor with an assigned
+// project yet — keeps the no-login PublicExpenseForm working exactly as before.
+const LOCAL_KEY = 'supervisor_expenses_list';
 
 export const WalletProvider = ({ children }) => {
-  const [walletBalance, setWalletBalance] = useState(() => {
-    const saved = localStorage.getItem('supervisor_wallet_balance');
-    return saved !== null ? parseFloat(saved) : 25000;
-  });
+  const { user } = useAuth();
 
-  const [totalAdvance, setTotalAdvance] = useState(() => {
-    const saved = localStorage.getItem('supervisor_total_advance');
-    return saved !== null ? parseFloat(saved) : 125000;
-  });
-
-  const [expensesList, setExpensesList] = useState(() => {
-    const saved = localStorage.getItem('supervisor_expenses_list');
-    if (saved) {
-      try {
-        const parsed = JSON.parse(saved);
-        return ensureSequentialIds(parsed);
-      } catch (e) {
-        return DEFAULT_EXPENSES;
-      }
-    }
-    return DEFAULT_EXPENSES;
-  });
-
+  const [project, setProject] = useState(null);
+  const [walletBalance, setWalletBalance] = useState(0);
+  const [totalAdvance, setTotalAdvance] = useState(0);
+  const [expensesList, setExpensesList] = useState([]);
+  const [advancesList, setAdvancesList] = useState([]);
+  const [loading, setLoading] = useState(true);
   const [lastDeduction, setLastDeduction] = useState(null);
 
-  useEffect(() => {
-    localStorage.setItem('supervisor_wallet_balance', walletBalance.toString());
-  }, [walletBalance]);
+  // Maps a real backend expense record to the shape the existing UI already expects.
+  const toUiExpense = (e) => ({
+    id: e.id,
+    category: e.category?.name || 'Expense',
+    site: project?.site || project?.name || '',
+    amount: Number(e.amount),
+    date: new Date(e.createdAt).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }),
+    time: new Date(e.createdAt).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' }),
+    status: e.status === 'ops_rejected' ? 'Rejected' : e.status === 'submitted' ? 'Pending' : 'Approved',
+    paidTo: e.vendorName || 'Local Vendor',
+    receiptName: e.receiptUrl ? e.receiptUrl.split('/').pop() : null,
+    receiptUrl: e.receiptUrl || null,
+    receipt: !!e.receiptUrl,
+  });
+
+  const toUiAdvance = (a) => ({
+    id: a.id,
+    site: project?.site || project?.name || '',
+    amount: Number(a.amount),
+    date: new Date(a.createdAt).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }),
+    urgency: 'Regular',
+    status: a.status.charAt(0).toUpperCase() + a.status.slice(1),
+    note: a.purpose || '',
+  });
+
+  const refresh = useCallback(async () => {
+    if (!user || user.role !== 'site_supervisor') {
+      setLoading(false);
+      return;
+    }
+    setLoading(true);
+    try {
+      const { data: projData } = await axios.get(`${API}/projects`);
+      const myProject = projData.projects?.[0] || null;
+      setProject(myProject);
+
+      if (myProject) {
+        const [walletRes, expRes, advRes] = await Promise.all([
+          axios.get(`${API}/projects/${myProject.id}/wallet`),
+          axios.get(`${API}/expenses`, { params: { projectId: myProject.id, pageSize: 100 } }),
+          axios.get(`${API}/advances`, { params: { projectId: myProject.id } }),
+        ]);
+        setWalletBalance(walletRes.data.balance);
+        setTotalAdvance(walletRes.data.totalAdvance);
+        setExpensesList(expRes.data.expenses.map(toUiExpense));
+        setAdvancesList(advRes.data.advances.map(toUiAdvance));
+      } else {
+        setExpensesList([]);
+        setAdvancesList([]);
+      }
+    } catch (err) {
+      console.error('Failed to load wallet data from the server', err);
+    } finally {
+      setLoading(false);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user]);
 
   useEffect(() => {
-    localStorage.setItem('supervisor_total_advance', totalAdvance.toString());
-  }, [totalAdvance]);
+    refresh();
+  }, [refresh]);
 
-  useEffect(() => {
-    localStorage.setItem('supervisor_expenses_list', JSON.stringify(expensesList));
-  }, [expensesList]);
-
-  // Function to add a daily expense and immediately deduct from available wallet balance
-  const recordExpense = (expenseData) => {
-    const amountNum = parseFloat(expenseData.amount) || 0;
-    
-    // Deduct from wallet balance
-    setWalletBalance((prev) => {
-      const nextBal = prev - amountNum;
-      return nextBal;
-    });
-
-    let createdEntry = null;
-
-    setExpensesList((prev) => {
-      const currentMax = prev.reduce((max, exp) => {
-        const num = parseInt((exp.id || '').replace(/[^0-9]/g, ''), 10);
-        return !isNaN(num) && num > max ? num : max;
-      }, 1000);
-
-      createdEntry = {
-        id: `EXP-${currentMax + 1}`,
-        category: expenseData.category || 'Materials',
-        site: expenseData.site || 'Metro Line 3 - Station #4B',
-        amount: amountNum,
-        date: 'Today',
-        time: 'Just now',
-        status: 'Pending',
-        paidTo: expenseData.paidTo || 'Local Vendor',
-        receiptName: expenseData.receiptName || null,
-        receiptUrl: expenseData.receiptUrl || null,
-        receipt: !!(expenseData.receiptName || expenseData.receiptUrl)
-      };
-
-      return [createdEntry, ...prev];
-    });
-    
-    // Flash deduction notification
-    setLastDeduction(amountNum);
-    setTimeout(() => setLastDeduction(null), 4000);
-
-    return createdEntry;
+  // Fallback used only when there's no authenticated supervisor session yet
+  // (the public, no-login expense form) — mirrors the old localStorage-only behavior.
+  const recordExpenseLocalFallback = (expenseData) => {
+    const saved = localStorage.getItem(LOCAL_KEY);
+    const list = saved ? JSON.parse(saved) : [];
+    const entry = {
+      id: `EXP-LOCAL-${Date.now()}`,
+      category: expenseData.category || 'Materials',
+      site: expenseData.site || '',
+      amount: parseFloat(expenseData.amount) || 0,
+      date: 'Today',
+      time: 'Just now',
+      status: 'Pending',
+      paidTo: expenseData.paidTo || 'Local Vendor',
+      receiptName: expenseData.receiptName || null,
+      receiptUrl: expenseData.receiptUrl || null,
+      receipt: !!(expenseData.receiptName || expenseData.receiptUrl),
+    };
+    localStorage.setItem(LOCAL_KEY, JSON.stringify([entry, ...list]));
+    return entry;
   };
 
-  // Function to record multiple expenses at once in batch
-  const recordMultipleExpenses = (expensesArray) => {
+  // expenseData: { category, amount, paidTo, file (a real File object, optional), site }
+  const recordExpense = async (expenseData) => {
+    if (!user || !project) {
+      return recordExpenseLocalFallback(expenseData);
+    }
+
+    const form = new FormData();
+    form.append('projectId', project.id);
+    form.append('description', `${expenseData.category || 'Expense'} — ${expenseData.paidTo || 'Local Vendor'}`);
+    form.append('vendorName', expenseData.paidTo || 'Local Vendor');
+    form.append('amount', parseFloat(expenseData.amount) || 0);
+    if (expenseData.file) {
+      form.append('receipt', expenseData.file);
+    }
+
+    const { data } = await axios.post(`${API}/expenses`, form, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    });
+
+    setLastDeduction(parseFloat(expenseData.amount) || 0);
+    setTimeout(() => setLastDeduction(null), 4000);
+    await refresh();
+    return toUiExpense(data.expense);
+  };
+
+  // Submits each expense one by one against the real API (used by any bulk-entry UI).
+  const recordMultipleExpenses = async (expensesArray) => {
     if (!Array.isArray(expensesArray) || expensesArray.length === 0) return [];
-    
-    let totalBatchAmount = 0;
-    let createdBatch = [];
+    const created = [];
+    for (const exp of expensesArray) {
+      created.push(await recordExpense(exp));
+    }
+    return created;
+  };
 
-    setExpensesList((prev) => {
-      let currentMax = prev.reduce((max, exp) => {
-        const num = parseInt((exp.id || '').replace(/[^0-9]/g, ''), 10);
-        return !isNaN(num) && num > max ? num : max;
-      }, 1000);
-
-      createdBatch = expensesArray.map((exp) => {
-        currentMax += 1;
-        const amountNum = parseFloat(exp.amount) || 0;
-        totalBatchAmount += amountNum;
-        return {
-          id: `EXP-${currentMax}`,
-          category: exp.category || 'Travel',
-          site: exp.site || 'Metro Line 3 - Station #4B',
-          amount: amountNum,
-          date: 'Today',
-          time: 'Just now',
-          status: 'Pending',
-          paidTo: exp.paidTo || 'Local Vendor',
-          receiptName: exp.fileName || (exp.previewUrl ? 'Camera_Photo_Snap.jpg' : null),
-          receiptUrl: exp.previewUrl || null,
-          receipt: !!(exp.fileName || exp.previewUrl)
-        };
-      });
-
-      return [...createdBatch.reverse(), ...prev];
+  const requestAdvance = async (advanceData) => {
+    if (!user || !project) {
+      throw new Error('No project assigned yet — an admin needs to assign you to a project first.');
+    }
+    const { data } = await axios.post(`${API}/advances`, {
+      projectId: project.id,
+      amount: parseFloat(advanceData.amount) || 0,
+      purpose: advanceData.reason || advanceData.purpose || '',
     });
-
-    setWalletBalance((prev) => prev - totalBatchAmount);
-
-    setLastDeduction(totalBatchAmount);
-    setTimeout(() => setLastDeduction(null), 4000);
-
-    return createdBatch;
+    await refresh();
+    return toUiAdvance(data.advance);
   };
 
-  // Function to request advance and optionally credit wallet upon approval
-  const requestAdvance = (advanceData) => {
-    const amountNum = parseFloat(advanceData.amount) || 0;
-    setTotalAdvance((prev) => prev + amountNum);
-    return true;
-  };
-
-  // Calculate today's total spend
   const todaySpend = expensesList
-    .filter(item => item.date.includes('Today') || item.date.includes('20 Aug'))
+    .filter((item) => item.date === new Date().toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }) || item.date === 'Today')
     .reduce((sum, item) => sum + item.amount, 0);
 
   return (
-    <WalletContext.Provider value={{
-      walletBalance,
-      totalAdvance,
-      expensesList,
-      recordExpense,
-      recordMultipleExpenses,
-      requestAdvance,
-      todaySpend,
-      lastDeduction
-    }}>
+    <WalletContext.Provider
+      value={{
+        project,
+        walletBalance,
+        totalAdvance,
+        expensesList,
+        advancesList,
+        recordExpense,
+        recordMultipleExpenses,
+        requestAdvance,
+        todaySpend,
+        lastDeduction,
+        loading,
+        refresh,
+      }}
+    >
       {children}
     </WalletContext.Provider>
   );

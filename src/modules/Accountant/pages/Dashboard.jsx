@@ -48,8 +48,10 @@ import CorrectionReasonModal from '../components/accounts/CorrectionReasonModal'
 import RecordPaymentModal from '../components/accounts/RecordPaymentModal';
 import FundReleaseModal from '../components/accounts/FundReleaseModal';
 import SettlementModal from '../components/accounts/SettlementModal';
+import LivePayments from '../components/accounts/LivePayments';
 
 const TABS = [
+  { id: 'live-payments', label: 'Live Payments ⚡', icon: ShieldCheck, count: null },
   { id: 'overview', label: 'Overview', icon: Layers, count: null },
   { id: 'verification', label: 'Expense Verification', icon: Clock, countKey: 'pendingExpenses' },
   { id: 'wallets', label: 'Wallet Funds', icon: Wallet, countKey: 'pendingAdvances' },
@@ -62,6 +64,14 @@ const TABS = [
 ];
 
 const TAB_METADATA = {
+  'live-payments': {
+    prefix: 'Live',
+    highlight: 'Payments',
+    title: 'Live Payments',
+    subtitle: 'Real backend queue — expenses approved by Operations and advances ready to disburse',
+    icon: ShieldCheck,
+    color: '#059669'
+  },
   overview: {
     prefix: 'Welcome to',
     highlight: 'Dashboard',
@@ -451,6 +461,8 @@ const Dashboard = () => {
       )}
 
       {/* Active Tab View */}
+      {activeTab === 'live-payments' && <LivePayments />}
+
       {activeTab === 'overview' && (
         <OverviewTab
           projects={projects}

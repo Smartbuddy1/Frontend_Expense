@@ -14,6 +14,7 @@ import {
 } from '../data/operationsData';
 
 import OperationsOverview from '../components/operations/OperationsOverview';
+import LiveOpsPanel from '../components/operations/LiveOpsPanel';
 import ProjectsTab from '../components/operations/ProjectsTab';
 import TeamAssignmentTab from '../components/operations/TeamAssignmentTab';
 import ExpensesTab from '../components/operations/ExpensesTab';
@@ -517,6 +518,8 @@ const OperationsDashboard = () => {
           onSelectProject={(p) => { setSelectedProjectDetail(p); setIsProjectDetailOpen(true); }}
         />
       )}
+
+      {activeTab === 'live-ops' && <LiveOpsPanel />}
 
       {/* Modals */}
       <CreateSupervisorModal

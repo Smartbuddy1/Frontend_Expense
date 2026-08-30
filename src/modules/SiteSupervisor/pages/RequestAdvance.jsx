@@ -21,11 +21,12 @@ import { useLanguage } from '../context/LanguageContext';
 import { exportToExcel, triggerPrint, exportToPDF } from '../utils/exportUtils';
 
 const RequestAdvance = () => {
-  const { requestAdvance, walletBalance, totalAdvance } = useWallet();
+  const { requestAdvance, walletBalance, totalAdvance, advancesList } = useWallet();
   const { t, language } = useLanguage();
 
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
+  const [submitting, setSubmitting] = useState(false);
 
   // Form State for Modal
   const [amount, setAmount] = useState('');
@@ -33,15 +34,9 @@ const RequestAdvance = () => {
   const [purpose, setPurpose] = useState('');
   const [urgency, setUrgency] = useState('Immediate (Same Day)');
 
-  const [history, setHistory] = useState([
-    { id: 'ADV-505', site: 'Metro Line 3 - Station #4B', amount: 25000, date: '15 Aug 2026', urgency: 'Immediate (Same Day)', status: 'Approved', note: 'Emergency diesel & site barricade materials' },
-    { id: 'ADV-504', site: 'City Mall Phase 2 Extension', amount: 15000, date: '08 Aug 2026', urgency: 'Within 24 Hours', status: 'Approved', note: 'Weekly skilled mason advance wages' },
-    { id: 'ADV-503', site: 'Metro Line 3 - Station #4B', amount: 30000, date: '28 Jul 2026', urgency: 'Immediate (Same Day)', status: 'Approved', note: 'Ready-mix concrete delivery charge' },
-    { id: 'ADV-502', site: 'Green Valley Flyover', amount: 12000, date: '20 Jul 2026', urgency: 'Regular Weekly Advance', status: 'Approved', note: 'Safety scaffolding & harness equipment rent' },
-    { id: 'ADV-501', site: 'Metro Line 3 - Station #4B', amount: 18000, date: '12 Jul 2026', urgency: 'Immediate (Same Day)', status: 'Approved', note: 'Excavator fuel & driver night shift allowance' }
-  ]);
+  const history = advancesList;
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     if (!site) {
       alert(language === 'mr' ? 'कृपया साइट लोकेशन निवडा!' : 'Please select a Site Location!');
@@ -60,34 +55,25 @@ const RequestAdvance = () => {
       return;
     }
 
-    const currentMax = history.reduce((max, item) => {
-      const num = parseInt((item.id || '').replace(/[^0-9]/g, ''), 10);
-      return !isNaN(num) && num > max ? num : max;
-    }, 500);
+    setSubmitting(true);
+    try {
+      await requestAdvance({
+        amount: parseFloat(amount),
+        reason: purpose.trim(),
+        site
+      });
 
-    const newReq = {
-      id: `ADV-${currentMax + 1}`,
-      site,
-      amount: parseFloat(amount),
-      date: 'Today, Just now',
-      urgency,
-      status: 'Pending Approval',
-      note: purpose.trim()
-    };
-
-    setHistory([newReq, ...history]);
-    requestAdvance({
-      amount: parseFloat(amount),
-      reason: purpose.trim(),
-      site
-    });
-
-    setAmount('');
-    setPurpose('');
-    setIsModalOpen(false);
-    alert(language === 'mr' 
-      ? `₹${parseFloat(amount).toLocaleString()} ची अ‍ॅडव्हान्स मागणी मंजुरीसाठी पाठवली गेली आहे!` 
-      : `Requisition of ₹${parseFloat(amount).toLocaleString()} submitted for Project Head approval!`);
+      setAmount('');
+      setPurpose('');
+      setIsModalOpen(false);
+      alert(language === 'mr'
+        ? `₹${parseFloat(amount).toLocaleString()} ची अ‍ॅडव्हान्स मागणी मंजुरीसाठी पाठवली गेली आहे!`
+        : `Requisition of ₹${parseFloat(amount).toLocaleString()} submitted for Project Head approval!`);
+    } catch (err) {
+      alert(err.response?.data?.error || err.message || (language === 'mr' ? 'अडचण आली, पुन्हा प्रयत्न करा.' : 'Could not submit the request, please try again.'));
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   const filteredHistory = history.filter(item => {
@@ -587,6 +573,7 @@ const RequestAdvance = () => {
 
               <button
                 type="submit"
+                disabled={submitting}
                 style={{
                   width: '100%',
                   padding: '0.85rem',
@@ -596,7 +583,8 @@ const RequestAdvance = () => {
                   border: 'none',
                   fontWeight: '800',
                   fontSize: '0.95rem',
-                  cursor: 'pointer',
+                  cursor: submitting ? 'not-allowed' : 'pointer',
+                  opacity: submitting ? 0.7 : 1,
                   boxShadow: '0 4px 15px rgba(16, 185, 129, 0.35)',
                   display: 'flex',
                   alignItems: 'center',
