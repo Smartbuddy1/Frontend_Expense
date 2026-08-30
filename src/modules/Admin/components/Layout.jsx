@@ -66,12 +66,13 @@ const Layout = () => {
 
   const currentTab = new URLSearchParams(location.search).get('tab') || (location.pathname === '/dashboard' || location.pathname === '/operations' ? 'overview' : '');
 
+  // Only real, backend-connected screens are in the nav for launch — the rest
+  // (Operational Head / Site Projects / Site Supervisor / Accountant CRUD) are
+  // still mock-data-only (see docs/03-frontend-status.md) and hidden so nobody
+  // mistakes them for working. Their code is untouched; just re-add here once
+  // they're wired to the real API.
   const navigation = [
     { name: 'Dashboard', href: '/operations?tab=overview', tab: 'overview', icon: LayoutDashboard },
-    { name: 'Operational Head', href: '/operations?tab=operational-head', tab: 'operational-head', icon: ShieldCheck },
-    { name: 'Site Projects', href: '/operations?tab=projects', tab: 'projects', icon: HardHat },
-    { name: 'Site Supervisor', href: '/operations?tab=supervisors', tab: 'supervisors', icon: Users },
-    { name: 'Accountant', href: '/operations?tab=accountant', tab: 'accountant', icon: Briefcase },
     { name: 'Live Approvals ⚡', href: '/operations?tab=live-ops', tab: 'live-ops', icon: ShieldCheck },
   ];
 

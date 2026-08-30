@@ -34,6 +34,8 @@ const UploadBills = () => {
   const [category, setCategory] = useState('Travel');
   const [vendor, setVendor] = useState('');
   const [amount, setAmount] = useState('');
+  const [receiptFile, setReceiptFile] = useState(null);
+  const [submitting, setSubmitting] = useState(false);
 
   const filteredBills = bills.filter(b => {
     const term = searchTerm.toLowerCase().trim();
@@ -46,20 +48,29 @@ const UploadBills = () => {
     );
   });
 
-  const handleUpload = (e) => {
+  const handleUpload = async (e) => {
     e.preventDefault();
     if (!uploadTitle || !amount) return;
-    recordExpense({
-      category,
-      paidTo: vendor || 'Site Vendor',
-      amount: parseFloat(amount),
-      receiptName: uploadTitle,
-    });
-    setUploadTitle('');
-    setCategory('Travel');
-    setVendor('');
-    setAmount('');
-    alert('Bill uploaded successfully and submitted for audit verification!');
+    setSubmitting(true);
+    try {
+      await recordExpense({
+        category,
+        paidTo: vendor || 'Site Vendor',
+        amount: parseFloat(amount),
+        receiptName: uploadTitle,
+        file: receiptFile,
+      });
+      setUploadTitle('');
+      setCategory('Travel');
+      setVendor('');
+      setAmount('');
+      setReceiptFile(null);
+      alert('Bill uploaded successfully and submitted for audit verification!');
+    } catch (err) {
+      alert(err.response?.data?.error || 'Could not upload the bill, please try again.');
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   return (
@@ -154,24 +165,34 @@ const UploadBills = () => {
           </h2>
 
           <form onSubmit={handleUpload}>
-            <div style={{
-              border: '2px dashed var(--primary-color)',
-              borderRadius: '1rem',
-              padding: '2rem',
-              textAlign: 'center',
-              backgroundColor: 'var(--card-bg)',
-              marginBottom: '1.25rem',
-              cursor: 'pointer'
-            }}>
+            <label
+              htmlFor="file-input-direct"
+              style={{
+                display: 'block',
+                border: '2px dashed var(--primary-color)',
+                borderRadius: '1rem',
+                padding: '2rem',
+                textAlign: 'center',
+                backgroundColor: 'var(--card-bg)',
+                marginBottom: '1.25rem',
+                cursor: 'pointer'
+              }}
+            >
               <UploadCloud size={44} color="#8b5cf6" style={{ margin: '0 auto 0.5rem' }} />
               <p style={{ fontWeight: '700', color: 'var(--text-primary)', fontSize: '0.95rem', marginBottom: '0.2rem' }}>
-                Tap to Camera Snap or Browse
+                {receiptFile ? receiptFile.name : 'Tap to Camera Snap or Browse'}
               </p>
-              <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
-                Supports JPG, PNG, PDF up to 15MB
+              <p style={{ fontSize: '0.8rem', color: receiptFile ? '#10b981' : 'var(--text-secondary)' }}>
+                {receiptFile ? '✓ File attached' : 'Supports JPG, PNG, PDF up to 15MB'}
               </p>
-              <input type="file" style={{ display: 'none' }} id="file-input-direct" />
-            </div>
+              <input
+                type="file"
+                accept="image/*,.pdf"
+                style={{ display: 'none' }}
+                id="file-input-direct"
+                onChange={(e) => setReceiptFile(e.target.files[0] || null)}
+              />
+            </label>
 
             <div style={{ marginBottom: '1rem' }}>
               <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: '700', marginBottom: '0.4rem', color: 'var(--text-primary)' }}>
@@ -235,6 +256,7 @@ const UploadBills = () => {
 
             <button
               type="submit"
+              disabled={submitting}
               style={{
                 width: '100%',
                 padding: '0.9rem',
@@ -244,11 +266,12 @@ const UploadBills = () => {
                 border: 'none',
                 fontWeight: '700',
                 fontSize: '1rem',
-                cursor: 'pointer',
+                cursor: submitting ? 'not-allowed' : 'pointer',
+                opacity: submitting ? 0.7 : 1,
                 boxShadow: '0 6px 18px rgba(139, 92, 246, 0.3)'
               }}
             >
-              Upload & Verify Bill
+              {submitting ? 'Uploading…' : 'Upload & Verify Bill'}
             </button>
           </form>
         </div>

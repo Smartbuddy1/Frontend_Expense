@@ -1,9 +1,10 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import axios from 'axios';
-import { CheckCircle2, XCircle, Loader2, PlusCircle } from 'lucide-react';
+import { CheckCircle2, XCircle, Loader2, PlusCircle, UserPlus } from 'lucide-react';
 import toast from 'react-hot-toast';
 
 const API = import.meta.env.VITE_API_BASE_URL;
+const ROLES = ['operations', 'accountant', 'site_supervisor', 'admin'];
 
 // Talks directly to the real backend — separate from the rest of this dashboard,
 // which still runs on the original mock data / localStorage (see docs/03-frontend-status.md).
@@ -11,6 +12,7 @@ const API = import.meta.env.VITE_API_BASE_URL;
 const LiveOpsPanel = () => {
   const [projects, setProjects] = useState([]);
   const [supervisors, setSupervisors] = useState([]);
+  const [allUsers, setAllUsers] = useState([]);
   const [pendingExpenses, setPendingExpenses] = useState([]);
   const [pendingAdvances, setPendingAdvances] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -19,17 +21,22 @@ const LiveOpsPanel = () => {
   const [form, setForm] = useState({ code: '', name: '', site: '', budget: '', supervisorId: '' });
   const [creating, setCreating] = useState(false);
 
+  const [userForm, setUserForm] = useState({ name: '', mobile: '', password: '', role: 'site_supervisor' });
+  const [creatingUser, setCreatingUser] = useState(false);
+
   const loadAll = useCallback(async () => {
     setLoading(true);
     try {
-      const [projRes, supRes, expRes, advRes] = await Promise.all([
+      const [projRes, supRes, usersRes, expRes, advRes] = await Promise.all([
         axios.get(`${API}/projects`, { params: { pageSize: 100 } }),
         axios.get(`${API}/users`, { params: { role: 'site_supervisor' } }),
+        axios.get(`${API}/users`),
         axios.get(`${API}/expenses`, { params: { status: 'submitted', pageSize: 100 } }),
         axios.get(`${API}/advances`, { params: { status: 'requested' } }),
       ]);
       setProjects(projRes.data.projects);
       setSupervisors(supRes.data.users);
+      setAllUsers(usersRes.data.users);
       setPendingExpenses(expRes.data.expenses);
       setPendingAdvances(advRes.data.advances);
     } catch (err) {
@@ -64,6 +71,29 @@ const LiveOpsPanel = () => {
       toast.error(err.response?.data?.error || 'Could not create project');
     } finally {
       setCreating(false);
+    }
+  };
+
+  const handleCreateUser = async (e) => {
+    e.preventDefault();
+    if (!userForm.name || !userForm.mobile || !userForm.password) {
+      toast.error('Name, mobile, and password are required');
+      return;
+    }
+    if (userForm.password.length < 6) {
+      toast.error('Password must be at least 6 characters');
+      return;
+    }
+    setCreatingUser(true);
+    try {
+      await axios.post(`${API}/users`, userForm);
+      toast.success(`${userForm.role} account created for ${userForm.name}`);
+      setUserForm({ name: '', mobile: '', password: '', role: 'site_supervisor' });
+      await loadAll();
+    } catch (err) {
+      toast.error(err.response?.data?.error || 'Could not create the account');
+    } finally {
+      setCreatingUser(false);
     }
   };
 
@@ -126,6 +156,54 @@ const LiveOpsPanel = () => {
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+      <div style={{ background: 'var(--surface-bg)', border: '1px solid var(--border-color)', borderRadius: '1rem', padding: '1.5rem' }}>
+        <h3 style={{ margin: '0 0 1rem', fontWeight: 800, display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+          <UserPlus size={18} /> Add Team Member (Live)
+        </h3>
+        <form onSubmit={handleCreateUser} style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: '0.75rem', alignItems: 'end', marginBottom: '1.25rem' }}>
+          <div>
+            <label style={{ fontSize: '0.8rem', fontWeight: 700 }}>Name *</label>
+            <input value={userForm.name} onChange={(e) => setUserForm({ ...userForm, name: e.target.value })} style={{ width: '100%', padding: '0.6rem', borderRadius: '0.5rem', border: '1px solid var(--border-color)', background: 'var(--card-bg)', color: 'var(--text-primary)' }} />
+          </div>
+          <div>
+            <label style={{ fontSize: '0.8rem', fontWeight: 700 }}>Mobile *</label>
+            <input value={userForm.mobile} onChange={(e) => setUserForm({ ...userForm, mobile: e.target.value })} style={{ width: '100%', padding: '0.6rem', borderRadius: '0.5rem', border: '1px solid var(--border-color)', background: 'var(--card-bg)', color: 'var(--text-primary)' }} />
+          </div>
+          <div>
+            <label style={{ fontSize: '0.8rem', fontWeight: 700 }}>Password *</label>
+            <input type="text" value={userForm.password} onChange={(e) => setUserForm({ ...userForm, password: e.target.value })} placeholder="min 6 characters" style={{ width: '100%', padding: '0.6rem', borderRadius: '0.5rem', border: '1px solid var(--border-color)', background: 'var(--card-bg)', color: 'var(--text-primary)' }} />
+          </div>
+          <div>
+            <label style={{ fontSize: '0.8rem', fontWeight: 700 }}>Role *</label>
+            <select value={userForm.role} onChange={(e) => setUserForm({ ...userForm, role: e.target.value })} style={{ width: '100%', padding: '0.6rem', borderRadius: '0.5rem', border: '1px solid var(--border-color)', background: 'var(--card-bg)', color: 'var(--text-primary)' }}>
+              {ROLES.map((r) => <option key={r} value={r}>{r}</option>)}
+            </select>
+          </div>
+          <button type="submit" disabled={creatingUser} style={{ padding: '0.65rem 1rem', borderRadius: '0.5rem', border: 'none', background: '#2563eb', color: 'white', fontWeight: 700, cursor: creatingUser ? 'not-allowed' : 'pointer' }}>
+            {creatingUser ? 'Creating…' : 'Create Account'}
+          </button>
+        </form>
+
+        {allUsers.length > 0 && (
+          <div style={{ overflowX: 'auto' }}>
+            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.85rem' }}>
+              <thead><tr style={{ textAlign: 'left', borderBottom: '2px solid var(--border-color)' }}>
+                <th style={{ padding: '0.4rem' }}>Name</th><th style={{ padding: '0.4rem' }}>Mobile</th><th style={{ padding: '0.4rem' }}>Role</th>
+              </tr></thead>
+              <tbody>
+                {allUsers.map((u) => (
+                  <tr key={u.id} style={{ borderBottom: '1px solid var(--border-color)' }}>
+                    <td style={{ padding: '0.4rem' }}>{u.name}</td>
+                    <td style={{ padding: '0.4rem' }}>{u.mobile}</td>
+                    <td style={{ padding: '0.4rem' }}>{u.role}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
+
       <div style={{ background: 'var(--surface-bg)', border: '1px solid var(--border-color)', borderRadius: '1rem', padding: '1.5rem' }}>
         <h3 style={{ margin: '0 0 1rem', fontWeight: 800, display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
           <PlusCircle size={18} /> Create Project (Live)

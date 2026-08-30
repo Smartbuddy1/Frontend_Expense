@@ -13,40 +13,23 @@ import {
   X
 } from 'lucide-react';
 import { useLanguage } from '../context/LanguageContext';
+import { useWallet } from '../context/WalletContext';
 import { exportToExcel, triggerPrint, exportToPDF } from '../utils/exportUtils';
 
 const AssignedProjects = () => {
   const { t, language } = useLanguage();
+  const { project } = useWallet();
 
-  const [projects] = useState([
-    {
-      id: 'PRJ-M3',
-      name: 'Metro Line 3 - Station #4B',
-      location: 'Andheri East, Mumbai',
-      status: 'Active / On Track',
-      supervisor: 'Shiv (Field Lead)',
-      budgetAllocated: 'Rs. 45,00,000',
-      description: 'Platform concourse structural finishing, electrical conduit laying & sanitation block.'
-    },
-    {
-      id: 'PRJ-CM2',
-      name: 'City Mall Phase 2 Extension',
-      location: 'Viman Nagar, Pune',
-      status: 'In Progress',
-      supervisor: 'Shiv (Field Lead)',
-      budgetAllocated: 'Rs. 28,50,000',
-      description: 'Foundation reinforcement, boundary drainage system & emergency exit structure.'
-    },
-    {
-      id: 'PRJ-GVF',
-      name: 'Green Valley Flyover',
-      location: 'Kharghar, Navi Mumbai',
-      status: 'Active / On Track',
-      supervisor: 'Shiv (Field Lead)',
-      budgetAllocated: 'Rs. 18,00,000',
-      description: 'Pier cap concrete casting, steel girders placement & approach road expansion.'
-    }
-  ]);
+  // Real data from the backend — a supervisor currently has exactly one assigned project.
+  const projects = project ? [{
+    id: project.code,
+    name: project.name,
+    location: project.location || project.site || '—',
+    status: project.status,
+    supervisor: 'You',
+    budgetAllocated: `Rs. ${Number(project.budget).toLocaleString('en-IN')}`,
+    description: project.description || 'No description provided yet.'
+  }] : [];
 
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedProjectModal, setSelectedProjectModal] = useState(null);
