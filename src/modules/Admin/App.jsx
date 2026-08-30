@@ -10,11 +10,11 @@ const ProtectedRoute = ({ children }) => {
   const { user, loading } = useAuth();
   
   if (loading) return <div className="flex h-screen items-center justify-center">Loading...</div>;
-  if (!user) {
+  if (!user || user.role !== 'admin') {
     window.location.href = '/';
     return null;
   }
-  
+
   return children;
 };
 
@@ -25,7 +25,7 @@ function App() {
         <Router basename="/admin">
           <Routes>
             {/* Protected Layout Routes */}
-            <Route path="/" element={<Layout />}>
+            <Route path="/" element={<ProtectedRoute><Layout /></ProtectedRoute>}>
               {/* Redirect / to /dashboard */}
               <Route index element={<Navigate to="/dashboard" replace />} />
               <Route path="dashboard" element={<OperationsDashboard />} />
