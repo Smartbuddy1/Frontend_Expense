@@ -39,20 +39,16 @@ ASEMS/
 
 ## Getting started
 
-### Frontend
-```
-npm install
-npm run dev
-```
-Runs on `http://localhost:5173`. Root path shows the login screen; `/admin`, `/operations`, `/accountant`, `/supervisor` each load their own module.
+Full step-by-step (XAMPP, database, env files, seed data) is in [docs/09-local-setup.md](docs/09-local-setup.md) — start there if this is your first time running the project. Short version once that's done:
 
-### Backend
 ```
-cd server
-npm install
-npm run dev
+# backend
+cd server && npm install && npm run dev     # http://localhost:5000
+
+# frontend, in a second terminal
+npm install && npm run dev                  # http://localhost:5173
 ```
-Runs on `http://localhost:5000`; check `http://localhost:5000/health` to confirm it's up. Copy `server/.env.example` to `server/.env` and fill in real values before connecting to a database (see [docs/04-backend-plan.md](docs/04-backend-plan.md)).
+Root path shows the login screen; `/admin`, `/operations`, `/accountant`, `/supervisor` each load their own module after logging in.
 
 ## Contributing
 

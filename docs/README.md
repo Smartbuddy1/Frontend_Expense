@@ -12,6 +12,7 @@ This folder is the single source of truth for the ASEMS (Aarya Site Expense Mana
 6. [06-security.md](06-security.md) — auth, RBAC, file-upload safety, secrets, OWASP checklist
 7. [07-aws-deployment.md](07-aws-deployment.md) — proposed AWS architecture and environments
 8. [08-future-roadmap.md](08-future-roadmap.md) — phased plan for everything after the first working version
+9. [09-local-setup.md](09-local-setup.md) — get the frontend + backend running on your own machine (start here if you just joined)
 
 ## How to keep this folder useful
 
