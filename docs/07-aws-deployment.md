@@ -1,6 +1,6 @@
 # AWS Deployment Plan
 
-_Last updated: 2026-08-28_
+_Last updated: 2026-08-30_
 
 Nothing is deployed yet — this is the target architecture for when the backend from [04-backend-plan.md](04-backend-plan.md) exists. Start simple and cheap; scale specific pieces only when they actually need it.
 
@@ -10,7 +10,7 @@ Nothing is deployed yet — this is the target architecture for when the backend
 |---|---|---|
 | Frontend hosting | **S3 + CloudFront** (or AWS Amplify Hosting) | The Vite build (`npm run build` → `dist/`) is static — no server needed to serve it |
 | Backend API | **EC2** (single instance to start) or **Elastic Beanstalk** | Start simple; migrate to ECS Fargate later only if/when scaling demands it. Don't start with Kubernetes/ECS for a 4-person team's first deploy — it's more operational overhead than the project needs yet |
-| Database | **RDS for PostgreSQL** | Single-AZ to start (cheaper); move to Multi-AZ once this is handling real money in production |
+| Database | **RDS for MySQL** | Single-AZ to start (cheaper); move to Multi-AZ once this is handling real money in production |
 | File storage | **S3** (private bucket) | Bills, receipts, site photos — see [06-security.md](06-security.md) for access rules |
 | Domain & TLS | **Route 53 + ACM** | Free SSL certificate via ACM, attached to CloudFront/load balancer |
 | Secrets | **Secrets Manager** or **SSM Parameter Store** | DB credentials, JWT secret — never in `.env` files on the server |
@@ -27,7 +27,7 @@ Keep them on separate RDS instances and S3 buckets — never point staging at pr
 
 ## Suggested step order
 
-1. Provision an RDS PostgreSQL instance (staging) and point the local Prisma setup at it to confirm migrations run cleanly against real AWS infra early, not at the last minute.
+1. Provision an RDS for MySQL instance (staging) and point the local Prisma setup at it to confirm migrations run cleanly against real AWS infra early, not at the last minute.
 2. Create the S3 bucket (private, versioning on) for attachments.
 3. Deploy the backend to a single EC2 instance (or Elastic Beanstalk) behind an Application Load Balancer, TLS via ACM.
 4. Deploy the frontend build to S3 + CloudFront, pointed at the ALB for `/api/*`.

@@ -1,6 +1,6 @@
 # ASEMS — Project Overview
 
-_Last updated: 2026-08-28_
+_Last updated: 2026-08-30_
 
 ## What is ASEMS
 
@@ -43,7 +43,7 @@ The full, file-by-file breakdown of what's genuinely done vs. broken vs. missing
 | Frontend | React 19 + Vite (already built) | Already in place, no reason to change |
 | Backend | Node.js + Express | Every module's `AuthContext.jsx` already expects a `POST {API_URL}/auth/login` JSON call with `{mobile, password}` — the scaffolding already assumes a Node-style JSON API. Same language as the frontend also means all 4 people can work on either side |
 | ORM | Prisma | Schema-as-code, type-safe, easy migrations — good fit for a small team without a dedicated DBA |
-| Database | PostgreSQL | The domain is inherently relational (organizations → projects → expenses → approvals → payments), and the Accounts dashboards already assume real reporting/joins |
+| Database | MySQL | The domain is inherently relational (organizations → projects → expenses → approvals → payments), and the Accounts dashboards already assume real reporting/joins |
 | File storage | AWS S3 | Bill photos, receipts, site photos — never store binary files in the database |
 | Auth | JWT (access + refresh tokens) | Matches the shape already scaffolded in `AuthContext.jsx` |
 | Hosting | AWS (see [07-aws-deployment.md](07-aws-deployment.md)) | Per requirement |

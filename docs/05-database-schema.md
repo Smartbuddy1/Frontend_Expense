@@ -1,10 +1,18 @@
-# Database Schema (PostgreSQL)
+# Database Schema (MySQL)
 
-_Last updated: 2026-08-28_
+_Last updated: 2026-08-30_
 
 ## Why this doesn't exactly match any single mock data file
 
 The frontend audit ([03-frontend-status.md](03-frontend-status.md)) found that Admin/Operations' `operationsData.js` and Accountant's `accountsMockData.js` model the same real-world entities (projects, expenses) with **different field names and incompatible ID schemes** (`PRJ-SGM-01` vs `PRJ-101`), because the 4 modules were built somewhat independently. This schema reconciles both into one canonical model. Expect some frontend field-mapping work when each module switches from its mock data to the real API — that's expected and fine, it's cheaper to do once here than to carry two schemas forever.
+
+## A note on types (MySQL specifics)
+
+- **IDs**: MySQL has no native UUID type, so every `id` below is a UUID value stored as `CHAR(36)`. With Prisma this is `String @id @default(uuid()) @db.Char(36)`.
+- **Money**: use `DECIMAL(12,2)` (labeled `decimal` below) for every amount field — never `FLOAT`/`DOUBLE`, they lose precision on money.
+- **Timestamps**: use `DATETIME` (labeled `datetime` below), not `TIMESTAMP` — `TIMESTAMP` in MySQL has a year-2038 range limit and auto-converts time zones, which isn't what we want here.
+- **Lists** (e.g. `responsibilities`, `skills`): MySQL has no array type, so these are stored as a `JSON` column (labeled `json` below).
+- **Enums**: MySQL supports native `ENUM(...)` columns, so these map directly.
 
 ## Entity-relationship summary
 
@@ -40,7 +48,7 @@ Every logged-in person, regardless of role.
 | password_hash | text | bcrypt |
 | role | enum(`admin`,`operations`,`accountant`,`site_supervisor`) | |
 | status | enum(`active`,`inactive`) | |
-| created_at, updated_at | timestamptz | |
+| created_at, updated_at | datetime | |
 
 ### `organizations`
 Clients / municipal bodies (Admin's "Organizations" tab).
@@ -54,7 +62,7 @@ Clients / municipal bodies (Admin's "Organizations" tab).
 | gst_no | text | |
 | status | enum(`active`,`inactive`) | |
 | verified_date | date, nullable | |
-| created_at | timestamptz | |
+| created_at | datetime | |
 
 ### `operational_heads`
 | Column | Type | Notes |
@@ -64,8 +72,8 @@ Clients / municipal bodies (Admin's "Organizations" tab).
 | department, phone, email, location | text | |
 | experience, employee_id, specialization | text | |
 | joined_date | date | |
-| responsibilities | text[] | |
-| total_budget_authorisation | numeric | |
+| responsibilities | json | array of strings |
+| total_budget_authorisation | decimal | |
 | status | enum(`active`,`inactive`) | |
 
 ### `projects`
@@ -78,15 +86,15 @@ Clients / municipal bodies (Admin's "Organizations" tab).
 | organization_id | uuid FK → organizations | |
 | operational_head_id | uuid FK → operational_heads, nullable | |
 | supervisor_id | uuid FK → users, nullable | the assigned site supervisor |
-| budget | numeric | |
-| funds_released | numeric | replaces the divergent `spent`/`expenses` naming across modules |
-| advance | numeric | |
+| budget | decimal | |
+| funds_released | decimal | replaces the divergent `spent`/`expenses` naming across modules |
+| advance | decimal | |
 | start_date, end_date | date | |
 | status | enum(`planned`,`active`,`on_hold`,`completed`) | |
 | health | enum(`on_track`,`at_risk`,`delayed`) | |
 | progress | int (0–100) | |
 | description | text | |
-| created_at, updated_at | timestamptz | |
+| created_at, updated_at | datetime | |
 
 Derived values (`balance`, `spent-to-date`) should be computed in queries/views, not stored redundantly, to avoid the drift already seen between modules' mock data.
 
@@ -94,7 +102,7 @@ Derived values (`balance`, `spent-to-date`) should be computed in queries/views,
 | id, project_id (FK), title, status, target_date |
 
 ### `team_members`
-| id, name, role, phone, skills (text[]), status |
+| id, name, role, phone, skills (json), status |
 
 ### `project_team_assignments` (join table)
 | project_id (FK), team_member_id (FK), assigned_at |
@@ -114,15 +122,15 @@ The core table — models the full submit → approve → verify → pay lifecyc
 | item_description | text | |
 | vendor_name, vendor_gstin | text, nullable | |
 | bill_number, bill_date | text/date, nullable | |
-| amount | numeric | |
-| tax_amount | numeric, default 0 | |
+| amount | decimal | |
+| tax_amount | decimal, default 0 | |
 | payment_mode | text, nullable | |
 | gps_location, gps_address | text, nullable | from `PublicExpenseForm`'s geolocation capture |
 | status | enum(`submitted`,`ops_approved`,`ops_rejected`,`forwarded`,`accounts_verified`,`sent_for_correction`,`paid`) | one unified state machine replacing the ad-hoc status strings scattered across modules |
 | ops_approved_by, ops_approved_at, ops_remarks | | Operations' approval step |
 | accounts_verified_by, accounts_verified_at, payment_ref, accounts_remarks | | Accounts' verification step |
 | submitted_via | text | `app` / `public_form` |
-| created_at, updated_at | timestamptz | |
+| created_at, updated_at | datetime | |
 
 Index: `(project_id)`, `(submitted_by)`, `(status)`, `(created_at)` — expenses are the highest-volume table (daily entries per supervisor) and will be filtered by all four constantly.
 
@@ -156,8 +164,8 @@ One table for every uploaded file (bills, receipts, site photos) — always an S
 
 ### `audit_logs`
 Formalizes what the Accountant mock already sketches (`AUDIT_LOGS`) — record every state-changing financial action.
-| id, user_id (FK), action, target_type, target_id, details (jsonb), created_at |
+| id, user_id (FK), action, target_type, target_id, details (json), created_at |
 
 ## Migration approach
 
-Use Prisma migrations from the start (`prisma migrate dev`), one migration per phase in [04-backend-plan.md](04-backend-plan.md) rather than one giant initial migration — makes it far easier for 4 people to add fields without stepping on each other's schema changes.
+Use Prisma migrations from the start (`prisma migrate dev`, with the datasource provider set to `mysql`), one migration per phase in [04-backend-plan.md](04-backend-plan.md) rather than one giant initial migration — makes it far easier for 4 people to add fields without stepping on each other's schema changes.

@@ -1,6 +1,6 @@
 # Backend Plan — Starting From Zero
 
-_Last updated: 2026-08-28_
+_Last updated: 2026-08-30_
 
 There is currently **no backend at all**. This doc is the step-by-step for building one that the existing frontend can actually plug into with minimal frontend rework, since `AuthContext.jsx` and a few other files already assume a specific API shape.
 
@@ -26,14 +26,14 @@ ASEMS/
 
 ## 2. Stack (see [01-project-overview.md](01-project-overview.md) for the "why")
 
-Node.js + Express + Prisma + PostgreSQL + JWT. Validate request bodies with `zod`. Use `bcrypt` for password hashing.
+Node.js + Express + Prisma + MySQL + JWT. Validate request bodies with `zod`. Use `bcrypt` for password hashing.
 
 ## 3. Phased build order
 
 Build in this order — each phase should be its own set of PRs, and each phase should be demoable before moving to the next.
 
 ### Phase 0 — Project setup
-- `server/` scaffold, Express app, `.env.example`, connect to a local PostgreSQL instance, health-check route (`GET /health`)
+- `server/` scaffold, Express app, `.env.example`, connect to a local MySQL instance, health-check route (`GET /health`)
 - Prisma init, first migration with just a `users` table
 - CORS configured to allow the Vite dev server origin only
 

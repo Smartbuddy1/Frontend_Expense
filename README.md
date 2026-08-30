@@ -17,7 +17,7 @@ Full project documentation lives in [`docs/`](docs/README.md) — read that befo
 
 - **Frontend**: React 19 + Vite, one SPA per role under `src/modules/`
 - **Backend**: Node.js + Express (`server/`) — see [docs/04-backend-plan.md](docs/04-backend-plan.md)
-- **Database**: PostgreSQL via Prisma — see [docs/05-database-schema.md](docs/05-database-schema.md)
+- **Database**: MySQL via Prisma — see [docs/05-database-schema.md](docs/05-database-schema.md)
 - **Hosting**: AWS — see [docs/07-aws-deployment.md](docs/07-aws-deployment.md)
 
 > Status: the frontend is a working prototype for all 4 roles; the backend/database are just getting started. See [docs/03-frontend-status.md](docs/03-frontend-status.md) for the honest, file-by-file breakdown of what's done vs. left.
