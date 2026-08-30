@@ -1,10 +1,19 @@
 import React, { useState, useEffect } from 'react';
+import axios from 'axios';
 import AdminApp from './modules/Admin/App';
 import AccountantApp from './modules/Accountant/App';
 import SupervisorApp from './modules/SiteSupervisor/App';
 import OperationsApp from './modules/Operations/App';
 import { Smartphone, Lock, Eye, EyeOff, Sun, Moon, AlertCircle, ArrowRight, FileText } from 'lucide-react';
 import logoImg from './modules/Admin/assets/logo.png';
+
+// Backend roles map straight to the module paths that already exist.
+const ROLE_TO_PATH = {
+  admin: '/admin',
+  operations: '/operations',
+  accountant: '/accountant',
+  site_supervisor: '/supervisor',
+};
 
 function GlobalLogin() {
   const [username, setUsername] = useState('');
@@ -20,42 +29,31 @@ function GlobalLogin() {
     localStorage.setItem('theme', theme);
   }, [theme]);
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
     setLoading(true);
 
-    // Dummy authentication routing based on username
-    setTimeout(() => {
-      setLoading(false);
-      const user = username.toLowerCase();
-      let role = '';
-      if (user.includes('admin')) {
-        role = 'Admin';
-        window.location.href = '/admin';
-      } else if (user.includes('accountant')) {
-        role = 'Accountant';
-        window.location.href = '/accountant';
-      } else if (user.includes('supervisor') || user.includes('site')) {
-        role = 'Site_Supervisor';
-        window.location.href = '/supervisor';
-      } else if (user.includes('operations') || user.includes('op')) {
-        role = 'Operations';
-        window.location.href = '/operations';
-      } else {
-        setError('Invalid role. Try entering "admin", "accountant", "supervisor", or "operations".');
+    try {
+      const { data } = await axios.post(`${import.meta.env.VITE_API_BASE_URL}/auth/login`, {
+        mobile: username,
+        password,
+      });
+
+      localStorage.setItem('token', data.token);
+      localStorage.setItem('user', JSON.stringify(data.user));
+
+      const path = ROLE_TO_PATH[data.user.role];
+      if (!path) {
+        setError(`Logged in, but no dashboard is set up for role "${data.user.role}" yet.`);
+        setLoading(false);
         return;
       }
-      
-      // Set dummy token and user to bypass the local module login screens
-      localStorage.setItem('token', 'dummy-token-12345');
-      localStorage.setItem('user', JSON.stringify({ 
-        id: 1, 
-        name: 'Mock User', 
-        mobile: username, 
-        role: role 
-      }));
-    }, 800);
+      window.location.href = path;
+    } catch (err) {
+      setError(err.response?.data?.error || 'Could not reach the server. Is the backend running?');
+      setLoading(false);
+    }
   };
 
   return (
@@ -103,14 +101,14 @@ function GlobalLogin() {
           
           <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1.15rem' }}>
             <div className="form-group" style={{ marginBottom: 0 }}>
-              <label className="form-label" style={{ fontWeight: '600', fontSize: '0.85rem', color: 'var(--text-primary)', marginBottom: '0.4rem' }}>Username / Role</label>
+              <label className="form-label" style={{ fontWeight: '600', fontSize: '0.85rem', color: 'var(--text-primary)', marginBottom: '0.4rem' }}>Mobile Number</label>
               <div className="input-with-icon" style={{ position: 'relative' }}>
                 <Smartphone size={18} className="input-icon" style={{ position: 'absolute', left: '1rem', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-secondary)' }} />
                 <input
                   type="text"
                   className="form-input"
                   style={{ paddingLeft: '2.75rem', height: '3.25rem', fontSize: '1rem', backgroundColor: 'var(--surface-bg)' }}
-                  placeholder="e.g. admin, accountant..."
+                  placeholder="e.g. 9999999999"
                   value={username}
                   onChange={(e) => setUsername(e.target.value)}
                   required
