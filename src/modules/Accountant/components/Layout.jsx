@@ -44,14 +44,17 @@ const Layout = () => {
     window.location.href = '/';
   };
 
-  // Only real, backend-connected screens are in the nav for launch — the rest
-  // (Expense Verification/Wallet Funds/Budget/Advances/Ledger/Settlements/
-  // Analytics/Reports) still run on sample data (see docs/03-frontend-status.md)
-  // and are hidden so nobody mistakes them for working. Their code is
-  // untouched; just re-add here once they're wired to the real API.
   const navigation = [
     { name: 'Live Payments ⚡', href: '/dashboard?tab=live-payments', icon: Shield, tabKey: 'live-payments' },
     { name: 'Dashboard', href: '/dashboard?tab=overview', icon: LayoutDashboard, tabKey: 'overview' },
+    { name: 'Expense Verification', href: '/dashboard?tab=verification', icon: FileText, tabKey: 'verification' },
+    { name: 'Wallet Funds', href: '/dashboard?tab=wallets', icon: Wallet, tabKey: 'wallets' },
+    { name: 'Budget Management', href: '/dashboard?tab=budget', icon: Folder, tabKey: 'budget' },
+    { name: 'Advance Payouts', href: '/dashboard?tab=advances', icon: Users, tabKey: 'advances' },
+    { name: 'Payment Ledger', href: '/dashboard?tab=ledger', icon: Monitor, tabKey: 'ledger' },
+    { name: 'Settlements', href: '/dashboard?tab=settlements', icon: ClipboardList, tabKey: 'settlements' },
+    { name: 'Analytics', href: '/dashboard?tab=analytics', icon: Activity, tabKey: 'analytics' },
+    { name: 'Financial Reports', href: '/dashboard?tab=reports', icon: PieChart, tabKey: 'reports' },
   ];
 
   const currentTab = new URLSearchParams(location.search).get('tab') || 'overview';

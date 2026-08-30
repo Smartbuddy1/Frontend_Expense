@@ -68,17 +68,42 @@ const Layout = () => {
     window.location.href = '/';
   };
 
-  // Only real, backend-connected screens are in the nav for launch — the rest
-  // (old Projects/Site Supervisors/Bill Approve/Cash & Advance CRUD) are still
-  // mock-data-only (see docs/03-frontend-status.md) and hidden so nobody
-  // mistakes them for working. Their code is untouched; just re-add here once
-  // they're wired to the real API.
   const navigation = [
     {
       name: 'Dashboard',
       href: '/operations?tab=overview',
       icon: LayoutDashboard,
       tab: 'overview',
+    },
+    {
+      name: 'Create & Manage Projects',
+      href: '/operations?tab=projects',
+      icon: Folder,
+      tab: 'projects',
+    },
+    {
+      name: 'Site Supervisors',
+      href: '/operations?tab=team',
+      icon: Users,
+      tab: 'team',
+    },
+    {
+      name: 'Bill Approve',
+      href: '/operations?tab=expenses',
+      icon: CreditCard,
+      tab: 'expenses',
+    },
+    {
+      name: 'Cash & Advance',
+      href: '/operations?tab=cashadvance',
+      icon: IndianRupee,
+      tab: 'cashadvance',
+    },
+    {
+      name: 'Request Advance',
+      href: '/operations?tab=reconciliation',
+      icon: Scale,
+      tab: 'reconciliation',
     },
     {
       name: 'Live Approvals ⚡',
