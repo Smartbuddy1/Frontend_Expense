@@ -201,10 +201,10 @@ const RecordPaymentModal = ({
                 }}>
                   ₹
                 </span>
-                <input 
+                <input
                   type="number"
                   min="1"
-                  step="100"
+                  step="1"
                   value={amount}
                   onChange={(e) => setAmount(Number(e.target.value))}
                   required

@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
+import axios from 'axios';
 import { useSearchParams } from 'react-router-dom';
 import { 
   Building2, 
@@ -49,6 +50,114 @@ import RecordPaymentModal from '../components/accounts/RecordPaymentModal';
 import FundReleaseModal from '../components/accounts/FundReleaseModal';
 import SettlementModal from '../components/accounts/SettlementModal';
 import LivePayments from '../components/accounts/LivePayments';
+
+const API = import.meta.env.VITE_API_BASE_URL;
+
+// Backend statuses <-> the display strings this dashboard's UI already uses.
+const EXPENSE_STATUS_TO_DISPLAY = {
+  submitted: 'Pending Accounts Verification',
+  ops_approved: 'Pending Accounts Verification',
+  accounts_paid: 'Accounts Verified & Paid',
+  ops_rejected: 'Sent for Correction',
+};
+
+const ADVANCE_STATUS_TO_DISPLAY = {
+  requested: 'Pending Operations Approval',
+  approved: 'Pending Accounts Payment',
+  rejected: 'Rejected',
+  disbursed: 'Disbursed',
+};
+
+const mapProjectForAccounts = (p) => {
+  const budget = Number(p.budget) || 0;
+  const fundsReleased = Number(p.fundsReleased) || 0;
+  return {
+    id: p.id,
+    name: p.name,
+    site: p.site || p.location || '',
+    toilets: p.toiletsCount || 0,
+    supervisor: p.supervisor?.name || 'Unassigned',
+    supervisorMobile: p.supervisor?.mobile || '',
+    budget,
+    fundsReleased,
+    expenses: 0,
+    advance: 0,
+    balance: fundsReleased,
+    status: p.status,
+    startDate: p.startDate ? p.startDate.split('T')[0] : '',
+    endDate: p.endDate ? p.endDate.split('T')[0] : '',
+    progress: p.progress || 0,
+  };
+};
+
+const mapExpenseForAccounts = (e) => ({
+  id: e.id,
+  projectId: e.projectId,
+  projectName: e.project?.name || 'Unknown Project',
+  siteName: e.project?.site || '',
+  supervisor: e.submittedBy?.name || 'Unknown',
+  category: e.category?.name || 'Uncategorized',
+  itemDescription: e.description,
+  vendorName: e.vendorName || '',
+  billNumber: '',
+  billDate: e.createdAt,
+  amount: Number(e.amount),
+  hasBill: !!e.receiptUrl,
+  billUrl: e.receiptUrl || null,
+  status: EXPENSE_STATUS_TO_DISPLAY[e.status] || 'Pending Accounts Verification',
+  submittedAt: e.createdAt,
+});
+
+const mapAdvanceForAccounts = (a) => ({
+  id: a.id,
+  projectId: a.projectId,
+  projectName: a.project?.name || 'Unknown Project',
+  siteName: a.project?.site || '',
+  supervisor: a.requestedBy?.name || 'Unknown',
+  supervisorMobile: a.requestedBy?.mobile || '',
+  bankDetails: null,
+  requestedAmount: Number(a.amount),
+  approvedAmount: Number(a.amount),
+  purpose: a.purpose || '',
+  requestDate: a.createdAt,
+  date: a.createdAt,
+  status: ADVANCE_STATUS_TO_DISPLAY[a.status] || 'Pending Operations Approval',
+  paymentDetails: a.status === 'disbursed' ? { amountPaid: Number(a.amount) } : null,
+});
+
+const mapPaymentForAccounts = (p) => ({
+  id: p.id,
+  date: p.createdAt,
+  type: p.type,
+  projectId: p.projectId,
+  projectName: p.project?.name || '',
+  paidTo: p.paidTo || '',
+  amount: Number(p.amount),
+  paymentMode: p.paymentMode || '',
+  refNumber: p.refNumber || '',
+  category: p.category || '',
+  status: 'Completed',
+  notes: p.notes || '',
+});
+
+const mapSettlementForAccounts = (s) => ({
+  id: s.id,
+  projectId: s.projectId,
+  projectName: s.project?.name || '',
+  siteName: s.project?.site || '',
+  supervisor: s.supervisor?.name || '',
+  supervisorMobile: s.supervisor?.mobile || '',
+  completedDate: s.completedDate,
+  totalAdvanceGiven: Number(s.totalAdvanceGiven),
+  totalApprovedExpenses: Number(s.totalApprovedExpenses),
+  difference: Number(s.difference),
+  settlementType: s.settlementType === 'refund_due' ? 'REFUND_DUE' : 'ADDITIONAL_PAYABLE',
+  status: s.status === 'settled'
+    ? 'Completed'
+    : (s.settlementType === 'refund_due' ? 'Pending Refund Receipt' : 'Pending Accounts Payout'),
+  supervisorRemark: s.supervisorRemark || '',
+  accountsRemark: s.accountsRemark || '',
+});
 
 const TABS = [
   { id: 'live-payments', label: 'Live Payments ⚡', icon: ShieldCheck, count: null },
@@ -161,12 +270,40 @@ const Dashboard = () => {
     }
   };
 
-  const [projects, setProjects] = useState(INITIAL_PROJECTS);
-  const [expenses, setExpenses] = useState(INITIAL_EXPENSES);
-  const [advances, setAdvances] = useState(INITIAL_ADVANCES);
-  const [payments, setPayments] = useState(INITIAL_PAYMENTS_LEDGER);
-  const [settlements, setSettlements] = useState(INITIAL_SETTLEMENTS);
+  const [projects, setProjects] = useState([]);
+  const [expenses, setExpenses] = useState([]);
+  const [advances, setAdvances] = useState([]);
+  const [payments, setPayments] = useState([]);
+  const [settlements, setSettlements] = useState([]);
   const [auditLogs, setAuditLogs] = useState(AUDIT_LOGS);
+  const [loadingCore, setLoadingCore] = useState(true);
+
+  // Projects, expenses, advances, payments, and settlements all come from the
+  // real backend now. Audit logs are still a static sample — see
+  // docs/03-frontend-status.md for what's real vs not.
+  const fetchCore = useCallback(async () => {
+    setLoadingCore(true);
+    try {
+      const [projRes, expRes, advRes, payRes, settleRes] = await Promise.all([
+        axios.get(`${API}/projects`, { params: { pageSize: 100 } }),
+        axios.get(`${API}/expenses`, { params: { pageSize: 100 } }),
+        axios.get(`${API}/advances`),
+        axios.get(`${API}/payments-ledger`),
+        axios.get(`${API}/settlements`),
+      ]);
+      setProjects(projRes.data.projects.map(mapProjectForAccounts));
+      setExpenses(expRes.data.expenses.map(mapExpenseForAccounts));
+      setAdvances(advRes.data.advances.map(mapAdvanceForAccounts));
+      setPayments(payRes.data.entries.map(mapPaymentForAccounts));
+      setSettlements(settleRes.data.settlements.map(mapSettlementForAccounts));
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setLoadingCore(false);
+    }
+  }, []);
+
+  useEffect(() => { fetchCore(); }, [fetchCore]);
 
   // Active Modals state
   const [inspectingExpense, setInspectingExpense] = useState(null);
@@ -186,75 +323,29 @@ const Dashboard = () => {
     }, 4000);
   };
 
-  // 1. Approve Expense Handler (Module 6)
-  const handleApproveExpense = (expense) => {
-    setExpenses(prev => prev.map(e => {
-      if (e.id === expense.id) {
-        return {
-          ...e,
-          status: 'Accounts Verified & Paid',
-          accountsVerification: {
-            status: 'Verified',
-            verifiedBy: 'Accounts Dept',
-            verifiedAt: new Date().toLocaleString(),
-            paymentRef: `TRX-${Math.floor(100000 + Math.random() * 900000)}`,
-            paymentMode: 'NetBanking'
-          }
-        };
-      }
-      return e;
-    }));
-
-    // Update project verified expenses
-    setProjects(prev => prev.map(p => {
-      if (p.id === expense.projectId) {
-        return { ...p, expenses: (p.expenses || 0) + expense.amount, balance: (p.balance || 0) - expense.amount };
-      }
-      return p;
-    }));
-
-    // Add to payments ledger
-    const newPayment = {
-      id: `PAY-${Math.floor(1000 + Math.random() * 9000)}`,
-      date: new Date().toISOString().split('T')[0],
-      type: 'Expense Reimbursement',
-      projectId: expense.projectId,
-      projectName: expense.projectName,
-      paidTo: expense.vendorName || expense.supervisor,
-      amount: expense.amount,
-      paymentMode: 'NetBanking',
-      refNumber: `NEFT/EXP-${expense.id.slice(-4)}`,
-      category: expense.category,
-      status: 'Completed',
-      notes: `Verified claim ${expense.id} - ${expense.itemDescription}`
-    };
-    setPayments(prev => [newPayment, ...prev]);
-
-    setInspectingExpense(null);
-    showToast(`Claim ${expense.id} (₹${expense.amount.toLocaleString()}) verified and approved successfully!`);
+  // 1. Approve Expense Handler (Module 6) — marks an Operations-approved expense as paid
+  const handleApproveExpense = async (expense) => {
+    try {
+      await axios.patch(`${API}/expenses/${expense.id}/pay`);
+      await fetchCore();
+      setInspectingExpense(null);
+      showToast(`Claim ${expense.id} (₹${expense.amount.toLocaleString()}) verified and approved successfully!`);
+    } catch (err) {
+      showToast(err.response?.data?.error || 'Failed to approve expense', 'error');
+    }
   };
 
   // 2. Reject / Send back for correction (Module 6)
-  const handleRejectExpense = (expense, reason) => {
-    setExpenses(prev => prev.map(e => {
-      if (e.id === expense.id) {
-        return {
-          ...e,
-          status: 'Sent for Correction',
-          accountsVerification: {
-            status: 'Correction Required',
-            verifiedBy: 'Accounts Dept',
-            verifiedAt: new Date().toLocaleString(),
-            correctionReason: reason
-          }
-        };
-      }
-      return e;
-    }));
-
-    setInspectingExpense(null);
-    setCorrectingItem(null);
-    showToast(`Claim ${expense.id} sent back to ${expense.supervisor} with correction note.`, 'warning');
+  const handleRejectExpense = async (expense, reason) => {
+    try {
+      await axios.patch(`${API}/expenses/${expense.id}/reject`, { remarks: reason });
+      await fetchCore();
+      setInspectingExpense(null);
+      setCorrectingItem(null);
+      showToast(`Claim ${expense.id} sent back to ${expense.supervisor} with correction note.`, 'warning');
+    } catch (err) {
+      showToast(err.response?.data?.error || 'Failed to reject expense', 'error');
+    }
   };
 
   // 3. Disburse Advance Handler (Module 3)
@@ -264,109 +355,60 @@ const Dashboard = () => {
   };
 
   // 4. Submit Payment Handler (Module 7)
-  const handlePaymentSubmitted = (item, paymentData) => {
-    setPayments(prev => [paymentData, ...prev]);
-
-    if (paymentType === 'Advance') {
-      setAdvances(prev => prev.map(a => {
-        if (a.id === item.id) {
-          return {
-            ...a,
-            approvedAmount: paymentData.amount,
-            status: 'Disbursed',
-            paymentDetails: {
-              paymentDate: paymentData.date,
-              paymentMode: paymentData.paymentMode,
-              refNumber: paymentData.refNumber,
-              paidFromAccount: paymentData.paidFromAccount,
-              paidTo: paymentData.paidTo,
-              amountPaid: paymentData.amount,
-              recordedBy: 'Accounts Dept'
-            }
-          };
-        }
-        return a;
-      }));
-
-      // Update project advances
-      setProjects(prev => prev.map(p => {
-        if (p.id === item.projectId) {
-          return { ...p, advance: (p.advance || 0) + paymentData.amount };
-        }
-        return p;
-      }));
-
-      showToast(`Advance ${item.id} (₹${paymentData.amount.toLocaleString()}) disbursed to ${paymentData.paidTo}!`);
+  const handlePaymentSubmitted = async (item, paymentData) => {
+    if (paymentType !== 'Advance') {
+      setPaymentItem(null);
+      return;
     }
-
-    setPaymentItem(null);
+    try {
+      await axios.patch(`${API}/advances/${item.id}/disburse`);
+      await fetchCore();
+      showToast(`Advance ${item.id} (₹${paymentData.amount.toLocaleString()}) disbursed to ${paymentData.paidTo}!`);
+    } catch (err) {
+      showToast(err.response?.data?.error || 'Failed to disburse advance', 'error');
+    } finally {
+      setPaymentItem(null);
+    }
   };
 
   // 5. Fund Release Handler (Module 2)
-  const handleFundReleaseSubmitted = (project, fundData) => {
-    setProjects(prev => prev.map(p => {
-      if (p.id === project.id) {
-        const newReleased = (p.fundsReleased || 0) + fundData.amount;
-        return {
-          ...p,
-          fundsReleased: newReleased,
-          balance: newReleased - (p.expenses || 0)
-        };
-      }
-      return p;
-    }));
-
-    const newPayment = {
-      id: `PAY-${Math.floor(1000 + Math.random() * 9000)}`,
-      date: fundData.date,
-      type: 'Project Fund Release',
-      projectId: project.id,
-      projectName: project.name,
-      paidTo: `${project.name} Site Account`,
-      amount: fundData.amount,
-      paymentMode: 'Bank Transfer (RTGS)',
-      refNumber: fundData.refNumber,
-      category: 'Project Fund Allocation',
-      status: 'Completed',
-      notes: fundData.purpose
-    };
-    setPayments(prev => [newPayment, ...prev]);
-
-    setReleasingFundProject(null);
-    showToast(`₹${fundData.amount.toLocaleString()} released for ${project.name} successfully!`);
+  const handleFundReleaseSubmitted = async (project, fundData) => {
+    try {
+      await axios.patch(`${API}/projects/${project.id}/release-fund`, {
+        amount: fundData.amount,
+        paymentMode: fundData.paymentMode,
+        refNumber: fundData.refNumber,
+        notes: fundData.purpose,
+      });
+      await fetchCore();
+      showToast(`₹${fundData.amount.toLocaleString()} released for ${project.name} successfully!`);
+    } catch (err) {
+      showToast(err.response?.data?.error || 'Failed to release funds', 'error');
+    } finally {
+      setReleasingFundProject(null);
+    }
   };
 
   // 6. Execute Settlement Handler
-  const handleSettlementSubmit = (settlement, data) => {
-    setSettlements(prev => prev.map(s => (
-      s.id === settlement.id
-        ? { ...s, status: 'Settled', completedDate: data.completedDate, accountsRemark: data.remarks }
-        : s
-    )));
-
-    const newPayment = {
-      id: `PAY-${Math.floor(1000 + Math.random() * 9000)}`,
-      date: data.completedDate,
-      type: settlement.settlementType === 'REFUND_DUE' ? 'Settlement Refund Received' : 'Settlement Payment',
-      projectId: settlement.projectId,
-      projectName: settlement.projectName,
-      paidTo: settlement.settlementType === 'REFUND_DUE' ? data.bankAccount : settlement.supervisor,
-      amount: settlement.difference,
-      paymentMode: data.paymentMode,
-      refNumber: data.refNumber,
-      category: 'Project Settlement',
-      status: 'Completed',
-      notes: data.remarks
-    };
-    setPayments(prev => [newPayment, ...prev]);
-
-    setSettlingItem(null);
-    showToast(`Settlement ${settlement.id} for ${settlement.projectName} closed successfully!`);
+  const handleSettlementSubmit = async (settlement, data) => {
+    try {
+      await axios.patch(`${API}/settlements/${settlement.id}/settle`, {
+        paymentMode: data.paymentMode,
+        refNumber: data.refNumber,
+        accountsRemark: data.remarks,
+      });
+      await fetchCore();
+      showToast(`Settlement ${settlement.id} for ${settlement.projectName} closed successfully!`);
+    } catch (err) {
+      showToast(err.response?.data?.error || 'Failed to close settlement', 'error');
+    } finally {
+      setSettlingItem(null);
+    }
   };
 
   const pendingExpensesCount = expenses.filter(e => e.status === 'Pending Accounts Verification').length;
   const pendingAdvancesCount = advances.filter(a => a.status === 'Pending Accounts Payment').length;
-  const pendingSettlementsCount = settlements.filter(s => s.status !== 'Settled').length;
+  const pendingSettlementsCount = settlements.filter(s => s.status !== 'Completed').length;
 
   const counts = {
     pendingExpenses: pendingExpensesCount,
