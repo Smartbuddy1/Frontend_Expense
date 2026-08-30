@@ -37,7 +37,9 @@ import AnalyticsTab from '../components/accounts/AnalyticsTab';
 import ExpenseVerificationTab from '../components/accounts/ExpenseVerificationTab';
 import AdvanceDisbursalTab from '../components/accounts/AdvanceDisbursalTab';
 import SupervisorWalletFundsTab from '../components/accounts/SupervisorWalletFundsTab';
+import BudgetManagementTab from '../components/accounts/BudgetManagementTab';
 import PaymentLedgerTab from '../components/accounts/PaymentLedgerTab';
+import SettlementReconcileTab from '../components/accounts/SettlementReconcileTab';
 import FinancialReportsTab from '../components/accounts/FinancialReportsTab';
 import { useAuth } from '../context/AuthContext';
 
@@ -45,13 +47,16 @@ import ReceiptViewerModal from '../components/accounts/ReceiptViewerModal';
 import CorrectionReasonModal from '../components/accounts/CorrectionReasonModal';
 import RecordPaymentModal from '../components/accounts/RecordPaymentModal';
 import FundReleaseModal from '../components/accounts/FundReleaseModal';
+import SettlementModal from '../components/accounts/SettlementModal';
 
 const TABS = [
   { id: 'overview', label: 'Overview', icon: Layers, count: null },
   { id: 'verification', label: 'Expense Verification', icon: Clock, countKey: 'pendingExpenses' },
   { id: 'wallets', label: 'Wallet Funds', icon: Wallet, countKey: 'pendingAdvances' },
+  { id: 'budget', label: 'Budget Management', icon: Folder, count: null },
   { id: 'advances', label: 'Advance Disbursal', icon: Send, countKey: 'pendingAdvances' },
   { id: 'ledger', label: 'Payment Ledger', icon: CreditCard, count: null },
+  { id: 'settlements', label: 'Settlements', icon: TrendingUp, countKey: 'pendingSettlements' },
   { id: 'analytics', label: 'Analytics', icon: Activity, count: null },
   { id: 'reports', label: 'Financial Reports', icon: FileSpreadsheet, count: null }
 ];
@@ -81,6 +86,14 @@ const TAB_METADATA = {
     icon: Wallet,
     color: '#059669'
   },
+  budget: {
+    prefix: 'Budget',
+    highlight: 'Management',
+    title: 'Budget Management',
+    subtitle: 'Track per-project budgets and release funds against them',
+    icon: Folder,
+    color: '#059669'
+  },
   advances: {
     prefix: 'Advance',
     highlight: 'Payouts',
@@ -96,6 +109,14 @@ const TAB_METADATA = {
     subtitle: 'Complete transaction audit trail of all vendor payouts & fund releases',
     icon: CreditCard,
     color: '#0ea5e9'
+  },
+  settlements: {
+    prefix: 'Settlement',
+    highlight: 'Reconciliation',
+    title: 'Settlement Reconciliation',
+    subtitle: 'Close out project accounts — refunds due and additional payables',
+    icon: TrendingUp,
+    color: '#f59e0b'
   },
   analytics: {
     prefix: 'Financial',
@@ -143,6 +164,7 @@ const Dashboard = () => {
   const [paymentItem, setPaymentItem] = useState(null);
   const [paymentType, setPaymentType] = useState('Advance');
   const [releasingFundProject, setReleasingFundProject] = useState(null);
+  const [settlingItem, setSettlingItem] = useState(null);
 
   // Notification Toast
   const [toastMessage, setToastMessage] = useState(null);
@@ -304,12 +326,42 @@ const Dashboard = () => {
     showToast(`₹${fundData.amount.toLocaleString()} released for ${project.name} successfully!`);
   };
 
+  // 6. Execute Settlement Handler
+  const handleSettlementSubmit = (settlement, data) => {
+    setSettlements(prev => prev.map(s => (
+      s.id === settlement.id
+        ? { ...s, status: 'Settled', completedDate: data.completedDate, accountsRemark: data.remarks }
+        : s
+    )));
+
+    const newPayment = {
+      id: `PAY-${Math.floor(1000 + Math.random() * 9000)}`,
+      date: data.completedDate,
+      type: settlement.settlementType === 'REFUND_DUE' ? 'Settlement Refund Received' : 'Settlement Payment',
+      projectId: settlement.projectId,
+      projectName: settlement.projectName,
+      paidTo: settlement.settlementType === 'REFUND_DUE' ? data.bankAccount : settlement.supervisor,
+      amount: settlement.difference,
+      paymentMode: data.paymentMode,
+      refNumber: data.refNumber,
+      category: 'Project Settlement',
+      status: 'Completed',
+      notes: data.remarks
+    };
+    setPayments(prev => [newPayment, ...prev]);
+
+    setSettlingItem(null);
+    showToast(`Settlement ${settlement.id} for ${settlement.projectName} closed successfully!`);
+  };
+
   const pendingExpensesCount = expenses.filter(e => e.status === 'Pending Accounts Verification').length;
   const pendingAdvancesCount = advances.filter(a => a.status === 'Pending Accounts Payment').length;
+  const pendingSettlementsCount = settlements.filter(s => s.status !== 'Settled').length;
 
   const counts = {
     pendingExpenses: pendingExpensesCount,
-    pendingAdvances: pendingAdvancesCount
+    pendingAdvances: pendingAdvancesCount,
+    pendingSettlements: pendingSettlementsCount
   };
 
   return (
@@ -445,6 +497,13 @@ const Dashboard = () => {
         />
       )}
 
+      {activeTab === 'budget' && (
+        <BudgetManagementTab
+          projects={projects}
+          onReleaseFund={(project) => setReleasingFundProject(project)}
+        />
+      )}
+
       {activeTab === 'advances' && (
         <AdvanceDisbursalTab
           advances={advances}
@@ -458,6 +517,14 @@ const Dashboard = () => {
         <PaymentLedgerTab
           payments={payments}
           onRecordNewPayment={() => {}}
+        />
+      )}
+
+      {activeTab === 'settlements' && (
+        <SettlementReconcileTab
+          settlements={settlements}
+          projects={projects}
+          onExecuteSettlement={(settlement) => setSettlingItem(settlement)}
         />
       )}
 
@@ -507,6 +574,14 @@ const Dashboard = () => {
           project={releasingFundProject}
           onClose={() => setReleasingFundProject(null)}
           onSubmit={(proj, data) => handleFundReleaseSubmitted(proj, data)}
+        />
+      )}
+
+      {settlingItem && (
+        <SettlementModal
+          settlement={settlingItem}
+          onClose={() => setSettlingItem(null)}
+          onSubmit={(settlement, data) => handleSettlementSubmit(settlement, data)}
         />
       )}
     </div>
