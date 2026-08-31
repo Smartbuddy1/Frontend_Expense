@@ -38,17 +38,13 @@ import AnalyticsTab from '../components/accounts/AnalyticsTab';
 import ExpenseVerificationTab from '../components/accounts/ExpenseVerificationTab';
 import AdvanceDisbursalTab from '../components/accounts/AdvanceDisbursalTab';
 import SupervisorWalletFundsTab from '../components/accounts/SupervisorWalletFundsTab';
-import BudgetManagementTab from '../components/accounts/BudgetManagementTab';
 import PaymentLedgerTab from '../components/accounts/PaymentLedgerTab';
-import SettlementReconcileTab from '../components/accounts/SettlementReconcileTab';
 import FinancialReportsTab from '../components/accounts/FinancialReportsTab';
 import { useAuth } from '../context/AuthContext';
 
 import ReceiptViewerModal from '../components/accounts/ReceiptViewerModal';
 import CorrectionReasonModal from '../components/accounts/CorrectionReasonModal';
 import RecordPaymentModal from '../components/accounts/RecordPaymentModal';
-import FundReleaseModal from '../components/accounts/FundReleaseModal';
-import SettlementModal from '../components/accounts/SettlementModal';
 
 const API = import.meta.env.VITE_API_BASE_URL;
 
@@ -162,10 +158,8 @@ const TABS = [
   { id: 'overview', label: 'Overview', icon: Layers, count: null },
   { id: 'verification', label: 'Expense Verification', icon: Clock, countKey: 'pendingExpenses' },
   { id: 'wallets', label: 'Wallet Funds', icon: Wallet, countKey: 'pendingAdvances' },
-  { id: 'budget', label: 'Budget Management', icon: Folder, count: null },
   { id: 'advances', label: 'Advance Disbursal', icon: Send, countKey: 'pendingAdvances' },
   { id: 'ledger', label: 'Payment Ledger', icon: CreditCard, count: null },
-  { id: 'settlements', label: 'Settlements', icon: TrendingUp, countKey: 'pendingSettlements' },
   { id: 'analytics', label: 'Analytics', icon: Activity, count: null },
   { id: 'reports', label: 'Financial Reports', icon: FileSpreadsheet, count: null }
 ];
@@ -195,14 +189,6 @@ const TAB_METADATA = {
     icon: Wallet,
     color: '#059669'
   },
-  budget: {
-    prefix: 'Budget',
-    highlight: 'Management',
-    title: 'Budget Management',
-    subtitle: 'Track per-project budgets and release funds against them',
-    icon: Folder,
-    color: '#059669'
-  },
   advances: {
     prefix: 'Advance',
     highlight: 'Payouts',
@@ -218,14 +204,6 @@ const TAB_METADATA = {
     subtitle: 'Complete transaction audit trail of all vendor payouts & fund releases',
     icon: CreditCard,
     color: '#0ea5e9'
-  },
-  settlements: {
-    prefix: 'Settlement',
-    highlight: 'Reconciliation',
-    title: 'Settlement Reconciliation',
-    subtitle: 'Close out project accounts — refunds due and additional payables',
-    icon: TrendingUp,
-    color: '#f59e0b'
   },
   analytics: {
     prefix: 'Financial',
@@ -300,8 +278,6 @@ const Dashboard = () => {
   const [correctingItem, setCorrectingItem] = useState(null);
   const [paymentItem, setPaymentItem] = useState(null);
   const [paymentType, setPaymentType] = useState('Advance');
-  const [releasingFundProject, setReleasingFundProject] = useState(null);
-  const [settlingItem, setSettlingItem] = useState(null);
 
   // Notification Toast
   const [toastMessage, setToastMessage] = useState(null);
@@ -363,41 +339,6 @@ const Dashboard = () => {
       showToast(err.response?.data?.error || 'Failed to disburse advance', 'error');
     } finally {
       setPaymentItem(null);
-    }
-  };
-
-  // 5. Fund Release Handler (Module 2)
-  const handleFundReleaseSubmitted = async (project, fundData) => {
-    try {
-      await axios.patch(`${API}/projects/${project.id}/release-fund`, {
-        amount: fundData.amount,
-        paymentMode: fundData.paymentMode,
-        refNumber: fundData.refNumber,
-        notes: fundData.purpose,
-      });
-      await fetchCore();
-      showToast(`₹${fundData.amount.toLocaleString()} released for ${project.name} successfully!`);
-    } catch (err) {
-      showToast(err.response?.data?.error || 'Failed to release funds', 'error');
-    } finally {
-      setReleasingFundProject(null);
-    }
-  };
-
-  // 6. Execute Settlement Handler
-  const handleSettlementSubmit = async (settlement, data) => {
-    try {
-      await axios.patch(`${API}/settlements/${settlement.id}/settle`, {
-        paymentMode: data.paymentMode,
-        refNumber: data.refNumber,
-        accountsRemark: data.remarks,
-      });
-      await fetchCore();
-      showToast(`Settlement ${settlement.id} for ${settlement.projectName} closed successfully!`);
-    } catch (err) {
-      showToast(err.response?.data?.error || 'Failed to close settlement', 'error');
-    } finally {
-      setSettlingItem(null);
     }
   };
 
@@ -544,13 +485,6 @@ const Dashboard = () => {
         />
       )}
 
-      {activeTab === 'budget' && (
-        <BudgetManagementTab
-          projects={projects}
-          onReleaseFund={(project) => setReleasingFundProject(project)}
-        />
-      )}
-
       {activeTab === 'advances' && (
         <AdvanceDisbursalTab
           advances={advances}
@@ -564,14 +498,6 @@ const Dashboard = () => {
         <PaymentLedgerTab
           payments={payments}
           onRecordNewPayment={() => {}}
-        />
-      )}
-
-      {activeTab === 'settlements' && (
-        <SettlementReconcileTab
-          settlements={settlements}
-          projects={projects}
-          onExecuteSettlement={(settlement) => setSettlingItem(settlement)}
         />
       )}
 
@@ -616,21 +542,6 @@ const Dashboard = () => {
         />
       )}
 
-      {releasingFundProject && (
-        <FundReleaseModal
-          project={releasingFundProject}
-          onClose={() => setReleasingFundProject(null)}
-          onSubmit={(proj, data) => handleFundReleaseSubmitted(proj, data)}
-        />
-      )}
-
-      {settlingItem && (
-        <SettlementModal
-          settlement={settlingItem}
-          onClose={() => setSettlingItem(null)}
-          onSubmit={(settlement, data) => handleSettlementSubmit(settlement, data)}
-        />
-      )}
     </div>
   );
 };
