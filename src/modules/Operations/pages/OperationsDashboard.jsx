@@ -95,6 +95,28 @@ const mapExpense = (e) => {
   };
 };
 
+const ADVANCE_STATUS_TO_DISPLAY = {
+  requested: 'Pending',
+  approved: 'Approved',
+  rejected: 'Rejected',
+  disbursed: 'Disbursed',
+};
+
+const mapAdvance = (a) => ({
+  id: a.id,
+  projectId: a.projectId,
+  projectName: a.project?.name || 'Unknown Project',
+  site: a.project?.site || '',
+  supervisorId: a.requestedById,
+  supervisor: a.requestedBy?.name || 'Unknown',
+  supervisorMobile: a.requestedBy?.mobile || '',
+  purpose: a.purpose || '',
+  amount: Number(a.amount),
+  status: ADVANCE_STATUS_TO_DISPLAY[a.status] || 'Pending',
+  rawStatus: a.status,
+  date: a.createdAt,
+});
+
 import OperationsOverview from '../components/operations/OperationsOverview';
 import LiveOpsPanel from '../components/operations/LiveOpsPanel';
 import ProjectsTab from '../components/operations/ProjectsTab';
@@ -137,22 +159,25 @@ const OperationsDashboard = () => {
   const [supervisors, setSupervisors] = useState([]);
   const [teamMembers, setTeamMembers] = useState([]);
   const [expenses, setExpenses] = useState([]);
+  const [advances, setAdvances] = useState([]);
   const [loadingCore, setLoadingCore] = useState(true);
 
-  // Projects, supervisors, team members, and expenses all come from the real
-  // backend now. Site logs below are still the original mock data — see
-  // docs/03-frontend-status.md for what's real vs not yet.
+  // Projects, supervisors, team members, expenses, and advances all come from
+  // the real backend now. Site logs below are still the original mock data —
+  // see docs/03-frontend-status.md for what's real vs not yet.
   const fetchCore = useCallback(async () => {
     setLoadingCore(true);
     try {
-      const [projRes, supRes, teamRes, expRes] = await Promise.all([
+      const [projRes, supRes, teamRes, expRes, advRes] = await Promise.all([
         axios.get(`${API}/projects`, { params: { pageSize: 100 } }),
         axios.get(`${API}/users`, { params: { role: 'site_supervisor' } }),
         axios.get(`${API}/team-members`),
         axios.get(`${API}/expenses`, { params: { pageSize: 100 } }),
+        axios.get(`${API}/advances`),
       ]);
       setProjects(projRes.data.projects.map(mapProject));
       setSupervisors(supRes.data.users.map(mapSupervisor));
+      setAdvances(advRes.data.advances.map(mapAdvance));
       setTeamMembers(teamRes.data.teamMembers.map(mapTeamMember));
       setExpenses(expRes.data.expenses.map(mapExpense));
     } catch (err) {
@@ -469,7 +494,9 @@ const OperationsDashboard = () => {
           projects={projects}
           supervisors={supervisors}
           expenses={expenses}
+          advances={advances}
           activeView={activeTab}
+          onRefresh={fetchCore}
         />
       )}
 

@@ -361,7 +361,12 @@ const Dashboard = () => {
       return;
     }
     try {
-      await axios.patch(`${API}/advances/${item.id}/disburse`);
+      await axios.patch(`${API}/advances/${item.id}/disburse`, {
+        paidTo: paymentData.paidTo,
+        paymentMode: paymentData.paymentMode,
+        refNumber: paymentData.refNumber,
+        notes: paymentData.notes,
+      });
       await fetchCore();
       showToast(`Advance ${item.id} (₹${paymentData.amount.toLocaleString()}) disbursed to ${paymentData.paidTo}!`);
     } catch (err) {

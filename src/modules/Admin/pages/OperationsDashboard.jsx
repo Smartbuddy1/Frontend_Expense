@@ -121,6 +121,28 @@ const mapExpense = (e) => {
   };
 };
 
+const ADVANCE_STATUS_TO_DISPLAY = {
+  requested: 'Pending',
+  approved: 'Approved',
+  rejected: 'Rejected',
+  disbursed: 'Disbursed',
+};
+
+const mapAdvance = (a) => ({
+  id: a.id,
+  projectId: a.projectId,
+  projectName: a.project?.name || 'Unknown Project',
+  site: a.project?.site || '',
+  supervisorId: a.requestedById,
+  supervisor: a.requestedBy?.name || 'Unknown',
+  supervisorMobile: a.requestedBy?.mobile || '',
+  purpose: a.purpose || '',
+  amount: Number(a.amount),
+  status: ADVANCE_STATUS_TO_DISPLAY[a.status] || 'Pending',
+  rawStatus: a.status,
+  date: a.createdAt,
+});
+
 import OperationsOverview from '../components/operations/OperationsOverview';
 import LiveOpsPanel from '../components/operations/LiveOpsPanel';
 import ProjectsTab from '../components/operations/ProjectsTab';
@@ -175,12 +197,13 @@ const OperationsDashboard = () => {
   const [accountants, setAccountants] = useState([]);
   const [operationalHeads, setOperationalHeads] = useState([]);
   const [expenses, setExpenses] = useState([]);
+  const [advances, setAdvances] = useState([]);
   const [loadingCore, setLoadingCore] = useState(true);
 
   const fetchCore = useCallback(async () => {
     setLoadingCore(true);
     try {
-      const [projRes, supRes, teamRes, orgRes, accRes, headsRes, expRes] = await Promise.all([
+      const [projRes, supRes, teamRes, orgRes, accRes, headsRes, expRes, advRes] = await Promise.all([
         axios.get(`${API}/projects`, { params: { pageSize: 100 } }),
         axios.get(`${API}/users`, { params: { role: 'site_supervisor' } }),
         axios.get(`${API}/team-members`),
@@ -188,6 +211,7 @@ const OperationsDashboard = () => {
         axios.get(`${API}/users`, { params: { role: 'accountant' } }),
         axios.get(`${API}/operational-heads`),
         axios.get(`${API}/expenses`, { params: { pageSize: 100 } }),
+        axios.get(`${API}/advances`),
       ]);
       setProjects(projRes.data.projects.map(mapProject));
       setSupervisors(supRes.data.users.map(mapSupervisor));
@@ -196,6 +220,7 @@ const OperationsDashboard = () => {
       setAccountants(accRes.data.users.map(mapAccountant));
       setOperationalHeads(headsRes.data.operationalHeads.map(mapOperationalHead));
       setExpenses(expRes.data.expenses.map(mapExpense));
+      setAdvances(advRes.data.advances.map(mapAdvance));
     } catch (err) {
       toast.error('Could not load live operations data from the server');
       console.error(err);
@@ -683,8 +708,10 @@ const OperationsDashboard = () => {
           projects={projects}
           supervisors={supervisors}
           expenses={expenses}
+          advances={advances}
           onNavigateTab={setActiveTab}
           onOpenTransferAdvance={() => setIsTransferAdvanceOpen(true)}
+          onRefresh={fetchCore}
         />
       )}
 

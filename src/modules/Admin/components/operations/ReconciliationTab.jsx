@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import axios from 'axios';
 import {
   Scale, Plus, FileText, Download, CheckCircle2, Clock,
   AlertCircle, ArrowUpRight, ArrowDownRight, Building,
@@ -11,130 +12,84 @@ import { useLanguage } from '../../context/LanguageContext';
 import { addPdfHeaderWithLogo, addPdfFooterWithPageNumbers, getCompanyLogoBase64 } from '../../utils/pdfHeaderHelper';
 import toast from 'react-hot-toast';
 
+const API = import.meta.env.VITE_API_BASE_URL;
+
 const ReconciliationTab = ({
   projects = [],
   supervisors = [],
   expenses = [],
+  advances = [],
   onNavigateTab,
-  onOpenTransferAdvance
+  onOpenTransferAdvance,
+  onRefresh
 }) => {
   const { language } = useLanguage();
 
-  // Float state for supervisors
-  const [supervisorFloats, setSupervisorFloats] = useState([
-    {
-      id: 'sup-1',
-      name: 'Rohit Sharma',
-      phone: '+91 98220 12345',
-      project: 'Sangamner Eco Toilet Installation - Site P1',
-      site: 'Sangamner',
-      advance: 50000,
-      settled: 42000,
-      status: 'Healthy',
-      lastRef: 'UTR-HDFC-994821',
-      lastDate: '2026-08-18'
-    },
-    {
-      id: 'sup-2',
-      name: 'Amit Deshmukh',
-      phone: '+91 98220 54321',
-      project: 'Pune Smart City E-Toilet Cluster - Site P2',
-      site: 'Pune',
-      advance: 40000,
-      settled: 36800,
-      status: 'Healthy',
-      lastRef: 'UTR-ICICI-881920',
-      lastDate: '2026-08-19'
-    },
-    {
-      id: 'sup-3',
-      name: 'Sagar Patil',
-      phone: '+91 98220 98765',
-      project: 'Nashik Highway Eco Sanitation - Site P3',
-      site: 'Nashik',
-      advance: 50000,
-      settled: 33200,
-      status: 'Healthy',
-      lastRef: 'UTR-SBI-772911',
-      lastDate: '2026-08-20'
-    }
-  ]);
+  // Bank & UTR Ledger — real payment-ledger entries (advance disbursals + expense
+  // payouts), fetched separately since the parent dashboard doesn't hold this list.
+  const [rawLedger, setRawLedger] = useState([]);
 
-  // Bank & UTR Ledger records
-  const [ledgerRecords, setLedgerRecords] = useState([
-    {
-      id: 'TXN-REC-101',
-      supervisor: 'Rohit Sharma',
-      project: 'Sangamner Eco Toilet',
-      type: 'Advance Float',
-      mode: 'NEFT / HDFC',
-      utr: 'UTR9948210041',
-      amount: 50000,
-      date: '2026-08-10',
-      time: '11:30 AM',
-      status: 'Verified'
-    },
-    {
-      id: 'TXN-REC-102',
-      supervisor: 'Rohit Sharma',
-      project: 'Sangamner Eco Toilet',
-      type: 'Bill Adjustment',
-      mode: 'Voucher Claims',
-      utr: 'VCH-SGM-8821',
-      amount: 42000,
-      date: '2026-08-18',
-      time: '02:45 PM',
-      status: 'Verified'
-    },
-    {
-      id: 'TXN-REC-103',
-      supervisor: 'Amit Deshmukh',
-      project: 'Pune Smart City',
-      type: 'Advance Float',
-      mode: 'IMPS / ICICI',
-      utr: 'UTR8819203310',
-      amount: 40000,
-      date: '2026-08-12',
-      time: '10:15 AM',
-      status: 'Verified'
-    },
-    {
-      id: 'TXN-REC-104',
-      supervisor: 'Amit Deshmukh',
-      project: 'Pune Smart City',
-      type: 'Bill Adjustment',
-      mode: 'Voucher Claims',
-      utr: 'VCH-PNE-3390',
-      amount: 36800,
-      date: '2026-08-19',
-      time: '04:30 PM',
-      status: 'Verified'
-    },
-    {
-      id: 'TXN-REC-105',
-      supervisor: 'Sagar Patil',
-      project: 'Nashik Highway Hub',
-      type: 'Advance Float',
-      mode: 'RTGS / SBI',
-      utr: 'UTR7729118842',
-      amount: 50000,
-      date: '2026-08-15',
-      time: '01:20 PM',
-      status: 'Verified'
-    },
-    {
-      id: 'TXN-REC-106',
-      supervisor: 'Sagar Patil',
-      project: 'Nashik Highway Hub',
-      type: 'Bill Adjustment',
-      mode: 'Voucher Claims',
-      utr: 'VCH-NSK-1102',
-      amount: 33200,
-      date: '2026-08-20',
-      time: '05:10 PM',
-      status: 'Pending Audit'
+  const fetchLedger = useCallback(async () => {
+    try {
+      const { data } = await axios.get(`${API}/payments-ledger`);
+      setRawLedger(data.entries || []);
+    } catch (err) {
+      console.error(err);
     }
-  ]);
+  }, []);
+
+  useEffect(() => { fetchLedger(); }, [fetchLedger]);
+
+  const ledgerRecords = useMemo(() => rawLedger
+    .filter(e => e.type === 'Site Advance Disbursal' || e.type === 'Expense Reimbursement')
+    .map(e => {
+      const created = new Date(e.createdAt);
+      return {
+        id: e.id,
+        supervisor: e.paidTo || 'Site Supervisor',
+        project: e.project?.name || '',
+        type: e.type === 'Site Advance Disbursal' ? 'Advance Float' : 'Bill Adjustment',
+        mode: e.paymentMode || '—',
+        utr: e.refNumber || '—',
+        amount: Number(e.amount),
+        date: created.toISOString().split('T')[0],
+        time: created.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' }),
+        status: 'Verified',
+      };
+    }), [rawLedger]);
+
+  // Float state for supervisors — derived live from real projects/expenses/advances:
+  // total advance = disbursed advances for their project, total spent = ops-approved
+  // or accounts-paid expenses for that project (matches GET /projects/:id/wallet).
+  const supervisorFloats = useMemo(() => {
+    return projects
+      .filter(p => p.supervisorId)
+      .map(p => {
+        const totalAdvance = advances
+          .filter(a => a.projectId === p.id && a.rawStatus === 'disbursed')
+          .reduce((sum, a) => sum + a.amount, 0);
+        const totalSpent = expenses
+          .filter(e => e.projectId === p.id && e.status === 'Approved')
+          .reduce((sum, e) => sum + e.amount, 0);
+        const inHand = totalAdvance - totalSpent;
+        const lastLedgerEntry = ledgerRecords
+          .filter(r => r.project === p.name)
+          .sort((a, b) => new Date(b.date) - new Date(a.date))[0];
+        return {
+          id: p.supervisorId,
+          projectId: p.id,
+          name: p.supervisorName,
+          phone: p.supervisorPhone,
+          project: p.name,
+          site: p.location,
+          advance: totalAdvance,
+          settled: totalSpent,
+          status: inHand < 5000 ? 'Low Float' : 'Healthy',
+          lastRef: lastLedgerEntry?.utr || '—',
+          lastDate: lastLedgerEntry?.date || ''
+        };
+      });
+  }, [projects, advances, expenses, ledgerRecords]);
 
   const [searchQuery, setSearchQuery] = useState('');
   const [filterType, setFilterType] = useState('All');
@@ -147,7 +102,7 @@ const ReconciliationTab = ({
 
   // Form states for new float
   const [floatForm, setFloatForm] = useState({
-    supervisorId: 'sup-1',
+    supervisorId: '',
     amount: '',
     mode: 'NEFT / Bank Transfer',
     utr: '',
@@ -160,45 +115,47 @@ const ReconciliationTab = ({
   const totalInHand = totalAdvance - totalSettled;
   const discrepancy = 0; // 100% matched
 
-  const handleIssueFloatSubmit = (e) => {
+  // Issues cash to a supervisor via the real advance-transfer endpoint (auto-approved,
+  // skips the request step since Admin is authorizing it on the spot), then
+  // immediately confirms disbursal (Admin has that authority) so the payment
+  // mode/UTR captured here land in the real ledger straight away.
+  const handleIssueFloatSubmit = async (e) => {
     e.preventDefault();
     if (!floatForm.amount || Number(floatForm.amount) <= 0) {
       toast.error('Please enter a valid amount.');
       return;
     }
-
     const sup = supervisorFloats.find(s => s.id === floatForm.supervisorId);
-    const addedAmount = Number(floatForm.amount);
+    if (!sup) {
+      toast.error('Please select a supervisor.');
+      return;
+    }
 
-    setSupervisorFloats(prev => prev.map(s => {
-      if (s.id === floatForm.supervisorId) {
-        return {
-          ...s,
-          advance: s.advance + addedAmount,
-          lastRef: floatForm.utr || `UTR-${Date.now().toString().slice(-6)}`,
-          lastDate: new Date().toISOString().split('T')[0]
-        };
+    try {
+      const { data } = await axios.post(`${API}/advances/transfer`, {
+        projectId: sup.projectId,
+        supervisorId: sup.id,
+        amount: Number(floatForm.amount),
+        purpose: floatForm.notes || 'Advance float issued by Admin',
+      });
+      try {
+        await axios.patch(`${API}/advances/${data.advance.id}/disburse`, {
+          paidTo: sup.name,
+          paymentMode: floatForm.mode,
+          refNumber: floatForm.utr,
+        });
+      } catch {
+        // Not authorized to disburse directly — the advance stays "Approved"
+        // for Accounts to confirm the payout.
       }
-      return s;
-    }));
-
-    const newLedger = {
-      id: `TXN-REC-${Date.now().toString().slice(-3)}`,
-      supervisor: sup ? sup.name : 'Supervisor',
-      project: sup ? sup.site : 'Site Project',
-      type: 'Advance Float Top-Up',
-      mode: floatForm.mode,
-      utr: floatForm.utr || `UTR-${Date.now().toString().slice(-6)}`,
-      amount: addedAmount,
-      date: new Date().toISOString().split('T')[0],
-      time: new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' }),
-      status: 'Verified'
-    };
-
-    setLedgerRecords([newLedger, ...ledgerRecords]);
-    setIsIssueFloatOpen(false);
-    setFloatForm({ supervisorId: 'sup-1', amount: '', mode: 'NEFT / Bank Transfer', utr: '', notes: '' });
-    toast.success('Advance float issued successfully!');
+      setIsIssueFloatOpen(false);
+      setFloatForm({ supervisorId: '', amount: '', mode: 'NEFT / Bank Transfer', utr: '', notes: '' });
+      toast.success('Advance float issued successfully!');
+      onRefresh && onRefresh();
+      fetchLedger();
+    } catch (err) {
+      toast.error(err.response?.data?.error || 'Failed to issue advance float');
+    }
   };
 
   const handleSettleAccount = (sup) => {
@@ -206,20 +163,22 @@ const ReconciliationTab = ({
     setIsSettleModalOpen(true);
   };
 
-  const confirmSettlement = () => {
+  // Creates a real Settlement record for Accounts to review and close.
+  const confirmSettlement = async () => {
     if (!selectedSupervisor) return;
-    setSupervisorFloats(prev => prev.map(s => {
-      if (s.id === selectedSupervisor.id) {
-        return {
-          ...s,
-          advance: s.settled,
-          status: 'Settled & Balanced'
-        };
-      }
-      return s;
-    }));
-    setIsSettleModalOpen(false);
-    toast.success('Supervisor float account settled & cleared!');
+    try {
+      await axios.post(`${API}/settlements`, {
+        projectId: selectedSupervisor.projectId,
+        supervisorId: selectedSupervisor.id,
+        totalAdvanceGiven: selectedSupervisor.advance,
+        totalApprovedExpenses: selectedSupervisor.settled,
+      });
+      setIsSettleModalOpen(false);
+      toast.success('Float account flagged for settlement — forwarded to Accounts for final closure!');
+      onRefresh && onRefresh();
+    } catch (err) {
+      toast.error(err.response?.data?.error || 'Failed to create settlement');
+    }
   };
 
   const filteredLedger = ledgerRecords.filter(rec => {
@@ -937,7 +896,7 @@ const ReconciliationTab = ({
             <tbody>
               {supervisorFloats.map((sup, idx) => {
                 const inHand = sup.advance - sup.settled;
-                const percentSpent = Math.round((sup.settled / sup.advance) * 100);
+                const percentSpent = sup.advance > 0 ? Math.round((sup.settled / sup.advance) * 100) : 0;
                 const isLowFloat = inHand < 5000;
 
                 return (

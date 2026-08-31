@@ -72,6 +72,7 @@ const Layout = () => {
     { name: 'Site Projects', href: '/operations?tab=projects', tab: 'projects', icon: HardHat },
     { name: 'Site Supervisor', href: '/operations?tab=supervisors', tab: 'supervisors', icon: Users },
     { name: 'Accountant', href: '/operations?tab=accountant', tab: 'accountant', icon: Briefcase },
+    { name: 'Cash & Advance', href: '/operations?tab=reconciliation', tab: 'reconciliation', icon: IndianRupee },
     { name: 'Live Approvals ⚡', href: '/operations?tab=live-ops', tab: 'live-ops', icon: ShieldCheck },
   ];
 
