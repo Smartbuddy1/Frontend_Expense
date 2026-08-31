@@ -71,11 +71,7 @@ const Layout = () => {
     { name: 'Operational Head', href: '/operations?tab=operational-head', tab: 'operational-head', icon: ShieldCheck },
     { name: 'Site Projects', href: '/operations?tab=projects', tab: 'projects', icon: HardHat },
     { name: 'Site Supervisor', href: '/operations?tab=supervisors', tab: 'supervisors', icon: Users },
-    { name: 'Site Team', href: '/operations?tab=team', tab: 'team', icon: UserCheck },
     { name: 'Accountant', href: '/operations?tab=accountant', tab: 'accountant', icon: Briefcase },
-    { name: 'Cash & Advance', href: '/operations?tab=reconciliation', tab: 'reconciliation', icon: IndianRupee },
-    { name: 'Progress Monitoring', href: '/operations?tab=progress', tab: 'progress', icon: TrendingUp },
-    { name: 'Alerts', href: '/operations?tab=alerts', tab: 'alerts', icon: AlertTriangle },
   ];
 
   const currentNav = navigation.find(n => (n.tab && currentTab === n.tab) || location.pathname === n.href) || navigation[0];

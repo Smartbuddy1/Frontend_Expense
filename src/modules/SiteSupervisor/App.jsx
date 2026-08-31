@@ -8,7 +8,6 @@ import Dashboard from './pages/Dashboard';
 import AssignedProjects from './pages/AssignedProjects';
 import RequestAdvance from './pages/RequestAdvance';
 import DailyExpenses from './pages/DailyExpensesNew';
-import UploadBills from './pages/UploadBills';
 import BalanceSettlement from './pages/BalanceSettlement';
 import PublicExpenseForm from './pages/PublicExpenseForm';
 
@@ -43,7 +42,6 @@ function App() {
             <Route path="assigned-projects" element={<AssignedProjects />} />
             <Route path="request-advance" element={<RequestAdvance />} />
             <Route path="daily-expenses" element={<DailyExpenses />} />
-            <Route path="upload-bills" element={<UploadBills />} />
             <Route path="balance-settlement" element={<BalanceSettlement />} />
           </Route>
           

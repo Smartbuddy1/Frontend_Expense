@@ -68,7 +68,6 @@ const Layout = () => {
     { name: t('assignedProjects'), href: '/assigned-projects', icon: Building2 },
     { name: t('requestAdvance'), href: '/request-advance', icon: Banknote },
     { name: t('dailyExpenses'), href: '/daily-expenses', icon: ReceiptText },
-    { name: t('uploadBills'), href: '/upload-bills', icon: UploadCloud },
     { name: t('balanceSettlement'), href: '/balance-settlement', icon: Wallet },
   ];
 

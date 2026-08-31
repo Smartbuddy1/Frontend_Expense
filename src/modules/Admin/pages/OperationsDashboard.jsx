@@ -656,7 +656,7 @@ const OperationsDashboard = () => {
 
   return (
     <div className="space-y-6 max-w-7xl mx-auto pb-12 animate-in fade-in duration-300 font-sans">
-      <Toaster position="top-right" />
+      <Toaster position="top-right" toastOptions={{ duration: 3000 }} />
 
       {/* Tab Contents */}
       {activeTab === 'overview' && (

@@ -317,10 +317,6 @@ const Dashboard = () => {
               <option value="Green Valley Flyover">🌉 Green Valley Flyover</option>
             </select>
           </div>
-
-          <span className="supervisor-badge" style={{ fontSize: '0.75rem', padding: '0.35rem 0.8rem', backgroundColor: `${currentSiteInfo.statusColor}20`, color: currentSiteInfo.statusColor, borderColor: `${currentSiteInfo.statusColor}50` }}>
-            <Sparkles size={12} /> {currentSiteInfo.progress}
-          </span>
         </div>
       </div>
 
