@@ -10,7 +10,7 @@ import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import toast from 'react-hot-toast';
 import { useLanguage } from '../../context/LanguageContext';
-import { addPdfHeaderWithLogo, addPdfFooterWithLogo } from '../../utils/pdfHeaderHelper';
+import { addPdfHeaderWithLogo, addPdfFooterWithLogo, escapeHtml } from '../../utils/pdfHeaderHelper';
 import './operations-dashboard.css';
 
 const ExpensesTab = ({
@@ -176,10 +176,10 @@ const ExpensesTab = ({
       <tr>
         <td style="font-weight: 800; font-family: monospace; text-align: center;">${e.id}</td>
         <td>${e.date}</td>
-        <td><strong>${e.projectName}</strong></td>
-        <td><code>${e.voucherNo || 'VCH-GEN'}</code></td>
-        <td><strong>${e.category}</strong><br/><span style="color:#64748b; font-size:10px;">${e.description}</span></td>
-        <td>${e.supervisorName}</td>
+        <td><strong>${escapeHtml(e.projectName)}</strong></td>
+        <td><code>${escapeHtml(e.voucherNo || 'VCH-GEN')}</code></td>
+        <td><strong>${escapeHtml(e.category)}</strong><br/><span style="color:#64748b; font-size:10px;">${escapeHtml(e.description)}</span></td>
+        <td>${escapeHtml(e.supervisorName)}</td>
         <td style="font-weight: 800; color: #1e3a8a; text-align: right;">₹${(e.amount || 0).toLocaleString('en-IN')}</td>
         <td style="text-align: center;"><span class="badge ${e.status === 'Approved' ? 'badge-approved' : e.status === 'Rejected' ? 'badge-rejected' : 'badge-pending'}">${e.status}</span></td>
       </tr>

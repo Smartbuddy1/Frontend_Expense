@@ -7,7 +7,7 @@ import {
 import toast from 'react-hot-toast';
 import { useLanguage } from '../../context/LanguageContext';
 import { exportToPDF, exportToExcel } from '../../utils/exportUtils';
-import { getCompanyLogoBase64 } from '../../utils/pdfHeaderHelper';
+import { getCompanyLogoBase64, escapeHtml } from '../../utils/pdfHeaderHelper';
 import './operations-dashboard.css';
 
 export const SiteTeamTab = ({
@@ -112,17 +112,17 @@ export const SiteTeamTab = ({
           <tr>
             <td style="padding: 10px 8px; border: 1px solid #cbd5e1; font-weight: bold; text-align: center;">${index + 1}</td>
             <td style="padding: 10px 8px; border: 1px solid #cbd5e1; font-weight: bold; color: #0f172a;">
-              <div style="font-size: 13px; font-weight: 800;">${m.name}</div>
-              <div style="font-size: 11px; color: #64748b; font-weight: normal; margin-top: 2px;">ID: ${m.id}</div>
+              <div style="font-size: 13px; font-weight: 800;">${escapeHtml(m.name)}</div>
+              <div style="font-size: 11px; color: #64748b; font-weight: normal; margin-top: 2px;">ID: ${escapeHtml(m.id)}</div>
             </td>
             <td style="padding: 10px 8px; border: 1px solid #cbd5e1; color: #2563eb; font-weight: 700; font-size: 12px;">
-              ${m.role || 'Field Technician'}
+              ${escapeHtml(m.role || 'Field Technician')}
             </td>
             <td style="padding: 10px 8px; border: 1px solid #cbd5e1; color: #059669; font-weight: 700; font-size: 12px;">
-              ${m.phone || '-'}
+              ${escapeHtml(m.phone || '-')}
             </td>
             <td style="padding: 10px 8px; border: 1px solid #cbd5e1; color: #475569; font-size: 12px;">
-              ${assignedProj ? assignedProj.name : 'Sangamner Eco Toilet Installation'}
+              ${escapeHtml(assignedProj ? assignedProj.name : 'Sangamner Eco Toilet Installation')}
             </td>
             <td style="padding: 10px 8px; border: 1px solid #cbd5e1; text-align: center;">
               <span style="background: #ecfdf5; color: #059669; font-weight: 800; padding: 4px 10px; border-radius: 6px; font-size: 11px; border: 1px solid #a7f3d0; display: inline-block;">

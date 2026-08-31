@@ -6,7 +6,7 @@ import {
 import toast from 'react-hot-toast';
 import { useLanguage } from '../../context/LanguageContext';
 import { exportToPDF, exportToExcel } from '../../utils/exportUtils';
-import { getCompanyLogoBase64 } from '../../utils/pdfHeaderHelper';
+import { getCompanyLogoBase64, escapeHtml } from '../../utils/pdfHeaderHelper';
 
 const ProjectsTab = ({ 
   projects = [], 
@@ -108,16 +108,16 @@ const ProjectsTab = ({
         <tr>
           <td style="padding: 10px 8px; border: 1px solid #cbd5e1; font-weight: bold; text-align: center;">${index + 1}</td>
           <td style="padding: 10px 8px; border: 1px solid #cbd5e1; font-weight: bold; color: #0f172a;">
-            <div style="font-size: 13px; font-weight: 800;">${p.name}</div>
-            <div style="font-size: 11px; color: #64748b; font-weight: normal; margin-top: 2px;">Code: ${p.code || p.id}</div>
+            <div style="font-size: 13px; font-weight: 800;">${escapeHtml(p.name)}</div>
+            <div style="font-size: 11px; color: #64748b; font-weight: normal; margin-top: 2px;">Code: ${escapeHtml(p.code || p.id)}</div>
           </td>
-          <td style="padding: 10px 8px; border: 1px solid #cbd5e1; color: #334155; font-size: 12px;"><strong>${p.client || '-'}</strong></td>
+          <td style="padding: 10px 8px; border: 1px solid #cbd5e1; color: #334155; font-size: 12px;"><strong>${escapeHtml(p.client || '-')}</strong></td>
           <td style="padding: 10px 8px; border: 1px solid #cbd5e1; color: #334155; font-size: 12px;">
-            <strong>${p.supervisorName || '-'}</strong>
-            <div style="font-size: 11px; color: #059669; font-weight: bold; margin-top: 2px;">${p.supervisorPhone || ''}</div>
+            <strong>${escapeHtml(p.supervisorName || '-')}</strong>
+            <div style="font-size: 11px; color: #059669; font-weight: bold; margin-top: 2px;">${escapeHtml(p.supervisorPhone || '')}</div>
           </td>
           <td style="padding: 10px 8px; border: 1px solid #cbd5e1; color: #475569; font-size: 12px;">
-            ${p.location || '-'}
+            ${escapeHtml(p.location || '-')}
           </td>
           <td style="padding: 10px 8px; border: 1px solid #cbd5e1; text-align: center; font-size: 12px; font-weight: bold;">
             ${p.startDate ? p.startDate.split('-').reverse().join('/') : '01/08/2026'}

@@ -9,7 +9,7 @@ import toast from 'react-hot-toast';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import { useLanguage } from '../../context/LanguageContext';
-import { addPdfHeaderWithLogo, addPdfFooterWithLogo } from '../../utils/pdfHeaderHelper';
+import { addPdfHeaderWithLogo, addPdfFooterWithLogo, escapeHtml } from '../../utils/pdfHeaderHelper';
 
 const TeamAssignmentTab = ({
   projects = [],
@@ -196,15 +196,15 @@ const TeamAssignmentTab = ({
         <tr>
           <td style="text-align: center; font-weight: bold;">${idx + 1}</td>
           <td>
-            <strong>${sup.name || 'Supervisor'}</strong><br/>
-            <span style="color: #64748b; font-size: 10px;">${sup.phone || '-'}${sup.email ? ' | ' + sup.email : ''}</span>
+            <strong>${escapeHtml(sup.name || 'Supervisor')}</strong><br/>
+            <span style="color: #64748b; font-size: 10px;">${escapeHtml(sup.phone || '-')}${sup.email ? ' | ' + escapeHtml(sup.email) : ''}</span>
           </td>
           <td>
-            <strong>${projectName}</strong><br/>
-            <span style="color: #64748b; font-size: 10px;">Loc: ${location}</span>
+            <strong>${escapeHtml(projectName)}</strong><br/>
+            <span style="color: #64748b; font-size: 10px;">Loc: ${escapeHtml(location)}</span>
           </td>
           <td>
-            <strong>${clientName}</strong>
+            <strong>${escapeHtml(clientName)}</strong>
           </td>
           <td style="text-align: center;">
             <span class="badge ${statusClass}">${statusText}</span>

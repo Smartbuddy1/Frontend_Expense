@@ -10,7 +10,7 @@ import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import toast from 'react-hot-toast';
 import { useLanguage } from '../../context/LanguageContext';
-import { addPdfHeaderWithLogo, addPdfFooterWithPageNumbers, getCompanyLogoBase64 } from '../../utils/pdfHeaderHelper';
+import { addPdfHeaderWithLogo, addPdfFooterWithPageNumbers, getCompanyLogoBase64, escapeHtml } from '../../utils/pdfHeaderHelper';
 import './operations-dashboard.css';
 
 const ExpensesTab = ({
@@ -175,10 +175,10 @@ const ExpensesTab = ({
       <tr>
         <td style="font-weight: 800; font-family: monospace; text-align: center;">${e.id}</td>
         <td>${e.date}</td>
-        <td><strong>${e.projectName}</strong></td>
-        <td><code>${e.voucherNo || 'VCH-GEN'}</code></td>
-        <td><strong>${e.category}</strong><br/><span style="color:#64748b; font-size:10px;">${e.description}</span></td>
-        <td>${e.supervisorName}</td>
+        <td><strong>${escapeHtml(e.projectName)}</strong></td>
+        <td><code>${escapeHtml(e.voucherNo || 'VCH-GEN')}</code></td>
+        <td><strong>${escapeHtml(e.category)}</strong><br/><span style="color:#64748b; font-size:10px;">${escapeHtml(e.description)}</span></td>
+        <td>${escapeHtml(e.supervisorName)}</td>
         <td style="font-weight: 800; color: #1e3a8a; text-align: right;">₹${(e.amount || 0).toLocaleString('en-IN')}</td>
         <td style="text-align: center;"><span class="badge ${e.status === 'Approved' ? 'badge-approved' : e.status === 'Rejected' ? 'badge-rejected' : 'badge-pending'}">${e.status}</span></td>
       </tr>
@@ -350,11 +350,11 @@ const ExpensesTab = ({
         <tr>
           <td style="padding: 10px 8px; border: 1px solid #cbd5e1; font-weight: bold; text-align: center;">${index + 1}</td>
           <td style="padding: 10px 8px; border: 1px solid #cbd5e1; font-weight: bold; color: #0f172a;">
-            <div>${acc.name}</div>
-            <div style="font-size: 10px; color: #64748b; font-weight: normal;">${acc.email || '-'}</div>
+            <div>${escapeHtml(acc.name)}</div>
+            <div style="font-size: 10px; color: #64748b; font-weight: normal;">${escapeHtml(acc.email || '-')}</div>
           </td>
-          <td style="padding: 10px 8px; border: 1px solid #cbd5e1; color: #059669; font-weight: bold;">${acc.phone || '-'}</td>
-          <td style="padding: 10px 8px; border: 1px solid #cbd5e1; color: #334155;">${acc.branch || 'Head Office - Pune'}</td>
+          <td style="padding: 10px 8px; border: 1px solid #cbd5e1; color: #059669; font-weight: bold;">${escapeHtml(acc.phone || '-')}</td>
+          <td style="padding: 10px 8px; border: 1px solid #cbd5e1; color: #334155;">${escapeHtml(acc.branch || 'Head Office - Pune')}</td>
           <td style="padding: 10px 8px; border: 1px solid #cbd5e1; text-align: center;">
             <span style="background: #ecfdf5; color: #059669; font-weight: 800; padding: 3px 8px; border-radius: 6px; font-size: 10px; border: 1px solid #a7f3d0;">
               ${(acc.status || 'ACTIVE').toUpperCase()}

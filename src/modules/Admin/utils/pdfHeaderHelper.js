@@ -5,6 +5,21 @@ import logoImg from '../assets/logo.png';
  * to jsPDF exports and Print templates across all tabs in ASEMS.
  */
 
+// Print templates build raw HTML strings via template literals and inject them
+// with document.write() — any user-entered field (expense description, purpose,
+// remarks, names) going into one of those strings unescaped is a stored-XSS hole,
+// since it'd run in the app's own origin the next time someone prints that record.
+// Always wrap interpolated user text with this first.
+export const escapeHtml = (value) => {
+  if (value === null || value === undefined) return '';
+  return String(value)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+};
+
 let cachedLogoBase64 = null;
 
 // Fallback vector Aarya logo data URL if image cannot be loaded from filesystem/server

@@ -11,7 +11,7 @@ import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import { useLanguage } from '../../context/LanguageContext';
 import { useSearchParams } from 'react-router-dom';
-import { addPdfHeaderWithLogo, addPdfFooterWithLogo, getCompanyLogoBase64 } from '../../utils/pdfHeaderHelper';
+import { addPdfHeaderWithLogo, addPdfFooterWithLogo, getCompanyLogoBase64, escapeHtml } from '../../utils/pdfHeaderHelper';
 import toast from 'react-hot-toast';
 
 const API = import.meta.env.VITE_API_BASE_URL;
@@ -501,10 +501,10 @@ const ReconciliationTab = ({
       const totalReqAmount = filteredRequisitions.reduce((sum, r) => sum + (Number(r.amount) || 0), 0);
       const reqRows = filteredRequisitions.map((r, idx) => `
         <tr>
-          <td style="text-align:center; font-weight:800; color:#059669;">${r.id}</td>
-          <td><strong>${r.supervisor || 'Rohit Sharma'}</strong></td>
-          <td><strong>${r.site}</strong></td>
-          <td>${r.purpose}</td>
+          <td style="text-align:center; font-weight:800; color:#059669;">${escapeHtml(r.id)}</td>
+          <td><strong>${escapeHtml(r.supervisor || 'Rohit Sharma')}</strong></td>
+          <td><strong>${escapeHtml(r.site)}</strong></td>
+          <td>${escapeHtml(r.purpose)}</td>
           <td style="text-align:center;">
             <span style="padding:2px 7px; border-radius:6px; font-weight:700; font-size:9.5px; background:${r.urgencyType === 'high' ? '#fee2e2; color:#dc2626;' : '#dbeafe; color:#2563eb;'}">
               ${r.urgency}
@@ -623,12 +623,12 @@ const ReconciliationTab = ({
       return `
       <tr>
         <td style="text-align:center; font-weight:bold;">${idx + 1}</td>
-        <td><strong>${s.name}</strong><br/><span style="color:#2563eb; font-weight:700; font-size:10px;">${s.phone || '-'}</span></td>
-        <td><strong>${s.site}</strong><br/><span style="color:#64748b; font-size:10px;">${s.project}</span></td>
+        <td><strong>${escapeHtml(s.name)}</strong><br/><span style="color:#2563eb; font-weight:700; font-size:10px;">${escapeHtml(s.phone || '-')}</span></td>
+        <td><strong>${escapeHtml(s.site)}</strong><br/><span style="color:#64748b; font-size:10px;">${escapeHtml(s.project)}</span></td>
         <td style="text-align:right; font-weight:800;">₹${(s.advance || 0).toLocaleString('en-IN')}</td>
         <td style="text-align:right; font-weight:800; color:#2563eb;">₹${(s.settled || 0).toLocaleString('en-IN')}</td>
         <td style="text-align:right; font-weight:900; color:${((s.advance || 0) - (s.settled || 0)) < 5000 ? '#dc2626;' : '#059669;'}">₹${((s.advance || 0) - (s.settled || 0)).toLocaleString('en-IN')}</td>
-        <td style="text-align:center;">${supReq ? `<strong style="color:#b45309;">₹${supReq.amount.toLocaleString('en-IN')}</strong><br/><span style="font-size:9px; color:#b45309;">${supReq.id} (Pending)</span>` : '<span style="color:#94a3b8;">None</span>'}</td>
+        <td style="text-align:center;">${supReq ? `<strong style="color:#b45309;">₹${supReq.amount.toLocaleString('en-IN')}</strong><br/><span style="font-size:9px; color:#b45309;">${escapeHtml(supReq.id)} (Pending)</span>` : '<span style="color:#94a3b8;">None</span>'}</td>
         <td style="text-align:center;"><span style="padding:2px 7px; border-radius:9999px; font-weight:800; font-size:9px; background:${((s.advance || 0) - (s.settled || 0)) < 5000 ? '#fee2e2; color:#b91c1c;' : '#dcfce7; color:#15803d;'}">${((s.advance || 0) - (s.settled || 0)) < 5000 ? 'Low Cash' : 'Available'}</span></td>
       </tr>
     `;
@@ -815,19 +815,19 @@ const ReconciliationTab = ({
             <table class="meta-table">
               <tr>
                 <td class="label">Transaction Ref / UTR No:</td>
-                <td class="val"><code style="background:#f1f5f9; padding:3px 6px; border-radius:4px; font-size:14px;">${record.utr}</code></td>
+                <td class="val"><code style="background:#f1f5f9; padding:3px 6px; border-radius:4px; font-size:14px;">${escapeHtml(record.utr)}</code></td>
               </tr>
               <tr>
                 <td class="label">Site / Project Location:</td>
-                <td class="val">${record.project}</td>
+                <td class="val">${escapeHtml(record.project)}</td>
               </tr>
               <tr>
                 <td class="label">Assigned Site Supervisor:</td>
-                <td class="val">${record.supervisor}</td>
+                <td class="val">${escapeHtml(record.supervisor)}</td>
               </tr>
               <tr>
                 <td class="label">Payment Type & Mode:</td>
-                <td class="val">${record.type} (${record.mode})</td>
+                <td class="val">${escapeHtml(record.type)} (${escapeHtml(record.mode)})</td>
               </tr>
               <tr>
                 <td class="label">Audit Status:</td>

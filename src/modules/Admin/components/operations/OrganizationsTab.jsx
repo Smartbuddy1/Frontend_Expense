@@ -7,7 +7,7 @@ import {
 import toast from 'react-hot-toast';
 import { useLanguage } from '../../context/LanguageContext';
 import { exportToPDF, exportToExcel } from '../../utils/exportUtils';
-import { getCompanyLogoBase64 } from '../../utils/pdfHeaderHelper';
+import { getCompanyLogoBase64, escapeHtml } from '../../utils/pdfHeaderHelper';
 import { initialOperationalHeads } from '../../data/operationsData';
 import CreateOperationalHeadModal from './modals/CreateOperationalHeadModal';
 import './operations-dashboard.css';
@@ -161,9 +161,9 @@ export const OrganizationsTab = ({
       const tableRowsHtml = filteredHeads.map((h, index) => `
         <tr>
           <td style="padding: 10px 8px; border: 1px solid #cbd5e1; font-weight: bold; text-align: center;">${index + 1}</td>
-          <td style="padding: 10px 8px; border: 1px solid #cbd5e1; font-weight: bold; color: #0f172a;">${h.name}</td>
-          <td style="padding: 10px 8px; border: 1px solid #cbd5e1; color: #059669; font-weight: bold;">${h.phone || '-'}</td>
-          <td style="padding: 10px 8px; border: 1px solid #cbd5e1; color: #475569;">${h.email || '-'}</td>
+          <td style="padding: 10px 8px; border: 1px solid #cbd5e1; font-weight: bold; color: #0f172a;">${escapeHtml(h.name)}</td>
+          <td style="padding: 10px 8px; border: 1px solid #cbd5e1; color: #059669; font-weight: bold;">${escapeHtml(h.phone || '-')}</td>
+          <td style="padding: 10px 8px; border: 1px solid #cbd5e1; color: #475569;">${escapeHtml(h.email || '-')}</td>
         </tr>
       `).join('');
 

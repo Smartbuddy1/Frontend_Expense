@@ -9,7 +9,7 @@ import {
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import { useLanguage } from '../../context/LanguageContext';
-import { addPdfHeaderWithLogo, addPdfFooterWithPageNumbers, getCompanyLogoBase64 } from '../../utils/pdfHeaderHelper';
+import { addPdfHeaderWithLogo, addPdfFooterWithPageNumbers, getCompanyLogoBase64, escapeHtml } from '../../utils/pdfHeaderHelper';
 import toast from 'react-hot-toast';
 
 const API = import.meta.env.VITE_API_BASE_URL;
@@ -271,8 +271,8 @@ const ReconciliationTab = ({
           <tbody>
             ${supervisorFloats.map(s => `
               <tr>
-                <td><strong>${s.name}</strong><br/><span style="color:#64748b;">${s.phone}</span></td>
-                <td><strong>${s.site}</strong><br/><span style="color:#64748b;">${s.project}</span></td>
+                <td><strong>${escapeHtml(s.name)}</strong><br/><span style="color:#64748b;">${escapeHtml(s.phone)}</span></td>
+                <td><strong>${escapeHtml(s.site)}</strong><br/><span style="color:#64748b;">${escapeHtml(s.project)}</span></td>
                 <td><strong>₹${s.advance.toLocaleString('en-IN')}</strong></td>
                 <td style="color:#2563eb; font-weight:bold;">₹${s.settled.toLocaleString('en-IN')}</td>
                 <td><strong style="color:${(s.advance - s.settled) < 5000 ? '#b91c1c' : '#15803d'}; font-size:12px;">₹${(s.advance - s.settled).toLocaleString('en-IN')}</strong></td>
@@ -298,12 +298,12 @@ const ReconciliationTab = ({
           <tbody>
             ${filteredLedger.map(l => `
               <tr>
-                <td><strong>${l.id}</strong></td>
+                <td><strong>${escapeHtml(l.id)}</strong></td>
                 <td>${l.date || '23 Aug 2026'}</td>
-                <td><strong>${l.project}</strong></td>
-                <td>${l.type}<br/><span style="color:#64748b;">${l.mode}</span></td>
-                <td><code style="background:#f1f5f9; padding:2px 4px; border-radius:3px;">${l.utr}</code></td>
-                <td>${l.supervisor}</td>
+                <td><strong>${escapeHtml(l.project)}</strong></td>
+                <td>${escapeHtml(l.type)}<br/><span style="color:#64748b;">${escapeHtml(l.mode)}</span></td>
+                <td><code style="background:#f1f5f9; padding:2px 4px; border-radius:3px;">${escapeHtml(l.utr)}</code></td>
+                <td>${escapeHtml(l.supervisor)}</td>
                 <td><strong>₹${l.amount.toLocaleString('en-IN')}</strong></td>
               </tr>
             `).join('')}
@@ -491,19 +491,19 @@ const ReconciliationTab = ({
             <table class="meta-table">
               <tr>
                 <td class="label">Transaction Ref / UTR No:</td>
-                <td class="val"><code style="background:#f1f5f9; padding:3px 6px; border-radius:4px; font-size:14px;">${record.utr}</code></td>
+                <td class="val"><code style="background:#f1f5f9; padding:3px 6px; border-radius:4px; font-size:14px;">${escapeHtml(record.utr)}</code></td>
               </tr>
               <tr>
                 <td class="label">Site / Project Location:</td>
-                <td class="val">${record.project}</td>
+                <td class="val">${escapeHtml(record.project)}</td>
               </tr>
               <tr>
                 <td class="label">Assigned Site Supervisor:</td>
-                <td class="val">${record.supervisor}</td>
+                <td class="val">${escapeHtml(record.supervisor)}</td>
               </tr>
               <tr>
                 <td class="label">Payment Type & Mode:</td>
-                <td class="val">${record.type} (${record.mode})</td>
+                <td class="val">${escapeHtml(record.type)} (${escapeHtml(record.mode)})</td>
               </tr>
               <tr>
                 <td class="label">Audit Status:</td>
