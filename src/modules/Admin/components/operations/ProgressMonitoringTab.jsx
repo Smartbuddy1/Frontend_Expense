@@ -20,8 +20,15 @@ const ProgressMonitoringTab = ({
   const [searchQuery, setSearchQuery] = useState('');
   const [activeSubTab, setActiveSubTab] = useState('projects'); // 'projects' or 'logs'
 
-  // Limit to 3 core active projects or full list
-  const displayProjects = projects.slice(0, 3);
+  const displayProjects = projects;
+
+  const avgProgress = projects.length > 0
+    ? (projects.reduce((sum, p) => sum + (p.progress || 0), 0) / projects.length).toFixed(1)
+    : '0.0';
+  const activeMilestoneCount = projects.reduce(
+    (sum, p) => sum + (p.milestones || []).filter(m => m.status !== 'Completed').length,
+    0
+  );
 
   // Filtered projects
   const filteredProjects = displayProjects.filter(p => {
@@ -203,7 +210,7 @@ const ProgressMonitoringTab = ({
           onMouseLeave={(e) => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = '0 1px 4px rgba(0,0,0,0.03)'; e.currentTarget.style.borderColor = '#e2e8f0'; }}
         >
           <span style={{ fontSize: '0.82rem', color: '#64748b', fontWeight: '800', textTransform: 'uppercase', letterSpacing: '0.04em' }}>Total Sites</span>
-          <div style={{ fontSize: '1.55rem', fontWeight: '900', color: '#0f172a', marginTop: '0.15rem' }}>3 Sites</div>
+          <div style={{ fontSize: '1.55rem', fontWeight: '900', color: '#0f172a', marginTop: '0.15rem' }}>{projects.length} Sites</div>
         </div>
 
         {/* Card 2: Avg Progress -> Switches to Projects Progress Table */}
@@ -223,7 +230,7 @@ const ProgressMonitoringTab = ({
           onMouseLeave={(e) => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = '0 1px 4px rgba(0,0,0,0.03)'; e.currentTarget.style.borderColor = activeSubTab === 'projects' ? '#10b981' : '#e2e8f0'; }}
         >
           <span style={{ fontSize: '0.82rem', color: '#64748b', fontWeight: '800', textTransform: 'uppercase', letterSpacing: '0.04em' }}>Avg Progress</span>
-          <div style={{ fontSize: '1.55rem', fontWeight: '900', color: '#10b981', marginTop: '0.15rem' }}>57.3%</div>
+          <div style={{ fontSize: '1.55rem', fontWeight: '900', color: '#10b981', marginTop: '0.15rem' }}>{avgProgress}%</div>
         </div>
 
         {/* Card 3: Jobs -> Opens Update Milestone Modal or highlights milestones */}
@@ -249,7 +256,7 @@ const ProgressMonitoringTab = ({
           onMouseLeave={(e) => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = '0 1px 4px rgba(0,0,0,0.03)'; e.currentTarget.style.borderColor = '#e2e8f0'; }}
         >
           <span style={{ fontSize: '0.82rem', color: '#64748b', fontWeight: '800', textTransform: 'uppercase', letterSpacing: '0.04em' }}>Active Tasks</span>
-          <div style={{ fontSize: '1.55rem', fontWeight: '900', color: '#8b5cf6', marginTop: '0.15rem' }}>15 Tasks</div>
+          <div style={{ fontSize: '1.55rem', fontWeight: '900', color: '#8b5cf6', marginTop: '0.15rem' }}>{activeMilestoneCount} Tasks</div>
         </div>
 
         {/* Card 4: Daily Site Reports -> Switches to Daily Site Logs Table */}

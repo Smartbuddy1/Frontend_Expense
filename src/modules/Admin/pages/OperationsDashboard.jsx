@@ -6,11 +6,6 @@ import {
 } from 'lucide-react';
 import toast, { Toaster } from 'react-hot-toast';
 
-import {
-  initialExpenses,
-  initialSiteLogs
-} from '../data/operationsData';
-
 const API = import.meta.env.VITE_API_BASE_URL;
 
 const STATUS_TO_DISPLAY = { planned: 'Planned', active: 'In Progress', on_hold: 'On Hold', completed: 'Completed' };
@@ -143,6 +138,23 @@ const mapAdvance = (a) => ({
   date: a.createdAt,
 });
 
+const mapSiteLog = (log) => {
+  const created = new Date(log.date || log.createdAt);
+  return {
+    id: log.id,
+    projectId: log.projectId,
+    projectName: log.project?.name || 'Site Project',
+    supervisorName: log.supervisor?.name || 'Site Supervisor',
+    date: created.toISOString().split('T')[0],
+    time: created.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' }),
+    title: log.title,
+    workSummary: log.workSummary || '',
+    laborCount: log.laborCount || 0,
+    issues: log.issues || 'None',
+    status: log.status === 'verified' ? 'Verified' : 'Active',
+  };
+};
+
 import OperationsOverview from '../components/operations/OperationsOverview';
 import ProjectsTab from '../components/operations/ProjectsTab';
 import OrganizationsTab from '../components/operations/OrganizationsTab';
@@ -186,9 +198,7 @@ const OperationsDashboard = () => {
     setSearchParams({ tab });
   };
 
-  // Projects, supervisors, team members, organizations, and accountants all
-  // come from the real backend now. Expenses/site logs below are still the
-  // original mock data — see docs/03-frontend-status.md for what's real vs not.
+  // Everything below comes from the real backend now.
   const [projects, setProjects] = useState([]);
   const [supervisors, setSupervisors] = useState([]);
   const [teamMembers, setTeamMembers] = useState([]);
@@ -197,12 +207,13 @@ const OperationsDashboard = () => {
   const [operationalHeads, setOperationalHeads] = useState([]);
   const [expenses, setExpenses] = useState([]);
   const [advances, setAdvances] = useState([]);
+  const [siteLogs, setSiteLogs] = useState([]);
   const [loadingCore, setLoadingCore] = useState(true);
 
   const fetchCore = useCallback(async () => {
     setLoadingCore(true);
     try {
-      const [projRes, supRes, teamRes, orgRes, accRes, headsRes, expRes, advRes] = await Promise.all([
+      const [projRes, supRes, teamRes, orgRes, accRes, headsRes, expRes, advRes, logsRes] = await Promise.all([
         axios.get(`${API}/projects`, { params: { pageSize: 100 } }),
         axios.get(`${API}/users`, { params: { role: 'site_supervisor' } }),
         axios.get(`${API}/team-members`),
@@ -211,6 +222,7 @@ const OperationsDashboard = () => {
         axios.get(`${API}/operational-heads`),
         axios.get(`${API}/expenses`, { params: { pageSize: 100 } }),
         axios.get(`${API}/advances`),
+        axios.get(`${API}/site-logs`),
       ]);
       setProjects(projRes.data.projects.map(mapProject));
       setSupervisors(supRes.data.users.map(mapSupervisor));
@@ -220,6 +232,7 @@ const OperationsDashboard = () => {
       setOperationalHeads(headsRes.data.operationalHeads.map(mapOperationalHead));
       setExpenses(expRes.data.expenses.map(mapExpense));
       setAdvances(advRes.data.advances.map(mapAdvance));
+      setSiteLogs(logsRes.data.siteLogs.map(mapSiteLog));
     } catch (err) {
       toast.error('Could not load live operations data from the server');
       console.error(err);
@@ -229,16 +242,6 @@ const OperationsDashboard = () => {
   }, []);
 
   useEffect(() => { fetchCore(); }, [fetchCore]);
-
-  const [siteLogs, setSiteLogs] = useState(() => {
-    const saved = localStorage.getItem('asems_v2_sitelogs');
-    return saved ? JSON.parse(saved) : initialSiteLogs;
-  });
-
-  // Save changes to localStorage (site logs only — the rest is real now)
-  useEffect(() => {
-    localStorage.setItem('asems_v2_sitelogs', JSON.stringify(siteLogs));
-  }, [siteLogs]);
 
   // Modal States
   const [isCreateOrgOpen, setIsCreateOrgOpen] = useState(false);
@@ -571,44 +574,85 @@ const OperationsDashboard = () => {
     }
   };
 
-  const handleUpdateProgress = (updateData) => {
+  const handleUpdateProgress = async (updateData) => {
     const { projectId, progress, health, milestones, status, newLog } = updateData;
-    
-    // Update project
-    setProjects(prev => prev.map(p => {
-      if (p.id === projectId) {
-        return {
-          ...p,
-          progress,
-          health,
-          milestones,
-          status
-        };
+    try {
+      const patchBody = { progress };
+      if (DISPLAY_TO_HEALTH[health]) patchBody.health = DISPLAY_TO_HEALTH[health];
+      if (DISPLAY_TO_STATUS[status]) patchBody.status = DISPLAY_TO_STATUS[status];
+      else if (health === 'Completed') patchBody.status = 'completed';
+      await axios.patch(`${API}/projects/${projectId}`, patchBody);
+
+      const original = projects.find(p => p.id === projectId);
+      const originalMilestones = original?.milestones || [];
+      await Promise.all((milestones || []).map(async (m) => {
+        const orig = originalMilestones.find(om => om.id === m.id);
+        if (orig && orig.status !== m.status) {
+          await axios.patch(`${API}/projects/${projectId}/milestones/${m.id}`, { status: m.status });
+        }
+      }));
+
+      if (newLog) {
+        await axios.post(`${API}/site-logs`, {
+          projectId,
+          title: newLog.title,
+          workSummary: newLog.workSummary,
+          laborCount: newLog.laborCount,
+          issues: newLog.issues && newLog.issues !== 'None' ? newLog.issues : undefined,
+        });
       }
-      return p;
-    }));
 
-    // Prepend new site log
-    if (newLog) {
-      setSiteLogs(prev => [newLog, ...prev]);
-    }
-
-    toast.success(`Site progress updated to ${progress}%!`);
-  };
-
-  const handleResetData = () => {
-    if (window.confirm('Reset Operations Module to default demo datasets?')) {
-      setProjects(initialProjects);
-      setSupervisors(initialSupervisors);
-      setTeamMembers(initialTeamMembers);
-      setExpenses(initialExpenses);
-      setSiteLogs(initialSiteLogs);
-      localStorage.clear();
-      toast.success('Operations demo data reset successfully.');
+      toast.success(`Site progress updated to ${progress}%!`);
+      await fetchCore();
+    } catch (err) {
+      toast.error(err.response?.data?.error || 'Failed to update progress');
     }
   };
 
   const pendingExpensesCount = expenses.filter(e => e.status === 'Pending').length;
+
+  // Real, live alerts derived from actual project/wallet data — not stored
+  // anywhere, recomputed on every fetch from whatever's actually true right now.
+  const liveAlerts = [];
+  projects.forEach(p => {
+    if (p.health === 'At Risk' || p.health === 'Delayed') {
+      liveAlerts.push({
+        id: `health-${p.id}`,
+        projectCode: p.code,
+        projectName: p.name,
+        supervisor: p.supervisorName || 'Unassigned',
+        phone: p.supervisorPhone || '-',
+        location: p.location || p.site || '-',
+        type: 'Project Health',
+        priority: p.health === 'Delayed' ? 'High' : 'Medium',
+        title: `Project marked "${p.health}"`,
+        description: `${p.name} is at ${p.progress || 0}% progress and currently flagged ${p.health}. Review recent site logs and coordinate with the supervisor.`,
+        time: 'Live',
+        actionTaken: ''
+      });
+    }
+    if (p.supervisorId) {
+      const totalAdvance = advances.filter(a => a.projectId === p.id && a.rawStatus === 'disbursed').reduce((s, a) => s + a.amount, 0);
+      const totalSpent = expenses.filter(e => e.projectId === p.id && e.status === 'Approved').reduce((s, e) => s + e.amount, 0);
+      const inHand = totalAdvance - totalSpent;
+      if (totalAdvance > 0 && inHand < 5000) {
+        liveAlerts.push({
+          id: `lowcash-${p.id}`,
+          projectCode: p.code,
+          projectName: p.name,
+          supervisor: p.supervisorName || 'Unassigned',
+          phone: p.supervisorPhone || '-',
+          location: p.location || p.site || '-',
+          type: 'Low Site Float',
+          priority: inHand < 0 ? 'High' : 'Medium',
+          title: `Low cash in hand: ₹${inHand.toLocaleString('en-IN')}`,
+          description: `${p.supervisorName || 'The supervisor'} has only ₹${inHand.toLocaleString('en-IN')} left on site at ${p.name}. Consider issuing an advance float.`,
+          time: 'Live',
+          actionTaken: ''
+        });
+      }
+    }
+  });
 
   return (
     <div className="space-y-6 max-w-7xl mx-auto pb-12 animate-in fade-in duration-300 font-sans">
@@ -727,6 +771,7 @@ const OperationsDashboard = () => {
 
       {activeTab === 'alerts' && (
         <AlertsTab
+          alerts={liveAlerts}
           onSelectProject={(p) => { setSelectedProjectDetail(p); setIsProjectDetailOpen(true); }}
         />
       )}

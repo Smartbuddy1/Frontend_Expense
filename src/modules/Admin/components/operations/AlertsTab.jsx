@@ -9,72 +9,36 @@ import { useLanguage } from '../../context/LanguageContext';
 import { exportToPDF, exportToExcel } from '../../utils/exportUtils';
 import './operations-dashboard.css';
 
-export const AlertsTab = ({ onSelectProject }) => {
+export const AlertsTab = ({ alerts: rawAlerts = [], onSelectProject }) => {
   const { language } = useLanguage();
   const [filterType, setFilterType] = useState('all');
   const [searchTerm, setSearchTerm] = useState('');
 
-  const [alerts, setAlerts] = useState([
-    {
-      id: 'ALT-SGM-01',
-      projectCode: 'Sangamner-P1',
-      projectName: 'Sangamner Eco Toilet Installation - Site P1',
-      supervisor: 'Rohit Sharma',
-      phone: '+91 98220 11223',
-      location: 'Sangamner Bus Stand, Maharashtra',
-      type: 'Municipal Delay',
-      priority: 'High',
-      title: 'Municipal Water Hookup Line Approval Delayed',
-      description: 'Excavation and underground pipeline laying complete. Awaiting municipal junction connection approval from Sangamner Council.',
-      time: '1 hour ago',
-      status: 'Open',
-      actionTaken: 'Escalated to local ward officer for expedited permission.'
-    },
-    {
-      id: 'ALT-NSK-02',
-      projectCode: 'Nashik-P3',
-      projectName: 'Nashik Highway Eco Sanitation - Site P3',
-      supervisor: 'Sagar Patil',
-      phone: '+91 94220 88990',
-      location: 'Highway KM 145, Nashik',
-      type: 'Safety & Quality',
-      priority: 'Medium',
-      title: 'Bio-Digester Valve Seal Hydrostatic Pressure Check Due',
-      description: 'Hydrostatic pressure check scheduled before backfilling trench. Requires QC sign-off before concrete slab casing.',
-      time: '3 hours ago',
-      status: 'Open',
-      actionTaken: 'QC technician dispatched to site with pressure calibration gauge.'
-    },
-    {
-      id: 'ALT-PUN-03',
-      projectCode: 'Pune-P2',
-      projectName: 'Pune Smart City E-Toilet Cluster - Site P2',
-      supervisor: 'Amit Deshmukh',
-      phone: '+91 98230 45678',
-      location: 'Shivajinagar & Swargate Junction, Pune',
-      type: 'Material Shortage',
-      priority: 'Medium',
-      title: 'Additional 4-Core Armored Cable Required (40m)',
-      description: 'Site supervisor Amit requested 40m 4-core armored electrical cable for final hookup between distribution pillar and smart coin kiosk.',
-      time: '5 hours ago',
-      status: 'Open',
-      actionTaken: 'Local procurement purchase order initiated.'
-    }
-  ]);
+  // Alerts are computed live from real project/wallet data by the dashboard —
+  // there's no backend "resolve" for a live condition, so dismissing one here
+  // just hides it from this view for the session; it comes back on the next
+  // fetch if the underlying condition (still at risk, still low on cash) hasn't
+  // actually changed.
+  const [dismissedIds, setDismissedIds] = useState(() => new Set());
+  const alerts = rawAlerts.map(a => ({ ...a, status: dismissedIds.has(a.id) ? 'Resolved' : 'Open' }));
 
   const handleResolve = (id) => {
-    setAlerts(prev => prev.map(a => a.id === id ? { ...a, status: a.status === 'Resolved' ? 'Open' : 'Resolved' } : a));
+    setDismissedIds(prev => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id); else next.add(id);
+      return next;
+    });
   };
 
   const openCount = alerts.filter(a => a.status === 'Open').length;
   const highCount = alerts.filter(a => a.priority === 'High' && a.status === 'Open').length;
-  const materialCount = alerts.filter(a => (a.type?.toLowerCase().includes('material') || a.title?.toLowerCase().includes('cable')) && a.status === 'Open').length;
+  const lowFloatCount = alerts.filter(a => a.type === 'Low Site Float' && a.status === 'Open').length;
 
   const filteredAlerts = alerts.filter(alert => {
     let matchesFilter = true;
     if (filterType === 'open') matchesFilter = alert.status === 'Open';
     else if (filterType === 'high') matchesFilter = alert.priority === 'High' && alert.status === 'Open';
-    else if (filterType === 'material') matchesFilter = alert.type?.toLowerCase().includes('material') || alert.title?.toLowerCase().includes('cable') || alert.title?.toLowerCase().includes('material');
+    else if (filterType === 'material') matchesFilter = alert.type === 'Low Site Float';
     else if (filterType === 'resolved') matchesFilter = alert.status === 'Resolved';
 
     const matchesSearch = alert.projectCode.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -154,9 +118,9 @@ export const AlertsTab = ({ onSelectProject }) => {
             <span>{language === 'mr' ? 'महत्त्वाचे अलर्ट्स' : 'Alerts'}</span>
           </h1>
           <p className="dash-header-sub" style={{ margin: '0.25rem 0 0 0' }}>
-            {language === 'mr' 
-              ? 'सुरक्षा, स्थानिक परवानगी, साहित्याचा तुटवडा आणि त्वरित लक्ष देण्याच्या सूचना.' 
-              : 'Live site safety, municipal clearances, material shortages & critical escalations across active projects.'}
+            {language === 'mr'
+              ? 'प्रकल्पाची तब्येत आणि साइटवरील कमी रोख शिल्लक याबद्दल थेट सूचना.'
+              : 'Live alerts on project health and low cash-on-site across active projects.'}
           </p>
         </div>
 
@@ -339,10 +303,10 @@ export const AlertsTab = ({ onSelectProject }) => {
             e.currentTarget.style.transform = 'translateY(0)';
             e.currentTarget.style.boxShadow = filterType === 'material' ? '0 6px 16px rgba(234, 179, 8, 0.15)' : '0 1px 4px rgba(0,0,0,0.03)';
           }}
-          title="Click to filter Material Shortage Requests"
+          title="Click to filter Low Cash Float Alerts"
         >
-          <span style={{ fontSize: '0.82rem', color: '#64748b', fontWeight: '800', textTransform: 'uppercase', letterSpacing: '0.04em' }}>Material Shortage</span>
-          <div style={{ fontSize: '1.55rem', fontWeight: '900', color: '#ca8a04', marginTop: '0.15rem' }}>{materialCount || 1} Request</div>
+          <span style={{ fontSize: '0.82rem', color: '#64748b', fontWeight: '800', textTransform: 'uppercase', letterSpacing: '0.04em' }}>Low Cash Float</span>
+          <div style={{ fontSize: '1.55rem', fontWeight: '900', color: '#ca8a04', marginTop: '0.15rem' }}>{lowFloatCount} Sites</div>
         </div>
       </div>
 
@@ -385,7 +349,7 @@ export const AlertsTab = ({ onSelectProject }) => {
             { id: 'all', label: 'All Alerts' },
             { id: 'open', label: `Open (${openCount})` },
             { id: 'high', label: 'Emergency' },
-            { id: 'material', label: `Material (${materialCount || 1})` },
+            { id: 'material', label: `Low Cash Float (${lowFloatCount})` },
             { id: 'resolved', label: 'Resolved' }
           ].map(f => (
             <button

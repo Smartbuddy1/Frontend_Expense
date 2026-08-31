@@ -22,7 +22,8 @@ import {
   Globe,
   Languages,
   Scale,
-  IndianRupee
+  IndianRupee,
+  TrendingUp
 } from 'lucide-react';
 import Footer from './Footer';
 import AsemsLogo from './AsemsLogo';
@@ -104,6 +105,18 @@ const Layout = () => {
       href: '/operations?tab=reconciliation',
       icon: Scale,
       tab: 'reconciliation',
+    },
+    {
+      name: 'Progress Monitoring',
+      href: '/operations?tab=progress',
+      icon: TrendingUp,
+      tab: 'progress',
+    },
+    {
+      name: 'Alerts',
+      href: '/operations?tab=alerts',
+      icon: AlertTriangle,
+      tab: 'alerts',
     },
   ];
 

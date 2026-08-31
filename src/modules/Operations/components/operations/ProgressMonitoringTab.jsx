@@ -17,8 +17,7 @@ const ProgressMonitoringTab = ({
   const [selectedProjectId, setSelectedProjectId] = useState('All');
   const [searchQuery, setSearchQuery] = useState('');
 
-  // Limit to 3 projects
-  const displayProjects = projects.slice(0, 3);
+  const displayProjects = projects;
 
   // Filtered projects
   const filteredProjects = selectedProjectId === 'All' 

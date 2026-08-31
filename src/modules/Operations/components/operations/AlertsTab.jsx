@@ -6,61 +6,24 @@ import {
 import { useLanguage } from '../../context/LanguageContext';
 import './operations-dashboard.css';
 
-export const AlertsTab = ({ onSelectProject }) => {
+export const AlertsTab = ({ alerts: rawAlerts = [], onSelectProject }) => {
   const { language } = useLanguage();
   const [filterType, setFilterType] = useState('all');
   const [searchTerm, setSearchTerm] = useState('');
 
-  const [alerts, setAlerts] = useState([
-    {
-      id: 'ALT-SGM-01',
-      projectCode: 'Sangamner-P1',
-      projectName: 'Sangamner Eco Toilet Installation - Site P1',
-      supervisor: 'Rohit Sharma',
-      phone: '+91 98220 11223',
-      location: 'Sangamner Bus Stand, Maharashtra',
-      type: 'Municipal Delay',
-      priority: 'High',
-      title: 'Municipal Water Hookup Line Approval Delayed',
-      description: 'Excavation and underground pipeline laying complete. Awaiting municipal junction connection approval from Sangamner Council.',
-      time: '1 hour ago',
-      status: 'Open',
-      actionTaken: 'Escalated to local ward officer for expedited permission.'
-    },
-    {
-      id: 'ALT-NSK-02',
-      projectCode: 'Nashik-P3',
-      projectName: 'Nashik Highway Eco Sanitation - Site P3',
-      supervisor: 'Sagar Patil',
-      phone: '+91 94220 88990',
-      location: 'Highway KM 145, Nashik',
-      type: 'Safety & Quality',
-      priority: 'Medium',
-      title: 'Bio-Digester Valve Seal Hydrostatic Pressure Check Due',
-      description: 'Hydrostatic pressure check scheduled before backfilling trench. Requires QC sign-off before concrete slab casing.',
-      time: '3 hours ago',
-      status: 'Open',
-      actionTaken: 'QC technician dispatched to site with pressure calibration gauge.'
-    },
-    {
-      id: 'ALT-PUN-03',
-      projectCode: 'Pune-P2',
-      projectName: 'Pune Smart City E-Toilet Cluster - Site P2',
-      supervisor: 'Amit Deshmukh',
-      phone: '+91 98230 45678',
-      location: 'Shivajinagar & Swargate Junction, Pune',
-      type: 'Material Shortage',
-      priority: 'Medium',
-      title: 'Additional 4-Core Armored Cable Required (40m)',
-      description: 'Site supervisor Amit requested 40m 4-core armored electrical cable for final hookup between distribution pillar and smart coin kiosk.',
-      time: '5 hours ago',
-      status: 'Open',
-      actionTaken: 'Local procurement purchase order initiated.'
-    }
-  ]);
+  // Alerts are computed live from real project/wallet data by the dashboard —
+  // there's no backend "resolve" for a live condition, so dismissing one here
+  // just hides it from this view for the session; it comes back on the next
+  // fetch if the underlying condition hasn't actually changed.
+  const [dismissedIds, setDismissedIds] = useState(() => new Set());
+  const alerts = rawAlerts.map(a => ({ ...a, status: dismissedIds.has(a.id) ? 'Resolved' : 'Open' }));
 
   const handleResolve = (id) => {
-    setAlerts(prev => prev.map(a => a.id === id ? { ...a, status: 'Resolved' } : a));
+    setDismissedIds(prev => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id); else next.add(id);
+      return next;
+    });
   };
 
   const filteredAlerts = alerts.filter(alert => {
@@ -74,6 +37,8 @@ export const AlertsTab = ({ onSelectProject }) => {
 
   const openCount = alerts.filter(a => a.status === 'Open').length;
   const highCount = alerts.filter(a => a.priority === 'High' && a.status === 'Open').length;
+  const lowFloatCount = alerts.filter(a => a.type === 'Low Site Float' && a.status === 'Open').length;
+  const resolvedCount = alerts.filter(a => a.status === 'Resolved').length;
 
   return (
     <div className="dash-container">
@@ -84,9 +49,9 @@ export const AlertsTab = ({ onSelectProject }) => {
           <span>{language === 'mr' ? 'महत्त्वाचे अलर्ट्स' : 'Alerts'}</span>
         </h1>
         <p className="dash-header-sub">
-          {language === 'mr' 
-            ? 'सुरक्षा, स्थानिक परवानगी, साहित्याचा तुटवडा आणि त्वरित लक्ष देण्याच्या सूचना.' 
-            : 'Live site safety, municipal clearances, material shortages & critical escalations across active projects.'}
+          {language === 'mr'
+            ? 'प्रकल्पाची तब्येत आणि साइटवरील कमी रोख शिल्लक याबद्दल थेट सूचना.'
+            : 'Live alerts on project health and low cash-on-site across active projects.'}
         </p>
       </div>
 
@@ -114,33 +79,33 @@ export const AlertsTab = ({ onSelectProject }) => {
           </div>
           <h3 className="dash-stat-val">{highCount}</h3>
           <span className="dash-status-pill" style={{ background: '#fff7ed', color: '#c2410c', borderColor: '#ffedd5' }}>
-            1 Municipal Delay
+            Needs Review
           </span>
         </div>
 
         <div className="dash-stat-card">
           <div className="dash-stat-top">
-            <span className="dash-stat-label">Material Shortages</span>
+            <span className="dash-stat-label">Low Cash Float</span>
             <div className="dash-stat-icon-box" style={{ backgroundColor: '#f59e0b' }}>
               <AlertCircle size={18} strokeWidth={2.2} />
             </div>
           </div>
-          <h3 className="dash-stat-val">1</h3>
+          <h3 className="dash-stat-val">{lowFloatCount}</h3>
           <span className="dash-status-pill" style={{ background: '#fffbeb', color: '#b45309', borderColor: '#fef3c7' }}>
-            Pune Cable Order
+            Sites Below ₹5,000
           </span>
         </div>
 
         <div className="dash-stat-card">
           <div className="dash-stat-top">
-            <span className="dash-stat-label">Average Resolution Time</span>
+            <span className="dash-stat-label">Resolved This Session</span>
             <div className="dash-stat-icon-box" style={{ backgroundColor: '#10b981' }}>
               <Clock size={18} strokeWidth={2.2} />
             </div>
           </div>
-          <h3 className="dash-stat-val">&lt; 4 hrs</h3>
+          <h3 className="dash-stat-val">{resolvedCount}</h3>
           <span className="dash-status-pill">
-            ✓ Quick Turnaround
+            ✓ Cleared
           </span>
         </div>
       </div>
