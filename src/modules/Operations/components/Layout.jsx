@@ -105,12 +105,6 @@ const Layout = () => {
       icon: Scale,
       tab: 'reconciliation',
     },
-    {
-      name: 'Live Approvals ⚡',
-      href: '/operations?tab=live-ops',
-      icon: Shield,
-      tab: 'live-ops',
-    },
   ];
 
   return (

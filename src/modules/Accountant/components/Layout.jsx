@@ -45,7 +45,6 @@ const Layout = () => {
   };
 
   const navigation = [
-    { name: 'Live Payments ⚡', href: '/dashboard?tab=live-payments', icon: Shield, tabKey: 'live-payments' },
     { name: 'Dashboard', href: '/dashboard?tab=overview', icon: LayoutDashboard, tabKey: 'overview' },
     { name: 'Expense Verification', href: '/dashboard?tab=verification', icon: FileText, tabKey: 'verification' },
     { name: 'Wallet Funds', href: '/dashboard?tab=wallets', icon: Wallet, tabKey: 'wallets' },

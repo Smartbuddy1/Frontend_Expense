@@ -144,7 +144,6 @@ const mapAdvance = (a) => ({
 });
 
 import OperationsOverview from '../components/operations/OperationsOverview';
-import LiveOpsPanel from '../components/operations/LiveOpsPanel';
 import ProjectsTab from '../components/operations/ProjectsTab';
 import OrganizationsTab from '../components/operations/OrganizationsTab';
 import TeamAssignmentTab from '../components/operations/TeamAssignmentTab';
@@ -731,8 +730,6 @@ const OperationsDashboard = () => {
           onSelectProject={(p) => { setSelectedProjectDetail(p); setIsProjectDetailOpen(true); }}
         />
       )}
-
-      {activeTab === 'live-ops' && <LiveOpsPanel />}
 
       {/* Modals */}
       <CreateOrganizationModal

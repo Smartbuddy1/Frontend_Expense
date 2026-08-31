@@ -118,7 +118,6 @@ const mapAdvance = (a) => ({
 });
 
 import OperationsOverview from '../components/operations/OperationsOverview';
-import LiveOpsPanel from '../components/operations/LiveOpsPanel';
 import ProjectsTab from '../components/operations/ProjectsTab';
 import TeamAssignmentTab from '../components/operations/TeamAssignmentTab';
 import ExpensesTab from '../components/operations/ExpensesTab';
@@ -364,7 +363,8 @@ const OperationsDashboard = () => {
   };
 
   // "Forward to Accounts" is the same real action as approve — Operations
-  // approving an expense already makes it visible to Accounts' Live Payments.
+  // approving an expense already makes it visible in the Accountant's Expense
+  // Verification queue.
   const handleForwardExpense = async (expenseId, forwardTo = 'Accounts & Finance', notes = '') => {
     try {
       await axios.patch(`${API}/expenses/${expenseId}/approve`);
@@ -514,8 +514,6 @@ const OperationsDashboard = () => {
           onSelectProject={(p) => { setSelectedProjectDetail(p); setIsProjectDetailOpen(true); }}
         />
       )}
-
-      {activeTab === 'live-ops' && <LiveOpsPanel />}
 
       {/* Modals */}
       <CreateSupervisorModal

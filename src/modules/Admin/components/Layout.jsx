@@ -73,7 +73,6 @@ const Layout = () => {
     { name: 'Site Supervisor', href: '/operations?tab=supervisors', tab: 'supervisors', icon: Users },
     { name: 'Accountant', href: '/operations?tab=accountant', tab: 'accountant', icon: Briefcase },
     { name: 'Cash & Advance', href: '/operations?tab=reconciliation', tab: 'reconciliation', icon: IndianRupee },
-    { name: 'Live Approvals ⚡', href: '/operations?tab=live-ops', tab: 'live-ops', icon: ShieldCheck },
   ];
 
   const currentNav = navigation.find(n => (n.tab && currentTab === n.tab) || location.pathname === n.href) || navigation[0];
