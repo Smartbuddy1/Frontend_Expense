@@ -44,7 +44,7 @@ const PublicExpenseForm = () => {
   const [formData, setFormData] = useState({
     role: 'Site Supervisor',
     submitterName: '',
-    site: 'Metro Line 3 - Station #4B',
+    site: '',
     customSite: '',
     category: 'Travel',
     amount: '',
@@ -79,9 +79,6 @@ const PublicExpenseForm = () => {
 
   // Sites List
   const predefinedSites = [
-    'Metro Line 3 - Station #4B',
-    'City Mall Phase 2 Extension',
-    'Green Valley Flyover',
     'Client Visit / Sales Meeting',
     'Office / Headquarter',
     'Other / Custom Location'

@@ -174,8 +174,8 @@ import AssignTeamModal from '../components/operations/modals/AssignTeamModal';
 import { useSearchParams } from 'react-router-dom';
 import ExpenseApprovalModal from '../components/operations/modals/ExpenseApprovalModal';
 import SubmitExpenseModal from '../components/operations/modals/SubmitExpenseModal';
-import UpdateProgressModal from '../components/operations/modals/UpdateProgressModal';
 import ProjectDetailModal from '../components/operations/modals/ProjectDetailModal';
+import ManageMilestonesModal from '../components/operations/modals/ManageMilestonesModal';
 import CreateSupervisorModal from '../components/operations/modals/CreateSupervisorModal';
 import TransferAdvanceModal from '../components/operations/modals/TransferAdvanceModal';
 import SitePhotoGalleryModal from '../components/operations/modals/SitePhotoGalleryModal';
@@ -257,9 +257,9 @@ const OperationsDashboard = () => {
   const [inspectingExpense, setInspectingExpense] = useState(null);
 
   const [isSubmitExpenseOpen, setIsSubmitExpenseOpen] = useState(false);
-
-  const [isUpdateProgressOpen, setIsUpdateProgressOpen] = useState(false);
-  const [targetProjectForProgress, setTargetProjectForProgress] = useState(null);
+  
+  const [isManageMilestonesOpen, setIsManageMilestonesOpen] = useState(false);
+  const [targetProjectForMilestones, setTargetProjectForMilestones] = useState(null);
 
   const [isProjectDetailOpen, setIsProjectDetailOpen] = useState(false);
   const [selectedProjectDetail, setSelectedProjectDetail] = useState(null);
@@ -574,38 +574,39 @@ const OperationsDashboard = () => {
     }
   };
 
-  const handleUpdateProgress = async (updateData) => {
-    const { projectId, progress, health, milestones, status, newLog } = updateData;
+  const handleAddMilestone = async (projectId, milestoneData) => {
     try {
-      const patchBody = { progress };
-      if (DISPLAY_TO_HEALTH[health]) patchBody.health = DISPLAY_TO_HEALTH[health];
-      if (DISPLAY_TO_STATUS[status]) patchBody.status = DISPLAY_TO_STATUS[status];
-      else if (health === 'Completed') patchBody.status = 'completed';
-      await axios.patch(`${API}/projects/${projectId}`, patchBody);
-
-      const original = projects.find(p => p.id === projectId);
-      const originalMilestones = original?.milestones || [];
-      await Promise.all((milestones || []).map(async (m) => {
-        const orig = originalMilestones.find(om => om.id === m.id);
-        if (orig && orig.status !== m.status) {
-          await axios.patch(`${API}/projects/${projectId}/milestones/${m.id}`, { status: m.status });
-        }
-      }));
-
-      if (newLog) {
-        await axios.post(`${API}/site-logs`, {
-          projectId,
-          title: newLog.title,
-          workSummary: newLog.workSummary,
-          laborCount: newLog.laborCount,
-          issues: newLog.issues && newLog.issues !== 'None' ? newLog.issues : undefined,
-        });
-      }
-
-      toast.success(`Site progress updated to ${progress}%!`);
+      await axios.post(`${API}/projects/${projectId}/milestones`, milestoneData);
+      toast.success('Milestone added successfully');
       await fetchCore();
+      
+      // Update local state so modal updates instantly
+      const updatedProject = projects.find(p => p.id === projectId);
+      if (updatedProject && targetProjectForMilestones?.id === projectId) {
+         setTargetProjectForMilestones({
+           ...targetProjectForMilestones,
+           milestones: [...(targetProjectForMilestones.milestones || []), { ...milestoneData, id: 'temp-' + Date.now(), status: 'Pending' }]
+         });
+      }
     } catch (err) {
-      toast.error(err.response?.data?.error || 'Failed to update progress');
+      toast.error(err.response?.data?.error || 'Could not add milestone');
+    }
+  };
+
+  const handleDeleteMilestone = async (projectId, milestoneId) => {
+    try {
+      await axios.delete(`${API}/projects/${projectId}/milestones/${milestoneId}`);
+      toast.success('Milestone deleted');
+      await fetchCore();
+      
+      if (targetProjectForMilestones?.id === projectId) {
+         setTargetProjectForMilestones({
+           ...targetProjectForMilestones,
+           milestones: (targetProjectForMilestones.milestones || []).filter(m => m.id !== milestoneId)
+         });
+      }
+    } catch (err) {
+      toast.error(err.response?.data?.error || 'Could not delete milestone');
     }
   };
 
@@ -758,17 +759,6 @@ const OperationsDashboard = () => {
         />
       )}
 
-      {activeTab === 'progress' && (
-        <ProgressMonitoringTab
-          projects={projects}
-          siteLogs={siteLogs}
-          onNavigateTab={setActiveTab}
-          onOpenUpdateProgress={(p) => { setTargetProjectForProgress(p); setIsUpdateProgressOpen(true); }}
-          onSelectProject={(p) => { setSelectedProjectDetail(p); setIsProjectDetailOpen(true); }}
-          onOpenPhotoGallery={() => setIsPhotoGalleryOpen(true)}
-        />
-      )}
-
       {activeTab === 'alerts' && (
         <AlertsTab
           alerts={liveAlerts}
@@ -862,11 +852,19 @@ const OperationsDashboard = () => {
           setTargetProjectForTeam(p);
           setIsAssignTeamOpen(true);
         }}
-        onOpenProgress={(p) => {
+        onManageMilestones={(p) => {
           setIsProjectDetailOpen(false);
-          setTargetProjectForProgress(p);
-          setIsUpdateProgressOpen(true);
+          setTargetProjectForMilestones(p);
+          setIsManageMilestonesOpen(true);
         }}
+      />
+
+      <ManageMilestonesModal
+        isOpen={isManageMilestonesOpen}
+        onClose={() => { setIsManageMilestonesOpen(false); setTargetProjectForMilestones(null); }}
+        project={targetProjectForMilestones}
+        onAddMilestone={handleAddMilestone}
+        onDeleteMilestone={handleDeleteMilestone}
       />
 
       {/* Direct Advance Transfer Modal */}

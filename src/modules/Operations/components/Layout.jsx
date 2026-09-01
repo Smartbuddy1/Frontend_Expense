@@ -107,12 +107,6 @@ const Layout = () => {
       tab: 'reconciliation',
     },
     {
-      name: 'Progress Monitoring',
-      href: '/operations?tab=progress',
-      icon: TrendingUp,
-      tab: 'progress',
-    },
-    {
       name: 'Alerts',
       href: '/operations?tab=alerts',
       icon: AlertTriangle,

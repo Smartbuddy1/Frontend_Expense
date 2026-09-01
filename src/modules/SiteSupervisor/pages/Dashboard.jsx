@@ -38,6 +38,8 @@ import { useLanguage } from '../context/LanguageContext';
 const Dashboard = () => {
   const navigate = useNavigate();
   const { 
+    project,
+    categories,
     walletBalance, 
     totalAdvance, 
     todaySpend, 
@@ -48,28 +50,12 @@ const Dashboard = () => {
   } = useWallet();
   const { t, language } = useLanguage();
 
-  const sitesList = [
-    'Metro Line 3 - Station #4B',
-    'City Mall Phase 2 Extension',
-    'Green Valley Flyover'
-  ];
+  const selectedSite = 'all';
 
-  const categoriesList = [
-    'Travel',
-    'Local Conveyance',
-    'Transport',
-    'Lodging and Boarding',
-    'Purchase',
-    'Labour',
-    'Miscellaneous',
-    'Other'
-  ];
-
-  const [selectedSite, setSelectedSite] = useState('Metro Line 3 - Station #4B');
   const [activeModal, setActiveModal] = useState(null); // 'expense', 'advance', 'bill', null
   const [expenseForm, setExpenseForm] = useState({
-    category: 'Travel',
-    site: 'Metro Line 3 - Station #4B',
+    category: '',
+    site: '',
     amount: '',
     paidTo: '',
     receiptName: '',
@@ -77,11 +63,22 @@ const Dashboard = () => {
   });
 
   const [advanceForm, setAdvanceForm] = useState({ 
-    site: 'Metro Line 3 - Station #4B',
+    site: '',
     amount: '', 
     reason: '', 
     urgency: 'Immediate (Same Day)' 
   });
+
+  // Update forms when project/categories load
+  React.useEffect(() => {
+    if (project) {
+      setExpenseForm(prev => ({ ...prev, site: project.name }));
+      setAdvanceForm(prev => ({ ...prev, site: project.name }));
+    }
+    if (categories && categories.length > 0 && !expenseForm.category) {
+      setExpenseForm(prev => ({ ...prev, category: categories[0].name }));
+    }
+  }, [project, categories]);
 
   const handleExpenseFileChange = (e) => {
     const file = e.target.files[0];
@@ -95,47 +92,14 @@ const Dashboard = () => {
     }
   };
 
-  // Site Profile & Data Mapping
-  const siteDetails = {
-    'all': {
-      name: language === 'mr' ? 'सर्व साइट्स (All Sites)' : 'All Assigned Sites',
-      labors: 38,
-      advanceAllocated: totalAdvance,
-      progress: language === 'mr' ? 'चालू प्रकल्प' : 'All Sites Active',
-      statusColor: '#10b981'
-    },
-    'Metro Line 3 - Station #4B': {
-      name: 'Metro Line 3 - Station #4B',
-      labors: 18,
-      advanceAllocated: totalAdvance,
-      progress: language === 'mr' ? '६८% पूर्ण (On Track)' : '68% Completed',
-      statusColor: '#3b82f6'
-    },
-    'City Mall Phase 2 Extension': {
-      name: 'City Mall Phase 2 Extension',
-      labors: 12,
-      advanceAllocated: totalAdvance,
-      progress: language === 'mr' ? '४२% पूर्ण (In Progress)' : '42% In Progress',
-      statusColor: '#8b5cf6'
-    },
-    'Green Valley Flyover': {
-      name: 'Green Valley Flyover',
-      labors: 8,
-      advanceAllocated: totalAdvance,
-      progress: language === 'mr' ? '२५% पूर्ण (Foundation)' : '25% Foundation',
-      statusColor: '#06b6d4'
-    }
+  const currentSiteInfo = {
+    name: project ? project.name : (language === 'mr' ? 'कोणताही प्रकल्प नाही' : 'No Project Assigned'),
+    labors: 0,
+    advanceAllocated: totalAdvance,
+    statusColor: '#3b82f6'
   };
 
-  const currentSiteInfo = siteDetails[selectedSite] || siteDetails['all'];
-
-  // Filter expenses dynamically based on selected site
-  const filteredExpensesList = expensesList.filter(exp => {
-    if (selectedSite === 'all') return true;
-    const expSite = (exp.site || '').toLowerCase();
-    const targetSite = selectedSite.toLowerCase();
-    return expSite.includes(targetSite) || targetSite.includes(expSite) || (targetSite.includes('metro') && expSite.includes('metro')) || (targetSite.includes('city') && expSite.includes('city')) || (targetSite.includes('green') && expSite.includes('green'));
-  });
+  const filteredExpensesList = expensesList;
 
   const siteTodaySpend = filteredExpensesList.reduce((acc, curr) => acc + (curr.amount || 0), 0);
   const totalSpent = expensesList.reduce((acc, curr) => acc + (curr.amount || 0), 0);
@@ -175,8 +139,8 @@ const Dashboard = () => {
     });
 
     setExpenseForm({
-      category: 'Travel',
-      site: selectedSite === 'all' ? 'Metro Line 3 - Station #4B' : selectedSite,
+      category: categories && categories.length > 0 ? categories[0].name : '',
+      site: project ? project.name : '',
       amount: '',
       paidTo: '',
       receiptName: '',
@@ -213,7 +177,7 @@ const Dashboard = () => {
     alert(language === 'mr' 
       ? `₹${parseFloat(advanceForm.amount).toLocaleString()} ची अ‍ॅडव्हान्स मागणी मंजुरीसाठी पाठवली गेली आहे!` 
       : `Advance request of ₹${parseFloat(advanceForm.amount).toLocaleString()} submitted successfully!`);
-    setAdvanceForm({ site: selectedSite === 'all' ? 'Metro Line 3 - Station #4B' : selectedSite, amount: '', reason: '', urgency: 'Immediate (Same Day)' });
+    setAdvanceForm({ site: project ? project.name : '', amount: '', reason: '', urgency: 'Immediate (Same Day)' });
     setActiveModal(null);
   };
 
@@ -250,6 +214,14 @@ const Dashboard = () => {
       icon: <Wallet className="w-6 h-6 text-white" />,
       iconBg: '#06b6d4',
       action: () => navigate('/balance-settlement')
+    },
+    {
+      id: 'site-photos',
+      title: 'Site Photos',
+      description: 'Upload and view site photos',
+      icon: <Camera className="w-6 h-6 text-white" />,
+      iconBg: '#8b5cf6',
+      action: () => navigate('/site-photos')
     }
   ];
 
@@ -285,7 +257,7 @@ const Dashboard = () => {
           </p>
         </div>
 
-        {/* Site Selector on Right */}
+        {/* Site Details on Right */}
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', flexWrap: 'wrap' }}>
           <div style={{
             display: 'flex',
@@ -298,30 +270,19 @@ const Dashboard = () => {
             boxShadow: '0 2px 8px rgba(59, 130, 246, 0.15)'
           }}>
             <MapPin size={16} color="#3b82f6" />
-            <select 
-              value={selectedSite} 
-              onChange={(e) => setSelectedSite(e.target.value)}
-              style={{
-                background: 'transparent',
-                border: 'none',
-                color: 'var(--text-primary)',
-                fontWeight: '700',
-                fontSize: '0.85rem',
-                outline: 'none',
-                cursor: 'pointer'
-              }}
-            >
-              <option value="all">🌐 {language === 'mr' ? 'सर्व साइट्स (All Sites)' : 'All Assigned Sites'}</option>
-              <option value="Metro Line 3 - Station #4B">🚇 Metro Line 3 - Station #4B</option>
-              <option value="City Mall Phase 2 Extension">🏬 City Mall Phase 2 Extension</option>
-              <option value="Green Valley Flyover">🌉 Green Valley Flyover</option>
-            </select>
+            <span style={{
+              color: 'var(--text-primary)',
+              fontWeight: '700',
+              fontSize: '0.85rem',
+            }}>
+              {project ? project.name : (language === 'mr' ? 'कोणताही प्रकल्प नाही' : 'No Project')}
+            </span>
           </div>
         </div>
       </div>
 
       {/* Top Stat Cards Row (Full Width 100% Span) */}
-      <div className={selectedSite === 'all' ? 'dashboard-kpi-grid-4' : 'dashboard-kpi-grid-3'}>
+      <div className="dashboard-kpi-grid-3">
         {/* Card 1: Available Wallet Balance */}
         <div style={{
           background: 'var(--surface-bg)',
@@ -458,12 +419,12 @@ const Dashboard = () => {
           transition: 'transform 0.2s ease, box-shadow 0.2s ease'
         }}>
           <span style={{ fontSize: '0.85rem', fontWeight: '600', color: 'var(--text-secondary)' }}>
-            {selectedSite === 'all' ? (language === 'mr' ? 'एकूण झालेला खर्च' : 'Total Settled Expenses') : (language === 'mr' ? 'साइटवरील खर्च' : 'Site Settled Spend')}
+            {language === 'mr' ? 'साइटवरील खर्च' : 'Site Settled Spend'}
           </span>
 
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', margin: '0.4rem 0' }}>
             <div style={{ fontSize: '1.85rem', fontWeight: '800', color: 'var(--text-primary)', lineHeight: 1 }}>
-              ₹{selectedSite === 'all' ? totalSpent.toLocaleString() : siteTodaySpend.toLocaleString()}
+              ₹{siteTodaySpend.toLocaleString()}
             </div>
             <div style={{
               width: '48px',
@@ -639,9 +600,7 @@ const Dashboard = () => {
               {t('recentExpenses')}
             </h3>
             <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
-              {selectedSite === 'all' 
-                ? (language === 'mr' ? 'सर्व साइट्सच्या खर्चाच्या नोंदी दाखवत आहे' : 'Showing verified entries across all sites') 
-                : `${language === 'mr' ? 'निवडलेली साइट' : 'Filtered for'}: ${selectedSite} (${filteredExpensesList.length} ${language === 'mr' ? 'नोंदी' : 'entries'})`}
+              {project ? `${language === 'mr' ? 'साइट' : 'Site'}: ${project.name} (${filteredExpensesList.length} ${language === 'mr' ? 'नोंदी' : 'entries'})` : ''}
             </p>
           </div>
 
@@ -828,9 +787,7 @@ const Dashboard = () => {
                     outline: 'none'
                   }}
                 >
-                  {sitesList.map((s) => (
-                    <option key={s} value={s}>{s}</option>
-                  ))}
+                  {project && <option value={project.name}>{project.name}</option>}
                 </select>
               </div>
 
@@ -854,9 +811,9 @@ const Dashboard = () => {
                     outline: 'none'
                   }}
                 >
-                  {categoriesList.map((c) => (
-                    <option key={c} value={c}>
-                      {c === 'Other' ? (language === 'mr' ? 'इतर (Other)' : 'Other') : c}
+                  {categories.map((c) => (
+                    <option key={c.id} value={c.name}>
+                      {c.name === 'Other' ? (language === 'mr' ? 'इतर (Other)' : 'Other') : c.name}
                     </option>
                   ))}
                 </select>
@@ -1133,9 +1090,7 @@ const Dashboard = () => {
                     outline: 'none'
                   }}
                 >
-                  {sitesList.map((s) => (
-                    <option key={s} value={s}>{s}</option>
-                  ))}
+                  {project && <option value={project.name}>{project.name}</option>}
                 </select>
               </div>
 

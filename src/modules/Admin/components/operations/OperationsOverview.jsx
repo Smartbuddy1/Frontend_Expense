@@ -460,12 +460,7 @@ export const TopRevenueProjectsChart = ({ projects = [], onViewAll }) => {
    Modular Component 8: RecentActivityFeed (Exact Reference Screenshot Layout)
    ========================================================================== */
 export const RecentActivityFeed = ({ expenses = [], onApproveExpense, onRejectExpense, onViewAll }) => {
-  const displayActivities = (expenses && expenses.length > 0 ? expenses.slice(0, 4) : [
-    { id: 'EXP-1', projectName: 'Sangamner Site', category: 'Cement & PVC', supervisorName: 'Rohit Sharma', description: 'inhouse site work', amount: 18500, time: '14:24', status: 'Pending' },
-    { id: 'EXP-2', projectName: 'Pune Site', category: 'Tempo Transport', supervisorName: 'Amit Deshmukh', description: 'inhouse site work', amount: 12400, time: '14:12', status: 'Approved' },
-    { id: 'EXP-3', projectName: 'Nashik Site', category: 'Labor Wages', supervisorName: 'Sagar Patil', description: 'inhouse site work', amount: 8500, time: '14:09', status: 'Approved' },
-    { id: 'EXP-4', projectName: 'Sangamner Site', category: 'Plumbing Fittings', supervisorName: 'Rohit Sharma', description: 'inhouse site work', amount: 4800, time: '14:09', status: 'Pending' },
-  ]);
+  const displayActivities = expenses ? expenses.slice(0, 4) : [];
 
   return (
     <div className="dash-panel-card" style={{ display: 'flex', flexDirection: 'column', justifyContent: 'space-between', height: '100%', boxSizing: 'border-box' }}>
@@ -494,101 +489,107 @@ export const RecentActivityFeed = ({ expenses = [], onApproveExpense, onRejectEx
       </div>
 
       <div style={{ display: 'flex', flexDirection: 'column', gap: '0.55rem', marginTop: '0.25rem' }}>
-        {displayActivities.map((e) => {
-          const projName = e.projectName || 'Site Project';
-          const supName = (e.supervisorName || 'KAVERI GANGURDE').toUpperCase();
-          const isPending = (e.status || 'Pending') === 'Pending';
-          const isApproved = (e.status || '') === 'Approved';
+        {displayActivities.length === 0 ? (
+          <div style={{ textAlign: 'center', padding: '1.5rem', color: 'var(--text-secondary, #64748b)', fontSize: '0.9rem', fontWeight: '500' }}>
+            No recent activity available.
+          </div>
+        ) : (
+          displayActivities.map((e) => {
+            const projName = e.projectName || 'Site Project';
+            const supName = (e.supervisorName || 'KAVERI GANGURDE').toUpperCase();
+            const isPending = (e.status || 'Pending') === 'Pending';
+            const isApproved = (e.status || '') === 'Approved';
 
-          return (
-            <div
-              key={e.id}
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'space-between',
-                padding: '0.75rem 0.5rem',
-                borderBottom: '1px solid var(--border-color, #f1f5f9)'
-              }}
-            >
-              <div style={{ display: 'flex', alignItems: 'center', gap: '0.95rem', minWidth: 0 }}>
-                <div style={{
-                  width: '42px',
-                  height: '42px',
-                  borderRadius: '50%',
-                  backgroundColor: isApproved ? '#10b981' : isPending ? '#f59e0b' : '#ef4444',
-                  color: '#ffffff',
+            return (
+              <div
+                key={e.id}
+                style={{
                   display: 'flex',
                   alignItems: 'center',
-                  justifyContent: 'center',
-                  fontWeight: '900',
-                  fontSize: '1.1rem',
-                  flexShrink: 0
-                }}>
-                  ₹
+                  justifyContent: 'space-between',
+                  padding: '0.75rem 0.5rem',
+                  borderBottom: '1px solid var(--border-color, #f1f5f9)'
+                }}
+              >
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.95rem', minWidth: 0 }}>
+                  <div style={{
+                    width: '42px',
+                    height: '42px',
+                    borderRadius: '50%',
+                    backgroundColor: isApproved ? '#10b981' : isPending ? '#f59e0b' : '#ef4444',
+                    color: '#ffffff',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    fontWeight: '900',
+                    fontSize: '1.1rem',
+                    flexShrink: 0
+                  }}>
+                    ₹
+                  </div>
+                  <div style={{ minWidth: 0 }}>
+                    <p style={{ margin: 0, fontSize: '0.98rem', fontWeight: '800', color: 'var(--text-primary, #0f172a)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                      {projName} ({e.category || 'Site Claim'})
+                    </p>
+                    <p style={{ margin: '0.15rem 0 0 0', fontSize: '0.84rem', color: 'var(--text-secondary, #64748b)', fontWeight: '500', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                      {e.description || 'inhouse testing'} | {supName}
+                    </p>
+                  </div>
                 </div>
-                <div style={{ minWidth: 0 }}>
-                  <p style={{ margin: 0, fontSize: '0.98rem', fontWeight: '800', color: 'var(--text-primary, #0f172a)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                    {projName} ({e.category || 'Site Claim'})
-                  </p>
-                  <p style={{ margin: '0.15rem 0 0 0', fontSize: '0.84rem', color: 'var(--text-secondary, #64748b)', fontWeight: '500', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                    {e.description || 'inhouse testing'} | {supName}
-                  </p>
-                </div>
-              </div>
 
-              <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', flexShrink: 0 }}>
-                <div style={{ textAlign: 'right' }}>
-                  <p style={{ margin: 0, fontSize: '1.02rem', fontWeight: '800', color: isApproved ? '#059669' : '#ea580c' }}>
-                    +₹{(e.amount || 0).toLocaleString('en-IN')}
-                  </p>
-                  <p style={{ margin: '0.15rem 0 0 0', fontSize: '0.8rem', color: 'var(--text-secondary, #94a3b8)', fontWeight: '600' }}>
-                    {e.time || '14:24'}
-                  </p>
-                </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', flexShrink: 0 }}>
+                  <div style={{ textAlign: 'right' }}>
+                    <p style={{ margin: 0, fontSize: '1.02rem', fontWeight: '800', color: isApproved ? '#059669' : '#ea580c' }}>
+                      +₹{(e.amount || 0).toLocaleString('en-IN')}
+                    </p>
+                    <p style={{ margin: '0.15rem 0 0 0', fontSize: '0.8rem', color: 'var(--text-secondary, #94a3b8)', fontWeight: '600' }}>
+                      {e.time || '14:24'}
+                    </p>
+                  </div>
 
-                {isPending && onApproveExpense && (
-                  <div style={{ display: 'flex', gap: '0.35rem' }}>
-                    <button
-                      onClick={() => onApproveExpense(e.id, 'Fast-approved from Dashboard feed')}
-                      title="Quick Approve Claim"
-                      style={{
-                        backgroundColor: '#10b981',
-                        color: '#ffffff',
-                        border: 'none',
-                        borderRadius: '6px',
-                        padding: '0.3rem 0.5rem',
-                        fontSize: '0.72rem',
-                        fontWeight: '800',
-                        cursor: 'pointer'
-                      }}
-                    >
-                      ✓
-                    </button>
-                    {onRejectExpense && (
+                  {isPending && onApproveExpense && (
+                    <div style={{ display: 'flex', gap: '0.35rem' }}>
                       <button
-                        onClick={() => onRejectExpense(e.id, 'Rejected from Dashboard feed')}
-                        title="Quick Reject Claim"
+                        onClick={() => onApproveExpense(e.id, 'Fast-approved from Dashboard feed')}
+                        title="Quick Approve Claim"
                         style={{
-                          backgroundColor: '#f1f5f9',
-                          color: '#ef4444',
-                          border: '1px solid #fecaca',
+                          backgroundColor: '#10b981',
+                          color: '#ffffff',
+                          border: 'none',
                           borderRadius: '6px',
-                          padding: '0.3rem 0.45rem',
+                          padding: '0.3rem 0.5rem',
                           fontSize: '0.72rem',
                           fontWeight: '800',
                           cursor: 'pointer'
                         }}
                       >
-                        ✕
+                        ✓
                       </button>
-                    )}
-                  </div>
-                )}
+                      {onRejectExpense && (
+                        <button
+                          onClick={() => onRejectExpense(e.id, 'Rejected from Dashboard feed')}
+                          title="Quick Reject Claim"
+                          style={{
+                            backgroundColor: '#f1f5f9',
+                            color: '#ef4444',
+                            border: '1px solid #fecaca',
+                            borderRadius: '6px',
+                            padding: '0.3rem 0.45rem',
+                            fontSize: '0.72rem',
+                            fontWeight: '800',
+                            cursor: 'pointer'
+                          }}
+                        >
+                          ✕
+                        </button>
+                      )}
+                    </div>
+                  )}
+                </div>
               </div>
-            </div>
-          );
-        })}
+            );
+          })
+        )}
       </div>
     </div>
   );

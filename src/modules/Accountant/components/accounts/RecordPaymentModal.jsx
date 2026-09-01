@@ -8,7 +8,12 @@ import {
   Upload,
   Smartphone
 } from 'lucide-react';
-import { COMPANY_BANK_ACCOUNTS } from '../../data/accountsMockData';
+const COMPANY_BANK_ACCOUNTS = [
+  { id: 'acc_icici', name: 'ICICI Bank Current A/c - 001905004412 (Main Operational)', balance: 1450000 },
+  { id: 'acc_hdfc', name: 'HDFC Bank Current A/c - 50200088991122 (Project Disbursal)', balance: 880000 },
+  { id: 'acc_sbi', name: 'State Bank of India - 30882199001 (Govt / Escrow)', balance: 2500000 },
+  { id: 'acc_petty', name: 'Petty Cash Float (Office Cashier)', balance: 45000 }
+];
 
 const PAYMENT_MODES = [
   { id: 'UPI', label: 'UPI / QR Code', icon: Smartphone },

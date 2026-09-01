@@ -14,6 +14,7 @@ export const WalletProvider = ({ children }) => {
   const { user } = useAuth();
 
   const [project, setProject] = useState(null);
+  const [categories, setCategories] = useState([]);
   const [walletBalance, setWalletBalance] = useState(0);
   const [totalAdvance, setTotalAdvance] = useState(0);
   const [expensesList, setExpensesList] = useState([]);
@@ -53,9 +54,13 @@ export const WalletProvider = ({ children }) => {
     }
     setLoading(true);
     try {
-      const { data: projData } = await axios.get(`${API}/projects`);
+      const [{ data: projData }, { data: catData }] = await Promise.all([
+        axios.get(`${API}/projects`),
+        axios.get(`${API}/expenses/categories`)
+      ]);
       const myProject = projData.projects?.[0] || null;
       setProject(myProject);
+      setCategories(catData.categories || []);
 
       if (myProject) {
         const [walletRes, expRes, advRes] = await Promise.all([
@@ -161,6 +166,7 @@ export const WalletProvider = ({ children }) => {
     <WalletContext.Provider
       value={{
         project,
+        categories,
         walletBalance,
         totalAdvance,
         expensesList,

@@ -1,8 +1,39 @@
-import React from 'react';
-import { X, Building2, MapPin, Calendar, IndianRupee, Users, CheckCircle2, Activity, Clock, ShieldCheck, Phone, ArrowUpRight } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { X, Building2, MapPin, Calendar, IndianRupee, Users, CheckCircle2, Activity, Clock, ShieldCheck, Phone, ArrowUpRight, Camera, Image as ImageIcon, Loader2 } from 'lucide-react';
+import axios from 'axios';
 import logoImg from '../../../assets/logo.png';
 
-const ProjectDetailModal = ({ isOpen, onClose, project, supervisors = [], teamMembers = [], expenses = [], onOpenAssign, onOpenProgress }) => {
+const ProjectDetailModal = ({ isOpen, onClose, project, supervisors = [], teamMembers = [], expenses = [], onOpenAssign, onManageMilestones }) => {
+  const [activeTab, setActiveTab] = useState('overview');
+  const [photos, setPhotos] = useState([]);
+  const [loadingPhotos, setLoadingPhotos] = useState(false);
+
+  useEffect(() => {
+    if (isOpen && project && activeTab === 'photos') {
+      const fetchPhotos = async () => {
+        try {
+          setLoadingPhotos(true);
+          // Standard Vite axios call using env URL
+          const baseURL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/api';
+          const token = localStorage.getItem('token');
+          const userId = localStorage.getItem('userId');
+          const res = await axios.get(`${baseURL}/projects/${project.id}/photos`, {
+            headers: {
+              Authorization: `Bearer ${token}`,
+              'x-user-id': userId
+            }
+          });
+          setPhotos(res.data.photos || []);
+        } catch (err) {
+          console.error('Failed to fetch photos:', err);
+        } finally {
+          setLoadingPhotos(false);
+        }
+      };
+      fetchPhotos();
+    }
+  }, [isOpen, project, activeTab]);
+
   if (!isOpen || !project) return null;
 
   const projectExpenses = expenses.filter(e => e.projectId === project.id);
@@ -109,9 +140,57 @@ const ProjectDetailModal = ({ isOpen, onClose, project, supervisors = [], teamMe
           </button>
         </div>
 
+        {/* Tabs */}
+        <div style={{ display: 'flex', borderBottom: '1px solid #e2e8f0', backgroundColor: '#f8fafc' }}>
+          <button
+            onClick={() => setActiveTab('overview')}
+            style={{
+              flex: 1,
+              padding: '0.85rem',
+              background: 'none',
+              border: 'none',
+              borderBottom: activeTab === 'overview' ? '2px solid #2563eb' : '2px solid transparent',
+              color: activeTab === 'overview' ? '#2563eb' : '#64748b',
+              fontWeight: '800',
+              fontSize: '0.85rem',
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: '0.4rem',
+              transition: 'all 0.15s ease'
+            }}
+          >
+            <Activity size={16} /> Overview
+          </button>
+          <button
+            onClick={() => setActiveTab('photos')}
+            style={{
+              flex: 1,
+              padding: '0.85rem',
+              background: 'none',
+              border: 'none',
+              borderBottom: activeTab === 'photos' ? '2px solid #2563eb' : '2px solid transparent',
+              color: activeTab === 'photos' ? '#2563eb' : '#64748b',
+              fontWeight: '800',
+              fontSize: '0.85rem',
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: '0.4rem',
+              transition: 'all 0.15s ease'
+            }}
+          >
+            <Camera size={16} /> Site Photos
+          </button>
+        </div>
+
         {/* Modal Body */}
         <div style={{ overflowY: 'auto', padding: '1.5rem', display: 'flex', flexDirection: 'column', gap: '1.25rem', flex: 1 }}>
-          {/* Top Metrics Row */}
+          {activeTab === 'overview' ? (
+            <>
+              {/* Top Metrics Row */}
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '0.75rem' }}>
             <div style={{ padding: '0.85rem 1rem', borderRadius: '14px', backgroundColor: '#f8fafc', border: '1px solid #e2e8f0' }}>
               <div style={{ fontSize: '0.72rem', fontWeight: '800', color: '#64748b', textTransform: 'uppercase' }}>Live Progress</div>
@@ -188,15 +267,17 @@ const ProjectDetailModal = ({ isOpen, onClose, project, supervisors = [], teamMe
               <span style={{ fontSize: '0.75rem', fontWeight: '800', color: '#64748b', textTransform: 'uppercase', display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
                 <Activity size={14} color="#6366f1" /> Milestones & Execution Stages
               </span>
-              {onOpenProgress && (
-                <button
-                  type="button"
-                  onClick={() => { onClose(); onOpenProgress(project); }}
-                  style={{ background: 'none', border: 'none', color: '#2563eb', fontWeight: '800', fontSize: '0.76rem', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.2rem' }}
-                >
-                  Update <ArrowUpRight size={13} />
-                </button>
-              )}
+              <div style={{ display: 'flex', gap: '0.8rem' }}>
+                {onManageMilestones && (
+                  <button
+                    type="button"
+                    onClick={() => { onClose(); onManageMilestones(project); }}
+                    style={{ background: 'none', border: 'none', color: '#059669', fontWeight: '800', fontSize: '0.76rem', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.2rem' }}
+                  >
+                    Manage <ArrowUpRight size={13} />
+                  </button>
+                )}
+              </div>
             </div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '0.45rem' }}>
               {project.milestones?.map((m, idx) => (
@@ -233,6 +314,47 @@ const ProjectDetailModal = ({ isOpen, onClose, project, supervisors = [], teamMe
               ))}
             </div>
           </div>
+            </>
+          ) : (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', minHeight: '300px' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <span style={{ fontSize: '0.75rem', fontWeight: '800', color: '#64748b', textTransform: 'uppercase', display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
+                  <ImageIcon size={14} color="#3b82f6" /> Gallery
+                </span>
+                <span style={{ fontSize: '0.75rem', fontWeight: '800', color: '#64748b' }}>
+                  {photos.length} Photos
+                </span>
+              </div>
+              
+              {loadingPhotos ? (
+                <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', flex: 1 }}>
+                  <Loader2 className="animate-spin text-blue-500" size={24} />
+                </div>
+              ) : photos.length === 0 ? (
+                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', flex: 1, backgroundColor: '#f8fafc', borderRadius: '12px', border: '1px dashed #cbd5e1' }}>
+                  <Camera size={32} color="#94a3b8" style={{ marginBottom: '0.5rem' }} />
+                  <span style={{ fontSize: '0.85rem', color: '#64748b', fontWeight: '600' }}>No site photos uploaded yet.</span>
+                </div>
+              ) : (
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))', gap: '1rem' }}>
+                  {photos.map(photo => (
+                    <div key={photo.id} style={{ borderRadius: '10px', overflow: 'hidden', border: '1px solid #e2e8f0', backgroundColor: '#ffffff', display: 'flex', flexDirection: 'column' }}>
+                      <img src={photo.imageUrl} alt="Site" style={{ width: '100%', height: '140px', objectFit: 'cover' }} />
+                      <div style={{ padding: '0.65rem', display: 'flex', flexDirection: 'column', gap: '0.2rem' }}>
+                        <span style={{ fontSize: '0.75rem', color: '#0f172a', fontWeight: '600', lineHeight: 1.2, display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
+                          {photo.description || 'No description'}
+                        </span>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 'auto', paddingTop: '0.4rem' }}>
+                          <span style={{ fontSize: '0.65rem', color: '#64748b' }}>{photo.supervisor?.name || 'Supervisor'}</span>
+                          <span style={{ fontSize: '0.65rem', color: '#94a3b8' }}>{new Date(photo.createdAt).toLocaleDateString()}</span>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
         </div>
 
         {/* Footer */}

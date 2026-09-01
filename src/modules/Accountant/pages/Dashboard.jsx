@@ -23,15 +23,6 @@ import {
   Users
 } from 'lucide-react';
 
-import { 
-  INITIAL_PROJECTS, 
-  INITIAL_EXPENSES, 
-  INITIAL_ADVANCES, 
-  INITIAL_PAYMENTS_LEDGER, 
-  INITIAL_SETTLEMENTS, 
-  AUDIT_LOGS 
-} from '../data/accountsMockData';
-
 import KPIHeaderCards from '../components/accounts/KPIHeaderCards';
 import OverviewTab from '../components/accounts/OverviewTab';
 import AnalyticsTab from '../components/accounts/AnalyticsTab';
@@ -243,7 +234,7 @@ const Dashboard = () => {
   const [advances, setAdvances] = useState([]);
   const [payments, setPayments] = useState([]);
   const [settlements, setSettlements] = useState([]);
-  const [auditLogs, setAuditLogs] = useState(AUDIT_LOGS);
+  const [auditLogs, setAuditLogs] = useState([]);
   const [loadingCore, setLoadingCore] = useState(true);
 
   // Projects, expenses, advances, payments, and settlements all come from the

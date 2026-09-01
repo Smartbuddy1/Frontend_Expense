@@ -8,7 +8,6 @@ import toast from 'react-hot-toast';
 import { useLanguage } from '../../context/LanguageContext';
 import { exportToPDF, exportToExcel } from '../../utils/exportUtils';
 import { getCompanyLogoBase64, escapeHtml } from '../../utils/pdfHeaderHelper';
-import { initialOperationalHeads } from '../../data/operationsData';
 import CreateOperationalHeadModal from './modals/CreateOperationalHeadModal';
 import './operations-dashboard.css';
 
@@ -29,8 +28,7 @@ export const OrganizationsTab = ({
   // Internal state with localStorage fallback
   const [headsList, setHeadsList] = useState(() => {
     if (propOperationalHeads && propOperationalHeads.length > 0) return propOperationalHeads;
-    const saved = localStorage.getItem('asems_v2_operational_heads');
-    return saved ? JSON.parse(saved) : initialOperationalHeads;
+    return [];
   });
 
   // Keep internal list in sync if prop changes

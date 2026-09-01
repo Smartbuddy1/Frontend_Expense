@@ -336,11 +336,6 @@ export const SiteStatusGaugeChart = ({ totalCount = 3, activeCount = 3, inactive
    ========================================================================== */
 export const TopRevenueProjectsChart = ({ projects = [], onViewAll, onSelectProject, setActiveTab }) => {
   const { language } = useLanguage();
-  const mockItems = [
-    { name: 'Site Supervisor Advances (Floats)', spent: 40000 },
-    { name: 'Material Buffer & Contingency', spent: 10000 },
-  ];
-
   // Map actual projects to chart item structure
   const actualItems = projects.map(proj => {
     let displayName = proj.name || 'Unnamed Project';
@@ -361,18 +356,6 @@ export const TopRevenueProjectsChart = ({ projects = [], onViewAll, onSelectProj
 
   // Combine and sort by spent descending
   let combinedItems = [...actualItems];
-  combinedItems.sort((a, b) => b.spent - a.spent);
-
-  // Pad with mock items if we have fewer than 5 items
-  if (combinedItems.length < 5) {
-    mockItems.forEach(mock => {
-      if (combinedItems.length < 5 && !combinedItems.some(item => item.name === mock.name)) {
-        combinedItems.push(mock);
-      }
-    });
-  }
-
-  // Re-sort after padding
   combinedItems.sort((a, b) => b.spent - a.spent);
 
   // Take top 5

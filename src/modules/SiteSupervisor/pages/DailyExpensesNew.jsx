@@ -42,7 +42,7 @@ const DailyExpenses = () => {
   // Form State
   const [formData, setFormData] = useState({
     category: 'Travel',
-    site: 'Metro Line 3 - Station #4B',
+    site: project ? project.name : '',
     amount: '',
     paidTo: '',
     description: '',
@@ -53,24 +53,15 @@ const DailyExpenses = () => {
 
   const fileInputRef = useRef(null);
 
-  const categories = [
+  const categoriesList = [
     'All',
-    'Travel',
-    'Local Conveyance',
-    'Transport',
-    'Lodging and Boarding',
-    'Purchase',
-    'Labour',
-    'Miscellaneous',
-    'Other'
+    ...(categories?.map(c => c.name) || [])
   ];
 
-  const sites = [
+  const sitesList = [
     'All',
-    'Metro Line 3 - Station #4B',
-    'City Mall Phase 2 Extension',
-    'Green Valley Flyover'
-  ];
+    project ? project.name : null
+  ].filter(Boolean);
 
   const handleFileChange = (e) => {
     const file = e.target.files[0];
@@ -123,7 +114,7 @@ const DailyExpenses = () => {
 
       setFormData({
         category: 'Travel',
-        site: 'Metro Line 3 - Station #4B',
+        site: project ? project.name : '',
         amount: '',
         paidTo: '',
         description: '',
@@ -692,7 +683,7 @@ const DailyExpenses = () => {
                     outline: 'none'
                   }}
                 >
-                  {sites.filter(s => s !== 'All').map((s) => (
+                  {sitesList.filter(s => s !== 'All').map((s) => (
                     <option key={s} value={s}>{s}</option>
                   ))}
                 </select>
@@ -718,7 +709,7 @@ const DailyExpenses = () => {
                     outline: 'none'
                   }}
                 >
-                  {categories.filter(c => c !== 'All').map((c) => (
+                  {categoriesList.filter(c => c !== 'All').map((c) => (
                     <option key={c} value={c}>
                       {c === 'Other' ? (language === 'mr' ? 'इतर (Other)' : 'Other') : c}
                     </option>

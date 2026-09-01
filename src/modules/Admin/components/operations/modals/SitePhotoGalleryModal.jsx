@@ -12,86 +12,7 @@ export const SitePhotoGalleryModal = ({
 
   if (!isOpen) return null;
 
-  const mockPhotos = [
-    {
-      id: 1,
-      title: 'Foundation Excavation & Plinth PCC',
-      siteName: 'Sangamner Eco Toilet (Site P1)',
-      siteId: 'PRJ-SGM-01',
-      stage: 'Before / Foundation',
-      category: 'Civil',
-      date: '2026-08-20',
-      supervisor: 'Rohit Sharma',
-      location: 'Sangamner Bus Stand, Ahmednagar',
-      url: 'https://images.unsplash.com/photo-1541888946425-d0fbb186156f?w=600&auto=format&fit=crop&q=80',
-      status: 'Verified'
-    },
-    {
-      id: 2,
-      title: 'Prefab SS Enclosure Shell Bolting',
-      siteName: 'Sangamner Eco Toilet (Site P1)',
-      siteId: 'PRJ-SGM-01',
-      stage: 'In Progress / Structural',
-      category: 'Fabrication',
-      date: '2026-08-22',
-      supervisor: 'Rohit Sharma',
-      location: 'Sangamner Bus Stand, Ahmednagar',
-      url: 'https://images.unsplash.com/photo-1504307651254-35680f356dfd?w=600&auto=format&fit=crop&q=80',
-      status: 'Verified'
-    },
-    {
-      id: 3,
-      title: '2000L Bio-Digester Microbial Manifold Plumbed',
-      siteName: 'Nashik Highway Sanitation (Site P3)',
-      siteId: 'PRJ-NSK-03',
-      stage: 'In Progress / Plumbing',
-      category: 'Bio-Plumbing',
-      date: '2026-08-23',
-      supervisor: 'Sagar Patil',
-      location: 'Dwarka Circle, Nashik Highway',
-      url: 'https://images.unsplash.com/photo-1581092160607-ee22621dd758?w=600&auto=format&fit=crop&q=80',
-      status: 'Verified'
-    },
-    {
-      id: 4,
-      title: 'Solar & SCADA Telemetry System Coin Board Test',
-      siteName: 'Pune Smart E-Toilets (Site P2)',
-      siteId: 'PRJ-PUN-02',
-      stage: 'In Progress / Electrical',
-      category: 'Electrical & IoT',
-      date: '2026-08-24',
-      supervisor: 'Amit Deshmukh',
-      location: 'Shivajinagar Station, Pune',
-      url: 'https://images.unsplash.com/photo-1581092335397-9583fe92d232?w=600&auto=format&fit=crop&q=80',
-      status: 'Verified'
-    },
-    {
-      id: 5,
-      title: 'Final Touchup & Finished Restroom Handover Ready',
-      siteName: 'Pune Smart E-Toilets (Site P2)',
-      siteId: 'PRJ-PUN-02',
-      stage: 'After / Handover',
-      category: 'Finishing',
-      date: '2026-08-24',
-      supervisor: 'Amit Deshmukh',
-      location: 'Shivajinagar Station, Pune',
-      url: 'https://images.unsplash.com/photo-1584622650111-993a426fbf0a?w=600&auto=format&fit=crop&q=80',
-      status: 'Completed'
-    },
-    {
-      id: 6,
-      title: 'Structural Steel Trench Reinforcement',
-      siteName: 'Nashik Highway Sanitation (Site P3)',
-      siteId: 'PRJ-NSK-03',
-      stage: 'Before / Foundation',
-      category: 'Civil',
-      date: '2026-08-19',
-      supervisor: 'Sagar Patil',
-      location: 'Dwarka Circle, Nashik Highway',
-      url: 'https://images.unsplash.com/photo-1503387762-592deb58ef4e?w=600&auto=format&fit=crop&q=80',
-      status: 'Verified'
-    }
-  ];
+  const mockPhotos = [];
 
   const filteredPhotos = mockPhotos.filter(item => {
     const matchSite = selectedSite === 'ALL' || item.siteId === selectedSite || item.siteName.includes(selectedSite);
@@ -229,12 +150,23 @@ export const SitePhotoGalleryModal = ({
         <div style={{
           padding: '1.5rem 1.75rem',
           overflowY: 'auto',
-          display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fill, minmax(250px, 1fr))',
+          display: filteredPhotos.length === 0 ? 'flex' : 'grid',
+          alignItems: filteredPhotos.length === 0 ? 'center' : 'stretch',
+          justifyContent: filteredPhotos.length === 0 ? 'center' : 'stretch',
+          gridTemplateColumns: filteredPhotos.length === 0 ? 'none' : 'repeat(auto-fill, minmax(250px, 1fr))',
           gap: '1.25rem',
           flex: 1
         }}>
-          {filteredPhotos.map((photo) => (
+          {filteredPhotos.length === 0 ? (
+            <div style={{ textAlign: 'center', color: '#64748b', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '1rem' }}>
+              <ImageIcon size={48} color="#cbd5e1" />
+              <div>
+                <h4 style={{ margin: 0, fontSize: '1.1rem', fontWeight: '800', color: '#475569' }}>No Photos Uploaded</h4>
+                <p style={{ margin: '0.25rem 0 0 0', fontSize: '0.9rem', color: '#94a3b8' }}>Site photos from the supervisor app will appear here.</p>
+              </div>
+            </div>
+          ) : (
+            filteredPhotos.map((photo) => (
             <div
               key={photo.id}
               onClick={() => setActivePhoto(photo)}
@@ -289,7 +221,7 @@ export const SitePhotoGalleryModal = ({
                 </div>
               </div>
             </div>
-          ))}
+          )))}
         </div>
 
         {/* Modal Footer */}

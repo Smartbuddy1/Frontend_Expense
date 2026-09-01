@@ -21,7 +21,7 @@ import { useLanguage } from '../context/LanguageContext';
 import { exportToExcel, triggerPrint, exportToPDF } from '../utils/exportUtils';
 
 const RequestAdvance = () => {
-  const { requestAdvance, walletBalance, totalAdvance, advancesList } = useWallet();
+  const { requestAdvance, walletBalance, totalAdvance, advancesList, project } = useWallet();
   const { t, language } = useLanguage();
 
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -30,7 +30,13 @@ const RequestAdvance = () => {
 
   // Form State for Modal
   const [amount, setAmount] = useState('');
-  const [site, setSite] = useState('Metro Line 3 - Station #4B');
+  const [site, setSite] = useState(project ? project.name : '');
+
+  React.useEffect(() => {
+    if (project && !site) {
+      setSite(project.name);
+    }
+  }, [project, site]);
   const [purpose, setPurpose] = useState('');
   const [urgency, setUrgency] = useState('Immediate (Same Day)');
 
@@ -519,9 +525,11 @@ const RequestAdvance = () => {
                   onChange={(e) => setSite(e.target.value)}
                   style={{ width: '100%', padding: '0.65rem 0.8rem', borderRadius: '0.6rem', border: '1px solid var(--border-color)', backgroundColor: 'var(--card-bg)', color: 'var(--text-primary)', outline: 'none', fontWeight: '600' }}
                 >
-                  <option value="Metro Line 3 - Station #4B">Metro Line 3 - Station #4B</option>
-                  <option value="City Mall Phase 2 Extension">City Mall Phase 2 Extension</option>
-                  <option value="Green Valley Flyover">Green Valley Flyover</option>
+                  {project ? (
+                    <option value={project.name}>{project.name}</option>
+                  ) : (
+                    <option value="">No Project Assigned</option>
+                  )}
                 </select>
               </div>
 

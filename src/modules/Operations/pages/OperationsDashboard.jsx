@@ -133,7 +133,6 @@ import OperationsOverview from '../components/operations/OperationsOverview';
 import ProjectsTab from '../components/operations/ProjectsTab';
 import TeamAssignmentTab from '../components/operations/TeamAssignmentTab';
 import ExpensesTab from '../components/operations/ExpensesTab';
-import ProgressMonitoringTab from '../components/operations/ProgressMonitoringTab';
 import AlertsTab from '../components/operations/AlertsTab';
 import ReconciliationTab from '../components/operations/ReconciliationTab';
 
@@ -143,7 +142,6 @@ import AssignTeamModal from '../components/operations/modals/AssignTeamModal';
 import { useSearchParams } from 'react-router-dom';
 import ExpenseApprovalModal from '../components/operations/modals/ExpenseApprovalModal';
 import SubmitExpenseModal from '../components/operations/modals/SubmitExpenseModal';
-import UpdateProgressModal from '../components/operations/modals/UpdateProgressModal';
 import ProjectDetailModal from '../components/operations/modals/ProjectDetailModal';
 import CreateSupervisorModal from '../components/operations/modals/CreateSupervisorModal';
 
@@ -213,9 +211,6 @@ const OperationsDashboard = () => {
   const [inspectingExpense, setInspectingExpense] = useState(null);
 
   const [isSubmitExpenseOpen, setIsSubmitExpenseOpen] = useState(false);
-
-  const [isUpdateProgressOpen, setIsUpdateProgressOpen] = useState(false);
-  const [targetProjectForProgress, setTargetProjectForProgress] = useState(null);
 
   const [isProjectDetailOpen, setIsProjectDetailOpen] = useState(false);
   const [selectedProjectDetail, setSelectedProjectDetail] = useState(null);
@@ -393,41 +388,6 @@ const OperationsDashboard = () => {
     }
   };
 
-  const handleUpdateProgress = async (updateData) => {
-    const { projectId, progress, health, milestones, status, newLog } = updateData;
-    try {
-      const patchBody = { progress };
-      if (DISPLAY_TO_HEALTH[health]) patchBody.health = DISPLAY_TO_HEALTH[health];
-      if (DISPLAY_TO_STATUS[status]) patchBody.status = DISPLAY_TO_STATUS[status];
-      else if (health === 'Completed') patchBody.status = 'completed';
-      await axios.patch(`${API}/projects/${projectId}`, patchBody);
-
-      const original = projects.find(p => p.id === projectId);
-      const originalMilestones = original?.milestones || [];
-      await Promise.all((milestones || []).map(async (m) => {
-        const orig = originalMilestones.find(om => om.id === m.id);
-        if (orig && orig.status !== m.status) {
-          await axios.patch(`${API}/projects/${projectId}/milestones/${m.id}`, { status: m.status });
-        }
-      }));
-
-      if (newLog) {
-        await axios.post(`${API}/site-logs`, {
-          projectId,
-          title: newLog.title,
-          workSummary: newLog.workSummary,
-          laborCount: newLog.laborCount,
-          issues: newLog.issues && newLog.issues !== 'None' ? newLog.issues : undefined,
-        });
-      }
-
-      toast.success(`Site progress updated to ${progress}%!`);
-      await fetchCore();
-    } catch (err) {
-      toast.error(err.response?.data?.error || 'Failed to update progress');
-    }
-  };
-
   const pendingExpensesCount = expenses.filter(e => e.status === 'Pending').length;
 
   // Real, live alerts derived from actual project/wallet data — not stored
@@ -503,7 +463,6 @@ const OperationsDashboard = () => {
           onDeleteProject={handleDeleteProject}
           onSelectProject={(p) => { setSelectedProjectDetail(p); setIsProjectDetailOpen(true); }}
           onOpenAssignTeam={(p) => { setTargetProjectForTeam(p); setIsAssignTeamOpen(true); }}
-          onOpenUpdateProgress={(p) => { setTargetProjectForProgress(p); setIsUpdateProgressOpen(true); }}
         />
       )}
 
@@ -541,15 +500,6 @@ const OperationsDashboard = () => {
           advances={advances}
           activeView={activeTab}
           onRefresh={fetchCore}
-        />
-      )}
-
-      {activeTab === 'progress' && (
-        <ProgressMonitoringTab
-          projects={projects}
-          siteLogs={siteLogs}
-          onOpenUpdateProgress={(p) => { setTargetProjectForProgress(p); setIsUpdateProgressOpen(true); }}
-          onSelectProject={(p) => { setSelectedProjectDetail(p); setIsProjectDetailOpen(true); }}
         />
       )}
 
@@ -603,13 +553,6 @@ const OperationsDashboard = () => {
         supervisors={supervisors}
       />
 
-      <UpdateProgressModal
-        isOpen={isUpdateProgressOpen}
-        onClose={() => { setIsUpdateProgressOpen(false); setTargetProjectForProgress(null); }}
-        project={targetProjectForProgress}
-        onUpdateProgress={handleUpdateProgress}
-        supervisors={supervisors}
-      />
     </div>
   );
 };
