@@ -1,5 +1,8 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import axios from 'axios';
 import { X, Image as ImageIcon, CheckCircle, Calendar, MapPin, User, Eye, Download, Filter } from 'lucide-react';
+
+const API = import.meta.env.VITE_API_BASE_URL;
 
 export const SitePhotoGalleryModal = ({
   isOpen,
@@ -7,18 +10,35 @@ export const SitePhotoGalleryModal = ({
   projects = []
 }) => {
   const [selectedSite, setSelectedSite] = useState('ALL');
-  const [selectedCategory, setSelectedCategory] = useState('ALL');
   const [activePhoto, setActivePhoto] = useState(null);
+  const [photos, setPhotos] = useState([]);
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    if (!isOpen || projects.length === 0) return;
+    setLoading(true);
+    const targets = selectedSite === 'ALL' ? projects : projects.filter(p => p.id === selectedSite);
+    Promise.all(targets.map(p =>
+      axios.get(`${API}/projects/${p.id}/photos`)
+        .then(res => res.data.photos.map(photo => ({
+          id: photo.id,
+          url: photo.imageUrl,
+          title: photo.description || 'Site Photo',
+          siteId: p.id,
+          siteName: p.name,
+          supervisor: photo.supervisor?.name || 'Site Supervisor',
+          date: new Date(photo.createdAt).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }),
+        })))
+        .catch(() => [])
+    )).then(results => {
+      setPhotos(results.flat().sort((a, b) => new Date(b.date) - new Date(a.date)));
+      setLoading(false);
+    });
+  }, [isOpen, selectedSite, projects]);
 
   if (!isOpen) return null;
 
-  const mockPhotos = [];
-
-  const filteredPhotos = mockPhotos.filter(item => {
-    const matchSite = selectedSite === 'ALL' || item.siteId === selectedSite || item.siteName.includes(selectedSite);
-    const matchCat = selectedCategory === 'ALL' || item.category === selectedCategory || item.stage.includes(selectedCategory);
-    return matchSite && matchCat;
-  });
+  const filteredPhotos = photos;
 
   return (
     <div style={{
@@ -115,34 +135,15 @@ export const SitePhotoGalleryModal = ({
                 backgroundColor: '#ffffff'
               }}
             >
-              <option value="ALL">All Projects ({mockPhotos.length})</option>
-              <option value="PRJ-SGM-01">Sangamner Site (P1)</option>
-              <option value="PRJ-PUN-02">Pune Site (P2)</option>
-              <option value="PRJ-NSK-03">Nashik Highway (P3)</option>
-            </select>
-
-            <span style={{ fontSize: '0.85rem', fontWeight: '700', color: '#475569', marginLeft: '0.5rem' }}>Stage:</span>
-            <select
-              value={selectedCategory}
-              onChange={(e) => setSelectedCategory(e.target.value)}
-              style={{
-                padding: '0.45rem 0.85rem',
-                borderRadius: '10px',
-                border: '1px solid #cbd5e1',
-                fontSize: '0.86rem',
-                fontWeight: '700',
-                backgroundColor: '#ffffff'
-              }}
-            >
-              <option value="ALL">All Stages</option>
-              <option value="Before">Before / Foundation</option>
-              <option value="In Progress">In Progress Work</option>
-              <option value="After">After / Handover</option>
+              <option value="ALL">All Projects ({projects.length})</option>
+              {projects.map(p => (
+                <option key={p.id} value={p.id}>{p.name}</option>
+              ))}
             </select>
           </div>
 
           <span style={{ fontSize: '0.82rem', fontWeight: '700', color: '#059669' }}>
-            {filteredPhotos.length} Verified Photos Found
+            {loading ? 'Loading…' : `${filteredPhotos.length} Photos Found`}
           </span>
         </div>
 
@@ -197,7 +198,7 @@ export const SitePhotoGalleryModal = ({
                   position: 'absolute',
                   top: '0.65rem',
                   left: '0.65rem',
-                  backgroundColor: photo.stage.includes('After') ? '#10b981' : photo.stage.includes('Before') ? '#6366f1' : '#f59e0b',
+                  backgroundColor: '#059669',
                   color: '#ffffff',
                   fontSize: '0.72rem',
                   fontWeight: '800',
@@ -205,7 +206,7 @@ export const SitePhotoGalleryModal = ({
                   borderRadius: '9999px',
                   boxShadow: '0 2px 6px rgba(0,0,0,0.3)'
                 }}>
-                  {photo.stage}
+                  {photo.date}
                 </span>
               </div>
               <div style={{ padding: '0.85rem' }}>

@@ -64,6 +64,48 @@ export const DashboardHeader = ({
         {subtitle}
       </p>
     </div>
+
+    <div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem', flexWrap: 'wrap' }}>
+      {onOpenPhotoGallery && (
+        <button
+          onClick={onOpenPhotoGallery}
+          style={{
+            padding: '0.5rem 1.1rem', borderRadius: '10px', border: '1.5px solid #c7d2fe',
+            backgroundColor: '#eef2ff', color: '#4f46e5', fontSize: '0.88rem', fontWeight: '800',
+            cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: '0.4rem'
+          }}
+        >
+          <ImageIcon size={16} />
+          <span>Photo Gallery</span>
+        </button>
+      )}
+      {onOpenTransferAdvance && (
+        <button
+          onClick={onOpenTransferAdvance}
+          style={{
+            padding: '0.5rem 1.1rem', borderRadius: '10px', border: '1.5px solid #a7f3d0',
+            backgroundColor: '#ecfdf5', color: '#059669', fontSize: '0.88rem', fontWeight: '800',
+            cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: '0.4rem'
+          }}
+        >
+          <Send size={16} />
+          <span>Transfer Advance</span>
+        </button>
+      )}
+      {onExportPDF && (
+        <button
+          onClick={onExportPDF}
+          style={{
+            padding: '0.5rem 1.1rem', borderRadius: '10px', border: '1.5px solid #cbd5e1',
+            backgroundColor: '#ffffff', color: '#0f172a', fontSize: '0.88rem', fontWeight: '800',
+            cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: '0.4rem'
+          }}
+        >
+          <Download size={16} />
+          <span>Export PDF</span>
+        </button>
+      )}
+    </div>
   </div>
 );
 

@@ -175,6 +175,7 @@ import { useSearchParams } from 'react-router-dom';
 import ExpenseApprovalModal from '../components/operations/modals/ExpenseApprovalModal';
 import SubmitExpenseModal from '../components/operations/modals/SubmitExpenseModal';
 import ProjectDetailModal from '../components/operations/modals/ProjectDetailModal';
+import UpdateProgressModal from '../components/operations/modals/UpdateProgressModal';
 import ManageMilestonesModal from '../components/operations/modals/ManageMilestonesModal';
 import CreateSupervisorModal from '../components/operations/modals/CreateSupervisorModal';
 import TransferAdvanceModal from '../components/operations/modals/TransferAdvanceModal';
@@ -260,6 +261,9 @@ const OperationsDashboard = () => {
   
   const [isManageMilestonesOpen, setIsManageMilestonesOpen] = useState(false);
   const [targetProjectForMilestones, setTargetProjectForMilestones] = useState(null);
+
+  const [isUpdateProgressOpen, setIsUpdateProgressOpen] = useState(false);
+  const [targetProjectForProgress, setTargetProjectForProgress] = useState(null);
 
   const [isProjectDetailOpen, setIsProjectDetailOpen] = useState(false);
   const [selectedProjectDetail, setSelectedProjectDetail] = useState(null);
@@ -607,6 +611,41 @@ const OperationsDashboard = () => {
       }
     } catch (err) {
       toast.error(err.response?.data?.error || 'Could not delete milestone');
+    }
+  };
+
+  const handleUpdateProgress = async (updateData) => {
+    const { projectId, progress, health, milestones, status, newLog } = updateData;
+    try {
+      const patchBody = { progress };
+      if (DISPLAY_TO_HEALTH[health]) patchBody.health = DISPLAY_TO_HEALTH[health];
+      if (DISPLAY_TO_STATUS[status]) patchBody.status = DISPLAY_TO_STATUS[status];
+      else if (health === 'Completed') patchBody.status = 'completed';
+      await axios.patch(`${API}/projects/${projectId}`, patchBody);
+
+      const original = projects.find(p => p.id === projectId);
+      const originalMilestones = original?.milestones || [];
+      await Promise.all((milestones || []).map(async (m) => {
+        const orig = originalMilestones.find(om => om.id === m.id);
+        if (orig && orig.status !== m.status) {
+          await axios.patch(`${API}/projects/${projectId}/milestones/${m.id}`, { status: m.status });
+        }
+      }));
+
+      if (newLog) {
+        await axios.post(`${API}/site-logs`, {
+          projectId,
+          title: newLog.title,
+          workSummary: newLog.workSummary,
+          laborCount: newLog.laborCount,
+          issues: newLog.issues && newLog.issues !== 'None' ? newLog.issues : undefined,
+        });
+      }
+
+      toast.success(`Site progress updated to ${progress}%!`);
+      await fetchCore();
+    } catch (err) {
+      toast.error(err.response?.data?.error || 'Failed to update progress');
     }
   };
 

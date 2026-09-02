@@ -29,7 +29,7 @@ import { useLanguage } from '../context/LanguageContext';
 import { exportToExcel, triggerPrint, exportToPDF } from '../utils/exportUtils';
 
 const DailyExpenses = () => {
-  const { walletBalance, expensesList, recordExpense, todaySpend } = useWallet();
+  const { project, categories, walletBalance, expensesList, recordExpense, todaySpend } = useWallet();
   const { t, language } = useLanguage();
 
   const [searchTerm, setSearchTerm] = useState('');

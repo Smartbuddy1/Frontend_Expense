@@ -5,6 +5,7 @@ import {
 } from 'lucide-react';
 import { useLanguage } from '../../context/LanguageContext';
 import './operations-dashboard.css';
+import { StatCard } from './OperationsOverview';
 
 export const AlertsTab = ({ alerts: rawAlerts = [], onSelectProject }) => {
   const { language } = useLanguage();
@@ -57,57 +58,38 @@ export const AlertsTab = ({ alerts: rawAlerts = [], onSelectProject }) => {
 
       {/* KPI Stats Strip */}
       <div className="dash-stats-grid" style={{ gridTemplateColumns: 'repeat(4, minmax(0, 1fr))' }}>
-        <div className="dash-stat-card">
-          <div className="dash-stat-top">
-            <span className="dash-stat-label">Total Active Alerts</span>
-            <div className="dash-stat-icon-box" style={{ backgroundColor: '#ef4444' }}>
-              <AlertTriangle size={18} strokeWidth={2.2} />
-            </div>
-          </div>
-          <h3 className="dash-stat-val">{openCount}</h3>
-          <span className="dash-status-pill" style={{ background: '#fef2f2', color: '#dc2626', borderColor: '#fecaca' }}>
-            ● Requires Attention
-          </span>
-        </div>
-
-        <div className="dash-stat-card">
-          <div className="dash-stat-top">
-            <span className="dash-stat-label">High Priority</span>
-            <div className="dash-stat-icon-box" style={{ backgroundColor: '#ea580c' }}>
-              <ShieldAlert size={18} strokeWidth={2.2} />
-            </div>
-          </div>
-          <h3 className="dash-stat-val">{highCount}</h3>
-          <span className="dash-status-pill" style={{ background: '#fff7ed', color: '#c2410c', borderColor: '#ffedd5' }}>
-            Needs Review
-          </span>
-        </div>
-
-        <div className="dash-stat-card">
-          <div className="dash-stat-top">
-            <span className="dash-stat-label">Low Cash Float</span>
-            <div className="dash-stat-icon-box" style={{ backgroundColor: '#f59e0b' }}>
-              <AlertCircle size={18} strokeWidth={2.2} />
-            </div>
-          </div>
-          <h3 className="dash-stat-val">{lowFloatCount}</h3>
-          <span className="dash-status-pill" style={{ background: '#fffbeb', color: '#b45309', borderColor: '#fef3c7' }}>
-            Sites Below ₹5,000
-          </span>
-        </div>
-
-        <div className="dash-stat-card">
-          <div className="dash-stat-top">
-            <span className="dash-stat-label">Resolved This Session</span>
-            <div className="dash-stat-icon-box" style={{ backgroundColor: '#10b981' }}>
-              <Clock size={18} strokeWidth={2.2} />
-            </div>
-          </div>
-          <h3 className="dash-stat-val">{resolvedCount}</h3>
-          <span className="dash-status-pill">
-            ✓ Cleared
-          </span>
-        </div>
+        <StatCard 
+          title="Total Active Alerts" 
+          value={openCount} 
+          badgeText="Requires Attention" 
+          badgeType="danger" 
+          icon={AlertTriangle} 
+          iconBg="#ef4444" 
+        />
+        <StatCard 
+          title="High Priority" 
+          value={highCount} 
+          badgeText="Needs Review" 
+          badgeType="danger" 
+          icon={ShieldAlert} 
+          iconBg="#ea580c" 
+        />
+        <StatCard 
+          title="Low Cash Float" 
+          value={lowFloatCount} 
+          badgeText="Sites Below ₹5,000" 
+          badgeType="danger" 
+          icon={AlertCircle} 
+          iconBg="#f59e0b" 
+        />
+        <StatCard 
+          title="Resolved This Session" 
+          value={resolvedCount} 
+          badgeText="Cleared" 
+          badgeType="positive" 
+          icon={Clock} 
+          iconBg="#10b981" 
+        />
       </div>
 
       {/* Filter and Search Bar */}
