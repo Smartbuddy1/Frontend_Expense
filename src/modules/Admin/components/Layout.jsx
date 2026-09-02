@@ -61,7 +61,7 @@ const Layout = () => {
 
   const handleLogout = () => {
     logout();
-    window.location.href = '/';
+    window.location.href = import.meta.env.BASE_URL;
   };
 
   const currentTab = new URLSearchParams(location.search).get('tab') || (location.pathname === '/dashboard' || location.pathname === '/operations' ? 'overview' : '');

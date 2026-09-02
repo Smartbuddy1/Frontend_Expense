@@ -7,12 +7,16 @@ import OperationsApp from './modules/Operations/App';
 import { Smartphone, Lock, Eye, EyeOff, Sun, Moon, AlertCircle, ArrowRight, FileText } from 'lucide-react';
 import logoImg from './modules/Admin/assets/logo.png';
 
+// Base path the app is deployed under (e.g. "/" locally, "/expense/" on
+// aaryainnovtech.com/expense/) — set at build time via `vite build --base`.
+const BASE = import.meta.env.BASE_URL.replace(/\/$/, '');
+
 // Backend roles map straight to the module paths that already exist.
 const ROLE_TO_PATH = {
-  admin: '/admin',
-  operations: '/operations',
-  accountant: '/accountant',
-  site_supervisor: '/supervisor',
+  admin: `${BASE}/admin`,
+  operations: `${BASE}/operations`,
+  accountant: `${BASE}/accountant`,
+  site_supervisor: `${BASE}/supervisor`,
 };
 
 function GlobalLogin() {
@@ -157,7 +161,7 @@ function GlobalLogin() {
           </form>
 
           <div style={{ marginTop: '2rem', textAlign: 'center' }}>
-            <a href="/supervisor/expense-form" style={{ display: 'inline-flex', alignItems: 'center', gap: '0.5rem', color: 'var(--primary-color)', textDecoration: 'none', fontWeight: '600' }}>
+            <a href={`${BASE}/supervisor/expense-form`} style={{ display: 'inline-flex', alignItems: 'center', gap: '0.5rem', color: 'var(--primary-color)', textDecoration: 'none', fontWeight: '600' }}>
               <FileText size={18} />
               Submit Public Expense Form
             </a>
@@ -171,16 +175,16 @@ function GlobalLogin() {
 function App() {
   const path = window.location.pathname;
 
-  if (path.startsWith('/admin')) {
+  if (path.startsWith(`${BASE}/admin`)) {
     return <AdminApp />;
   }
-  if (path.startsWith('/accountant')) {
+  if (path.startsWith(`${BASE}/accountant`)) {
     return <AccountantApp />;
   }
-  if (path.startsWith('/supervisor')) {
+  if (path.startsWith(`${BASE}/supervisor`)) {
     return <SupervisorApp />;
   }
-  if (path.startsWith('/operations')) {
+  if (path.startsWith(`${BASE}/operations`)) {
     return <OperationsApp />;
   }
 

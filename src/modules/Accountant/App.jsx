@@ -15,7 +15,7 @@ const ProtectedRoute = ({ children }) => {
 
   if (loading) return <div className="flex h-screen items-center justify-center">Loading...</div>;
   if (!user || user.role !== 'accountant') {
-    window.location.href = '/';
+    window.location.href = import.meta.env.BASE_URL;
     return null;
   }
 
@@ -26,7 +26,7 @@ function App() {
   return (
     <ErrorBoundary>
       <AuthProvider>
-        <Router basename="/accountant">
+        <Router basename={`${import.meta.env.BASE_URL.replace(/\/$/, '')}/accountant`}>
           <Routes>
             {/* Protected Layout Routes */}
             <Route path="/" element={<ProtectedRoute><Layout /></ProtectedRoute>}>

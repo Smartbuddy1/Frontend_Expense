@@ -6,6 +6,7 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build",
+    "build:expense": "vite build --base=/expense/",
     "lint": "oxlint",
     "preview": "vite preview"
   },
