@@ -125,6 +125,8 @@ const BalanceSettlement = () => {
           }}>
             {language === 'mr'
               ? 'साईटवरील शिल्लक रक्कम, खर्च झालेला हिशोब आणि ऑडिट पासबुक लेजर.'
+              : language === 'hi'
+              ? 'साइट की शेष राशि, खर्च का हिसाब व ऑडिट पासबुक लेजर।'
               : 'Supervise available site petty balance, reconciled expenditures, and monthly audit settlement passbook.'}
           </p>
         </div>
@@ -219,7 +221,7 @@ const BalanceSettlement = () => {
         />
         <input
           type="text"
-          placeholder={language === 'mr' ? 'प्रोजेक्ट, तपशील किंवा रक्कम शोधा...' : 'Search project, details, amount...'}
+          placeholder={language === 'mr' ? 'प्रोजेक्ट, तपशील किंवा रक्कम शोधा...' : language === 'hi' ? 'प्रोजेक्ट, विवरण या राशि खोजें...' : 'Search project, details, amount...'}
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
           style={{
@@ -283,7 +285,7 @@ const BalanceSettlement = () => {
         }}>
           <h3 style={{ fontSize: '1.15rem', fontWeight: '800', color: 'var(--text-primary)', margin: 0, display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
             <Wallet size={18} color="#06b6d4" />
-            {language === 'mr' ? 'पासबुक स्टेटमेंट व ट्रॅन्झॅक्शन लेजर' : 'Passbook Statement & Transaction Ledger'}
+            {language === 'mr' ? 'पासबुक स्टेटमेंट व ट्रॅन्झॅक्शन लेजर' : language === 'hi' ? 'पासबुक स्टेटमेंट व ट्रांजेक्शन लेजर' : 'Passbook Statement & Transaction Ledger'}
           </h3>
         </div>
 
@@ -304,7 +306,7 @@ const BalanceSettlement = () => {
               {filteredEntries.length === 0 ? (
                 <tr>
                   <td colSpan="7" style={{ padding: '2.5rem', textAlign: 'center', color: 'var(--text-secondary)' }}>
-                    {language === 'mr' ? 'कोणताही ट्रॅन्झॅक्शन सापडला नाही.' : 'No matching transactions found.'}
+                    {language === 'mr' ? 'कोणताही ट्रॅन्झॅक्शन सापडला नाही.' : language === 'hi' ? 'कोई ट्रांजेक्शन नहीं मिला।' : 'No matching transactions found.'}
                   </td>
                 </tr>
               ) : (

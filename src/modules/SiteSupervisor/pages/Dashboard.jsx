@@ -93,7 +93,7 @@ const Dashboard = () => {
   };
 
   const currentSiteInfo = {
-    name: project ? project.name : (language === 'mr' ? 'कोणताही प्रकल्प नाही' : 'No Project Assigned'),
+    name: project ? project.name : (language === 'mr' ? 'कोणताही प्रकल्प नाही' : language === 'hi' ? 'कोई प्रोजेक्ट नहीं' : 'No Project Assigned'),
     labors: 0,
     advanceAllocated: totalAdvance,
     statusColor: '#3b82f6'
@@ -108,23 +108,23 @@ const Dashboard = () => {
     e.preventDefault();
     
     if (!expenseForm.site) {
-      alert(language === 'mr' ? 'कृपया साइट लोकेशन निवडा!' : 'Please select a Site Location!');
+      alert(language === 'mr' ? 'कृपया साइट लोकेशन निवडा!' : language === 'hi' ? 'कृपया साइट लोकेशन चुनें!' : 'Please select a Site Location!');
       return;
     }
     if (!expenseForm.category) {
-      alert(language === 'mr' ? 'कृपया खर्चाचा प्रकार निवडा!' : 'Please select an Expense Category!');
+      alert(language === 'mr' ? 'कृपया खर्चाचा प्रकार निवडा!' : language === 'hi' ? 'कृपया खर्च का प्रकार चुनें!' : 'Please select an Expense Category!');
       return;
     }
     if (!expenseForm.amount || isNaN(expenseForm.amount) || parseFloat(expenseForm.amount) <= 0) {
-      alert(language === 'mr' ? 'कृपया योग्य रक्कम भरा!' : 'Please enter a valid amount!');
+      alert(language === 'mr' ? 'कृपया योग्य रक्कम भरा!' : language === 'hi' ? 'कृपया सही राशि भरें!' : 'Please enter a valid amount!');
       return;
     }
     if (!expenseForm.paidTo || !expenseForm.paidTo.trim()) {
-      alert(language === 'mr' ? 'कृपया कोणाला पैसे दिले (Vendor / Person Name) ते भरा!' : 'Please enter Paid To (Vendor / Person Name)!');
+      alert(language === 'mr' ? 'कृपया कोणाला पैसे दिले (Vendor / Person Name) ते भरा!' : language === 'hi' ? 'कृपया किसे भुगतान किया (Vendor / Person Name) यह भरें!' : 'Please enter Paid To (Vendor / Person Name)!');
       return;
     }
     if (!expenseForm.receiptName) {
-      alert(language === 'mr' ? 'कृपया बिलाचा फोटो किंवा डॉक्युमेंट पुरावा जोडा (Bill Proof अनिवार्य आहे)!' : 'Please attach a bill photo or document proof (Mandatory)!');
+      alert(language === 'mr' ? 'कृपया बिलाचा फोटो किंवा डॉक्युमेंट पुरावा जोडा (Bill Proof अनिवार्य आहे)!' : language === 'hi' ? 'कृपया बिल की फोटो या डॉक्युमेंट प्रमाण जोड़ें (Bill Proof अनिवार्य है)!' : 'Please attach a bill photo or document proof (Mandatory)!');
       return;
     }
 
@@ -147,25 +147,25 @@ const Dashboard = () => {
       previewUrl: null
     });
     setActiveModal(null);
-    alert(language === 'mr' ? 'खर्च आणि बिलाचा पुरावा यशस्वीरीत्या नोंदवला गेला!' : 'Expense and bill proof recorded successfully!');
+    alert(language === 'mr' ? 'खर्च आणि बिलाचा पुरावा यशस्वीरीत्या नोंदवला गेला!' : language === 'hi' ? 'खर्च और बिल का प्रमाण सफलतापूर्वक दर्ज हो गया!' : 'Expense and bill proof recorded successfully!');
   };
 
   const handleRequestAdvance = (e) => {
     e.preventDefault();
     if (!advanceForm.site) {
-      alert(language === 'mr' ? 'कृपया साइट लोकेशन निवडा!' : 'Please select a Site Location!');
+      alert(language === 'mr' ? 'कृपया साइट लोकेशन निवडा!' : language === 'hi' ? 'कृपया साइट लोकेशन चुनें!' : 'Please select a Site Location!');
       return;
     }
     if (!advanceForm.amount || isNaN(advanceForm.amount) || parseFloat(advanceForm.amount) <= 0) {
-      alert(language === 'mr' ? 'कृपया योग्य अ‍ॅडव्हान्स रक्कम भरा!' : 'Please enter a valid advance amount!');
+      alert(language === 'mr' ? 'कृपया योग्य अ‍ॅडव्हान्स रक्कम भरा!' : language === 'hi' ? 'कृपया सही एडवांस राशि भरें!' : 'Please enter a valid advance amount!');
       return;
     }
     if (!advanceForm.urgency) {
-      alert(language === 'mr' ? 'कृपया तातडीचा प्रकार (Urgency Level) निवडा!' : 'Please select an Urgency Level!');
+      alert(language === 'mr' ? 'कृपया तातडीचा प्रकार (Urgency Level) निवडा!' : language === 'hi' ? 'कृपया तात्कालिकता (Urgency Level) चुनें!' : 'Please select an Urgency Level!');
       return;
     }
     if (!advanceForm.reason || !advanceForm.reason.trim()) {
-      alert(language === 'mr' ? 'कृपया अ‍ॅडव्हान्सचे कारण / स्पष्टीकरण भरा (Mandatory)!' : 'Please enter Purpose / Reason for advance (Mandatory)!');
+      alert(language === 'mr' ? 'कृपया अ‍ॅडव्हान्सचे कारण / स्पष्टीकरण भरा (Mandatory)!' : language === 'hi' ? 'कृपया एडवांस का कारण / स्पष्टीकरण भरें (Mandatory)!' : 'Please enter Purpose / Reason for advance (Mandatory)!');
       return;
     }
 
@@ -174,8 +174,10 @@ const Dashboard = () => {
       reason: advanceForm.reason.trim(),
       site: advanceForm.site
     });
-    alert(language === 'mr' 
-      ? `₹${parseFloat(advanceForm.amount).toLocaleString()} ची अ‍ॅडव्हान्स मागणी मंजुरीसाठी पाठवली गेली आहे!` 
+    alert(language === 'mr'
+      ? `₹${parseFloat(advanceForm.amount).toLocaleString()} ची अ‍ॅडव्हान्स मागणी मंजुरीसाठी पाठवली गेली आहे!`
+      : language === 'hi'
+      ? `₹${parseFloat(advanceForm.amount).toLocaleString()} का एडवांस अनुरोध स्वीकृति के लिए भेज दिया गया है!`
       : `Advance request of ₹${parseFloat(advanceForm.amount).toLocaleString()} submitted successfully!`);
     setAdvanceForm({ site: project ? project.name : '', amount: '', reason: '', urgency: 'Immediate (Same Day)' });
     setActiveModal(null);
@@ -251,8 +253,10 @@ const Dashboard = () => {
             color: 'var(--text-secondary)',
             margin: 0
           }}>
-            {language === 'mr' 
-              ? 'नमस्कार (Site Supervisor), हा तुमच्या साइट्सचा आणि खर्चाचा आढावा आहे.' 
+            {language === 'mr'
+              ? 'नमस्कार (Site Supervisor), हा तुमच्या साइट्सचा आणि खर्चाचा आढावा आहे.'
+              : language === 'hi'
+              ? 'नमस्ते (Site Supervisor), यह आपकी साइटों व खर्च का विवरण है।'
               : 'Hello Site Supervisor, here is your assigned sites overview and expenses.'}
           </p>
         </div>
@@ -275,7 +279,7 @@ const Dashboard = () => {
               fontWeight: '700',
               fontSize: '0.85rem',
             }}>
-              {project ? project.name : (language === 'mr' ? 'कोणताही प्रकल्प नाही' : 'No Project')}
+              {project ? project.name : (language === 'mr' ? 'कोणताही प्रकल्प नाही' : language === 'hi' ? 'कोई प्रोजेक्ट नहीं' : 'No Project')}
             </span>
           </div>
         </div>
@@ -366,7 +370,7 @@ const Dashboard = () => {
           transition: 'transform 0.2s ease, box-shadow 0.2s ease'
         }}>
           <span style={{ fontSize: '0.85rem', fontWeight: '600', color: 'var(--text-secondary)' }}>
-            {language === 'mr' ? 'एकूण अ‍ॅडव्हान्स फंड' : 'Total Advance Fund'}
+            {language === 'mr' ? 'एकूण अ‍ॅडव्हान्स फंड' : language === 'hi' ? 'कुल एडवांस फंड' : 'Total Advance Fund'}
           </span>
 
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', margin: '0.4rem 0' }}>
@@ -419,7 +423,7 @@ const Dashboard = () => {
           transition: 'transform 0.2s ease, box-shadow 0.2s ease'
         }}>
           <span style={{ fontSize: '0.85rem', fontWeight: '600', color: 'var(--text-secondary)' }}>
-            {language === 'mr' ? 'साइटवरील खर्च' : 'Site Settled Spend'}
+            {language === 'mr' ? 'साइटवरील खर्च' : language === 'hi' ? 'साइट पर खर्च' : 'Site Settled Spend'}
           </span>
 
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', margin: '0.4rem 0' }}>
@@ -473,7 +477,7 @@ const Dashboard = () => {
             transition: 'transform 0.2s ease, box-shadow 0.2s ease'
           }}>
             <span style={{ fontSize: '0.85rem', fontWeight: '600', color: 'var(--text-secondary)' }}>
-              {language === 'mr' ? 'एकूण नियुक्त प्रोजेक्ट्स' : 'Total Projects'}
+              {language === 'mr' ? 'एकूण नियुक्त प्रोजेक्ट्स' : language === 'hi' ? 'कुल नियुक्त प्रोजेक्ट्स' : 'Total Projects'}
             </span>
 
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', margin: '0.4rem 0' }}>
@@ -600,7 +604,7 @@ const Dashboard = () => {
               {t('recentExpenses')}
             </h3>
             <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
-              {project ? `${language === 'mr' ? 'साइट' : 'Site'}: ${project.name} (${filteredExpensesList.length} ${language === 'mr' ? 'नोंदी' : 'entries'})` : ''}
+              {project ? `${language === 'mr' ? 'साइट' : language === 'hi' ? 'साइट' : 'Site'}: ${project.name} (${filteredExpensesList.length} ${language === 'mr' ? 'नोंदी' : language === 'hi' ? 'प्रविष्टियाँ' : 'entries'})` : ''}
             </p>
           </div>
 
@@ -645,7 +649,7 @@ const Dashboard = () => {
               {filteredExpensesList.length === 0 ? (
                 <tr>
                   <td colSpan="7" style={{ padding: '2rem', textAlign: 'center', color: 'var(--text-secondary)', fontSize: '0.9rem' }}>
-                    {language === 'mr' ? 'या साइटसाठी अद्याप कोणताही खर्च नोंदवलेला नाही.' : 'No expenses recorded for this site yet.'}
+                    {language === 'mr' ? 'या साइटसाठी अद्याप कोणताही खर्च नोंदवलेला नाही.' : language === 'hi' ? 'इस साइट के लिए अभी तक कोई खर्च दर्ज नहीं हुआ है।' : 'No expenses recorded for this site yet.'}
                   </td>
                 </tr>
               ) : (
@@ -813,7 +817,7 @@ const Dashboard = () => {
                 >
                   {categories.map((c) => (
                     <option key={c.id} value={c.name}>
-                      {c.name === 'Other' ? (language === 'mr' ? 'इतर (Other)' : 'Other') : c.name}
+                      {c.name === 'Other' ? (language === 'mr' ? 'इतर (Other)' : language === 'hi' ? 'अन्य (Other)' : 'Other') : c.name}
                     </option>
                   ))}
                 </select>
@@ -906,10 +910,10 @@ const Dashboard = () => {
                   >
                     <Camera size={22} color="#2563eb" />
                     <span style={{ fontSize: '0.8rem', fontWeight: '700' }}>
-                      {language === 'mr' ? 'कॅमेरा फोटो' : 'Camera Snap'}
+                      {language === 'mr' ? 'कॅमेरा फोटो' : language === 'hi' ? 'कैमरा फोटो' : 'Camera Snap'}
                     </span>
                     <span style={{ fontSize: '0.7rem', color: 'var(--text-secondary)' }}>
-                      {language === 'mr' ? 'थेट फोटो काढा' : 'Take direct photo'}
+                      {language === 'mr' ? 'थेट फोटो काढा' : language === 'hi' ? 'सीधे फोटो लें' : 'Take direct photo'}
                     </span>
                     <input 
                       type="file" 
@@ -942,10 +946,10 @@ const Dashboard = () => {
                   >
                     <FileText size={22} color="#8b5cf6" />
                     <span style={{ fontSize: '0.8rem', fontWeight: '700' }}>
-                      {language === 'mr' ? 'डॉक्युमेंट्स / गॅलरी' : 'Upload Document'}
+                      {language === 'mr' ? 'डॉक्युमेंट्स / गॅलरी' : language === 'hi' ? 'डॉक्युमेंट्स / गैलरी' : 'Upload Document'}
                     </span>
                     <span style={{ fontSize: '0.7rem', color: 'var(--text-secondary)' }}>
-                      {language === 'mr' ? 'PDF किंवा इमेज निवडा' : 'PDF, JPG, PNG'}
+                      {language === 'mr' ? 'PDF किंवा इमेज निवडा' : language === 'hi' ? 'PDF या इमेज चुनें' : 'PDF, JPG, PNG'}
                     </span>
                     <input 
                       type="file" 
@@ -1054,10 +1058,10 @@ const Dashboard = () => {
                 </div>
                 <div>
                   <h3 style={{ fontSize: '1.2rem', fontWeight: '800', color: 'var(--text-primary)', margin: 0 }}>
-                    {language === 'mr' ? 'नवीन फंड मागणी (Fund Requisition)' : 'New Fund Requisition'}
+                    {language === 'mr' ? 'नवीन फंड मागणी (Fund Requisition)' : language === 'hi' ? 'नई फंड मांग (Fund Requisition)' : 'New Fund Requisition'}
                   </h3>
                   <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>
-                    {language === 'mr' ? 'साईटवरील तातडीच्या खर्चासाठी अ‍ॅडव्हान्स मागणी पाठवा' : 'Request advance petty cash from Head Office'}
+                    {language === 'mr' ? 'साईटवरील तातडीच्या खर्चासाठी अ‍ॅडव्हान्स मागणी पाठवा' : language === 'hi' ? 'साइट के तात्कालिक खर्च के लिए एडवांस मांग भेजें' : 'Request advance petty cash from Head Office'}
                   </span>
                 </div>
               </div>
@@ -1125,7 +1129,7 @@ const Dashboard = () => {
               {/* Urgency Level */}
               <div>
                 <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: '700', marginBottom: '0.35rem', color: 'var(--text-primary)' }}>
-                  {language === 'mr' ? 'तातडीचा प्रकार (Urgency Level)' : 'Urgency Level'} <span style={{ color: '#ef4444' }}>*</span>
+                  {language === 'mr' ? 'तातडीचा प्रकार (Urgency Level)' : language === 'hi' ? 'तात्कालिकता (Urgency Level)' : 'Urgency Level'} <span style={{ color: '#ef4444' }}>*</span>
                 </label>
                 <select
                   required
@@ -1155,7 +1159,7 @@ const Dashboard = () => {
                 </label>
                 <textarea 
                   rows="3"
-                  placeholder={language === 'mr' ? 'अ‍ॅडव्हान्स कशासाठी लागत आहे ते स्पष्ट लिहा (उदा. २ टन वाळू व मिक्सर मशीन भाडे)...' : 'Specify why advance is needed (e.g. 2 tons sand delivery & mixer machine rent)...'}
+                  placeholder={language === 'mr' ? 'अ‍ॅडव्हान्स कशासाठी लागत आहे ते स्पष्ट लिहा (उदा. २ टन वाळू व मिक्सर मशीन भाडे)...' : language === 'hi' ? 'एडवांस किसलिए चाहिए यह स्पष्ट लिखें (उदा. 2 टन रेत व मिक्सर मशीन किराया)...' : 'Specify why advance is needed (e.g. 2 tons sand delivery & mixer machine rent)...'}
                   required
                   value={advanceForm.reason}
                   onChange={(e) => setAdvanceForm({ ...advanceForm, reason: e.target.value })}

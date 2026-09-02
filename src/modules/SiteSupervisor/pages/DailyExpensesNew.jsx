@@ -80,23 +80,23 @@ const DailyExpenses = () => {
     e.preventDefault();
 
     if (!formData.site) {
-      alert(language === 'mr' ? 'कृपया साइट लोकेशन निवडा!' : 'Please select a Site Location!');
+      alert(language === 'mr' ? 'कृपया साइट लोकेशन निवडा!' : language === 'hi' ? 'कृपया साइट लोकेशन चुनें!' : 'Please select a Site Location!');
       return;
     }
     if (!formData.category) {
-      alert(language === 'mr' ? 'कृपया खर्चाचा प्रकार निवडा!' : 'Please select an Expense Category!');
+      alert(language === 'mr' ? 'कृपया खर्चाचा प्रकार निवडा!' : language === 'hi' ? 'कृपया खर्च का प्रकार चुनें!' : 'Please select an Expense Category!');
       return;
     }
     if (!formData.amount || isNaN(formData.amount) || parseFloat(formData.amount) <= 0) {
-      alert(language === 'mr' ? 'कृपया योग्य रक्कम भरा!' : 'Please enter a valid amount!');
+      alert(language === 'mr' ? 'कृपया योग्य रक्कम भरा!' : language === 'hi' ? 'कृपया सही राशि भरें!' : 'Please enter a valid amount!');
       return;
     }
     if (!formData.paidTo || !formData.paidTo.trim()) {
-      alert(language === 'mr' ? 'कृपया कोणाला पैसे दिले (Vendor / Person Name) ते भरा!' : 'Please enter Paid To (Vendor / Person Name)!');
+      alert(language === 'mr' ? 'कृपया कोणाला पैसे दिले (Vendor / Person Name) ते भरा!' : language === 'hi' ? 'कृपया किसे भुगतान किया (Vendor / Person Name) यह भरें!' : 'Please enter Paid To (Vendor / Person Name)!');
       return;
     }
     if (!formData.receiptName) {
-      alert(language === 'mr' ? 'कृपया बिलाचा फोटो किंवा डॉक्युमेंट पुरावा जोडा (Bill Proof अनिवार्य आहे)!' : 'Please attach a bill photo or document proof (Mandatory)!');
+      alert(language === 'mr' ? 'कृपया बिलाचा फोटो किंवा डॉक्युमेंट पुरावा जोडा (Bill Proof अनिवार्य आहे)!' : language === 'hi' ? 'कृपया बिल की फोटो या डॉक्युमेंट प्रमाण जोड़ें (Bill Proof अनिवार्य है)!' : 'Please attach a bill photo or document proof (Mandatory)!');
       return;
     }
 
@@ -124,9 +124,9 @@ const DailyExpenses = () => {
       });
 
       setIsAddModalOpen(false);
-      alert(language === 'mr' ? 'खर्च आणि बिलाचा पुरावा यशस्वीरीत्या नोंदवला गेला!' : 'Expense and bill proof recorded successfully!');
+      alert(language === 'mr' ? 'खर्च आणि बिलाचा पुरावा यशस्वीरीत्या नोंदवला गेला!' : language === 'hi' ? 'खर्च और बिल का प्रमाण सफलतापूर्वक दर्ज हो गया!' : 'Expense and bill proof recorded successfully!');
     } catch (err) {
-      alert(err.response?.data?.error || (language === 'mr' ? 'खर्च नोंदवण्यात अडचण आली, पुन्हा प्रयत्न करा.' : 'Could not save the expense, please try again.'));
+      alert(err.response?.data?.error || (language === 'mr' ? 'खर्च नोंदवण्यात अडचण आली, पुन्हा प्रयत्न करा.' : language === 'hi' ? 'खर्च दर्ज करने में समस्या आई, पुनः प्रयास करें.' : 'Could not save the expense, please try again.'));
     } finally {
       setSubmitting(false);
     }
@@ -233,6 +233,8 @@ const DailyExpenses = () => {
           }}>
             {language === 'mr'
               ? 'दैनिक साईट खर्च, मजुरी आणि बिलांचे व्यवस्थापन व ऑडिट रेकॉर्ड.'
+              : language === 'hi'
+              ? 'दैनिक साइट खर्च, मजदूरी व बिलों का प्रबंधन व ऑडिट रिकॉर्ड।'
               : 'Record, verify, and categorize daily site operational expenses, muster labor wages, and bills.'}
           </p>
         </div>
@@ -326,7 +328,7 @@ const DailyExpenses = () => {
         }}>
           <div>
             <span style={{ fontSize: '0.78rem', fontWeight: '700', color: 'var(--text-secondary)', textTransform: 'uppercase' }}>
-              {language === 'mr' ? 'एकूण खर्च' : 'Total Spent'}
+              {language === 'mr' ? 'एकूण खर्च' : language === 'hi' ? 'कुल खर्च' : 'Total Spent'}
             </span>
             <div style={{ fontSize: '1.5rem', fontWeight: '800', color: 'var(--text-primary)', marginTop: '0.2rem' }}>
               ₹{totalFilteredAmount.toLocaleString()}
@@ -350,7 +352,7 @@ const DailyExpenses = () => {
         }}>
           <div>
             <span style={{ fontSize: '0.78rem', fontWeight: '700', color: 'var(--text-secondary)', textTransform: 'uppercase' }}>
-              {language === 'mr' ? 'आजचा खर्च' : "Today's Spend"}
+              {language === 'mr' ? 'आजचा खर्च' : language === 'hi' ? 'आज का खर्च' : "Today's Spend"}
             </span>
             <div style={{ fontSize: '1.5rem', fontWeight: '800', color: '#10b981', marginTop: '0.2rem' }}>
               ₹{todaySpend.toLocaleString()}
@@ -406,7 +408,7 @@ const DailyExpenses = () => {
         />
         <input
           type="text"
-          placeholder={language === 'mr' ? 'खर्च, पावती, विक्रेता किंवा रक्कम शोधा...' : 'Search expense, vendor, category, site, amount...'}
+          placeholder={language === 'mr' ? 'खर्च, पावती, विक्रेता किंवा रक्कम शोधा...' : language === 'hi' ? 'खर्च, रसीद, विक्रेता या राशि खोजें...' : 'Search expense, vendor, category, site, amount...'}
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
           style={{
@@ -472,7 +474,7 @@ const DailyExpenses = () => {
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
             <ReceiptText size={20} color="#2563eb" />
             <h2 style={{ fontSize: '1.15rem', fontWeight: '800', color: 'var(--text-primary)', margin: 0 }}>
-              {language === 'mr' ? 'दैनिक खर्चाच्या नोंदी' : 'Daily Expense Entries'}
+              {language === 'mr' ? 'दैनिक खर्चाच्या नोंदी' : language === 'hi' ? 'दैनिक खर्च की प्रविष्टियाँ' : 'Daily Expense Entries'}
             </h2>
             <span style={{
               fontSize: '0.75rem',
@@ -482,7 +484,7 @@ const DailyExpenses = () => {
               backgroundColor: 'rgba(37, 99, 235, 0.12)',
               color: '#2563eb'
             }}>
-              {filteredExpenses.length} {language === 'mr' ? 'नोंदी' : 'Entries'}
+              {filteredExpenses.length} {language === 'mr' ? 'नोंदी' : language === 'hi' ? 'प्रविष्टियाँ' : 'Entries'}
             </span>
           </div>
 
@@ -535,7 +537,7 @@ const DailyExpenses = () => {
               {filteredExpenses.length === 0 ? (
                 <tr>
                   <td colSpan="8" style={{ padding: '2.5rem', textAlign: 'center', color: 'var(--text-secondary)' }}>
-                    {language === 'mr' ? 'कोणतीही खर्चाची नोंद सापडली नाही.' : 'No expense entries found.'}
+                    {language === 'mr' ? 'कोणतीही खर्चाची नोंद सापडली नाही.' : language === 'hi' ? 'कोई खर्च प्रविष्टि नहीं मिली।' : 'No expense entries found.'}
                   </td>
                 </tr>
               ) : (
@@ -711,7 +713,7 @@ const DailyExpenses = () => {
                 >
                   {categoriesList.filter(c => c !== 'All').map((c) => (
                     <option key={c} value={c}>
-                      {c === 'Other' ? (language === 'mr' ? 'इतर (Other)' : 'Other') : c}
+                      {c === 'Other' ? (language === 'mr' ? 'इतर (Other)' : language === 'hi' ? 'अन्य (Other)' : 'Other') : c}
                     </option>
                   ))}
                 </select>
@@ -804,10 +806,10 @@ const DailyExpenses = () => {
                   >
                     <Camera size={22} color="#2563eb" />
                     <span style={{ fontSize: '0.8rem', fontWeight: '700' }}>
-                      {language === 'mr' ? 'कॅमेरा फोटो' : 'Camera Snap'}
+                      {language === 'mr' ? 'कॅमेरा फोटो' : language === 'hi' ? 'कैमरा फोटो' : 'Camera Snap'}
                     </span>
                     <span style={{ fontSize: '0.7rem', color: 'var(--text-secondary)' }}>
-                      {language === 'mr' ? 'थेट फोटो काढा' : 'Take direct photo'}
+                      {language === 'mr' ? 'थेट फोटो काढा' : language === 'hi' ? 'सीधे फोटो लें' : 'Take direct photo'}
                     </span>
                     <input 
                       type="file" 
@@ -840,10 +842,10 @@ const DailyExpenses = () => {
                   >
                     <FileText size={22} color="#8b5cf6" />
                     <span style={{ fontSize: '0.8rem', fontWeight: '700' }}>
-                      {language === 'mr' ? 'डॉक्युमेंट्स / गॅलरी' : 'Upload Document'}
+                      {language === 'mr' ? 'डॉक्युमेंट्स / गॅलरी' : language === 'hi' ? 'डॉक्युमेंट्स / गैलरी' : 'Upload Document'}
                     </span>
                     <span style={{ fontSize: '0.7rem', color: 'var(--text-secondary)' }}>
-                      {language === 'mr' ? 'PDF किंवा इमेज निवडा' : 'PDF, JPG, PNG'}
+                      {language === 'mr' ? 'PDF किंवा इमेज निवडा' : language === 'hi' ? 'PDF या इमेज चुनें' : 'PDF, JPG, PNG'}
                     </span>
                     <input 
                       type="file" 
@@ -911,7 +913,7 @@ const DailyExpenses = () => {
                   boxShadow: '0 6px 18px rgba(99, 102, 241, 0.4)'
                 }}
               >
-                {submitting ? (language === 'mr' ? 'सेव्ह होत आहे...' : 'Saving...') : t('saveExpenseBtn')}
+                {submitting ? (language === 'mr' ? 'सेव्ह होत आहे...' : language === 'hi' ? 'सेव हो रहा है...' : 'Saving...') : t('saveExpenseBtn')}
               </button>
             </form>
           </div>

@@ -169,14 +169,14 @@ const Layout = () => {
             </div>
             <div className="user-details" style={{ minWidth: 0, display: 'flex', flexDirection: 'column' }}>
               <p className="user-name" style={{ margin: 0, fontSize: '0.9rem', fontWeight: '700', color: '#f8fafc', whiteSpace: 'nowrap' }}>
-                {language === 'mr' ? 'साइट सुपरवायझर' : 'Site Supervisor'}
+                {language === 'mr' ? 'साइट सुपरवायझर' : language === 'hi' ? 'साइट सुपरवाइजर' : 'Site Supervisor'}
               </p>
             </div>
           </div>
           <button 
             onClick={handleLogout} 
             className="logout-btn" 
-            title={language === 'mr' ? 'लॉगआउट' : 'Logout'}
+            title={language === 'mr' ? 'लॉगआउट' : language === 'hi' ? 'लॉगआउट' : 'Logout'}
             style={{
               background: 'rgba(255, 255, 255, 0.06)',
               color: '#94a3b8',
@@ -275,12 +275,14 @@ const Layout = () => {
                 transition: 'all 0.2s ease',
                 flexShrink: 0
               }}
-              title="भाषा बदला / Switch Language"
+              title="भाषा बदला / Switch Language / भाषा बदलें"
             >
               <Globe size={14} color="#3b82f6" />
               <span style={{ color: language === 'mr' ? '#3b82f6' : 'var(--text-secondary)' }}>मराठी</span>
               <span style={{ color: 'var(--slate-400)', fontSize: '0.65rem' }}>|</span>
               <span style={{ color: language === 'en' ? '#3b82f6' : 'var(--text-secondary)' }}>ENG</span>
+              <span style={{ color: 'var(--slate-400)', fontSize: '0.65rem' }}>|</span>
+              <span style={{ color: language === 'hi' ? '#3b82f6' : 'var(--text-secondary)' }}>हिं</span>
             </button>
 
             {/* Theme Toggle */}

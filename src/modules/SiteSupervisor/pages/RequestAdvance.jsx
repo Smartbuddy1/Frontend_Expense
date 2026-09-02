@@ -45,19 +45,19 @@ const RequestAdvance = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!site) {
-      alert(language === 'mr' ? 'कृपया साइट लोकेशन निवडा!' : 'Please select a Site Location!');
+      alert(language === 'mr' ? 'कृपया साइट लोकेशन निवडा!' : language === 'hi' ? 'कृपया साइट लोकेशन चुनें!' : 'Please select a Site Location!');
       return;
     }
     if (!amount || isNaN(amount) || parseFloat(amount) <= 0) {
-      alert(language === 'mr' ? 'कृपया योग्य अ‍ॅडव्हान्स रक्कम भरा!' : 'Please enter a valid advance amount!');
+      alert(language === 'mr' ? 'कृपया योग्य अ‍ॅडव्हान्स रक्कम भरा!' : language === 'hi' ? 'कृपया सही एडवांस राशि भरें!' : 'Please enter a valid advance amount!');
       return;
     }
     if (!urgency) {
-      alert(language === 'mr' ? 'कृपया तातडीचा प्रकार (Urgency Level) निवडा!' : 'Please select an Urgency Level!');
+      alert(language === 'mr' ? 'कृपया तातडीचा प्रकार (Urgency Level) निवडा!' : language === 'hi' ? 'कृपया तात्कालिकता (Urgency Level) चुनें!' : 'Please select an Urgency Level!');
       return;
     }
     if (!purpose || !purpose.trim()) {
-      alert(language === 'mr' ? 'कृपया अ‍ॅडव्हान्सचे कारण / स्पष्टीकरण भरा (Mandatory)!' : 'Please enter Purpose / Reason for advance (Mandatory)!');
+      alert(language === 'mr' ? 'कृपया अ‍ॅडव्हान्सचे कारण / स्पष्टीकरण भरा (Mandatory)!' : language === 'hi' ? 'कृपया एडवांस का कारण / स्पष्टीकरण भरें (Mandatory)!' : 'Please enter Purpose / Reason for advance (Mandatory)!');
       return;
     }
 
@@ -74,9 +74,11 @@ const RequestAdvance = () => {
       setIsModalOpen(false);
       alert(language === 'mr'
         ? `₹${parseFloat(amount).toLocaleString()} ची अ‍ॅडव्हान्स मागणी मंजुरीसाठी पाठवली गेली आहे!`
+        : language === 'hi'
+        ? `₹${parseFloat(amount).toLocaleString()} की एडवांस मांग स्वीकृति के लिए भेज दी गई है!`
         : `Requisition of ₹${parseFloat(amount).toLocaleString()} submitted for Project Head approval!`);
     } catch (err) {
-      alert(err.response?.data?.error || err.message || (language === 'mr' ? 'अडचण आली, पुन्हा प्रयत्न करा.' : 'Could not submit the request, please try again.'));
+      alert(err.response?.data?.error || err.message || (language === 'mr' ? 'अडचण आली, पुन्हा प्रयत्न करा.' : language === 'hi' ? 'समस्या आई, कृपया पुनः प्रयास करें.' : 'Could not submit the request, please try again.'));
     } finally {
       setSubmitting(false);
     }
@@ -164,6 +166,8 @@ const RequestAdvance = () => {
           }}>
             {language === 'mr'
               ? 'साईटवरील खर्चासाठी नवीन अ‍ॅडव्हान्स फंडाची मागणी करा व मंजुरीचा स्टेटस तपासा.'
+              : language === 'hi'
+              ? 'साइट के खर्च के लिए नई एडवांस निधि की मांग करें व स्वीकृति की स्थिति देखें।'
               : 'Requisition site petty cash, urgent material purchase funds, and track approval status.'}
           </p>
         </div>
@@ -258,7 +262,7 @@ const RequestAdvance = () => {
         />
         <input
           type="text"
-          placeholder={language === 'mr' ? 'प्रोजेक्ट, कारण किंवा रक्कम शोधा...' : 'Search site, purpose, amount...'}
+          placeholder={language === 'mr' ? 'प्रोजेक्ट, कारण किंवा रक्कम शोधा...' : language === 'hi' ? 'प्रोजेक्ट, कारण या राशि खोजें...' : 'Search site, purpose, amount...'}
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
           style={{
@@ -320,7 +324,7 @@ const RequestAdvance = () => {
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', flexWrap: 'wrap' }}>
             <h2 style={{ fontSize: '1.15rem', fontWeight: '800', color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: '0.5rem', margin: 0 }}>
               <History size={18} color="#10b981" />
-              {language === 'mr' ? 'अलीकडील अ‍ॅडव्हान्स मागण्या (Requisition Ledger)' : 'Recent Advance Requisitions'}
+              {language === 'mr' ? 'अलीकडील अ‍ॅडव्हान्स मागण्या (Requisition Ledger)' : language === 'hi' ? 'हाल की एडवांस मांगें (Requisition Ledger)' : 'Recent Advance Requisitions'}
             </h2>
 
             {/* Total Requests Badge */}
@@ -366,7 +370,7 @@ const RequestAdvance = () => {
               onMouseLeave={(e) => e.currentTarget.style.transform = 'translateY(0)'}
             >
               <Plus size={16} />
-              <span>{language === 'mr' ? 'नवीन फंड मागणी' : 'Request New Fund'}</span>
+              <span>{language === 'mr' ? 'नवीन फंड मागणी' : language === 'hi' ? 'नई फंड मांग' : 'Request New Fund'}</span>
             </button>
           </div>
         </div>
@@ -389,7 +393,7 @@ const RequestAdvance = () => {
               {filteredHistory.length === 0 ? (
                 <tr>
                   <td colSpan="7" style={{ padding: '2.5rem', textAlign: 'center', color: 'var(--text-secondary)' }}>
-                    {language === 'mr' ? 'कोणतीही अ‍ॅडव्हान्स मागणी सापडली नाही.' : 'No matching advance requisitions found.'}
+                    {language === 'mr' ? 'कोणतीही अ‍ॅडव्हान्स मागणी सापडली नाही.' : language === 'hi' ? 'कोई एडवांस मांग नहीं मिली।' : 'No matching advance requisitions found.'}
                   </td>
                 </tr>
               ) : (
@@ -498,10 +502,10 @@ const RequestAdvance = () => {
                 </div>
                 <div>
                   <h3 style={{ fontSize: '1.2rem', fontWeight: '800', color: 'var(--text-primary)', margin: 0 }}>
-                    {language === 'mr' ? 'नवीन फंड मागणी (Fund Requisition)' : 'New Fund Requisition'}
+                    {language === 'mr' ? 'नवीन फंड मागणी (Fund Requisition)' : language === 'hi' ? 'नई फंड मांग (Fund Requisition)' : 'New Fund Requisition'}
                   </h3>
                   <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>
-                    {language === 'mr' ? 'साईटवरील तातडीच्या खर्चासाठी अ‍ॅडव्हान्स मागणी पाठवा' : 'Request advance petty cash from Head Office'}
+                    {language === 'mr' ? 'साईटवरील तातडीच्या खर्चासाठी अ‍ॅडव्हान्स मागणी पाठवा' : language === 'hi' ? 'साइट के तात्कालिक खर्च के लिए एडवांस मांग भेजें' : 'Request advance petty cash from Head Office'}
                   </span>
                 </div>
               </div>
@@ -551,7 +555,7 @@ const RequestAdvance = () => {
 
               <div style={{ marginBottom: '1rem' }}>
                 <label style={{ display: 'block', fontSize: '0.825rem', fontWeight: '700', marginBottom: '0.35rem', color: 'var(--text-primary)' }}>
-                  {language === 'mr' ? 'तातडीचा प्रकार (Urgency Level)' : 'Urgency Level'} <span style={{ color: '#ef4444' }}>*</span>
+                  {language === 'mr' ? 'तातडीचा प्रकार (Urgency Level)' : language === 'hi' ? 'तात्कालिकता (Urgency Level)' : 'Urgency Level'} <span style={{ color: '#ef4444' }}>*</span>
                 </label>
                 <select
                   required
@@ -571,7 +575,7 @@ const RequestAdvance = () => {
                 </label>
                 <textarea
                   rows="3"
-                  placeholder={language === 'mr' ? 'अ‍ॅडव्हान्स कशासाठी लागत आहे ते स्पष्ट लिहा (उदा. २ टन वाळू व मिक्सर मशीन भाडे)...' : 'Specify why advance is needed (e.g. 2 tons sand delivery & mixer machine rent)...'}
+                  placeholder={language === 'mr' ? 'अ‍ॅडव्हान्स कशासाठी लागत आहे ते स्पष्ट लिहा (उदा. २ टन वाळू व मिक्सर मशीन भाडे)...' : language === 'hi' ? 'एडवांस किसलिए चाहिए यह स्पष्ट लिखें (उदा. 2 टन रेत व मिक्सर मशीन किराया)...' : 'Specify why advance is needed (e.g. 2 tons sand delivery & mixer machine rent)...'}
                   required
                   value={purpose}
                   onChange={(e) => setPurpose(e.target.value)}

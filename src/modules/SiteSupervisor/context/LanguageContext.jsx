@@ -75,6 +75,78 @@ const translations = {
     currentLang: 'मराठी',
     switchLang: 'English'
   },
+  hi: {
+    // Navigation
+    dashboard: 'डैशबोर्ड',
+    assignedProjects: 'प्रोजेक्ट व साइट प्रगति',
+    requestAdvance: 'एडवांस अनुरोध',
+    dailyExpenses: 'दैनिक खर्च व बिल',
+    uploadBills: 'बिल अपलोड करें',
+    balanceSettlement: 'शेष राशि व पासबुक',
+    mainMenu: 'मुख्य मेनू',
+    logout: 'लॉगआउट',
+
+    // Header & Wallet
+    walletBalance: 'वॉलेट शेष राशि',
+    readyToSpend: 'खर्च के लिए उपलब्ध',
+    liveActive: 'साइट सक्रिय है',
+    justSpent: 'अभी खर्च हुआ',
+
+    // Dashboard Stats & Cards
+    supervisorTitle: 'साइट सुपरवाइजर डैशबोर्ड',
+    supervisorSubtitle: 'साइट के कार्य, दैनिक खर्च, एडवांस और बिलों का सीधा प्रबंधन।',
+    availableBalance: 'उपलब्ध शेष राशि',
+    totalAdvance: 'कुल प्राप्त एडवांस',
+    todaySpend: 'आज का कुल खर्च',
+    assignedSites: 'नियुक्त साइटें',
+    quickActions: 'त्वरित कार्य (Quick Actions)',
+    recentExpenses: 'हाल के खर्च व वाउचर',
+    recentExpensesSub: 'साइट पर दर्ज किए गए खर्च की ताज़ा प्रविष्टियाँ',
+    quickAddExpense: 'नया खर्च जोड़ें',
+
+    // Action Card Descriptions
+    descAssigned: 'साइट मानचित्र, मजदूरों की संख्या व दैनिक प्रगति देखें',
+    descAdvance: 'खरीद, डीजल व मजदूरी के लिए आपातकालीन निधि मांगें',
+    descExpenses: 'दैनिक खर्च दर्ज करें और बिल की फोटो/रसीद जोड़ें',
+    descSettlement: 'शेष राशि, हिसाब व अंतिम सेटलमेंट पासबुक देखें',
+
+    // Table Headers
+    voucherId: 'वाउचर आईडी',
+    expenseCategory: 'खर्च का प्रकार',
+    siteLocation: 'साइट स्थान',
+    dateTime: 'तारीख',
+    amount: 'राशि (₹)',
+    status: 'स्थिति (Status)',
+    receipt: 'रसीद / बिल',
+    view: 'देखें',
+    noBill: 'बिल नहीं',
+    approved: 'स्वीकृत',
+    pending: 'जांच जारी',
+
+    // Expense Form
+    recordExpenseTitle: 'खर्च दर्ज करें व बिल जोड़ें',
+    expenseCategoryLabel: 'खर्च का प्रकार (Category)',
+    amountPaidLabel: 'भुगतान की गई राशि (₹)',
+    paidToLabel: 'किसे भुगतान किया (दुकान / व्यक्ति का नाम)',
+    attachBillProof: 'बिल का प्रमाण जोड़ें (फोटो / रसीद)',
+    cameraSnap: 'कैमरे से फोटो लें',
+    chooseFile: 'फाइल / गैलरी चुनें',
+    saveExpenseBtn: 'खर्च व बिल सहेजें',
+    filterAll: 'सभी प्रविष्टियाँ',
+    filterWithBill: 'बिल सहित',
+
+    // Request Advance
+    requestAdvanceTitle: 'एडवांस राशि का अनुरोध',
+    requestAdvanceSub: 'साइट के चालू कार्यों व मजदूरी के लिए निधि का अनुरोध करें।',
+    reqAmountLabel: 'आवश्यक राशि (₹)',
+    purposeLabel: 'अनुरोध का कारण / स्पष्टीकरण',
+    sendRequisitionBtn: 'एडवांस अनुरोध भेजें',
+    advanceHistory: 'पिछले एडवांस रिकॉर्ड',
+
+    // Language names
+    currentLang: 'हिंदी',
+    switchLang: 'मराठी'
+  },
   en: {
     // Navigation
     dashboard: 'Dashboard',
@@ -158,8 +230,9 @@ export const LanguageProvider = ({ children }) => {
     localStorage.setItem('app_language', language);
   }, [language]);
 
+  const LANG_CYCLE = ['mr', 'en', 'hi'];
   const toggleLanguage = () => {
-    setLanguage(prev => (prev === 'mr' ? 'en' : 'mr'));
+    setLanguage(prev => LANG_CYCLE[(LANG_CYCLE.indexOf(prev) + 1) % LANG_CYCLE.length]);
   };
 
   const t = (key) => {

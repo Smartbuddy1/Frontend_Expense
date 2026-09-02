@@ -68,13 +68,13 @@ const PublicExpenseForm = () => {
 
   // Departments / Roles
   const roles = [
-    { value: 'Site Supervisor', labelEn: 'Site Supervisor', labelMr: 'साइट सुपरवायझर', icon: Briefcase },
-    { value: 'Sales / Field Executive', labelEn: 'Sales / Field Executive', labelMr: 'सेल्स / फील्ड एक्झिक्युटिव्ह', icon: Zap },
-    { value: 'Site Engineer / Manager', labelEn: 'Site Engineer / Manager', labelMr: 'साइट इंजिनिअर / मॅनेजर', icon: Building2 },
-    { value: 'Procurement / Purchase', labelEn: 'Procurement / Purchase', labelMr: 'खरेदी विभाग (Purchase)', icon: Tag },
-    { value: 'Office & Admin', labelEn: 'Office & Admin', labelMr: 'ऑफिस / ॲडमिन', icon: Layers },
-    { value: 'Contractor / Vendor', labelEn: 'Contractor / Vendor', labelMr: 'कंत्राटदार / व्हेंडर', icon: User },
-    { value: 'Other', labelEn: 'Other', labelMr: 'इतर', icon: User }
+    { value: 'Site Supervisor', labelEn: 'Site Supervisor', labelMr: 'साइट सुपरवायझर', labelHi: 'साइट सुपरवाइजर', icon: Briefcase },
+    { value: 'Sales / Field Executive', labelEn: 'Sales / Field Executive', labelMr: 'सेल्स / फील्ड एक्झिक्युटिव्ह', labelHi: 'सेल्स / फील्ड एक्जीक्यूटिव', icon: Zap },
+    { value: 'Site Engineer / Manager', labelEn: 'Site Engineer / Manager', labelMr: 'साइट इंजिनिअर / मॅनेजर', labelHi: 'साइट इंजीनियर / मैनेजर', icon: Building2 },
+    { value: 'Procurement / Purchase', labelEn: 'Procurement / Purchase', labelMr: 'खरेदी विभाग (Purchase)', labelHi: 'खरीद विभाग (Purchase)', icon: Tag },
+    { value: 'Office & Admin', labelEn: 'Office & Admin', labelMr: 'ऑफिस / ॲडमिन', labelHi: 'ऑफिस / एडमिन', icon: Layers },
+    { value: 'Contractor / Vendor', labelEn: 'Contractor / Vendor', labelMr: 'कंत्राटदार / व्हेंडर', labelHi: 'ठेकेदार / वेंडर', icon: User },
+    { value: 'Other', labelEn: 'Other', labelMr: 'इतर', labelHi: 'अन्य', icon: User }
   ];
 
   // Sites List
@@ -86,16 +86,16 @@ const PublicExpenseForm = () => {
 
   // Categories
   const categories = [
-    { value: 'Travel', labelEn: 'Travel / Conveyance', labelMr: 'प्रवास / पेट्रोल / भाडे', emoji: '🚗' },
-    { value: 'Local Conveyance', labelEn: 'Local Conveyance (Auto/Taxi)', labelMr: 'स्थानिक प्रवास (रिक्षा/टॅक्सी)', emoji: '🛺' },
-    { value: 'Client Meeting / Hospitality', labelEn: 'Client Meeting / Food & Tea', labelMr: 'क्लायंट भेट / चहा-नाश्ता', emoji: '☕' },
-    { value: 'Purchase', labelEn: 'Purchase / Site Material', labelMr: 'खरेदी / मटेरिअल', emoji: '🛒' },
-    { value: 'Transport', labelEn: 'Transport & Freight', labelMr: 'वाहतूक / टेम्पो भाडे', emoji: '🚚' },
-    { value: 'Labour', labelEn: 'Labour / Daily Wages', labelMr: 'मजुरी / दैनंदिन वेतन', emoji: '👷' },
-    { value: 'Lodging and Boarding', labelEn: 'Lodging & Boarding', labelMr: 'निवास व जेवण', emoji: '🏨' },
-    { value: 'Office & Stationary', labelEn: 'Office Stationary / Printing', labelMr: 'ऑफिस / झेरॉक्स / प्रिंट', emoji: '📄' },
-    { value: 'Miscellaneous', labelEn: 'Miscellaneous / Petty Cash', labelMr: 'किरकोळ खर्च', emoji: '📦' },
-    { value: 'Other', labelEn: 'Other', labelMr: 'इतर', emoji: '📌' }
+    { value: 'Travel', labelEn: 'Travel / Conveyance', labelMr: 'प्रवास / पेट्रोल / भाडे', labelHi: 'यात्रा / पेट्रोल / किराया', emoji: '🚗' },
+    { value: 'Local Conveyance', labelEn: 'Local Conveyance (Auto/Taxi)', labelMr: 'स्थानिक प्रवास (रिक्षा/टॅक्सी)', labelHi: 'स्थानीय यात्रा (रिक्शा/टैक्सी)', emoji: '🛺' },
+    { value: 'Client Meeting / Hospitality', labelEn: 'Client Meeting / Food & Tea', labelMr: 'क्लायंट भेट / चहा-नाश्ता', labelHi: 'क्लाइंट मीटिंग / चाय-नाश्ता', emoji: '☕' },
+    { value: 'Purchase', labelEn: 'Purchase / Site Material', labelMr: 'खरेदी / मटेरिअल', labelHi: 'खरीद / मटेरियल', emoji: '🛒' },
+    { value: 'Transport', labelEn: 'Transport & Freight', labelMr: 'वाहतूक / टेम्पो भाडे', labelHi: 'परिवहन / टेम्पो किराया', emoji: '🚚' },
+    { value: 'Labour', labelEn: 'Labour / Daily Wages', labelMr: 'मजुरी / दैनंदिन वेतन', labelHi: 'मजदूरी / दैनिक वेतन', emoji: '👷' },
+    { value: 'Lodging and Boarding', labelEn: 'Lodging & Boarding', labelMr: 'निवास व जेवण', labelHi: 'निवास व भोजन', emoji: '🏨' },
+    { value: 'Office & Stationary', labelEn: 'Office Stationary / Printing', labelMr: 'ऑफिस / झेरॉक्स / प्रिंट', labelHi: 'ऑफिस / फोटोकॉपी / प्रिंट', emoji: '📄' },
+    { value: 'Miscellaneous', labelEn: 'Miscellaneous / Petty Cash', labelMr: 'किरकोळ खर्च', labelHi: 'विविध खर्च', emoji: '📦' },
+    { value: 'Other', labelEn: 'Other', labelMr: 'इतर', labelHi: 'अन्य', emoji: '📌' }
   ];
 
   // Auto-fetch GPS Location on component mount
@@ -107,7 +107,7 @@ const PublicExpenseForm = () => {
     if (!navigator.geolocation) {
       setFormData(prev => ({
         ...prev,
-        gpsError: language === 'mr' ? 'ब्राउझरमध्ये GPS सुविधा उपलब्ध नाही' : 'Geolocation is not supported by your browser'
+        gpsError: language === 'mr' ? 'ब्राउझरमध्ये GPS सुविधा उपलब्ध नाही' : language === 'hi' ? 'ब्राउज़र में GPS सुविधा उपलब्ध नहीं है' : 'Geolocation is not supported by your browser'
       }));
       return;
     }
@@ -148,7 +148,7 @@ const PublicExpenseForm = () => {
         }));
       },
       (error) => {
-        let errMessage = language === 'mr' ? 'लोकेशन परमिशन चालू करा' : 'Location permission denied or unavailable';
+        let errMessage = language === 'mr' ? 'लोकेशन परमिशन चालू करा' : language === 'hi' ? 'लोकेशन परमिशन चालू करें' : 'Location permission denied or unavailable';
         setFormData(prev => ({
           ...prev,
           isGpsLoading: false,
@@ -182,27 +182,27 @@ const PublicExpenseForm = () => {
     const selectedSite = formData.site === 'Other / Custom Location' ? formData.customSite.trim() : formData.site;
 
     if (!selectedSite) {
-      alert(language === 'mr' ? 'कृपया साइट किंवा ठिकाणाचे नाव टाका!' : 'Please enter or select a site/location!');
+      alert(language === 'mr' ? 'कृपया साइट किंवा ठिकाणाचे नाव टाका!' : language === 'hi' ? 'कृपया साइट या स्थान का नाम डालें!' : 'Please enter or select a site/location!');
       return;
     }
 
     if (!formData.submitterName.trim()) {
-      alert(language === 'mr' ? 'कृपया तुमचे नाव भरा!' : 'Please enter your name!');
+      alert(language === 'mr' ? 'कृपया तुमचे नाव भरा!' : language === 'hi' ? 'कृपया अपना नाम भरें!' : 'Please enter your name!');
       return;
     }
 
     if (!formData.amount || isNaN(formData.amount) || parseFloat(formData.amount) <= 0) {
-      alert(language === 'mr' ? 'कृपया वैध रक्कम भरा!' : 'Please enter a valid amount!');
+      alert(language === 'mr' ? 'कृपया वैध रक्कम भरा!' : language === 'hi' ? 'कृपया सही राशि भरें!' : 'Please enter a valid amount!');
       return;
     }
 
     if (!formData.paidTo || !formData.paidTo.trim()) {
-      alert(language === 'mr' ? 'कृपया ज्याला पैसे दिले त्याचे नाव भरा!' : 'Please enter Vendor / Person name!');
+      alert(language === 'mr' ? 'कृपया ज्याला पैसे दिले त्याचे नाव भरा!' : language === 'hi' ? 'कृपया जिसे भुगतान किया उसका नाम भरें!' : 'Please enter Vendor / Person name!');
       return;
     }
 
     if (!formData.receiptName) {
-      alert(language === 'mr' ? 'कृपया बिलाचा फोटो किंवा डॉक्युमेंट जोडा (आवश्यक)!' : 'Please attach Bill / Receipt Proof (Required)!');
+      alert(language === 'mr' ? 'कृपया बिलाचा फोटो किंवा डॉक्युमेंट जोडा (आवश्यक)!' : language === 'hi' ? 'कृपया बिल की फोटो या डॉक्युमेंट जोड़ें (आवश्यक)!' : 'Please attach Bill / Receipt Proof (Required)!');
       return;
     }
 
@@ -303,7 +303,7 @@ const PublicExpenseForm = () => {
               <span className="pef-live-badge">LIVE</span>
             </div>
             <span className="pef-brand-subtitle">
-              {language === 'mr' ? 'फील्ड व साइट खर्च पोर्टल' : 'Field & Site Expense Portal'}
+              {language === 'mr' ? 'फील्ड व साइट खर्च पोर्टल' : language === 'hi' ? 'फील्ड व साइट खर्च पोर्टल' : 'Field & Site Expense Portal'}
             </span>
           </div>
         </div>
@@ -311,11 +311,12 @@ const PublicExpenseForm = () => {
         {/* Language Switcher */}
         <button
           type="button"
-          onClick={() => setLanguage(language === 'mr' ? 'en' : 'mr')}
+          onClick={() => setLanguage(language === 'mr' ? 'en' : language === 'en' ? 'hi' : 'mr')}
           className="pef-lang-btn"
+          title="भाषा बदला / Switch Language / भाषा बदलें"
         >
           <Globe size={15} color="#2563eb" />
-          <span>{language === 'mr' ? 'English' : 'मराठी'}</span>
+          <span>{language === 'mr' ? 'English' : language === 'en' ? 'हिंदी' : 'मराठी'}</span>
         </button>
       </header>
 
@@ -330,7 +331,7 @@ const PublicExpenseForm = () => {
             <div>
               <h2 className="pef-card-title">Expense Form</h2>
               <p className="pef-card-subtitle">
-                {language === 'mr' ? 'खर्च आणि बिल पुरावा नोंदवा' : 'Record Expense & Bill Proof'}
+                {language === 'mr' ? 'खर्च आणि बिल पुरावा नोंदवा' : language === 'hi' ? 'खर्च व बिल प्रमाण दर्ज करें' : 'Record Expense & Bill Proof'}
               </p>
             </div>
           </div>
@@ -345,13 +346,13 @@ const PublicExpenseForm = () => {
             <div className="pef-gps-text-wrap">
               <span className="pef-gps-main-text">
                 {formData.isGpsLoading ? (
-                  language === 'mr' ? 'GPS लोकेशन शोधत आहे...' : 'Auto-detecting GPS location...'
+                  language === 'mr' ? 'GPS लोकेशन शोधत आहे...' : language === 'hi' ? 'GPS लोकेशन खोजा जा रहा है...' : 'Auto-detecting GPS location...'
                 ) : formData.gpsAddress ? (
                   formData.gpsAddress
                 ) : formData.gpsError ? (
                   formData.gpsError
                 ) : (
-                  language === 'mr' ? 'ऑटो GPS लोकेशन' : 'Auto GPS Location'
+                  language === 'mr' ? 'ऑटो GPS लोकेशन' : language === 'hi' ? 'ऑटो GPS लोकेशन' : 'Auto GPS Location'
                 )}
               </span>
               {formData.gpsLocation && !formData.isGpsLoading && (
@@ -367,7 +368,7 @@ const PublicExpenseForm = () => {
             className="pef-gps-refresh-btn"
           >
             <RotateCw size={12} className={formData.isGpsLoading ? 'spin-anim' : ''} />
-            <span>{language === 'mr' ? 'रिफ्रेश' : 'Refresh'}</span>
+            <span>{language === 'mr' ? 'रिफ्रेश' : language === 'hi' ? 'रिफ्रेश' : 'Refresh'}</span>
           </button>
         </div>
 
@@ -379,10 +380,10 @@ const PublicExpenseForm = () => {
             </div>
 
             <h3 className="pef-success-title">
-              {language === 'mr' ? 'खर्च यशस्वीरीत्या नोंदवला गेला!' : 'Expense Submitted Successfully!'}
+              {language === 'mr' ? 'खर्च यशस्वीरीत्या नोंदवला गेला!' : language === 'hi' ? 'खर्च सफलतापूर्वक दर्ज हो गया!' : 'Expense Submitted Successfully!'}
             </h3>
             <p className="pef-success-subtitle">
-              {language === 'mr' ? 'व्हाउचर पावती क्रमांक तयार झाला आहे:' : 'Your expense voucher ticket has been generated:'}
+              {language === 'mr' ? 'व्हाउचर पावती क्रमांक तयार झाला आहे:' : language === 'hi' ? 'वाउचर रसीद नंबर तैयार हो गया है:' : 'Your expense voucher ticket has been generated:'}
             </p>
 
             {/* Receipt Summary Card */}
@@ -390,13 +391,13 @@ const PublicExpenseForm = () => {
               <div className="pef-receipt-head">
                 <div>
                   <span className="pef-receipt-label">
-                    {language === 'mr' ? 'पावती क्रमांक (Voucher ID)' : 'VOUCHER REF ID'}
+                    {language === 'mr' ? 'पावती क्रमांक (Voucher ID)' : language === 'hi' ? 'रसीद नंबर (Voucher ID)' : 'VOUCHER REF ID'}
                   </span>
                   <div className="pef-receipt-id">{submittedEntry.id}</div>
                 </div>
                 <div style={{ textAlign: 'right' }}>
                   <span className="pef-receipt-label">
-                    {language === 'mr' ? 'एकूण रक्कम' : 'TOTAL AMOUNT'}
+                    {language === 'mr' ? 'एकूण रक्कम' : language === 'hi' ? 'कुल राशि' : 'TOTAL AMOUNT'}
                   </span>
                   <div className="pef-receipt-amount">₹{submittedEntry.amount.toLocaleString()}</div>
                 </div>
@@ -405,7 +406,7 @@ const PublicExpenseForm = () => {
               <div className="pef-receipt-grid">
                 <div>
                   <span className="pef-receipt-grid-label">
-                    {language === 'mr' ? 'सबमिट करणारे नाव' : 'Submitted By'}
+                    {language === 'mr' ? 'सबमिट करणारे नाव' : language === 'hi' ? 'सबमिट करने वाले का नाम' : 'Submitted By'}
                   </span>
                   <strong className="pef-receipt-grid-val">{submittedEntry.submitterName}</strong>
                   <div style={{ fontSize: '0.74rem', color: '#2563eb', fontWeight: '700' }}>{submittedEntry.role}</div>
@@ -413,28 +414,28 @@ const PublicExpenseForm = () => {
 
                 <div>
                   <span className="pef-receipt-grid-label">
-                    {language === 'mr' ? 'खर्चाचा प्रकार' : 'Expense Category'}
+                    {language === 'mr' ? 'खर्चाचा प्रकार' : language === 'hi' ? 'खर्च का प्रकार' : 'Expense Category'}
                   </span>
                   <strong className="pef-receipt-grid-val">{submittedEntry.category}</strong>
                 </div>
 
                 <div>
                   <span className="pef-receipt-grid-label">
-                    {language === 'mr' ? 'कोणाला दिले (Paid To)' : 'Paid To (Vendor)'}
+                    {language === 'mr' ? 'कोणाला दिले (Paid To)' : language === 'hi' ? 'किसे भुगतान किया (Paid To)' : 'Paid To (Vendor)'}
                   </span>
                   <strong className="pef-receipt-grid-val">{submittedEntry.paidTo}</strong>
                 </div>
 
                 <div>
                   <span className="pef-receipt-grid-label">
-                    {language === 'mr' ? 'पेमेंट पद्धत' : 'Payment Mode'}
+                    {language === 'mr' ? 'पेमेंट पद्धत' : language === 'hi' ? 'पेमेंट पद्धति' : 'Payment Mode'}
                   </span>
                   <strong className="pef-receipt-grid-val">{submittedEntry.paymentMode}</strong>
                 </div>
 
                 <div style={{ gridColumn: 'span 2' }}>
                   <span className="pef-receipt-grid-label">
-                    {language === 'mr' ? 'साइट / लोकेशन' : 'Site / Location'}
+                    {language === 'mr' ? 'साइट / लोकेशन' : language === 'hi' ? 'साइट / लोकेशन' : 'Site / Location'}
                   </span>
                   <strong className="pef-receipt-grid-val">{submittedEntry.site}</strong>
                 </div>
@@ -455,7 +456,7 @@ const PublicExpenseForm = () => {
               className="pef-submit-another-btn"
             >
               <Plus size={20} />
-              <span>{language === 'mr' ? 'आणखी एक खर्च भरा' : 'Submit Another Expense'}</span>
+              <span>{language === 'mr' ? 'आणखी एक खर्च भरा' : language === 'hi' ? 'एक और खर्च भरें' : 'Submit Another Expense'}</span>
             </button>
           </div>
         ) : (
@@ -468,7 +469,7 @@ const PublicExpenseForm = () => {
               <div>
                 <label className="pef-label">
                   <Briefcase size={14} color="#2563eb" />
-                  <span>{language === 'mr' ? 'विभाग / पद' : 'ROLE / DEPARTMENT'}</span>
+                  <span>{language === 'mr' ? 'विभाग / पद' : language === 'hi' ? 'विभाग / पद' : 'ROLE / DEPARTMENT'}</span>
                   <span className="pef-req-star">*</span>
                 </label>
                 
@@ -481,7 +482,7 @@ const PublicExpenseForm = () => {
                   >
                     {roles.map(r => (
                       <option key={r.value} value={r.value}>
-                        {language === 'mr' ? r.labelMr : r.labelEn}
+                        {language === 'mr' ? r.labelMr : language === 'hi' ? r.labelHi : r.labelEn}
                       </option>
                     ))}
                   </select>
@@ -493,13 +494,13 @@ const PublicExpenseForm = () => {
               <div>
                 <label className="pef-label">
                   <User size={14} color="#2563eb" />
-                  <span>{language === 'mr' ? 'तुमचे नाव' : 'YOUR NAME'}</span>
+                  <span>{language === 'mr' ? 'तुमचे नाव' : language === 'hi' ? 'आपका नाम' : 'YOUR NAME'}</span>
                   <span className="pef-req-star">*</span>
                 </label>
                 <input
                   type="text"
                   required
-                  placeholder={language === 'mr' ? 'उदा. राहुल पाटील' : 'e.g. Rahul Patil'}
+                  placeholder={language === 'mr' ? 'उदा. राहुल पाटील' : language === 'hi' ? 'उदा. राहुल पाटील' : 'e.g. Rahul Patil'}
                   value={formData.submitterName}
                   onChange={(e) => setFormData({ ...formData, submitterName: e.target.value })}
                   className="pef-input"
@@ -513,7 +514,7 @@ const PublicExpenseForm = () => {
               <div>
                 <label className="pef-label">
                   <MapPin size={14} color="#2563eb" />
-                  <span>{language === 'mr' ? 'साइट / लोकेशन' : 'SITE LOCATION'}</span>
+                  <span>{language === 'mr' ? 'साइट / लोकेशन' : language === 'hi' ? 'साइट / लोकेशन' : 'SITE LOCATION'}</span>
                   <span className="pef-req-star">*</span>
                 </label>
                 
@@ -535,7 +536,7 @@ const PublicExpenseForm = () => {
                   <input
                     type="text"
                     required
-                    placeholder={language === 'mr' ? 'कस्टम साइट किंवा क्लायंट लोकेशनचे नाव लिहा' : 'Enter site, client or shop location name'}
+                    placeholder={language === 'mr' ? 'कस्टम साइट किंवा क्लायंट लोकेशनचे नाव लिहा' : language === 'hi' ? 'कस्टम साइट या क्लाइंट लोकेशन का नाम लिखें' : 'Enter site, client or shop location name'}
                     value={formData.customSite}
                     onChange={(e) => setFormData({ ...formData, customSite: e.target.value })}
                     className="pef-input pef-custom-site-input"
@@ -547,10 +548,10 @@ const PublicExpenseForm = () => {
               <div>
                 <label className="pef-label">
                   <Tag size={14} color="#2563eb" />
-                  <span>{language === 'mr' ? 'खर्चाचा प्रकार' : 'Expense Category'}</span>
+                  <span>{language === 'mr' ? 'खर्चाचा प्रकार' : language === 'hi' ? 'खर्च का प्रकार' : 'Expense Category'}</span>
                   <span className="pef-req-star">*</span>
                 </label>
-                
+
                 <div className="pef-select-wrapper">
                   <select
                     required
@@ -560,7 +561,7 @@ const PublicExpenseForm = () => {
                   >
                     {categories.map(c => (
                       <option key={c.value} value={c.value}>
-                        {c.emoji} {language === 'mr' ? c.labelMr : c.labelEn}
+                        {c.emoji} {language === 'mr' ? c.labelMr : language === 'hi' ? c.labelHi : c.labelEn}
                       </option>
                     ))}
                   </select>
@@ -575,7 +576,7 @@ const PublicExpenseForm = () => {
               <div>
                 <div className="pef-amount-head">
                   <label className="pef-label" style={{ marginBottom: 0 }}>
-                    <span>{language === 'mr' ? 'भरलेली रक्कम' : 'Amount Paid (₹)'}</span>
+                    <span>{language === 'mr' ? 'भरलेली रक्कम' : language === 'hi' ? 'भुगतान की गई राशि (₹)' : 'Amount Paid (₹)'}</span>
                     <span className="pef-req-star">*</span>
                   </label>
                   
@@ -612,7 +613,7 @@ const PublicExpenseForm = () => {
               {/* PAID TO (VENDOR / PERSON NAME) */}
               <div>
                 <label className="pef-label">
-                  <span>{language === 'mr' ? 'कोणाला दिले' : 'Paid To (Vendor / Person Name)'}</span>
+                  <span>{language === 'mr' ? 'कोणाला दिले' : language === 'hi' ? 'किसे भुगतान किया' : 'Paid To (Vendor / Person Name)'}</span>
                   <span className="pef-req-star">*</span>
                 </label>
                 <input
@@ -629,7 +630,7 @@ const PublicExpenseForm = () => {
             {/* ROW 4: PAYMENT MODE */}
             <div>
               <label className="pef-label">
-                <span>{language === 'mr' ? 'पेमेंट पद्धत' : 'Payment Mode'}</span>
+                <span>{language === 'mr' ? 'पेमेंट पद्धत' : language === 'hi' ? 'पेमेंट पद्धति' : 'Payment Mode'}</span>
               </label>
               <div className="pef-paymode-grid">
                 {[
@@ -654,11 +655,11 @@ const PublicExpenseForm = () => {
             <div>
               <div className="pef-bill-header">
                 <label className="pef-label" style={{ margin: 0 }}>
-                  <span>{language === 'mr' ? 'बिल / पावती जोडा' : 'Attach Bill / Receipt Proof'}</span>
+                  <span>{language === 'mr' ? 'बिल / पावती जोडा' : language === 'hi' ? 'बिल / रसीद जोड़ें' : 'Attach Bill / Receipt Proof'}</span>
                   <span className="pef-req-star">*</span>
                 </label>
                 <span className={`pef-required-badge ${formData.receiptName ? 'pef-attached-badge' : ''}`}>
-                  {formData.receiptName ? '✓ Attached' : (language === 'mr' ? '(आवश्यक)' : '(Required)')}
+                  {formData.receiptName ? '✓ Attached' : (language === 'mr' ? '(आवश्यक)' : language === 'hi' ? '(आवश्यक)' : '(Required)')}
                 </span>
               </div>
 
@@ -669,8 +670,8 @@ const PublicExpenseForm = () => {
                   <div className="pef-upload-icon-circle pef-camera-icon-bg">
                     <Camera size={22} color="#2563eb" />
                   </div>
-                  <span className="pef-upload-title">{language === 'mr' ? 'कॅमेरा' : 'Camera'}</span>
-                  <span className="pef-upload-sub">{language === 'mr' ? 'थेट फोटो काढा' : 'Take direct photo'}</span>
+                  <span className="pef-upload-title">{language === 'mr' ? 'कॅमेरा' : language === 'hi' ? 'कैमरा' : 'Camera'}</span>
+                  <span className="pef-upload-sub">{language === 'mr' ? 'थेट फोटो काढा' : language === 'hi' ? 'सीधे फोटो लें' : 'Take direct photo'}</span>
                   <input
                     ref={cameraInputRef}
                     type="file"
@@ -686,8 +687,8 @@ const PublicExpenseForm = () => {
                   <div className="pef-upload-icon-circle pef-gallery-icon-bg">
                     <FileText size={22} color="#8b5cf6" />
                   </div>
-                  <span className="pef-upload-title">{language === 'mr' ? 'गॅलरी उघडा' : 'Open Gallery'}</span>
-                  <span className="pef-upload-sub">{language === 'mr' ? 'PDF किंवा इमेज निवडा' : 'PDF, JPG, PNG'}</span>
+                  <span className="pef-upload-title">{language === 'mr' ? 'गॅलरी उघडा' : language === 'hi' ? 'गैलरी खोलें' : 'Open Gallery'}</span>
+                  <span className="pef-upload-sub">{language === 'mr' ? 'PDF किंवा इमेज निवडा' : language === 'hi' ? 'PDF या इमेज चुनें' : 'PDF, JPG, PNG'}</span>
                   <input
                     ref={fileInputRef}
                     type="file"
@@ -716,7 +717,7 @@ const PublicExpenseForm = () => {
                         {formData.receiptName}
                       </span>
                       <span className="pef-preview-sub">
-                        {language === 'mr' ? '✓ फाइल जोडली गेली' : '✓ File attached successfully'}
+                        {language === 'mr' ? '✓ फाइल जोडली गेली' : language === 'hi' ? '✓ फाइल जुड़ गई' : '✓ File attached successfully'}
                       </span>
                     </div>
                   </div>
@@ -727,7 +728,7 @@ const PublicExpenseForm = () => {
                     className="pef-remove-file-btn"
                   >
                     <X size={14} />
-                    <span>{language === 'mr' ? 'काढा' : 'Remove'}</span>
+                    <span>{language === 'mr' ? 'काढा' : language === 'hi' ? 'हटाएं' : 'Remove'}</span>
                   </button>
                 </div>
               )}
@@ -736,11 +737,11 @@ const PublicExpenseForm = () => {
             {/* ROW 6: DESCRIPTION / PURPOSE */}
             <div>
               <label className="pef-label">
-                <span>{language === 'mr' ? 'खर्चाचे कारण / शेरा' : 'Purpose / Remarks of Expense'}</span>
+                <span>{language === 'mr' ? 'खर्चाचे कारण / शेरा' : language === 'hi' ? 'खर्च का कारण / टिप्पणी' : 'Purpose / Remarks of Expense'}</span>
               </label>
               <textarea
                 rows={2}
-                placeholder={language === 'mr' ? 'उदा. क्लायंट मीटिंगसाठी प्रवास खर्च, 5 सिमेंट गोणी खरेदी' : 'e.g. Travel for site visit, emergency material purchase'}
+                placeholder={language === 'mr' ? 'उदा. क्लायंट मीटिंगसाठी प्रवास खर्च, 5 सिमेंट गोणी खरेदी' : language === 'hi' ? 'उदा. क्लाइंट मीटिंग के लिए यात्रा खर्च, 5 सीमेंट बैग खरीद' : 'e.g. Travel for site visit, emergency material purchase'}
                 value={formData.description}
                 onChange={(e) => setFormData({ ...formData, description: e.target.value })}
                 className="pef-input pef-textarea"
@@ -756,19 +757,19 @@ const PublicExpenseForm = () => {
               {isSubmitting ? (
                 <>
                   <RotateCw size={20} className="spin-anim" />
-                  <span>{language === 'mr' ? 'नोंद होत आहे...' : 'Submitting...'}</span>
+                  <span>{language === 'mr' ? 'नोंद होत आहे...' : language === 'hi' ? 'दर्ज हो रहा है...' : 'Submitting...'}</span>
                 </>
               ) : (
                 <>
                   <Send size={19} />
-                  <span>{language === 'mr' ? 'सबमिट' : 'Submit'}</span>
+                  <span>{language === 'mr' ? 'सबमिट' : language === 'hi' ? 'सबमिट' : 'Submit'}</span>
                 </>
               )}
             </button>
 
             <div className="pef-footer-stamp">
               <ShieldCheck size={14} color="#16a34a" />
-              <span>{language === 'mr' ? 'GPS सत्यापित नोंद • SiteSupervisor' : 'GPS timestamped & verified submission • SiteSupervisor'}</span>
+              <span>{language === 'mr' ? 'GPS सत्यापित नोंद • SiteSupervisor' : language === 'hi' ? 'GPS सत्यापित प्रविष्टि • SiteSupervisor' : 'GPS timestamped & verified submission • SiteSupervisor'}</span>
             </div>
           </form>
         )}

@@ -105,6 +105,8 @@ const AssignedProjects = () => {
           }}>
             {language === 'mr'
               ? 'तुमच्या सर्व नियुक्त केलेल्या साइट्सची माहिती आणि बजेट तपशील.'
+              : language === 'hi'
+              ? 'आपकी सभी नियुक्त साइटों की जानकारी व बजट विवरण।'
               : 'Complete directory and specifications of assigned construction sites and allocated budgets.'}
           </p>
         </div>
@@ -199,7 +201,7 @@ const AssignedProjects = () => {
         />
         <input
           type="text"
-          placeholder={language === 'mr' ? 'साइट, लोकेशन किंवा प्रोजेक्ट शोधा...' : 'Search site, location, client, status...'}
+          placeholder={language === 'mr' ? 'साइट, लोकेशन किंवा प्रोजेक्ट शोधा...' : language === 'hi' ? 'साइट, लोकेशन या प्रोजेक्ट खोजें...' : 'Search site, location, client, status...'}
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
           style={{
@@ -263,7 +265,7 @@ const AssignedProjects = () => {
         }}>
           <h2 style={{ fontSize: '1.15rem', fontWeight: '800', color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: '0.5rem', margin: 0 }}>
             <FileText size={18} color="#3b82f6" />
-            {language === 'mr' ? 'सर्व प्रोजेक्ट्सची माहिती' : 'All Assigned Projects Information'}
+            {language === 'mr' ? 'सर्व प्रोजेक्ट्सची माहिती' : language === 'hi' ? 'सभी प्रोजेक्ट्स की जानकारी' : 'All Assigned Projects Information'}
           </h2>
           <span style={{
             fontSize: '0.8rem',
@@ -274,7 +276,7 @@ const AssignedProjects = () => {
             borderRadius: '9999px',
             border: '1px solid rgba(59, 130, 246, 0.2)'
           }}>
-            {filteredProjects.length} {language === 'mr' ? 'प्रोजेक्ट्स' : 'Projects'}
+            {filteredProjects.length} {language === 'mr' ? 'प्रोजेक्ट्स' : language === 'hi' ? 'प्रोजेक्ट्स' : 'Projects'}
           </span>
         </div>
 
@@ -293,7 +295,7 @@ const AssignedProjects = () => {
               {filteredProjects.length === 0 ? (
                 <tr>
                   <td colSpan="5" style={{ padding: '2rem', textAlign: 'center', color: 'var(--text-secondary)' }}>
-                    {language === 'mr' ? 'कोणताही जुळणारा प्रोजेक्ट सापडला नाही.' : 'No matching projects found.'}
+                    {language === 'mr' ? 'कोणताही जुळणारा प्रोजेक्ट सापडला नाही.' : language === 'hi' ? 'कोई मिलता-जुलता प्रोजेक्ट नहीं मिला।' : 'No matching projects found.'}
                   </td>
                 </tr>
               ) : (
@@ -420,7 +422,7 @@ const AssignedProjects = () => {
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
                 <div style={{ background: 'var(--card-bg)', padding: '0.75rem 0.9rem', borderRadius: '0.75rem', border: '1px solid var(--border-color)' }}>
                   <span style={{ fontSize: '0.725rem', color: 'var(--text-secondary)', fontWeight: '700', textTransform: 'uppercase' }}>
-                    {language === 'mr' ? 'लोकेशन' : 'LOCATION'}
+                    {language === 'mr' ? 'लोकेशन' : language === 'hi' ? 'लोकेशन' : 'LOCATION'}
                   </span>
                   <div style={{ fontSize: '0.875rem', fontWeight: '700', color: 'var(--text-primary)', marginTop: '0.2rem' }}>
                     {selectedProjectModal.location}
@@ -428,7 +430,7 @@ const AssignedProjects = () => {
                 </div>
                 <div style={{ background: 'var(--card-bg)', padding: '0.75rem 0.9rem', borderRadius: '0.75rem', border: '1px solid var(--border-color)' }}>
                   <span style={{ fontSize: '0.725rem', color: 'var(--text-secondary)', fontWeight: '700', textTransform: 'uppercase' }}>
-                    {language === 'mr' ? 'प्रकल्प स्थिती' : 'PROJECT STATUS'}
+                    {language === 'mr' ? 'प्रकल्प स्थिती' : language === 'hi' ? 'प्रोजेक्ट स्थिति' : 'PROJECT STATUS'}
                   </span>
                   <div style={{ fontSize: '0.875rem', fontWeight: '800', color: '#10b981', marginTop: '0.2rem' }}>
                     {selectedProjectModal.status}
