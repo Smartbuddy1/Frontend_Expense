@@ -22,8 +22,29 @@ const BalanceSettlement = () => {
   const { walletBalance, totalAdvance, expensesList } = useWallet();
   const { t, language } = useLanguage();
   const [searchTerm, setSearchTerm] = useState('');
+  const [filterSite, setFilterSite] = useState('');
+  const [filterCategory, setFilterCategory] = useState('');
 
-  const totalSpent = expensesList.reduce((sum, item) => sum + item.amount, 0);
+  // 1. Only include Approved expenses in the passbook statement
+  const settledExpenses = expensesList.filter(exp => exp.status === 'Approved');
+  
+  // 2. Reverse the list so it goes from Oldest to Newest
+  const chronologicalExpenses = [...settledExpenses].reverse();
+  
+  let currentBalance = totalAdvance;
+  const expenseEntries = chronologicalExpenses.map((exp) => {
+    currentBalance -= exp.amount;
+    return {
+      id: `TXN-${exp.id.replace('EXP-', '').slice(0, 4).toUpperCase()}`,
+      type: 'Debit',
+      site: exp.site || 'Metro Line 3 - Station #4B',
+      desc: `${exp.category} - ${exp.paidTo || 'Vendor'}`,
+      category: exp.category,
+      amount: exp.amount,
+      date: exp.date,
+      balanceAfter: currentBalance
+    };
+  });
 
   const ledgerEntries = [
     {
@@ -31,54 +52,50 @@ const BalanceSettlement = () => {
       type: 'Credit',
       site: 'Head Office (Main Account)',
       desc: 'Advance received from Head Office',
+      category: 'Advance',
       amount: totalAdvance,
       date: 'August 2026',
-      balanceAfter: walletBalance + totalSpent
+      balanceAfter: currentBalance // Represents balance before any expenses
     },
-    ...expensesList.map((exp) => ({
-      id: `TXN-${exp.id.replace('EXP-', '')}`,
-      type: 'Debit',
-      site: exp.site || 'Metro Line 3 - Station #4B',
-      desc: `${exp.category} - ${exp.paidTo || 'Vendor'}`,
-      amount: exp.amount,
-      date: exp.date,
-      balanceAfter: walletBalance
-    }))
+    ...expenseEntries
   ];
+
+  const uniqueSites = [...new Set(ledgerEntries.map(item => item.site).filter(Boolean))];
+  const uniqueCategories = [...new Set(ledgerEntries.map(item => item.category).filter(Boolean))];
 
   const filteredEntries = ledgerEntries.filter(entry => {
     const term = searchTerm.toLowerCase().trim();
-    if (!term) return true;
-    return (
+    const matchesSearch = !term || (
       (entry.id || '').toLowerCase().includes(term) ||
       (entry.site || '').toLowerCase().includes(term) ||
       (entry.desc || '').toLowerCase().includes(term) ||
       (entry.date || '').toLowerCase().includes(term) ||
       (entry.amount || '').toString().includes(term)
     );
+    const matchesSite = !filterSite || entry.site === filterSite;
+    const matchesCategory = !filterCategory || entry.category === filterCategory;
+    return matchesSearch && matchesSite && matchesCategory;
   });
 
   const handleExportExcel = () => {
-    const headers = ['Transaction ID', 'Date', 'Project / Site Name', 'Type (Credit/Debit)', 'Transaction Details', 'Amount (₹)', 'Closing Balance (₹)'];
+    const headers = ['ID', 'Date', 'Project / Site Name', 'Details', 'Amount (₹)', 'Balance (₹)'];
     const rows = filteredEntries.map(entry => [
       entry.id,
       entry.date,
       entry.site,
-      entry.type,
       entry.desc,
-      entry.amount,
+      entry.type === 'Credit' ? `+${entry.amount}` : `-${entry.amount}`,
       entry.balanceAfter
     ]);
     exportToExcel('Site_Supervisor_Passbook_Ledger', headers, rows);
   };
 
   const handleExportPDF = () => {
-    const headers = ['Txn ID', 'Date', 'Project / Site', 'Type', 'Transaction Details', 'Amount (Rs)', 'Closing Balance (Rs)'];
+    const headers = ['ID', 'Date', 'Project / Site', 'Details', 'Amount (Rs)', 'Balance (Rs)'];
     const rows = filteredEntries.map(entry => [
       entry.id,
       entry.date,
       entry.site,
-      entry.type,
       entry.desc,
       `${entry.type === 'Debit' ? '-' : '+'} Rs. ${entry.amount.toLocaleString()}`,
       `Rs. ${entry.balanceAfter.toLocaleString()}`
@@ -201,67 +218,135 @@ const BalanceSettlement = () => {
         </div>
       </div>
 
-      {/* 50% Width Search Bar */}
+      {/* Filter and Search Bar Container */}
       <div style={{
-        position: 'relative',
-        width: '50%',
-        minWidth: '280px',
-        margin: '0.15rem 0 0.35rem 0'
+        display: 'flex',
+        gap: '1rem',
+        alignItems: 'center',
+        flexWrap: 'wrap',
+        margin: '0.15rem 0 1rem 0'
       }}>
-        <Search
-          size={17}
-          style={{
-            position: 'absolute',
-            left: '0.95rem',
-            top: '50%',
-            transform: 'translateY(-50%)',
-            color: 'var(--text-secondary)',
-            pointerEvents: 'none'
-          }}
-        />
-        <input
-          type="text"
-          placeholder={language === 'mr' ? 'प्रोजेक्ट, तपशील किंवा रक्कम शोधा...' : language === 'hi' ? 'प्रोजेक्ट, विवरण या राशि खोजें...' : 'Search project, details, amount...'}
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-          style={{
-            width: '100%',
-            padding: '0.55rem 2.2rem 0.55rem 2.5rem',
-            borderRadius: '0.75rem',
-            border: '1.5px solid var(--border-color)',
-            backgroundColor: 'var(--surface-bg)',
-            color: 'var(--text-primary)',
-            fontSize: '0.875rem',
-            outline: 'none',
-            transition: 'all 0.2s ease',
-            boxShadow: '0 2px 8px -2px var(--shadow-color)',
-            boxSizing: 'border-box'
-          }}
-          onFocus={(e) => e.target.style.borderColor = '#2563eb'}
-          onBlur={(e) => e.target.style.borderColor = 'var(--border-color)'}
-        />
-        {searchTerm && (
-          <button
-            onClick={() => setSearchTerm('')}
+        {/* Search Bar */}
+        <div style={{
+          position: 'relative',
+          flex: '1 1 280px',
+          maxWidth: '100%'
+        }}>
+          <Search
+            size={17}
             style={{
               position: 'absolute',
-              right: '0.75rem',
+              left: '0.95rem',
               top: '50%',
               transform: 'translateY(-50%)',
-              background: 'transparent',
-              border: 'none',
               color: 'var(--text-secondary)',
-              cursor: 'pointer',
-              fontSize: '0.85rem',
-              display: 'flex',
-              alignItems: 'center',
-              padding: 0
+              pointerEvents: 'none'
             }}
-            title="Clear Search"
+          />
+          <input
+            type="text"
+            placeholder={language === 'mr' ? 'प्रोजेक्ट, तपशील किंवा रक्कम शोधा...' : language === 'hi' ? 'प्रोजेक्ट, विवरण या राशि खोजें...' : 'Search project, details, amount...'}
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            style={{
+              width: '100%',
+              padding: '0.55rem 2.2rem 0.55rem 2.5rem',
+              borderRadius: '0.75rem',
+              border: '1.5px solid var(--border-color)',
+              backgroundColor: 'var(--surface-bg)',
+              color: 'var(--text-primary)',
+              fontSize: '0.875rem',
+              outline: 'none',
+              transition: 'all 0.2s ease',
+              boxShadow: '0 2px 8px -2px var(--shadow-color)',
+              boxSizing: 'border-box'
+            }}
+            onFocus={(e) => e.target.style.borderColor = '#2563eb'}
+            onBlur={(e) => e.target.style.borderColor = 'var(--border-color)'}
+          />
+          {searchTerm && (
+            <button
+              onClick={() => setSearchTerm('')}
+              style={{
+                position: 'absolute',
+                right: '0.75rem',
+                top: '50%',
+                transform: 'translateY(-50%)',
+                background: 'transparent',
+                border: 'none',
+                color: 'var(--text-secondary)',
+                cursor: 'pointer',
+                fontSize: '0.85rem',
+                display: 'flex',
+                alignItems: 'center',
+                padding: 0
+              }}
+              title="Clear Search"
+            >
+              ✕
+            </button>
+          )}
+        </div>
+
+        {/* Site Filter */}
+        <div style={{
+          position: 'relative',
+          flex: '0 0 auto',
+          minWidth: '200px'
+        }}>
+          <select
+            value={filterSite}
+            onChange={(e) => setFilterSite(e.target.value)}
+            style={{
+              width: '100%',
+              padding: '0.55rem 1rem',
+              borderRadius: '0.75rem',
+              border: '1.5px solid var(--border-color)',
+              backgroundColor: 'var(--surface-bg)',
+              color: 'var(--text-primary)',
+              fontSize: '0.875rem',
+              outline: 'none',
+              cursor: 'pointer',
+              boxShadow: '0 2px 8px -2px var(--shadow-color)',
+              boxSizing: 'border-box'
+            }}
           >
-            ✕
-          </button>
-        )}
+            <option value="">{language === 'mr' ? 'सर्व साइट्स (All Sites)' : 'All Sites'}</option>
+            {uniqueSites.map((site, index) => (
+              <option key={index} value={site}>{site}</option>
+            ))}
+          </select>
+        </div>
+
+        {/* Category Filter */}
+        <div style={{
+          position: 'relative',
+          flex: '0 0 auto',
+          minWidth: '200px'
+        }}>
+          <select
+            value={filterCategory}
+            onChange={(e) => setFilterCategory(e.target.value)}
+            style={{
+              width: '100%',
+              padding: '0.55rem 1rem',
+              borderRadius: '0.75rem',
+              border: '1.5px solid var(--border-color)',
+              backgroundColor: 'var(--surface-bg)',
+              color: 'var(--text-primary)',
+              fontSize: '0.875rem',
+              outline: 'none',
+              cursor: 'pointer',
+              boxShadow: '0 2px 8px -2px var(--shadow-color)',
+              boxSizing: 'border-box'
+            }}
+          >
+            <option value="">{language === 'mr' ? 'सर्व श्रेणी (All Categories)' : 'All Categories'}</option>
+            {uniqueCategories.map((cat, index) => (
+              <option key={index} value={cat}>{cat}</option>
+            ))}
+          </select>
+        </div>
       </div>
 
       {/* Ledger Table Container */}
@@ -293,19 +378,18 @@ const BalanceSettlement = () => {
           <table className="premium-table" style={{ width: '100%', minWidth: '750px', borderCollapse: 'collapse', textAlign: 'left', fontSize: '0.9rem' }}>
             <thead>
               <tr style={{ borderBottom: '2px solid var(--border-color)', color: 'var(--text-secondary)', backgroundColor: 'var(--card-bg)' }}>
-                <th style={{ padding: '0.85rem 1rem', fontWeight: '700' }}>TXN ID</th>
+                <th style={{ padding: '0.85rem 1rem', fontWeight: '700' }}>ID</th>
                 <th style={{ padding: '0.85rem 1rem', fontWeight: '700' }}>DATE</th>
-                <th style={{ padding: '0.85rem 1rem', fontWeight: '700' }}>PROJECT / SITE NAME</th>
-                <th style={{ padding: '0.85rem 1rem', fontWeight: '700' }}>TRANSACTION DETAILS</th>
-                <th style={{ padding: '0.85rem 1rem', fontWeight: '700' }}>CREDIT (+)</th>
-                <th style={{ padding: '0.85rem 1rem', fontWeight: '700' }}>DEBIT (-)</th>
-                <th style={{ padding: '0.85rem 1rem', fontWeight: '700', textAlign: 'right' }}>RUNNING BALANCE</th>
+                <th style={{ padding: '0.85rem 1rem', fontWeight: '700' }}>SITE / PROJECT</th>
+                <th style={{ padding: '0.85rem 1rem', fontWeight: '700' }}>DETAILS</th>
+                <th style={{ padding: '0.85rem 1rem', fontWeight: '700' }}>AMOUNT (₹)</th>
+                <th style={{ padding: '0.85rem 1rem', fontWeight: '700', textAlign: 'right' }}>BALANCE (₹)</th>
               </tr>
             </thead>
             <tbody>
               {filteredEntries.length === 0 ? (
                 <tr>
-                  <td colSpan="7" style={{ padding: '2.5rem', textAlign: 'center', color: 'var(--text-secondary)' }}>
+                  <td colSpan="6" style={{ padding: '2.5rem', textAlign: 'center', color: 'var(--text-secondary)' }}>
                     {language === 'mr' ? 'कोणताही ट्रॅन्झॅक्शन सापडला नाही.' : language === 'hi' ? 'कोई ट्रांजेक्शन नहीं मिला।' : 'No matching transactions found.'}
                   </td>
                 </tr>
@@ -320,28 +404,35 @@ const BalanceSettlement = () => {
                     onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'var(--card-bg)'}
                     onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
                   >
-                    <td style={{ padding: '0.9rem 1rem', fontWeight: '700', color: 'var(--primary-color)', whiteSpace: 'nowrap' }}>
+                    <td data-label="ID" style={{ padding: '0.9rem 1rem', fontWeight: '700', color: 'var(--primary-color)', whiteSpace: 'nowrap' }}>
                       {row.id}
                     </td>
-                    <td style={{ padding: '0.9rem 1rem', color: 'var(--text-secondary)', fontSize: '0.85rem', whiteSpace: 'nowrap' }}>
+                    <td data-label="DATE" style={{ padding: '0.9rem 1rem', color: 'var(--text-secondary)', fontSize: '0.85rem', whiteSpace: 'nowrap' }}>
                       {row.date}
                     </td>
-                    <td style={{ padding: '0.9rem 1rem', whiteSpace: 'nowrap' }}>
+                    <td data-label="SITE / PROJECT" style={{ padding: '0.9rem 1rem', whiteSpace: 'nowrap' }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', color: 'var(--text-primary)', fontWeight: '700' }}>
                         <MapPin size={14} color="#3b82f6" />
                         <span>{row.site}</span>
                       </div>
                     </td>
-                    <td style={{ padding: '0.9rem 1rem', fontWeight: '600', color: 'var(--text-primary)' }}>
+                    <td data-label="DETAILS" style={{ padding: '0.9rem 1rem', fontWeight: '600', color: 'var(--text-primary)' }}>
                       {row.desc}
                     </td>
-                    <td style={{ padding: '0.9rem 1rem', fontWeight: '700', color: '#10b981', whiteSpace: 'nowrap' }}>
-                      {row.type === 'Credit' ? `+₹${row.amount.toLocaleString()}` : '-'}
+                    <td data-label="AMOUNT" style={{ padding: '0.9rem 1rem', fontWeight: '700', whiteSpace: 'nowrap' }}>
+                      {row.type === 'Credit' ? (
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.25rem', color: '#10b981' }}>
+                          <ArrowUpRight size={15} strokeWidth={2.5} />
+                          <span>+₹{row.amount.toLocaleString()}</span>
+                        </div>
+                      ) : (
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.25rem', color: '#ef4444' }}>
+                          <ArrowDownLeft size={15} strokeWidth={2.5} />
+                          <span>-₹{row.amount.toLocaleString()}</span>
+                        </div>
+                      )}
                     </td>
-                    <td style={{ padding: '0.9rem 1rem', fontWeight: '700', color: '#ef4444', whiteSpace: 'nowrap' }}>
-                      {row.type === 'Debit' ? `-₹${row.amount.toLocaleString()}` : '-'}
-                    </td>
-                    <td style={{ padding: '0.9rem 1rem', fontWeight: '800', color: 'var(--text-primary)', textAlign: 'right', whiteSpace: 'nowrap' }}>
+                    <td data-label="BALANCE" style={{ padding: '0.9rem 1rem', fontWeight: '800', color: 'var(--text-primary)', textAlign: 'right', whiteSpace: 'nowrap' }}>
                       ₹{row.balanceAfter.toLocaleString()}
                     </td>
                   </tr>

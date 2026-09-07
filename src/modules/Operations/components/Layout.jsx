@@ -23,7 +23,8 @@ import {
   Languages,
   Scale,
   IndianRupee,
-  TrendingUp
+  TrendingUp,
+  ClipboardList
 } from 'lucide-react';
 import Footer from './Footer';
 import AsemsLogo from './AsemsLogo';
@@ -111,6 +112,12 @@ const Layout = () => {
       href: '/operations?tab=alerts',
       icon: AlertTriangle,
       tab: 'alerts',
+    },
+    {
+      name: 'Public Form',
+      href: '/operations?tab=public-form',
+      icon: Globe,
+      tab: 'public-form',
     },
   ];
 

@@ -18,18 +18,18 @@ import { exportToExcel, triggerPrint, exportToPDF } from '../utils/exportUtils';
 
 const AssignedProjects = () => {
   const { t, language } = useLanguage();
-  const { project } = useWallet();
+  const { projects: myProjects } = useWallet();
 
-  // Real data from the backend — a supervisor currently has exactly one assigned project.
-  const projects = project ? [{
-    id: project.code,
-    name: project.name,
-    location: project.location || project.site || '—',
-    status: project.status,
+  // Real data from the backend — all projects assigned to this supervisor.
+  const projects = myProjects.map((p) => ({
+    id: p.code,
+    name: p.name,
+    location: p.location || p.site || '—',
+    status: p.status,
     supervisor: 'You',
-    budgetAllocated: `Rs. ${Number(project.budget).toLocaleString('en-IN')}`,
-    description: project.description || 'No description provided yet.'
-  }] : [];
+    budgetAllocated: `Rs. ${Number(p.budget).toLocaleString('en-IN')}`,
+    description: p.description || 'No description provided yet.'
+  }));
 
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedProjectModal, setSelectedProjectModal] = useState(null);
@@ -309,10 +309,10 @@ const AssignedProjects = () => {
                     onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'var(--card-bg)'}
                     onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
                   >
-                    <td style={{ padding: '0.9rem 1rem', fontWeight: '700', color: '#3b82f6', whiteSpace: 'nowrap' }}>
+                    <td data-label="PROJECT ID" style={{ padding: '0.9rem 1rem', fontWeight: '700', color: '#3b82f6', whiteSpace: 'nowrap' }}>
                       {proj.id}
                     </td>
-                    <td style={{ padding: '0.9rem 1rem' }}>
+                    <td data-label="PROJECT & SITE" style={{ padding: '0.9rem 1rem' }}>
                       <div style={{ fontWeight: '700', color: 'var(--text-primary)', fontSize: '0.95rem' }}>
                         {proj.name}
                       </div>
@@ -320,13 +320,13 @@ const AssignedProjects = () => {
                         Lead: {proj.supervisor}
                       </div>
                     </td>
-                    <td style={{ padding: '0.9rem 1rem', color: 'var(--text-secondary)', whiteSpace: 'nowrap' }}>
+                    <td data-label="LOCATION" style={{ padding: '0.9rem 1rem', color: 'var(--text-secondary)', whiteSpace: 'nowrap' }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
                         <MapPin size={14} color="#ef4444" />
                         <span>{proj.location}</span>
                       </div>
                     </td>
-                    <td style={{ padding: '0.9rem 1rem', whiteSpace: 'nowrap' }}>
+                    <td data-label="STATUS" style={{ padding: '0.9rem 1rem', whiteSpace: 'nowrap' }}>
                       <span style={{
                         display: 'inline-flex',
                         alignItems: 'center',
@@ -341,7 +341,7 @@ const AssignedProjects = () => {
                         <CheckCircle2 size={12} /> {proj.status}
                       </span>
                     </td>
-                    <td style={{ padding: '0.9rem 1rem', textAlign: 'center', whiteSpace: 'nowrap' }}>
+                    <td data-label="DETAILS" style={{ padding: '0.9rem 1rem', textAlign: 'center', whiteSpace: 'nowrap' }}>
                       <button
                         onClick={() => setSelectedProjectModal(proj)}
                         style={{

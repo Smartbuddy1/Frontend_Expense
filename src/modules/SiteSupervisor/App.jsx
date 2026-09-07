@@ -10,7 +10,6 @@ import RequestAdvance from './pages/RequestAdvance';
 import DailyExpenses from './pages/DailyExpensesNew';
 import BalanceSettlement from './pages/BalanceSettlement';
 import PublicExpenseForm from './pages/PublicExpenseForm';
-import SitePhotos from './pages/SitePhotos';
 
 // Optional: Protected Route Wrapper if you want to keep authentication logic
 const ProtectedRoute = ({ children }) => {
@@ -44,7 +43,6 @@ function App() {
             <Route path="request-advance" element={<RequestAdvance />} />
             <Route path="daily-expenses" element={<DailyExpenses />} />
             <Route path="balance-settlement" element={<BalanceSettlement />} />
-            <Route path="site-photos" element={<SitePhotos />} />
           </Route>
           
           {/* Fallback */}

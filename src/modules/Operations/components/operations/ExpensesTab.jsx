@@ -1267,7 +1267,7 @@ const ExpensesTab = ({
                     Forward Expense Claim
                   </h3>
                   <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary, #64748b)', margin: '0.15rem 0 0 0' }}>
-                    Route claim <strong style={{ color: '#0284c7' }}>{forwardModalClaim.id}</strong> to recipient department
+                    Route claim <strong style={{ color: '#0284c7' }}>{forwardModalClaim.displayId || forwardModalClaim.id}</strong> to recipient department
                   </p>
                 </div>
               </div>
@@ -1419,7 +1419,7 @@ const ExpensesTab = ({
                   if (onForwardExpense) {
                     onForwardExpense(forwardModalClaim.id, forwardTargetDept, forwardNotes);
                   } else {
-                    toast.success(`Expense ${forwardModalClaim.id} forwarded to ${forwardTargetDept}!`);
+                    toast.success(`Expense ${forwardModalClaim.displayId || forwardModalClaim.id} forwarded to ${forwardTargetDept}!`);
                   }
                   setForwardModalClaim(null);
                 }}

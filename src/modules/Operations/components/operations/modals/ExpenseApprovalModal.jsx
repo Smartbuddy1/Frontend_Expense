@@ -46,7 +46,7 @@ const ExpenseApprovalModal = ({ isOpen, onClose, expense, onApprove, onReject })
                 </span>
               </div>
               <p className="text-[11px] sm:text-xs text-slate-500 dark:text-slate-400 truncate">
-                Claim: <span className="font-mono font-bold text-slate-700 dark:text-slate-300">{expense.id}</span> • Inv: {expense.invoiceNumber}
+                Claim: <span className="font-mono font-bold text-slate-700 dark:text-slate-300">{expense.displayId || expense.id}</span> • Inv: {expense.invoiceNumber}
               </p>
             </div>
           </div>

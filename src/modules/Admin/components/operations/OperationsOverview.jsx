@@ -3,7 +3,7 @@ import {
   Building2, Users, IndianRupee, Layers, Monitor, CreditCard,
   ArrowRight, ArrowUpRight, ArrowDownRight, Activity, HardHat, Clock, ChevronRight,
   Tag, CheckCircle2, XCircle, Wrench, UserPlus, PlusCircle, Folder, Scale, ShieldCheck,
-  TrendingUp, AlertTriangle, PieChart as PieIcon, Download, Calendar, Send, Image as ImageIcon, FileSpreadsheet, Briefcase
+  TrendingUp, AlertTriangle, PieChart as PieIcon, Download, Calendar, Send, FileSpreadsheet, Briefcase
 } from 'lucide-react';
 import { ResponsiveContainer, PieChart, Pie, Cell, Tooltip, Legend } from 'recharts';
 import { useLanguage } from '../../context/LanguageContext';
@@ -52,8 +52,7 @@ export const DashboardHeader = ({
   dateFilter = 'all',
   onDateFilterChange,
   onExportPDF,
-  onOpenTransferAdvance,
-  onOpenPhotoGallery
+  onOpenTransferAdvance
 }) => (
   <div className="dash-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '1rem', marginBottom: '0.5rem' }}>
     <div>
@@ -66,19 +65,6 @@ export const DashboardHeader = ({
     </div>
 
     <div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem', flexWrap: 'wrap' }}>
-      {onOpenPhotoGallery && (
-        <button
-          onClick={onOpenPhotoGallery}
-          style={{
-            padding: '0.5rem 1.1rem', borderRadius: '10px', border: '1.5px solid #c7d2fe',
-            backgroundColor: '#eef2ff', color: '#4f46e5', fontSize: '0.88rem', fontWeight: '800',
-            cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: '0.4rem'
-          }}
-        >
-          <ImageIcon size={16} />
-          <span>Photo Gallery</span>
-        </button>
-      )}
       {onOpenTransferAdvance && (
         <button
           onClick={onOpenTransferAdvance}
@@ -879,8 +865,7 @@ const OperationsOverview = ({
   onSelectProject,
   onApproveExpense,
   onRejectExpense,
-  onOpenTransferAdvance,
-  onOpenPhotoGallery
+  onOpenTransferAdvance
 }) => {
   const { language } = useLanguage();
   const [dateFilter, setDateFilter] = useState('all');
@@ -943,7 +928,6 @@ const OperationsOverview = ({
         onDateFilterChange={setDateFilter}
         onExportPDF={handleExportReport}
         onOpenTransferAdvance={onOpenTransferAdvance}
-        onOpenPhotoGallery={onOpenPhotoGallery}
       />
 
       {/* 2. Top 4 Statistics Cards: Total Operational Head, Total Projects, Total Supervisors, Total Accountants */}

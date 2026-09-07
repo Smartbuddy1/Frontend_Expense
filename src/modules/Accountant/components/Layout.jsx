@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Outlet, Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { LayoutDashboard, Users, Folder, Monitor, LogOut, FileText, Sun, Moon, Settings, User, Phone, Shield, Menu, Activity, PieChart, Tag, ClipboardList, Radio, Wallet } from 'lucide-react';
+import { LayoutDashboard, Users, Folder, Monitor, LogOut, FileText, Sun, Moon, Settings, User, Phone, Shield, Menu, Activity, PieChart, Tag, ClipboardList, Radio, Wallet, Globe } from 'lucide-react';
 import Footer from './Footer';
 import aiLogo from '../assets/ai_logo.jpg';
 
@@ -52,6 +52,7 @@ const Layout = () => {
     { name: 'Payment Ledger', href: '/dashboard?tab=ledger', icon: Monitor, tabKey: 'ledger' },
     { name: 'Analytics', href: '/dashboard?tab=analytics', icon: Activity, tabKey: 'analytics' },
     { name: 'Financial Reports', href: '/dashboard?tab=reports', icon: PieChart, tabKey: 'reports' },
+    { name: 'Public Form', href: '/dashboard?tab=public-form', icon: Globe, tabKey: 'public-form' },
   ];
 
   const currentTab = new URLSearchParams(location.search).get('tab') || 'overview';

@@ -321,7 +321,7 @@ const AdvanceDisbursalTab = ({
                       }}
                     >
                       <td style={{ padding: '1rem', fontWeight: '600' }}>
-                        <div style={{ fontWeight: '700', color: 'var(--text-primary)' }}>{adv.id}</div>
+                        <div style={{ fontWeight: '700', color: 'var(--text-primary)' }}>{adv.displayId || adv.id}</div>
                         <div style={{ fontSize: '0.74rem', color: 'var(--text-secondary)' }}>{adv.requestDate || adv.date || 'N/A'}</div>
                       </td>
 

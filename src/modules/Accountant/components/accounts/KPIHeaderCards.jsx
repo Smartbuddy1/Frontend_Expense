@@ -21,8 +21,6 @@ import {
 const KPIHeaderCards = ({ projects, expenses, advances, settlements, onNavigateTab }) => {
   const totalBudget = projects.reduce((acc, p) => acc + (p.budget || 0), 0);
   const totalFundsReleased = projects.reduce((acc, p) => acc + (p.fundsReleased || 0), 0);
-  const totalProjectExpenses = projects.reduce((acc, p) => acc + (p.expenses || 0), 0);
-  const totalSupervisorWalletBalance = projects.reduce((acc, p) => acc + (p.balance || 0), 0);
   
   const totalAdvancesDisbursed = advances
     .filter(a => a.status === 'Disbursed')
@@ -31,6 +29,11 @@ const KPIHeaderCards = ({ projects, expenses, advances, settlements, onNavigateT
   const totalVerifiedExpenses = expenses
     .filter(e => e.status === 'Accounts Verified & Paid')
     .reduce((acc, e) => acc + (e.amount || 0), 0);
+
+  const totalProjectExpenses = totalVerifiedExpenses;
+  // Wallet balance across all sites = total advances actually disbursed minus expenses actually verified/paid
+  const totalSupervisorWalletBalance = totalAdvancesDisbursed - totalVerifiedExpenses;
+
 
   const pendingVerificationList = expenses.filter(e => e.status === 'Pending Accounts Verification');
   const pendingVerificationAmount = pendingVerificationList.reduce((acc, e) => acc + (e.amount || 0), 0);

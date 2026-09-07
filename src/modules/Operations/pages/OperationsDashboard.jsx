@@ -70,7 +70,7 @@ const mapExpense = (e) => {
   const created = new Date(e.createdAt);
   return {
     id: e.id,
-    voucherNo: `EXP-${e.id.slice(0, 8).toUpperCase()}`,
+    voucherNo: `EXP-${e.id.slice(0, 4).toUpperCase()}`,
     date: created.toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }),
     time: created.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' }),
     projectId: e.projectId,
@@ -98,6 +98,7 @@ const ADVANCE_STATUS_TO_DISPLAY = {
 };
 
 const mapAdvance = (a) => ({
+  displayId: `REQ-${a.id.slice(0, 4).toUpperCase()}`,
   id: a.id,
   projectId: a.projectId,
   projectName: a.project?.name || 'Unknown Project',
@@ -135,6 +136,7 @@ import TeamAssignmentTab from '../components/operations/TeamAssignmentTab';
 import ExpensesTab from '../components/operations/ExpensesTab';
 import AlertsTab from '../components/operations/AlertsTab';
 import ReconciliationTab from '../components/operations/ReconciliationTab';
+import PublicFormTab from '../components/operations/PublicFormTab';
 
 // Modals
 import CreateProjectModal from '../components/operations/modals/CreateProjectModal';
@@ -444,6 +446,7 @@ const OperationsDashboard = () => {
           supervisors={supervisors}
           teamMembers={teamMembers}
           expenses={expenses}
+          advances={advances}
           siteLogs={siteLogs}
           setActiveTab={handleTabChange}
           onOpenCreateProject={() => { setEditingProject(null); setIsCreateProjectOpen(true); }}
@@ -508,6 +511,10 @@ const OperationsDashboard = () => {
           alerts={liveAlerts}
           onSelectProject={(p) => { setSelectedProjectDetail(p); setIsProjectDetailOpen(true); }}
         />
+      )}
+
+      {activeTab === 'public-form' && (
+        <PublicFormTab />
       )}
 
       {/* Modals */}

@@ -96,7 +96,7 @@ const mapExpense = (e) => {
   const created = new Date(e.createdAt);
   return {
     id: e.id,
-    voucherNo: `EXP-${e.id.slice(0, 8).toUpperCase()}`,
+    voucherNo: `EXP-${e.id.slice(0, 4).toUpperCase()}`,
     date: created.toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }),
     time: created.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' }),
     projectId: e.projectId,
@@ -179,7 +179,7 @@ import UpdateProgressModal from '../components/operations/modals/UpdateProgressM
 import ManageMilestonesModal from '../components/operations/modals/ManageMilestonesModal';
 import CreateSupervisorModal from '../components/operations/modals/CreateSupervisorModal';
 import TransferAdvanceModal from '../components/operations/modals/TransferAdvanceModal';
-import SitePhotoGalleryModal from '../components/operations/modals/SitePhotoGalleryModal';
+
 
 const OperationsDashboard = () => {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -915,12 +915,7 @@ const OperationsDashboard = () => {
         projects={projects}
       />
 
-      {/* Site Photo Gallery & Proofs Modal */}
-      <SitePhotoGalleryModal
-        isOpen={isPhotoGalleryOpen}
-        onClose={() => setIsPhotoGalleryOpen(false)}
-        projects={projects}
-      />
+
     </div>
   );
 };

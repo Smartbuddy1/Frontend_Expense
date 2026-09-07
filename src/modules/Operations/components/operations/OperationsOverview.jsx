@@ -334,23 +334,20 @@ export const SiteStatusGaugeChart = ({ totalCount = 3, activeCount = 3, inactive
 /* ==========================================================================
    Modular Component 7: TopRevenueProjectsChart (5 Horizontal Bars Graph)
    ========================================================================== */
-export const TopRevenueProjectsChart = ({ projects = [], onViewAll, onSelectProject, setActiveTab }) => {
+export const TopRevenueProjectsChart = ({ projects = [], expenses = [], onViewAll, onSelectProject, setActiveTab }) => {
   const { language } = useLanguage();
   // Map actual projects to chart item structure
   const actualItems = projects.map(proj => {
     let displayName = proj.name || 'Unnamed Project';
-    const codeStr = proj.code || proj.id || '';
-    if (codeStr.includes('Sangamner-P1') || proj.id === 'PRJ-SGM-01') {
-      displayName = 'Sangamner Eco Toilet (Site P1)';
-    } else if (codeStr.includes('Nashik-P3') || proj.id === 'PRJ-NSK-03') {
-      displayName = 'Nashik Highway Sanitation (Site P3)';
-    } else if (codeStr.includes('Pune-P2') || proj.id === 'PRJ-PUN-02') {
-      displayName = 'Pune Smart E-Toilets (Site P2)';
-    }
+    
+    const projectExpenses = expenses.filter(e => e.projectId === proj.id || e.projectName === proj.name);
+    const expSum = projectExpenses.reduce((acc, curr) => acc + (Number(curr.amount) || 0), 0);
+    const spentVal = expSum > 0 ? expSum : (Number(proj.spent) || 0);
+
     return {
       name: displayName,
       rawProject: proj,
-      spent: Number(proj.spent) || 0
+      spent: spentVal
     };
   });
 
@@ -757,15 +754,11 @@ export const BudgetDistributionPieChart = ({
   // Project-wise total expense data for the Pie Chart
   const pieData = projects.length > 0 ? projects.map((p, idx) => {
     let shortName = p.name || `Project ${idx + 1}`;
-    if (shortName.includes('Sangamner')) shortName = 'Sangamner-P1';
-    else if (shortName.includes('Nashik')) shortName = 'Nashik-P3';
-    else if (shortName.includes('Pune')) shortName = 'Pune-P2';
 
     // Calculate actual expenses for this project from expenses list or p.spent
     const projectExpenses = expenses.filter(e => e.projectId === p.id || e.projectName === p.name);
     const expSum = projectExpenses.reduce((acc, curr) => acc + (Number(curr.amount) || 0), 0);
-    const fallbackSpent = idx === 0 ? 72500 : idx === 1 ? 48300 : 62500;
-    const spentVal = expSum > 0 ? expSum : (Number(p.spent) || fallbackSpent);
+    const spentVal = expSum > 0 ? expSum : (Number(p.spent) || 0);
 
     return {
       name: shortName,
@@ -774,11 +767,7 @@ export const BudgetDistributionPieChart = ({
       value: spentVal,
       color: projectColors[idx % projectColors.length]
     };
-  }) : [
-    { name: 'Sangamner-P1', fullName: 'Sangamner Eco Toilet', value: 72500, color: '#2563eb' },
-    { name: 'Nashik-P3', fullName: 'Nashik Highway Sanitation', value: 62500, color: '#10b981' },
-    { name: 'Pune-P2', fullName: 'Pune Smart E-Toilets', value: 48300, color: '#f59e0b' },
-  ];
+  }) : [];
 
   const totalExpenseVal = pieData.reduce((acc, item) => acc + item.value, 0);
 
@@ -927,6 +916,7 @@ const OperationsOverview = ({
   projects = [],
   supervisors = [],
   expenses = [],
+  advances = [],
   setActiveTab,
   onOpenCreateProject,
   onSelectProject,
@@ -938,12 +928,23 @@ const OperationsOverview = ({
   const pendingBillsCount = expenses.filter(e => e.status === 'Pending').length;
   const approvedTotalSpent = expenses.filter(e => e.status === 'Approved').reduce((acc, curr) => acc + (curr.amount || 0), 0);
 
-  // Official Project Summary Table directly from ASEMS Documentation Section 12 (3 Projects)
-  const projectSummaryRows = [
-    { project: 'Sangamner-P1', site: 'Sangamner', supervisor: 'Rohit Sharma', status: 'In Progress', budget: '₹2,00,000', expense: '₹72,500', advance: '₹50,000', balance: '₹77,500' },
-    { project: 'Pune-P2', site: 'Pune', supervisor: 'Amit Deshmukh', status: 'In Progress', budget: '₹1,50,000', expense: '₹48,300', advance: '₹40,000', balance: '₹61,700' },
-    { project: 'Nashik-P3', site: 'Nashik', supervisor: 'Sagar Patil', status: 'In Progress', budget: '₹2,50,000', expense: '₹62,500', advance: '₹50,000', balance: '₹1,37,500' },
-  ];
+  // Project Summary Table calculated dynamically
+  const projectSummaryRows = projects.map(p => {
+    const projectExpenses = expenses.filter(e => e.projectId === p.id && e.status === 'Approved').reduce((acc, curr) => acc + (curr.amount || 0), 0);
+    const projectAdvances = advances.filter(a => a.projectId === p.id && a.rawStatus === 'disbursed').reduce((acc, curr) => acc + (curr.amount || 0), 0);
+    const balance = projectAdvances - projectExpenses;
+    
+    return {
+      project: p.code || p.name,
+      site: p.location || p.site || 'N/A',
+      supervisor: p.supervisorName || 'Unassigned',
+      status: p.status || 'In Progress',
+      budget: `₹${(p.budget || 0).toLocaleString('en-IN')}`,
+      expense: `₹${projectExpenses.toLocaleString('en-IN')}`,
+      advance: `₹${projectAdvances.toLocaleString('en-IN')}`,
+      balance: `₹${balance.toLocaleString('en-IN')}`,
+    };
+  });
 
   return (
     <div className="dash-container">
@@ -959,8 +960,8 @@ const OperationsOverview = ({
         {/* Row 1, Card 2: Total Projects */}
         <StatCard
           title="Total Projects"
-          value={String(projects.length || 3)}
-          badgeText={`${projects.length || 3} Site Projects`}
+          value={String(projects.length)}
+          badgeText={`${projects.length} Site Projects`}
           badgeType="positive"
           icon={Folder}
           iconBg="#ea580c"
@@ -969,8 +970,8 @@ const OperationsOverview = ({
         {/* Row 1, Card 3: Supervisors */}
         <StatCard
           title="Supervisors"
-          value={String(supervisors.length || 3)}
-          badgeText={`${supervisors.length || 3} Active`}
+          value={String(supervisors.length)}
+          badgeText={`${supervisors.length} Active`}
           badgeType="positive"
           icon={Users}
           iconBg="#8b5cf6"
@@ -1052,7 +1053,8 @@ const OperationsOverview = ({
       }}>
         {/* Left: Top Projects Breakdown Bar Chart */}
         <TopRevenueProjectsChart 
-          projects={projects} 
+          projects={projects}
+          expenses={expenses}
           onViewAll={() => setActiveTab && setActiveTab('projects')} 
           onSelectProject={onSelectProject}
           setActiveTab={setActiveTab}

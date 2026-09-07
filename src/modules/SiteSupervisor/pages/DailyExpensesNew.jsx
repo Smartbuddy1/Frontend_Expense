@@ -22,27 +22,83 @@ import {
   FileText,
   Sparkles,
   Layers,
-  ArrowDownRight
+  ArrowDownRight,
+  Edit2
 } from 'lucide-react';
 import { useWallet } from '../context/WalletContext';
 import { useLanguage } from '../context/LanguageContext';
 import { exportToExcel, triggerPrint, exportToPDF } from '../utils/exportUtils';
 
 const DailyExpenses = () => {
-  const { project, categories, walletBalance, expensesList, recordExpense, todaySpend } = useWallet();
+  const { project, projects, defaultTargetProject, categories, walletBalance, expensesList, recordExpense, todaySpend, deleteExpense, updateExpense } = useWallet();
   const { t, language } = useLanguage();
 
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('All');
   const [selectedSite, setSelectedSite] = useState('All');
+  const [selectedDate, setSelectedDate] = useState('');
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [viewReceiptModal, setViewReceiptModal] = useState(null);
   const [submitting, setSubmitting] = useState(false);
 
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [editExpenseData, setEditExpenseData] = useState(null);
+
+  const handleEditClick = (expense) => {
+    setEditExpenseData({
+      id: expense.id,
+      category: expense.category,
+      projectId: projects.find(p => (p.name === expense.site || p.site === expense.site))?.id || defaultTargetProject?.id,
+      amount: expense.amount,
+      paidTo: expense.paidTo === 'Local Vendor' ? '' : expense.paidTo,
+      description: '',
+      receiptName: expense.receiptName || '',
+      previewUrl: expense.receiptUrl || null,
+      receiptFile: null
+    });
+    setIsEditModalOpen(true);
+  };
+
+  const handleEditFileChange = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      const preview = URL.createObjectURL(file);
+      setEditExpenseData({
+        ...editExpenseData,
+        receiptName: file.name,
+        previewUrl: preview,
+        receiptFile: file
+      });
+    }
+  };
+
+  const handleEditSubmit = async (e) => {
+    e.preventDefault();
+    if (!editExpenseData.projectId || !editExpenseData.category || !editExpenseData.amount || !editExpenseData.paidTo.trim()) {
+      alert("Please fill all required fields!");
+      return;
+    }
+    if (!editExpenseData.receiptName && !editExpenseData.previewUrl) {
+      alert(language === 'mr' ? 'कृपया बिलाचा फोटो किंवा डॉक्युमेंट पुरावा जोडा (Bill Proof अनिवार्य आहे)!' : language === 'hi' ? 'कृपया बिल की फोटो या डॉक्युमेंट प्रमाण जोड़ें (Bill Proof अनिवार्य है)!' : 'Please attach a bill photo or document proof (Mandatory)!');
+      return;
+    }
+    setSubmitting(true);
+    try {
+      await updateExpense(editExpenseData.id, editExpenseData);
+      setIsEditModalOpen(false);
+      setEditExpenseData(null);
+      alert('Expense updated successfully!');
+    } catch (err) {
+      alert(err.response?.data?.error || 'Failed to update expense');
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
   // Form State
   const [formData, setFormData] = useState({
-    category: 'Travel',
-    site: project ? project.name : '',
+    category: '',
+    projectId: defaultTargetProject ? defaultTargetProject.id : '',
     amount: '',
     paidTo: '',
     description: '',
@@ -51,17 +107,18 @@ const DailyExpenses = () => {
     receiptFile: null
   });
 
+  React.useEffect(() => {
+    if (defaultTargetProject) {
+      setFormData(prev => ({ ...prev, projectId: defaultTargetProject.id }));
+    }
+  }, [defaultTargetProject]);
+
   const fileInputRef = useRef(null);
 
   const categoriesList = [
     'All',
     ...(categories?.map(c => c.name) || [])
   ];
-
-  const sitesList = [
-    'All',
-    project ? project.name : null
-  ].filter(Boolean);
 
   const handleFileChange = (e) => {
     const file = e.target.files[0];
@@ -79,7 +136,7 @@ const DailyExpenses = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    if (!formData.site) {
+    if (!formData.projectId) {
       alert(language === 'mr' ? 'कृपया साइट लोकेशन निवडा!' : language === 'hi' ? 'कृपया साइट लोकेशन चुनें!' : 'Please select a Site Location!');
       return;
     }
@@ -104,7 +161,7 @@ const DailyExpenses = () => {
     try {
       await recordExpense({
         category: formData.category,
-        site: formData.site,
+        projectId: formData.projectId,
         amount: parseFloat(formData.amount),
         paidTo: formData.paidTo.trim(),
         receiptName: formData.receiptName,
@@ -113,8 +170,8 @@ const DailyExpenses = () => {
       });
 
       setFormData({
-        category: 'Travel',
-        site: project ? project.name : '',
+        category: '',
+        projectId: defaultTargetProject ? defaultTargetProject.id : '',
         amount: '',
         paidTo: '',
         description: '',
@@ -132,8 +189,23 @@ const DailyExpenses = () => {
     }
   };
 
+  // Unique lists for filters
+  const uniqueSites = ['All', ...new Set(expensesList.map(item => item.site).filter(Boolean))];
+  const uniqueCategories = ['All', ...new Set(expensesList.map(item => item.category).filter(Boolean))];
+  const uniqueDates = ['', ...new Set(expensesList.map(item => item.date).filter(Boolean))];
+
   // Filtered List
   const filteredExpenses = expensesList.filter((exp) => {
+    // 1. Site Filter
+    if (selectedSite !== 'All' && exp.site !== selectedSite) return false;
+    
+    // 2. Category Filter
+    if (selectedCategory !== 'All' && exp.category !== selectedCategory) return false;
+
+    // 3. Date Filter
+    if (selectedDate && exp.date !== selectedDate) return false;
+
+    // 4. Search Filter
     const term = searchTerm.toLowerCase().trim();
     if (!term) return true;
 
@@ -388,67 +460,168 @@ const DailyExpenses = () => {
         </div>
       </div>
 
-      {/* 50% Width Search Bar */}
-      <div style={{
-        position: 'relative',
-        width: '50%',
-        minWidth: '280px',
-        margin: '0.15rem 0 0.35rem 0'
+      {/* Filter and Search Bar Container */}
+      <div className="filter-toolbar" style={{
+        display: 'flex',
+        gap: '0.75rem',
+        alignItems: 'center',
+        flexWrap: 'wrap',
+        margin: '0.5rem 0 1.5rem 0',
+        padding: '0.75rem',
+        background: 'var(--card-bg)',
+        borderRadius: '1rem',
+        border: '1px solid var(--border-color)',
+        boxShadow: '0 4px 12px -4px var(--shadow-color)'
       }}>
-        <Search
-          size={17}
-          style={{
-            position: 'absolute',
-            left: '0.95rem',
-            top: '50%',
-            transform: 'translateY(-50%)',
-            color: 'var(--text-secondary)',
-            pointerEvents: 'none'
-          }}
-        />
-        <input
-          type="text"
-          placeholder={language === 'mr' ? 'खर्च, पावती, विक्रेता किंवा रक्कम शोधा...' : language === 'hi' ? 'खर्च, रसीद, विक्रेता या राशि खोजें...' : 'Search expense, vendor, category, site, amount...'}
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-          style={{
-            width: '100%',
-            padding: '0.55rem 2.2rem 0.55rem 2.5rem',
-            borderRadius: '0.75rem',
-            border: '1.5px solid var(--border-color)',
-            backgroundColor: 'var(--surface-bg)',
-            color: 'var(--text-primary)',
-            fontSize: '0.875rem',
-            outline: 'none',
-            transition: 'all 0.2s ease',
-            boxShadow: '0 2px 8px -2px var(--shadow-color)',
-            boxSizing: 'border-box'
-          }}
-          onFocus={(e) => e.target.style.borderColor = '#2563eb'}
-          onBlur={(e) => e.target.style.borderColor = 'var(--border-color)'}
-        />
-        {searchTerm && (
-          <button
-            onClick={() => setSearchTerm('')}
+        {/* Search Bar */}
+        <div style={{
+          position: 'relative',
+          flex: '1 1 280px',
+          maxWidth: '100%'
+        }}>
+          <Search
+            size={17}
             style={{
               position: 'absolute',
-              right: '0.75rem',
+              left: '0.95rem',
               top: '50%',
               transform: 'translateY(-50%)',
-              background: 'transparent',
-              border: 'none',
               color: 'var(--text-secondary)',
-              cursor: 'pointer',
-              fontSize: '0.85rem',
-              display: 'flex',
-              alignItems: 'center',
-              padding: 0
+              pointerEvents: 'none'
             }}
-            title="Clear Search"
+          />
+          <input
+            type="text"
+            placeholder={language === 'mr' ? 'खर्च, पावती, विक्रेता किंवा रक्कम शोधा...' : language === 'hi' ? 'खर्च, रसीद, विक्रेता या राशि खोजें...' : 'Search expense, vendor, category, site, amount...'}
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            style={{
+              width: '100%',
+              padding: '0.55rem 2.2rem 0.55rem 2.5rem',
+              borderRadius: '0.75rem',
+              border: '1.5px solid var(--border-color)',
+              backgroundColor: 'var(--surface-bg)',
+              color: 'var(--text-primary)',
+              fontSize: '0.875rem',
+              outline: 'none',
+              transition: 'all 0.2s ease',
+              boxShadow: '0 2px 8px -2px var(--shadow-color)',
+              boxSizing: 'border-box'
+            }}
+            onFocus={(e) => e.target.style.borderColor = '#2563eb'}
+            onBlur={(e) => e.target.style.borderColor = 'var(--border-color)'}
+          />
+          {searchTerm && (
+            <button
+              onClick={() => setSearchTerm('')}
+              style={{
+                position: 'absolute',
+                right: '0.75rem',
+                top: '50%',
+                transform: 'translateY(-50%)',
+                background: 'transparent',
+                border: 'none',
+                color: 'var(--text-secondary)',
+                cursor: 'pointer',
+                fontSize: '0.85rem',
+                display: 'flex',
+                alignItems: 'center',
+                padding: 0
+              }}
+              title="Clear Search"
+            >
+              ✕
+            </button>
+          )}
+        </div>
+
+        {/* Site Filter */}
+        <div style={{
+          position: 'relative',
+          flex: '1 1 140px',
+          minWidth: '140px'
+        }}>
+          <select
+            value={selectedSite}
+            onChange={(e) => setSelectedSite(e.target.value)}
+            style={{
+              width: '100%',
+              padding: '0.55rem 1rem',
+              borderRadius: '0.75rem',
+              border: '1.5px solid var(--border-color)',
+              backgroundColor: 'var(--surface-bg)',
+              color: 'var(--text-primary)',
+              fontSize: '0.875rem',
+              outline: 'none',
+              cursor: 'pointer',
+              boxShadow: '0 2px 8px -2px var(--shadow-color)',
+              boxSizing: 'border-box'
+            }}
           >
-            ✕
-          </button>
-        )}
+            {uniqueSites.map((site, index) => (
+              <option key={index} value={site}>{site === 'All' ? (language === 'mr' ? 'सर्व साइट्स (All Sites)' : 'All Sites') : site}</option>
+            ))}
+          </select>
+        </div>
+
+        {/* Category Filter */}
+        <div style={{
+          position: 'relative',
+          flex: '1 1 140px',
+          minWidth: '140px'
+        }}>
+          <select
+            value={selectedCategory}
+            onChange={(e) => setSelectedCategory(e.target.value)}
+            style={{
+              width: '100%',
+              padding: '0.55rem 1rem',
+              borderRadius: '0.75rem',
+              border: '1.5px solid var(--border-color)',
+              backgroundColor: 'var(--surface-bg)',
+              color: 'var(--text-primary)',
+              fontSize: '0.875rem',
+              outline: 'none',
+              cursor: 'pointer',
+              boxShadow: '0 2px 8px -2px var(--shadow-color)',
+              boxSizing: 'border-box'
+            }}
+          >
+            {uniqueCategories.map((cat, index) => (
+              <option key={index} value={cat}>{cat === 'All' ? (language === 'mr' ? 'सर्व श्रेणी (All Categories)' : 'All Categories') : cat}</option>
+            ))}
+          </select>
+        </div>
+
+        {/* Date Filter */}
+        <div style={{
+          position: 'relative',
+          flex: '1 1 140px',
+          minWidth: '140px'
+        }}>
+          <select
+            value={selectedDate}
+            onChange={(e) => setSelectedDate(e.target.value)}
+            style={{
+              width: '100%',
+              padding: '0.55rem 1rem',
+              borderRadius: '0.75rem',
+              border: '1.5px solid var(--border-color)',
+              backgroundColor: 'var(--surface-bg)',
+              color: 'var(--text-primary)',
+              fontSize: '0.875rem',
+              outline: 'none',
+              cursor: 'pointer',
+              boxShadow: '0 2px 8px -2px var(--shadow-color)',
+              boxSizing: 'border-box'
+            }}
+          >
+            <option value="">{language === 'mr' ? 'सर्व तारखा (All Dates)' : 'All Dates'}</option>
+            {uniqueDates.filter(d => d).map((date, index) => (
+              <option key={index} value={date}>{date}</option>
+            ))}
+          </select>
+        </div>
       </div>
 
       {/* Main Table Card */}
@@ -531,19 +704,20 @@ const DailyExpenses = () => {
                 <th style={{ padding: '0.85rem 1rem', fontWeight: '700' }}>{t('amount')}</th>
                 <th style={{ padding: '0.85rem 1rem', fontWeight: '700' }}>{t('status')}</th>
                 <th style={{ padding: '0.85rem 1rem', fontWeight: '700', textAlign: 'center' }}>{t('receipt')}</th>
+                <th style={{ padding: '0.85rem 1rem', fontWeight: '700', textAlign: 'center' }}>Actions</th>
               </tr>
             </thead>
             <tbody>
               {filteredExpenses.length === 0 ? (
                 <tr>
-                  <td colSpan="8" style={{ padding: '2.5rem', textAlign: 'center', color: 'var(--text-secondary)' }}>
+                  <td colSpan="9" style={{ padding: '2.5rem', textAlign: 'center', color: 'var(--text-secondary)' }}>
                     {language === 'mr' ? 'कोणतीही खर्चाची नोंद सापडली नाही.' : language === 'hi' ? 'कोई खर्च प्रविष्टि नहीं मिली।' : 'No expense entries found.'}
                   </td>
                 </tr>
               ) : (
                 filteredExpenses.map((exp) => (
                   <tr
-                    key={exp.id}
+                    key={exp.displayId || exp.id}
                     style={{
                       borderBottom: '1px solid var(--border-color)',
                       transition: 'background-color 0.15s ease'
@@ -551,28 +725,28 @@ const DailyExpenses = () => {
                     onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'var(--card-bg)'}
                     onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
                   >
-                    <td style={{ padding: '0.85rem 1rem', fontWeight: '700', color: 'var(--primary-color)', whiteSpace: 'nowrap' }}>
-                      {exp.id}
+                    <td data-label="ID" style={{ padding: '0.85rem 1rem', fontWeight: '700', color: 'var(--primary-color)', maxWidth: '120px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={exp.displayId || exp.id}>
+                      {exp.displayId || exp.id}
                     </td>
-                    <td style={{ padding: '0.85rem 1rem', fontWeight: '700', color: 'var(--text-primary)', whiteSpace: 'nowrap' }}>
+                    <td data-label="CATEGORY" style={{ padding: '0.85rem 1rem', fontWeight: '700', color: 'var(--text-primary)', whiteSpace: 'nowrap' }}>
                       {exp.category}
                     </td>
-                    <td style={{ padding: '0.85rem 1rem', color: 'var(--text-secondary)', whiteSpace: 'nowrap' }}>
+                    <td data-label="SITE" style={{ padding: '0.85rem 1rem', color: 'var(--text-secondary)', whiteSpace: 'nowrap' }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
                         <MapPin size={13} color="#3b82f6" />
                         <span>{exp.site}</span>
                       </div>
                     </td>
-                    <td style={{ padding: '0.85rem 1rem', color: 'var(--text-primary)', fontWeight: '600' }}>
+                    <td data-label="VENDOR" style={{ padding: '0.85rem 1rem', color: 'var(--text-primary)', fontWeight: '600' }}>
                       {exp.paidTo || 'Local Vendor'}
                     </td>
-                    <td style={{ padding: '0.85rem 1rem', color: 'var(--text-secondary)', fontSize: '0.85rem', whiteSpace: 'nowrap' }}>
+                    <td data-label="DATE" style={{ padding: '0.85rem 1rem', color: 'var(--text-secondary)', fontSize: '0.85rem', whiteSpace: 'nowrap' }}>
                       {exp.date}
                     </td>
-                    <td style={{ padding: '0.85rem 1rem', fontWeight: '800', color: '#10b981', whiteSpace: 'nowrap' }}>
+                    <td data-label="AMOUNT" style={{ padding: '0.85rem 1rem', fontWeight: '800', color: '#10b981', whiteSpace: 'nowrap' }}>
                       ₹{exp.amount.toLocaleString()}
                     </td>
-                    <td style={{ padding: '0.85rem 1rem', whiteSpace: 'nowrap' }}>
+                    <td data-label="STATUS" style={{ padding: '0.85rem 1rem', whiteSpace: 'nowrap' }}>
                       <span style={{
                         display: 'inline-flex',
                         alignItems: 'center',
@@ -588,7 +762,7 @@ const DailyExpenses = () => {
                         {exp.status === 'Approved' ? t('approved') : t('pending')}
                       </span>
                     </td>
-                    <td style={{ padding: '0.85rem 1rem', textAlign: 'center', whiteSpace: 'nowrap' }}>
+                    <td data-label="RECEIPT" style={{ padding: '0.85rem 1rem', textAlign: 'center', whiteSpace: 'nowrap' }}>
                       {exp.receipt ? (
                         <button
                           onClick={() => setViewReceiptModal(exp)}
@@ -611,6 +785,62 @@ const DailyExpenses = () => {
                       ) : (
                         <span style={{ color: 'var(--slate-400)', fontSize: '0.75rem' }}>{t('noBill')}</span>
                       )}
+                    </td>
+                    <td data-label="ACTIONS" style={{ padding: '0.85rem 1rem', textAlign: 'center', whiteSpace: 'nowrap' }}>
+                      <div style={{ display: 'flex', gap: '0.4rem', justifyContent: 'center' }}>
+                        <button
+                          title="Edit"
+                          disabled={exp.status !== 'Pending'}
+                          style={{
+                            background: exp.status === 'Pending' ? 'rgba(59, 130, 246, 0.1)' : 'rgba(148, 163, 184, 0.1)',
+                            color: exp.status === 'Pending' ? '#3b82f6' : '#94a3b8',
+                            border: exp.status === 'Pending' ? '1px solid rgba(59, 130, 246, 0.3)' : '1px solid rgba(148, 163, 184, 0.3)',
+                            padding: '0.35rem',
+                            borderRadius: '0.5rem',
+                            cursor: exp.status === 'Pending' ? 'pointer' : 'not-allowed',
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            transition: 'all 0.2s ease',
+                            opacity: exp.status === 'Pending' ? 1 : 0.6
+                          }}
+                          onMouseEnter={(e) => { if (exp.status === 'Pending') { e.currentTarget.style.background = 'rgba(59, 130, 246, 0.2)'; e.currentTarget.style.transform = 'scale(1.05)'; } }}
+                          onMouseLeave={(e) => { if (exp.status === 'Pending') { e.currentTarget.style.background = 'rgba(59, 130, 246, 0.1)'; e.currentTarget.style.transform = 'scale(1)'; } }}
+                          onClick={() => handleEditClick(exp)}
+                        >
+                          <Edit2 size={16} />
+                        </button>
+                        <button
+                          title="Delete"
+                          disabled={exp.status !== 'Pending'}
+                          style={{
+                            background: exp.status === 'Pending' ? 'rgba(239, 68, 68, 0.1)' : 'rgba(148, 163, 184, 0.1)',
+                            color: exp.status === 'Pending' ? '#ef4444' : '#94a3b8',
+                            border: exp.status === 'Pending' ? '1px solid rgba(239, 68, 68, 0.3)' : '1px solid rgba(148, 163, 184, 0.3)',
+                            padding: '0.35rem',
+                            borderRadius: '0.5rem',
+                            cursor: exp.status === 'Pending' ? 'pointer' : 'not-allowed',
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            transition: 'all 0.2s ease',
+                            opacity: exp.status === 'Pending' ? 1 : 0.6
+                          }}
+                          onMouseEnter={(e) => { if (exp.status === 'Pending') { e.currentTarget.style.background = 'rgba(239, 68, 68, 0.2)'; e.currentTarget.style.transform = 'scale(1.05)'; } }}
+                          onMouseLeave={(e) => { if (exp.status === 'Pending') { e.currentTarget.style.background = 'rgba(239, 68, 68, 0.1)'; e.currentTarget.style.transform = 'scale(1)'; } }}
+                          onClick={async () => { 
+                            if(window.confirm(language === 'mr' ? 'हा खर्च खरोखर डिलीट करायचा आहे का?' : language === 'hi' ? 'क्या आप वास्तव में इस खर्च को डिलीट करना चाहते हैं?' : 'Are you sure you want to delete this expense?')) {
+                              try {
+                                await deleteExpense(exp.id);
+                              } catch(err) {
+                                alert(err.response?.data?.error || 'Failed to delete expense.');
+                              }
+                            }
+                          }}
+                        >
+                          <Trash2 size={16} />
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 ))
@@ -672,8 +902,8 @@ const DailyExpenses = () => {
                 </label>
                 <select
                   required
-                  value={formData.site}
-                  onChange={(e) => setFormData({ ...formData, site: e.target.value })}
+                  value={formData.projectId}
+                  onChange={(e) => setFormData({ ...formData, projectId: e.target.value })}
                   style={{
                     width: '100%',
                     padding: '0.75rem',
@@ -685,8 +915,8 @@ const DailyExpenses = () => {
                     outline: 'none'
                   }}
                 >
-                  {sitesList.filter(s => s !== 'All').map((s) => (
-                    <option key={s} value={s}>{s}</option>
+                  {projects.map((p) => (
+                    <option key={p.id} value={p.id}>{p.name}</option>
                   ))}
                 </select>
               </div>
@@ -711,11 +941,17 @@ const DailyExpenses = () => {
                     outline: 'none'
                   }}
                 >
+                  <option value="" disabled>{language === 'mr' ? 'कॅटेगरी निवडा' : language === 'hi' ? 'कैटेगरी चुनें' : 'Select Category'}</option>
                   {categoriesList.filter(c => c !== 'All').map((c) => (
                     <option key={c} value={c}>
                       {c === 'Other' ? (language === 'mr' ? 'इतर (Other)' : language === 'hi' ? 'अन्य (Other)' : 'Other') : c}
                     </option>
                   ))}
+                  {!categoriesList.includes('Other') && (
+                    <option value="Other">
+                      {language === 'mr' ? 'इतर (Other)' : language === 'hi' ? 'अन्य (Other)' : 'Other'}
+                    </option>
+                  )}
                 </select>
               </div>
 
@@ -995,6 +1231,207 @@ const DailyExpenses = () => {
             >
               Download Verified Receipt File
             </button>
+          </div>
+        </div>
+      )}
+
+      {/* Modal: Edit Expense */}
+      {isEditModalOpen && editExpenseData && (
+        <div style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(0, 0, 0, 0.7)', backdropFilter: 'blur(4px)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000, padding: '1rem' }}>
+          <div style={{ backgroundColor: 'var(--surface-bg)', borderRadius: '1.25rem', width: '100%', maxWidth: '500px', padding: '1.5rem', boxShadow: '0 20px 40px rgba(0,0,0,0.3)', border: '1px solid var(--border-color)', maxHeight: '90vh', overflowY: 'auto' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                <div style={{ width: '40px', height: '40px', borderRadius: '10px', background: 'linear-gradient(135deg, rgba(37, 99, 235, 0.1) 0%, rgba(124, 58, 237, 0.1) 100%)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#3b82f6' }}>
+                  <Edit2 size={22} />
+                </div>
+                <div>
+                  <h3 style={{ fontSize: '1.2rem', fontWeight: '800', color: 'var(--text-primary)', margin: 0 }}>
+                    {language === 'mr' ? 'खर्च संपादित करा' : language === 'hi' ? 'खर्च संपादित करें' : 'Edit Expense'}
+                  </h3>
+                  <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', margin: '0.2rem 0 0 0' }}>Update voucher details</p>
+                </div>
+              </div>
+              <button onClick={() => { setIsEditModalOpen(false); setEditExpenseData(null); }} style={{ background: 'transparent', border: 'none', color: 'var(--text-secondary)', cursor: 'pointer', padding: '0.25rem', display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: '0.5rem' }}>
+                <X size={20} />
+              </button>
+            </div>
+
+            <form onSubmit={handleEditSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1.15rem' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                  <label style={{ fontSize: '0.85rem', fontWeight: '600', color: 'var(--text-secondary)' }}>{t('siteLocation')}</label>
+                  <select
+                    value={editExpenseData.projectId}
+                    onChange={(e) => setEditExpenseData({ ...editExpenseData, projectId: e.target.value })}
+                    required
+                    style={{ padding: '0.75rem', borderRadius: '0.65rem', border: '1px solid var(--border-color)', backgroundColor: 'var(--bg-color)', color: 'var(--text-primary)', fontSize: '0.9rem', outline: 'none' }}
+                  >
+                    <option value="" disabled>Select Site</option>
+                    {projects.map(p => (
+                      <option key={p.id} value={p.id}>{p.name}</option>
+                    ))}
+                  </select>
+                </div>
+
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                  <label style={{ fontSize: '0.85rem', fontWeight: '600', color: 'var(--text-secondary)' }}>{t('expenseCategory')}</label>
+                  <select
+                    value={editExpenseData.category}
+                    onChange={(e) => setEditExpenseData({ ...editExpenseData, category: e.target.value })}
+                    required
+                    style={{ padding: '0.75rem', borderRadius: '0.65rem', border: '1px solid var(--border-color)', backgroundColor: 'var(--bg-color)', color: 'var(--text-primary)', fontSize: '0.9rem', outline: 'none' }}
+                  >
+                    <option value="" disabled>Select Category</option>
+                    {categoriesList.filter(c => c !== 'All').map((cat, idx) => (
+                      <option key={idx} value={cat}>{cat}</option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                <label style={{ fontSize: '0.85rem', fontWeight: '600', color: 'var(--text-secondary)' }}>Paid To (Vendor Name)</label>
+                <input
+                  type="text"
+                  placeholder="e.g. Ramesh Hardware, Raju Labor"
+                  value={editExpenseData.paidTo}
+                  onChange={(e) => setEditExpenseData({ ...editExpenseData, paidTo: e.target.value })}
+                  required
+                  style={{ padding: '0.75rem', borderRadius: '0.65rem', border: '1px solid var(--border-color)', backgroundColor: 'var(--bg-color)', color: 'var(--text-primary)', fontSize: '0.9rem', outline: 'none' }}
+                />
+              </div>
+
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                <label style={{ fontSize: '0.85rem', fontWeight: '600', color: 'var(--text-secondary)' }}>{t('amountRs')}</label>
+                <input
+                  type="number"
+                  placeholder="0.00"
+                  value={editExpenseData.amount}
+                  onChange={(e) => setEditExpenseData({ ...editExpenseData, amount: e.target.value })}
+                  required
+                  min="1"
+                  style={{ padding: '0.75rem', borderRadius: '0.65rem', border: '1px solid var(--border-color)', backgroundColor: 'var(--bg-color)', color: 'var(--text-primary)', fontSize: '0.9rem', outline: 'none' }}
+                />
+              </div>
+
+              {/* Receipt File */}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                <label style={{ fontSize: '0.85rem', fontWeight: '600', color: 'var(--text-secondary)' }}>Attach Bill/Receipt Photo <span style={{ color: '#ef4444' }}>*</span></label>
+                {!editExpenseData.previewUrl ? (
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
+                    {/* Option 1: Direct Camera Snap */}
+                    <label 
+                      style={{
+                        display: 'flex',
+                        flexDirection: 'column',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        gap: '0.35rem',
+                        padding: '0.85rem 0.5rem',
+                        border: '1.5px dashed #2563eb',
+                        borderRadius: '0.75rem',
+                        backgroundColor: 'rgba(37, 99, 235, 0.06)',
+                        color: '#2563eb',
+                        cursor: 'pointer',
+                        transition: 'all 0.2s ease',
+                        textAlign: 'center'
+                      }}
+                      onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'rgba(37, 99, 235, 0.12)'}
+                      onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'rgba(37, 99, 235, 0.06)'}
+                    >
+                      <Camera size={22} color="#2563eb" />
+                      <span style={{ fontSize: '0.8rem', fontWeight: '700' }}>
+                        {language === 'mr' ? 'कॅमेरा फोटो' : language === 'hi' ? 'कैमरा फोटो' : 'Camera Snap'}
+                      </span>
+                      <span style={{ fontSize: '0.7rem', color: 'var(--text-secondary)' }}>
+                        {language === 'mr' ? 'थेट फोटो काढा' : language === 'hi' ? 'सीधे फोटो लें' : 'Take direct photo'}
+                      </span>
+                      <input 
+                        type="file" 
+                        accept="image/*" 
+                        capture="environment" 
+                        style={{ display: 'none' }}
+                        onChange={handleEditFileChange}
+                      />
+                    </label>
+
+                    {/* Option 2: Upload Documents / PDF / Gallery */}
+                    <label 
+                      style={{
+                        display: 'flex',
+                        flexDirection: 'column',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        gap: '0.35rem',
+                        padding: '0.85rem 0.5rem',
+                        border: '1.5px dashed #8b5cf6',
+                        borderRadius: '0.75rem',
+                        backgroundColor: 'rgba(139, 92, 246, 0.06)',
+                        color: '#8b5cf6',
+                        cursor: 'pointer',
+                        transition: 'all 0.2s ease',
+                        textAlign: 'center'
+                      }}
+                      onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'rgba(139, 92, 246, 0.12)'}
+                      onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'rgba(139, 92, 246, 0.06)'}
+                    >
+                      <FileText size={22} color="#8b5cf6" />
+                      <span style={{ fontSize: '0.8rem', fontWeight: '700' }}>
+                        {language === 'mr' ? 'डॉक्युमेंट्स / गॅलरी' : language === 'hi' ? 'डॉक्युमेंट्स / गैलरी' : 'Upload Document'}
+                      </span>
+                      <span style={{ fontSize: '0.7rem', color: 'var(--text-secondary)' }}>
+                        {language === 'mr' ? 'PDF किंवा इमेज निवडा' : language === 'hi' ? 'PDF या इमेज चुनें' : 'PDF, JPG, PNG'}
+                      </span>
+                      <input 
+                        type="file" 
+                        accept="image/*,.pdf" 
+                        style={{ display: 'none' }}
+                        onChange={handleEditFileChange}
+                      />
+                    </label>
+                  </div>
+                ) : (
+                  <div style={{
+                    display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                    padding: '0.75rem 1rem', background: 'var(--card-bg)', borderRadius: '0.75rem', border: '1px solid var(--border-color)'
+                  }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', overflow: 'hidden' }}>
+                      <div style={{ width: '36px', height: '36px', borderRadius: '8px', backgroundColor: '#e0e7ff', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                        <ReceiptText size={18} color="#4338ca" />
+                      </div>
+                      <div style={{ overflow: 'hidden' }}>
+                        <p style={{ margin: 0, fontSize: '0.85rem', fontWeight: '600', color: 'var(--text-primary)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                          {editExpenseData.receiptName}
+                        </p>
+                        <p style={{ margin: 0, fontSize: '0.7rem', color: '#10b981', display: 'flex', alignItems: 'center', gap: '0.25rem', marginTop: '0.1rem' }}>
+                          <CheckCircle2 size={12} /> Attached
+                        </p>
+                      </div>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setEditExpenseData({ ...editExpenseData, previewUrl: null, receiptFile: null, receiptName: '' })}
+                      style={{ background: 'rgba(239, 68, 68, 0.1)', border: 'none', color: '#ef4444', cursor: 'pointer', padding: '0.4rem', borderRadius: '0.5rem', display: 'flex', alignItems: 'center' }}
+                      title="Remove attachment"
+                    >
+                      <X size={14} />
+                    </button>
+                  </div>
+                )}
+              </div>
+
+              <button
+                type="submit"
+                disabled={submitting}
+                style={{
+                  width: '100%', padding: '0.85rem', borderRadius: '0.75rem', background: 'linear-gradient(135deg, #2563eb 0%, #7c3aed 100%)',
+                  color: 'white', border: 'none', fontWeight: '700', fontSize: '0.95rem', cursor: submitting ? 'not-allowed' : 'pointer',
+                  opacity: submitting ? 0.7 : 1, marginTop: '0.5rem', boxShadow: '0 6px 18px rgba(99, 102, 241, 0.4)'
+                }}
+              >
+                {submitting ? 'Updating...' : 'Update Expense'}
+              </button>
+            </form>
           </div>
         </div>
       )}

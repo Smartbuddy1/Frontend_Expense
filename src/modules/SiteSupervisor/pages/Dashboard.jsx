@@ -13,7 +13,7 @@ import {
   CheckCircle2, 
   Clock, 
   AlertCircle, 
-  ChevronRight, 
+  ChevronRight,
   HardHat, 
   Calendar,
   FileCheck,
@@ -24,7 +24,6 @@ import {
   Sparkles,
   Eye,
   FileText,
-  MapPin,
   Camera,
   ArrowDownRight,
   FolderPlus,
@@ -37,48 +36,58 @@ import { useLanguage } from '../context/LanguageContext';
 
 const Dashboard = () => {
   const navigate = useNavigate();
-  const { 
+  const {
     project,
+    projects,
+    selectedProjectId,
+    defaultTargetProject,
+    selectProject,
     categories,
-    walletBalance, 
-    totalAdvance, 
-    todaySpend, 
-    expensesList, 
-    recordExpense, 
-    requestAdvance, 
-    lastDeduction 
+    walletBalance,
+    totalAdvance,
+    todaySpend,
+    expensesList,
+    advancesList, // Added advancesList
+    recordExpense,
+    requestAdvance,
+    lastDeduction
   } = useWallet();
   const { t, language } = useLanguage();
 
-  const selectedSite = 'all';
+  const dashboardProjectId = 'all';
+  const dashboardProject = null;
+  const isAllProjects = true;
 
   const [activeModal, setActiveModal] = useState(null); // 'expense', 'advance', 'bill', null
   const [expenseForm, setExpenseForm] = useState({
     category: '',
-    site: '',
+    projectId: '',
     amount: '',
     paidTo: '',
     receiptName: '',
-    previewUrl: null
+    previewUrl: null,
+    receiptFile: null
   });
 
-  const [advanceForm, setAdvanceForm] = useState({ 
-    site: '',
-    amount: '', 
-    reason: '', 
-    urgency: 'Immediate (Same Day)' 
+  const [advanceForm, setAdvanceForm] = useState({
+    projectId: '',
+    amount: '',
+    reason: '',
+    urgency: 'Immediate (Same Day)'
   });
 
-  // Update forms when project/categories load
+  // Default both forms' target project whenever it changes (e.g. dashboard
+  // switched to a different project, or projects finished loading) — the
+  // supervisor can still pick a different one from the modal's own dropdown.
   React.useEffect(() => {
-    if (project) {
-      setExpenseForm(prev => ({ ...prev, site: project.name }));
-      setAdvanceForm(prev => ({ ...prev, site: project.name }));
+    if (defaultTargetProject) {
+      setExpenseForm(prev => ({ ...prev, projectId: defaultTargetProject.id }));
+      setAdvanceForm(prev => ({ ...prev, projectId: defaultTargetProject.id }));
     }
     if (categories && categories.length > 0 && !expenseForm.category) {
       setExpenseForm(prev => ({ ...prev, category: categories[0].name }));
     }
-  }, [project, categories]);
+  }, [defaultTargetProject, categories]);
 
   const handleExpenseFileChange = (e) => {
     const file = e.target.files[0];
@@ -87,19 +96,42 @@ const Dashboard = () => {
       setExpenseForm(prev => ({
         ...prev,
         receiptName: file.name,
-        previewUrl: preview
+        previewUrl: preview,
+        receiptFile: file
       }));
     }
   };
 
   const currentSiteInfo = {
-    name: project ? project.name : (language === 'mr' ? 'कोणताही प्रकल्प नाही' : language === 'hi' ? 'कोई प्रोजेक्ट नहीं' : 'No Project Assigned'),
+    name: dashboardProject ? dashboardProject.name : (language === 'mr' ? 'कोणताही प्रकल्प नाही' : language === 'hi' ? 'कोई प्रोजेक्ट नहीं' : 'No Project Assigned'),
     labors: 0,
     advanceAllocated: totalAdvance,
     statusColor: '#3b82f6'
   };
 
-  const filteredExpensesList = expensesList;
+  const filteredExpensesList = isAllProjects
+    ? expensesList
+    : expensesList.filter(exp => exp.site === dashboardProject?.name);
+
+  const filteredAdvancesList = isAllProjects
+    ? advancesList
+    : advancesList.filter(adv => adv.site === dashboardProject?.name);
+
+  const localTotalAdvance = isAllProjects 
+    ? totalAdvance 
+    : filteredAdvancesList
+        .filter(a => a.status === 'Disbursed')
+        .reduce((sum, a) => sum + (a.amount || 0), 0);
+
+  const localApprovedSpent = isAllProjects
+    ? 0
+    : filteredExpensesList
+        .filter(e => e.status === 'Approved')
+        .reduce((sum, e) => sum + (e.amount || 0), 0);
+
+  const localWalletBalance = isAllProjects 
+    ? walletBalance 
+    : (localTotalAdvance - localApprovedSpent);
 
   const siteTodaySpend = filteredExpensesList.reduce((acc, curr) => acc + (curr.amount || 0), 0);
   const totalSpent = expensesList.reduce((acc, curr) => acc + (curr.amount || 0), 0);
@@ -107,7 +139,7 @@ const Dashboard = () => {
   const handleAddExpense = (e) => {
     e.preventDefault();
     
-    if (!expenseForm.site) {
+    if (!expenseForm.projectId) {
       alert(language === 'mr' ? 'कृपया साइट लोकेशन निवडा!' : language === 'hi' ? 'कृपया साइट लोकेशन चुनें!' : 'Please select a Site Location!');
       return;
     }
@@ -130,21 +162,23 @@ const Dashboard = () => {
 
     recordExpense({
       category: expenseForm.category,
-      site: expenseForm.site,
+      projectId: expenseForm.projectId,
       amount: parseFloat(expenseForm.amount),
       paidTo: expenseForm.paidTo.trim(),
       receiptName: expenseForm.receiptName,
       receiptUrl: expenseForm.previewUrl || null,
+      file: expenseForm.receiptFile,
       receipt: true
     });
 
     setExpenseForm({
       category: categories && categories.length > 0 ? categories[0].name : '',
-      site: project ? project.name : '',
+      projectId: defaultTargetProject ? defaultTargetProject.id : '',
       amount: '',
       paidTo: '',
       receiptName: '',
-      previewUrl: null
+      previewUrl: null,
+      receiptFile: null
     });
     setActiveModal(null);
     alert(language === 'mr' ? 'खर्च आणि बिलाचा पुरावा यशस्वीरीत्या नोंदवला गेला!' : language === 'hi' ? 'खर्च और बिल का प्रमाण सफलतापूर्वक दर्ज हो गया!' : 'Expense and bill proof recorded successfully!');
@@ -152,7 +186,7 @@ const Dashboard = () => {
 
   const handleRequestAdvance = (e) => {
     e.preventDefault();
-    if (!advanceForm.site) {
+    if (!advanceForm.projectId) {
       alert(language === 'mr' ? 'कृपया साइट लोकेशन निवडा!' : language === 'hi' ? 'कृपया साइट लोकेशन चुनें!' : 'Please select a Site Location!');
       return;
     }
@@ -172,14 +206,15 @@ const Dashboard = () => {
     requestAdvance({
       amount: parseFloat(advanceForm.amount),
       reason: advanceForm.reason.trim(),
-      site: advanceForm.site
+      urgency: advanceForm.urgency,
+      projectId: advanceForm.projectId
     });
     alert(language === 'mr'
       ? `₹${parseFloat(advanceForm.amount).toLocaleString()} ची अ‍ॅडव्हान्स मागणी मंजुरीसाठी पाठवली गेली आहे!`
       : language === 'hi'
       ? `₹${parseFloat(advanceForm.amount).toLocaleString()} का एडवांस अनुरोध स्वीकृति के लिए भेज दिया गया है!`
       : `Advance request of ₹${parseFloat(advanceForm.amount).toLocaleString()} submitted successfully!`);
-    setAdvanceForm({ site: project ? project.name : '', amount: '', reason: '', urgency: 'Immediate (Same Day)' });
+    setAdvanceForm({ projectId: defaultTargetProject ? defaultTargetProject.id : '', amount: '', reason: '', urgency: 'Immediate (Same Day)' });
     setActiveModal(null);
   };
 
@@ -216,14 +251,6 @@ const Dashboard = () => {
       icon: <Wallet className="w-6 h-6 text-white" />,
       iconBg: '#06b6d4',
       action: () => navigate('/balance-settlement')
-    },
-    {
-      id: 'site-photos',
-      title: 'Site Photos',
-      description: 'Upload and view site photos',
-      icon: <Camera className="w-6 h-6 text-white" />,
-      iconBg: '#8b5cf6',
-      action: () => navigate('/site-photos')
     }
   ];
 
@@ -261,28 +288,6 @@ const Dashboard = () => {
           </p>
         </div>
 
-        {/* Site Details on Right */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', flexWrap: 'wrap' }}>
-          <div style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: '0.4rem',
-            background: 'var(--surface-bg)',
-            border: '1.5px solid #3b82f6',
-            padding: '0.45rem 0.85rem',
-            borderRadius: '0.65rem',
-            boxShadow: '0 2px 8px rgba(59, 130, 246, 0.15)'
-          }}>
-            <MapPin size={16} color="#3b82f6" />
-            <span style={{
-              color: 'var(--text-primary)',
-              fontWeight: '700',
-              fontSize: '0.85rem',
-            }}>
-              {project ? project.name : (language === 'mr' ? 'कोणताही प्रकल्प नाही' : language === 'hi' ? 'कोई प्रोजेक्ट नहीं' : 'No Project')}
-            </span>
-          </div>
-        </div>
       </div>
 
       {/* Top Stat Cards Row (Full Width 100% Span) */}
@@ -306,7 +311,7 @@ const Dashboard = () => {
 
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', margin: '0.4rem 0' }}>
             <div style={{ fontSize: '1.85rem', fontWeight: '800', color: '#10b981', lineHeight: 1 }}>
-              ₹{walletBalance.toLocaleString()}
+              ₹{localWalletBalance.toLocaleString()}
             </div>
             <div style={{
               width: '48px',
@@ -375,7 +380,7 @@ const Dashboard = () => {
 
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', margin: '0.4rem 0' }}>
             <div style={{ fontSize: '1.85rem', fontWeight: '800', color: 'var(--text-primary)', lineHeight: 1 }}>
-              ₹{totalAdvance.toLocaleString()}
+              ₹{localTotalAdvance.toLocaleString()}
             </div>
             <div style={{
               width: '48px',
@@ -463,26 +468,29 @@ const Dashboard = () => {
         </div>
 
         {/* Card 4: Total Projects (Placed LAST in the row when 'All Sites' is selected) */}
-        {selectedSite === 'all' && (
-          <div style={{
-            background: 'var(--surface-bg)',
-            borderRadius: '1.15rem',
-            border: '1px solid var(--border-color)',
-            padding: '1.15rem 1.25rem',
-            boxShadow: '0 4px 16px -2px var(--shadow-color)',
-            display: 'flex',
-            flexDirection: 'column',
-            justifyContent: 'space-between',
-            minHeight: '140px',
-            transition: 'transform 0.2s ease, box-shadow 0.2s ease'
-          }}>
+        {isAllProjects && (
+          <div
+            onClick={() => navigate('/assigned-projects')}
+            style={{
+              background: 'var(--surface-bg)',
+              borderRadius: '1.15rem',
+              border: '1px solid var(--border-color)',
+              padding: '1.15rem 1.25rem',
+              boxShadow: '0 4px 16px -2px var(--shadow-color)',
+              display: 'flex',
+              flexDirection: 'column',
+              justifyContent: 'space-between',
+              minHeight: '140px',
+              cursor: 'pointer',
+              transition: 'transform 0.2s ease, box-shadow 0.2s ease'
+            }}>
             <span style={{ fontSize: '0.85rem', fontWeight: '600', color: 'var(--text-secondary)' }}>
               {language === 'mr' ? 'एकूण नियुक्त प्रोजेक्ट्स' : language === 'hi' ? 'कुल नियुक्त प्रोजेक्ट्स' : 'Total Projects'}
             </span>
 
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', margin: '0.4rem 0' }}>
               <div style={{ fontSize: '2.1rem', fontWeight: '800', color: 'var(--text-primary)', lineHeight: 1 }}>
-                3
+                {projects.length}
               </div>
               <div style={{
                 width: '48px',
@@ -511,7 +519,7 @@ const Dashboard = () => {
                 backgroundColor: 'rgba(16, 185, 129, 0.12)',
                 color: '#10b981'
               }}>
-                <TrendingUp size={12} /> +5% active
+                <TrendingUp size={12} /> {projects.filter(p => p.status === 'active').length} {language === 'mr' ? 'सक्रिय' : language === 'hi' ? 'सक्रिय' : 'active'}
               </span>
             </div>
           </div>
@@ -604,7 +612,16 @@ const Dashboard = () => {
               {t('recentExpenses')}
             </h3>
             <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
-              {project ? `${language === 'mr' ? 'साइट' : language === 'hi' ? 'साइट' : 'Site'}: ${project.name} (${filteredExpensesList.length} ${language === 'mr' ? 'नोंदी' : language === 'hi' ? 'प्रविष्टियाँ' : 'entries'})` : ''}
+              {(() => {
+                const entriesWord = language === 'mr' ? 'नोंदी' : language === 'hi' ? 'प्रविष्टियाँ' : 'entries';
+                if (isAllProjects) {
+                  const label = language === 'mr' ? 'सर्व प्रकल्प' : language === 'hi' ? 'सभी प्रोजेक्ट्स' : 'All Projects';
+                  return `${label} (${filteredExpensesList.length} ${entriesWord})`;
+                }
+                if (!dashboardProject) return '';
+                const siteWord = language === 'mr' ? 'साइट' : language === 'hi' ? 'साइट' : 'Site';
+                return `${siteWord}: ${dashboardProject.name} (${filteredExpensesList.length} ${entriesWord})`;
+              })()}
             </p>
           </div>
 
@@ -639,6 +656,7 @@ const Dashboard = () => {
                 <th style={{ padding: '0.75rem 1rem', fontWeight: '600' }}>{t('voucherId')}</th>
                 <th style={{ padding: '0.75rem 1rem', fontWeight: '600' }}>{t('expenseCategory')}</th>
                 <th style={{ padding: '0.75rem 1rem', fontWeight: '600' }}>{t('siteLocation')}</th>
+                <th style={{ padding: '0.75rem 1rem', fontWeight: '600' }}>Vendor / Paid To</th>
                 <th style={{ padding: '0.75rem 1rem', fontWeight: '600' }}>{t('dateTime')}</th>
                 <th style={{ padding: '0.75rem 1rem', fontWeight: '600' }}>{t('amount')}</th>
                 <th style={{ padding: '0.75rem 1rem', fontWeight: '600' }}>{t('status')}</th>
@@ -648,14 +666,14 @@ const Dashboard = () => {
             <tbody>
               {filteredExpensesList.length === 0 ? (
                 <tr>
-                  <td colSpan="7" style={{ padding: '2rem', textAlign: 'center', color: 'var(--text-secondary)', fontSize: '0.9rem' }}>
+                  <td colSpan="8" style={{ padding: '2rem', textAlign: 'center', color: 'var(--text-secondary)', fontSize: '0.9rem' }}>
                     {language === 'mr' ? 'या साइटसाठी अद्याप कोणताही खर्च नोंदवलेला नाही.' : language === 'hi' ? 'इस साइट के लिए अभी तक कोई खर्च दर्ज नहीं हुआ है।' : 'No expenses recorded for this site yet.'}
                   </td>
                 </tr>
               ) : (
                 filteredExpensesList.slice(0, 8).map((exp) => (
                   <tr 
-                    key={exp.id} 
+                    key={exp.displayId || exp.id} 
                     style={{ 
                       borderBottom: '1px solid var(--border-color)',
                       transition: 'background-color 0.15s ease'
@@ -663,22 +681,25 @@ const Dashboard = () => {
                     onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'var(--card-bg)'}
                     onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
                   >
-                    <td style={{ padding: '0.85rem 1rem', fontWeight: '700', color: 'var(--primary-color)', whiteSpace: 'nowrap' }}>
-                      {exp.id}
+                    <td data-label="ID" style={{ padding: '0.85rem 1rem', fontWeight: '700', color: 'var(--primary-color)', maxWidth: '120px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={exp.displayId || exp.id}>
+                      {exp.displayId || exp.id}
                     </td>
-                    <td style={{ padding: '0.85rem 1rem', fontWeight: '600', color: 'var(--text-primary)', whiteSpace: 'nowrap' }}>
+                    <td data-label="CATEGORY" style={{ padding: '0.85rem 1rem', fontWeight: '600', color: 'var(--text-primary)', whiteSpace: 'nowrap' }}>
                       {exp.category}
                     </td>
-                    <td style={{ padding: '0.85rem 1rem', color: 'var(--text-secondary)', whiteSpace: 'nowrap' }}>
+                    <td data-label="SITE" style={{ padding: '0.85rem 1rem', color: 'var(--text-secondary)', whiteSpace: 'nowrap' }}>
                       {exp.site}
                     </td>
-                    <td style={{ padding: '0.85rem 1rem', color: 'var(--text-secondary)', fontSize: '0.85rem', whiteSpace: 'nowrap' }}>
+                    <td data-label="VENDOR" style={{ padding: '0.85rem 1rem', color: 'var(--text-primary)', fontWeight: '600', whiteSpace: 'nowrap' }}>
+                      {exp.paidTo || 'Local Vendor'}
+                    </td>
+                    <td data-label="DATE" style={{ padding: '0.85rem 1rem', color: 'var(--text-secondary)', fontSize: '0.85rem', whiteSpace: 'nowrap' }}>
                       {exp.date}
                     </td>
-                    <td style={{ padding: '0.85rem 1rem', fontWeight: '700', color: 'var(--text-primary)', whiteSpace: 'nowrap' }}>
+                    <td data-label="AMOUNT" style={{ padding: '0.85rem 1rem', fontWeight: '700', color: 'var(--text-primary)', whiteSpace: 'nowrap' }}>
                       ₹{exp.amount.toLocaleString()}
                     </td>
-                    <td style={{ padding: '0.85rem 1rem', whiteSpace: 'nowrap' }}>
+                    <td data-label="STATUS" style={{ padding: '0.85rem 1rem', whiteSpace: 'nowrap' }}>
                       <span style={{
                         display: 'inline-flex',
                         alignItems: 'center',
@@ -694,10 +715,10 @@ const Dashboard = () => {
                         {exp.status === 'Approved' ? t('approved') : t('pending')}
                       </span>
                     </td>
-                    <td style={{ padding: '0.85rem 1rem', textAlign: 'center', whiteSpace: 'nowrap' }}>
+                    <td data-label="RECEIPT" style={{ padding: '0.85rem 1rem', textAlign: 'center', whiteSpace: 'nowrap' }}>
                       {exp.receipt ? (
                         <button 
-                          onClick={() => alert(`Showing receipt for ${exp.id}`)}
+                          onClick={() => alert(`Showing receipt for `)}
                           style={{
                             background: 'rgba(59, 130, 246, 0.1)',
                             color: '#3b82f6',
@@ -778,8 +799,8 @@ const Dashboard = () => {
                 </label>
                 <select
                   required
-                  value={expenseForm.site}
-                  onChange={(e) => setExpenseForm({ ...expenseForm, site: e.target.value })}
+                  value={expenseForm.projectId}
+                  onChange={(e) => setExpenseForm({ ...expenseForm, projectId: e.target.value })}
                   style={{
                     width: '100%',
                     padding: '0.75rem',
@@ -791,7 +812,9 @@ const Dashboard = () => {
                     outline: 'none'
                   }}
                 >
-                  {project && <option value={project.name}>{project.name}</option>}
+                  {projects.map((p) => (
+                    <option key={p.id} value={p.id}>{p.name}</option>
+                  ))}
                 </select>
               </div>
 
@@ -820,6 +843,11 @@ const Dashboard = () => {
                       {c.name === 'Other' ? (language === 'mr' ? 'इतर (Other)' : language === 'hi' ? 'अन्य (Other)' : 'Other') : c.name}
                     </option>
                   ))}
+                  {!categories.find(c => c.name === 'Other') && (
+                    <option value="Other">
+                      {language === 'mr' ? 'इतर (Other)' : language === 'hi' ? 'अन्य (Other)' : 'Other'}
+                    </option>
+                  )}
                 </select>
               </div>
 
@@ -980,7 +1008,7 @@ const Dashboard = () => {
                     </div>
                     <button
                       type="button"
-                      onClick={() => setExpenseForm(prev => ({ ...prev, receiptName: '', previewUrl: null }))}
+                      onClick={() => setExpenseForm(prev => ({ ...prev, receiptName: '', previewUrl: null, receiptFile: null }))}
                       style={{
                         background: 'none',
                         border: 'none',
@@ -1081,8 +1109,8 @@ const Dashboard = () => {
                 </label>
                 <select
                   required
-                  value={advanceForm.site}
-                  onChange={(e) => setAdvanceForm({ ...advanceForm, site: e.target.value })}
+                  value={advanceForm.projectId}
+                  onChange={(e) => setAdvanceForm({ ...advanceForm, projectId: e.target.value })}
                   style={{
                     width: '100%',
                     padding: '0.75rem',
@@ -1094,7 +1122,9 @@ const Dashboard = () => {
                     outline: 'none'
                   }}
                 >
-                  {project && <option value={project.name}>{project.name}</option>}
+                  {projects.map((p) => (
+                    <option key={p.id} value={p.id}>{p.name}</option>
+                  ))}
                 </select>
               </div>
 

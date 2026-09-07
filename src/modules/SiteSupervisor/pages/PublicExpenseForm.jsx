@@ -393,7 +393,7 @@ const PublicExpenseForm = () => {
                   <span className="pef-receipt-label">
                     {language === 'mr' ? 'पावती क्रमांक (Voucher ID)' : language === 'hi' ? 'रसीद नंबर (Voucher ID)' : 'VOUCHER REF ID'}
                   </span>
-                  <div className="pef-receipt-id">{submittedEntry.id}</div>
+                  <div className="pef-receipt-id">{submittedEntry.displayId || submittedEntry.id}</div>
                 </div>
                 <div style={{ textAlign: 'right' }}>
                   <span className="pef-receipt-label">

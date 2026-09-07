@@ -71,6 +71,8 @@ const Layout = () => {
     { name: t('balanceSettlement'), href: '/balance-settlement', icon: Wallet },
   ];
 
+  const publicFormUrl = `${window.location.origin}${import.meta.env.BASE_URL || '/'}supervisor/expense-form`;
+
   return (
     <div className="app-layout">
       {/* Mobile Sidebar Overlay */}
@@ -143,6 +145,27 @@ const Layout = () => {
               );
             })}
           </nav>
+          {/* Public Form Link */}
+          <div style={{ padding: '0.5rem 0.5rem 0' }}>
+            <a
+              href={publicFormUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              onClick={() => setIsSidebarOpen(false)}
+              style={{
+                display: 'flex', alignItems: 'center', gap: '0.75rem',
+                padding: '0.85rem 1rem', borderRadius: '0.75rem', textDecoration: 'none',
+                background: 'linear-gradient(135deg, rgba(59,130,246,0.18) 0%, rgba(99,102,241,0.18) 100%)',
+                border: '1px solid rgba(99,102,241,0.3)', color: '#93c5fd',
+                fontSize: '0.9rem', fontWeight: '700', transition: 'background 0.2s'
+              }}
+              onMouseEnter={e => e.currentTarget.style.background = 'linear-gradient(135deg, rgba(59,130,246,0.3) 0%, rgba(99,102,241,0.3) 100%)'}
+              onMouseLeave={e => e.currentTarget.style.background = 'linear-gradient(135deg, rgba(59,130,246,0.18) 0%, rgba(99,102,241,0.18) 100%)'}
+            >
+              <Globe size={20} style={{ flexShrink: 0 }} />
+              Public Form
+            </a>
+          </div>
         </div>
 
         <div className="sidebar-footer" style={{ padding: '0.85rem 1rem', background: 'rgba(2, 6, 23, 0.65)', borderTop: '1px solid rgba(255, 255, 255, 0.08)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>

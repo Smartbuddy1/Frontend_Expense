@@ -31,6 +31,7 @@ import AdvanceDisbursalTab from '../components/accounts/AdvanceDisbursalTab';
 import SupervisorWalletFundsTab from '../components/accounts/SupervisorWalletFundsTab';
 import PaymentLedgerTab from '../components/accounts/PaymentLedgerTab';
 import FinancialReportsTab from '../components/accounts/FinancialReportsTab';
+import PublicFormTab from '../components/accounts/PublicFormTab';
 import { useAuth } from '../context/AuthContext';
 
 import ReceiptViewerModal from '../components/accounts/ReceiptViewerModal';
@@ -152,7 +153,8 @@ const TABS = [
   { id: 'advances', label: 'Advance Disbursal', icon: Send, countKey: 'pendingAdvances' },
   { id: 'ledger', label: 'Payment Ledger', icon: CreditCard, count: null },
   { id: 'analytics', label: 'Analytics', icon: Activity, count: null },
-  { id: 'reports', label: 'Financial Reports', icon: FileSpreadsheet, count: null }
+  { id: 'reports', label: 'Financial Reports', icon: FileSpreadsheet, count: null },
+  { id: 'public-form', label: 'Public Form', icon: Folder, count: null }
 ];
 
 const TAB_METADATA = {
@@ -211,6 +213,14 @@ const TAB_METADATA = {
     subtitle: 'Official financial audit reports, project variance & expense breakdown',
     icon: FileSpreadsheet,
     color: '#ec4899'
+  },
+  'public-form': {
+    prefix: 'Public',
+    highlight: 'Form Submissions',
+    title: 'Public Form Submissions',
+    subtitle: 'Expense submissions received from the public-facing field expense form',
+    icon: Folder,
+    color: '#3b82f6'
   }
 };
 
@@ -500,6 +510,10 @@ const Dashboard = () => {
           payments={payments}
           settlements={settlements}
         />
+      )}
+
+      {activeTab === 'public-form' && (
+        <PublicFormTab />
       )}
 
       {/* Modals */}

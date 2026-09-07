@@ -1,4 +1,4 @@
-﻿:root {
+:root {
   --font-sans: 'Cambria', 'Georgia', serif;
   --font-heading: 'Cambria', 'Georgia', serif;
 
@@ -8257,5 +8257,302 @@ button, input, select, textarea, table, th, td {
     width: 100% !important;
     max-width: 100% !important;
     height: 350px !important;
+  }
+}
+
+/* =========================================================
+   MOBILE RESPONSIVENESS OVERRIDES
+   ========================================================= */
+
+@media (max-width: 768px) {
+  /* 1. Dashboard Layout & Grids */
+  .app-layout {
+    flex-direction: column !important;
+  }
+  
+  .page-content {
+    padding: 1rem !important;
+  }
+  
+  .dashboard-kpi-grid-4,
+  .dashboard-kpi-grid-3,
+  .kpi-cards-grid,
+  .stats-grid {
+    grid-template-columns: 1fr !important;
+    gap: 1rem !important;
+  }
+  
+  .charts-grid,
+  .overview-charts-grid {
+    grid-template-columns: 1fr !important;
+  }
+  
+  /* 2. Top Header & Modals */
+  .top-header {
+    height: 60px !important;
+    padding: 0 1rem !important;
+  }
+  
+  .page-title {
+    font-size: 1.15rem !important;
+  }
+  
+  .modal-overlay {
+    padding: 1rem !important;
+    align-items: center !important;
+  }
+  
+  .modal-content {
+    width: 100% !important;
+    max-width: 100% !important;
+    margin: 0 !important;
+    max-height: 90vh !important;
+  }
+  
+  .modal-body {
+    padding: 1.25rem !important;
+  }
+  
+  /* Forms */
+  .form-grid-2 {
+    grid-template-columns: 1fr !important;
+    gap: 1rem !important;
+  }
+    gap: 1rem;
+  }
+  .quick-actions-row {
+    flex-direction: column;
+  }
+  .stat-card {
+    padding: 1.25rem;
+  }
+}
+
+/* Hide print elements on screen */
+.print-only {
+  display: none;
+}
+
+/* --- PRINT MEDIA QUERIES --- */
+@media print {
+  @page {
+    size: A4 portrait;
+    margin: 10mm;
+  }
+
+  .no-print, .sidebar, .navbar, .top-header, .dashboard-header button, .search-container, .auth-container, .pagination-container, button {
+    display: none !important;
+  }
+  
+  .print-only {
+    display: block !important;
+  }
+
+  * {
+    overflow: visible !important;
+    max-height: none !important;
+  }
+
+  ::-webkit-scrollbar {
+    display: none !important;
+    width: 0 !important;
+    height: 0 !important;
+    background: transparent !important;
+  }
+
+  body, html, .app-layout, .page-content, .main-content, .table-container, .glass-panel, .card, .reports-container, .page-container {
+    background: white !important;
+    color: black !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    box-shadow: none !important;
+    border: none !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    height: auto !important;
+    overflow: visible !important;
+  }
+
+  .print-watermark {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 600px;
+    opacity: 0.05;
+    z-index: -1;
+    pointer-events: none;
+  }
+
+  /* Force table headers and cells to format cleanly without orphan headers */
+  table, .premium-table {
+    width: 100% !important;
+    border-collapse: collapse !important;
+    page-break-inside: auto !important;
+    break-inside: auto !important;
+    margin-top: 1rem !important;
+  }
+
+  tr, .premium-row {
+    page-break-inside: avoid !important;
+    break-inside: avoid !important;
+    page-break-after: auto !important;
+  }
+
+  thead {
+    display: table-header-group !important;
+  }
+
+  tfoot {
+    display: table-footer-group !important;
+  }
+
+  .premium-table th, .print-body-content th {
+    background-color: #059669 !important;
+    color: white !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+    box-shadow: inset 0 0 0 1000px #059669 !important;
+    border: 1px solid #047857 !important;
+    padding: 11px 14px !important;
+    text-align: center !important;
+    font-size: 10.5pt !important;
+    font-weight: 700 !important;
+    letter-spacing: 0.5px !important;
+    white-space: nowrap !important;
+    font-family: 'Cambria', Georgia, serif !important;
+  }
+
+  .premium-table td, .print-body-content td {
+    border: 1px solid #cbd5e1 !important;
+    padding: 10px 14px !important;
+    text-align: center !important;
+    color: #1e293b !important;
+    font-size: 10pt !important;
+    font-weight: 500 !important;
+    word-break: break-word !important;
+    white-space: normal !important;
+    font-family: 'Cambria', Georgia, serif !important;
+  }
+
+  .premium-table tfoot td, .print-body-content tfoot td, .premium-table tfoot th, .print-body-content tfoot th {
+    background-color: #f1f5f9 !important;
+    color: #0f172a !important;
+    font-weight: 700 !important;
+    font-size: 10.5pt !important;
+    border: 1.5px solid #94a3b8 !important;
+    padding: 11px 14px !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+    font-family: 'Cambria', Georgia, serif !important;
+  }
+
+  /* Adjust Recharts for print */
+  .recharts-responsive-container {
+    width: 100% !important;
+    max-width: 100% !important;
+    height: 350px !important;
+  }
+}
+
+/* =========================================================
+   MOBILE RESPONSIVENESS OVERRIDES
+   ========================================================= */
+
+@media (max-width: 768px) {
+  /* 1. Dashboard Layout & Grids */
+  .app-layout {
+    flex-direction: column !important;
+  }
+  
+  .page-content {
+    padding: 1rem !important;
+  }
+  
+  .dashboard-kpi-grid-4,
+  .dashboard-kpi-grid-3,
+  .kpi-cards-grid,
+  .stats-grid {
+    grid-template-columns: 1fr !important;
+    gap: 1rem !important;
+  }
+  
+  .charts-grid,
+  .overview-charts-grid {
+    grid-template-columns: 1fr !important;
+  }
+  
+  /* 2. Top Header & Modals */
+  .top-header {
+    height: 60px !important;
+    padding: 0 1rem !important;
+  }
+  
+  .page-title {
+    font-size: 1.15rem !important;
+  }
+  
+  .modal-overlay {
+    padding: 1rem !important;
+    align-items: center !important;
+  }
+  
+  .modal-content {
+    width: 100% !important;
+    max-width: 100% !important;
+    margin: 0 !important;
+    max-height: 90vh !important;
+  }
+  
+  .modal-body {
+    padding: 1.25rem !important;
+  }
+  
+  /* Forms */
+  .form-grid-2 {
+    grid-template-columns: 1fr !important;
+    gap: 1rem !important;
+  }
+  
+  .form-input, .form-select, .form-textarea {
+    width: 100% !important;
+  }
+}
+
+/* ==========================================================================
+/* ==========================================================================
+   ENHANCED MOBILE RESPONSIVE TABLE LAYOUT (SCROLLABLE)
+   ========================================================================== */
+.table-responsive {
+  width: 100%;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  margin-bottom: 1rem;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+  border-radius: 12px;
+  background: var(--surface-bg);
+}
+
+.table-responsive .premium-table {
+  width: 100%;
+  min-width: 900px; /* Forces table to be wide enough to not squish text */
+  margin-bottom: 0;
+}
+
+.table-responsive .premium-table th,
+.table-responsive .premium-table td {
+  white-space: nowrap; /* Prevents text from wrapping */
+  padding: 1rem;
+}
+
+/* Make the first column (ID or Date) slightly sticky if needed - optional */
+@media (max-width: 768px) {
+  .table-responsive .premium-table th:first-child,
+  .table-responsive .premium-table td:first-child {
+    position: sticky;
+    left: 0;
+    z-index: 2;
+    background-color: var(--surface-bg);
+    box-shadow: 2px 0 5px -2px rgba(0,0,0,0.1);
   }
 }
