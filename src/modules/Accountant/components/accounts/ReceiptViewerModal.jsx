@@ -34,6 +34,7 @@ const ReceiptViewerModal = ({ expense, onClose, onApprove, onReject }) => {
   };
 
   const allChecked = activeChecklist.amountMatched && activeChecklist.itemVerified;
+  const isVerified = expense.status === 'Accounts Verified & Paid';
 
   return (
     <div style={{
@@ -329,18 +330,20 @@ const ReceiptViewerModal = ({ expense, onClose, onApprove, onReject }) => {
         }}>
           <button
             onClick={() => onReject && onReject(expense)}
+            disabled={isVerified}
             style={{
               padding: '0.65rem 1.25rem',
               borderRadius: '10px',
-              backgroundColor: 'rgba(239, 68, 68, 0.1)',
-              color: '#ef4444',
-              border: '1px solid rgba(239, 68, 68, 0.3)',
+              backgroundColor: isVerified ? 'transparent' : 'rgba(239, 68, 68, 0.1)',
+              color: isVerified ? 'var(--text-secondary)' : '#ef4444',
+              border: isVerified ? '1px solid var(--border-color)' : '1px solid rgba(239, 68, 68, 0.3)',
               fontWeight: '600',
               fontSize: '0.86rem',
               display: 'flex',
               alignItems: 'center',
               gap: '0.5rem',
-              cursor: 'pointer'
+              cursor: isVerified ? 'not-allowed' : 'pointer',
+              opacity: isVerified ? 0.6 : 1
             }}
           >
             <AlertTriangle size={17} />
@@ -361,30 +364,32 @@ const ReceiptViewerModal = ({ expense, onClose, onApprove, onReject }) => {
                 cursor: 'pointer'
               }}
             >
-              Cancel
+              {isVerified ? 'Close' : 'Cancel'}
             </button>
 
-            <button
-              onClick={() => onApprove && onApprove(expense)}
-              disabled={!allChecked}
-              style={{
-                padding: '0.65rem 1.5rem',
-                borderRadius: '10px',
-                backgroundColor: allChecked ? '#10b981' : 'var(--slate-400)',
-                color: '#ffffff',
-                border: 'none',
-                fontWeight: '700',
-                fontSize: '0.86rem',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '0.5rem',
-                cursor: allChecked ? 'pointer' : 'not-allowed',
-                boxShadow: allChecked ? '0 4px 14px rgba(16, 185, 129, 0.35)' : 'none'
-              }}
-            >
-              <CheckCircle2 size={17} />
-              Approve & Release to Vendor
-            </button>
+            {!isVerified && (
+              <button
+                onClick={() => onApprove && onApprove(expense)}
+                disabled={!allChecked}
+                style={{
+                  padding: '0.65rem 1.5rem',
+                  borderRadius: '10px',
+                  backgroundColor: allChecked ? '#10b981' : 'var(--slate-400)',
+                  color: '#ffffff',
+                  border: 'none',
+                  fontWeight: '700',
+                  fontSize: '0.86rem',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.5rem',
+                  cursor: allChecked ? 'pointer' : 'not-allowed',
+                  boxShadow: allChecked ? '0 4px 14px rgba(16, 185, 129, 0.35)' : 'none'
+                }}
+              >
+                <CheckCircle2 size={17} />
+                Approve & Release to Vendor
+              </button>
+            )}
           </div>
         </div>
       </div>

@@ -60,10 +60,12 @@ const OverviewTab = ({
   }));
 
   const categoryMap = {};
-  expenses.forEach(e => {
+  expenses.filter(e => e.status === 'Accounts Verified & Paid').forEach(e => {
     categoryMap[e.category] = (categoryMap[e.category] || 0) + (e.amount || 0);
   });
-  const categoryData = Object.entries(categoryMap).map(([name, value]) => ({ name, value }));
+  const categoryData = Object.entries(categoryMap)
+    .filter(([_, value]) => value > 0)
+    .map(([name, value]) => ({ name, value }));
   const totalCategoryExpense = categoryData.reduce((acc, c) => acc + (c.value || 0), 0);
   const CATEGORY_COLORS = ['#3b82f6', '#10b981', '#f59e0b', '#8b5cf6', '#ec4899', '#06b6d4', '#64748b'];
 

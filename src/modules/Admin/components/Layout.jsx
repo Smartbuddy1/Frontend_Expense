@@ -7,6 +7,7 @@ import {
   User, Menu, ShieldCheck, FileText, HardHat, UserCheck, Briefcase,
   Phone, Shield
 } from 'lucide-react';
+import newLogo from '../../../../public/logo_new.png';
 import Footer from './Footer';
 
 const Layout = () => {
@@ -99,7 +100,7 @@ const Layout = () => {
             maxWidth: '185px',
             margin: '0 auto'
           }}>
-            <img src="/logo_new.png" alt="Aarya Innovtech Logo" style={{ width: '100%', height: 'auto', maxHeight: '40px', objectFit: 'contain' }} />
+            <img src={newLogo} alt="Aarya Innovtech Logo" style={{ width: '100%', height: 'auto', maxHeight: '40px', objectFit: 'contain' }} />
           </div>
         </div>
 

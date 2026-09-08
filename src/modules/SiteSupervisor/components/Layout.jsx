@@ -20,6 +20,7 @@ import {
   HardHat,
   Globe
 } from 'lucide-react';
+import companyLogo from '../../../../public/company_logo.png';
 import Footer from './Footer';
 
 const Layout = () => {
@@ -100,7 +101,7 @@ const Layout = () => {
               boxSizing: 'border-box'
             }}>
               <img 
-                src="/company_logo.png" 
+                src={companyLogo} 
                 alt="AI - Ideas engineered into reality" 
                 style={{ 
                   maxHeight: '40px', 

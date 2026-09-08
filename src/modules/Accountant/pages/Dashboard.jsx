@@ -42,7 +42,7 @@ const API = import.meta.env.VITE_API_BASE_URL;
 
 // Backend statuses <-> the display strings this dashboard's UI already uses.
 const EXPENSE_STATUS_TO_DISPLAY = {
-  submitted: 'Pending Accounts Verification',
+  submitted: 'Pending Operations Approval',
   ops_approved: 'Pending Accounts Verification',
   accounts_paid: 'Accounts Verified & Paid',
   ops_rejected: 'Sent for Correction',
@@ -91,7 +91,8 @@ const mapExpenseForAccounts = (e) => ({
   amount: Number(e.amount),
   hasBill: !!e.receiptUrl,
   billUrl: e.receiptUrl || null,
-  status: EXPENSE_STATUS_TO_DISPLAY[e.status] || 'Pending Accounts Verification',
+  status: EXPENSE_STATUS_TO_DISPLAY[e.status] || 'Pending Operations Approval',
+  opsApproval: e.opsApprovedById ? { status: 'Approved', approvedBy: e.opsApprovedBy?.name || 'Operations' } : (e.status === 'ops_rejected' ? { status: 'Rejected' } : null),
   submittedAt: e.createdAt,
 });
 
@@ -260,9 +261,23 @@ const Dashboard = () => {
         axios.get(`${API}/payments-ledger`),
         axios.get(`${API}/settlements`),
       ]);
-      setProjects(projRes.data.projects.map(mapProjectForAccounts));
-      setExpenses(expRes.data.expenses.map(mapExpenseForAccounts));
-      setAdvances(advRes.data.advances.map(mapAdvanceForAccounts));
+      const mappedProjects = projRes.data.projects.map(mapProjectForAccounts);
+      const mappedExpenses = expRes.data.expenses.map(mapExpenseForAccounts);
+      const mappedAdvances = advRes.data.advances.map(mapAdvanceForAccounts);
+
+      // Compute actual expenses, advances, and balances per project for the accountant dashboard
+      mappedProjects.forEach(p => {
+        const projExp = mappedExpenses.filter(e => e.projectId === p.id && e.status === 'Accounts Verified & Paid').reduce((acc, e) => acc + e.amount, 0);
+        const projAdv = mappedAdvances.filter(a => a.projectId === p.id && a.status === 'Disbursed').reduce((acc, a) => acc + a.approvedAmount, 0);
+        p.expenses = projExp;
+        p.advance = projAdv;
+        p.balance = projAdv - projExp;
+        p.fundsReleased = projAdv; 
+      });
+
+      setProjects(mappedProjects);
+      setExpenses(mappedExpenses);
+      setAdvances(mappedAdvances);
       setPayments(payRes.data.entries.map(mapPaymentForAccounts));
       setSettlements(settleRes.data.settlements.map(mapSettlementForAccounts));
     } catch (err) {
