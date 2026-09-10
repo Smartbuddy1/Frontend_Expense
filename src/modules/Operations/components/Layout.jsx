@@ -96,12 +96,6 @@ const Layout = () => {
       tab: 'expenses',
     },
     {
-      name: 'Cash & Advance',
-      href: '/operations?tab=cashadvance',
-      icon: IndianRupee,
-      tab: 'cashadvance',
-    },
-    {
       name: 'Request Advance',
       href: '/operations?tab=reconciliation',
       icon: Scale,
@@ -342,10 +336,10 @@ const Layout = () => {
                   ? 'Site Supervisors'
                   : location.search.includes('tab=expenses')
                     ? 'Bill Approve'
-                    : location.search.includes('tab=cashadvance')
-                      ? 'Cash & Advance'
-                      : location.search.includes('tab=reconciliation')
-                        ? 'Request Advance'
+                    : location.search.includes('tab=reconciliation')
+                      ? 'Request Advance'
+                      : location.search.includes('tab=alerts')
+                        ? 'Alerts'
                         : 'Dashboard'}
             </h1>
           </div>

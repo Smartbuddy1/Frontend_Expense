@@ -56,42 +56,55 @@ const SupervisorWalletFundsTab = ({
   };
 
   // Group and map supervisor wallet data
-  const supervisorWallets = projects.map(p => {
-    const supervisorExpenses = expenses.filter(e => e.projectId === p.id || e.supervisor === p.supervisor);
-    const supervisorAdvances = advances.filter(a => a.projectId === p.id || a.supervisor === p.supervisor);
+  const supervisorMap = {};
+  projects.forEach(p => {
+    const sName = p.supervisor || 'Unassigned';
+    if (!supervisorMap[sName]) {
+      supervisorMap[sName] = {
+        supervisor: sName,
+        mobile: p.supervisorMobile || '+91 98221 00000',
+        projectName: '',
+        siteName: '',
+        toilets: 0,
+        totalLoaded: 0,
+        totalSpent: 0,
+        currentBalance: 0,
+      };
+    }
+    const w = supervisorMap[sName];
+    w.projectName += (w.projectName ? ', ' : '') + p.name;
+    w.siteName += (w.siteName ? ', ' : '') + (p.site || '');
+    w.toilets += (p.toilets || 0);
+    w.totalLoaded += (p.fundsReleased || 0);
+    w.totalSpent += (p.expenses || 0);
+    w.currentBalance += (p.balance !== undefined ? p.balance : ((p.fundsReleased || 0) - (p.expenses || 0)));
+  });
+
+  const supervisorWallets = Object.values(supervisorMap).map(w => {
+    const supervisorExpenses = expenses.filter(e => e.supervisor === w.supervisor);
+    const supervisorAdvances = advances.filter(a => a.supervisor === w.supervisor && a.status !== 'Pending Operations Approval');
     
-    // Find pending, rejected, and verified expense bills for this supervisor
-    const pendingExpense = supervisorExpenses.find(e => e.status === 'Pending Accounts Verification');
+    const pendingExpense = supervisorExpenses.find(e => e.status === 'Pending Operations Approval' || e.status === 'Pending Accounts Verification');
+    const pendingAdvance = supervisorAdvances.find(a => a.status === 'Pending Accounts Payment');
+    const pendingRequest = pendingAdvance || pendingExpense;
     const rejectedExpense = supervisorExpenses.find(e => e.status === 'Sent for Correction' || e.status === 'Rejected');
     const verifiedExpense = supervisorExpenses.find(e => e.status === 'Accounts Verified & Paid');
-
-    const totalSpent = p.expenses || 0;
-    const totalLoaded = p.fundsReleased || 0;
-    const currentBalance = p.balance !== undefined ? p.balance : (totalLoaded - totalSpent);
 
     let status = 'HEALTHY';
     if (pendingExpense) {
       status = 'REQUEST_PENDING';
     } else if (rejectedExpense) {
       status = 'REJECTED';
-    } else if (currentBalance < 40000) {
+    } else if (w.currentBalance < 40000) {
       status = 'LOW_FLOAT';
     } else {
       status = 'HEALTHY';
     }
 
     return {
-      project: p,
-      supervisor: p.supervisor,
-      mobile: p.supervisorMobile || '+91 98221 00000',
-      projectName: p.name,
-      siteName: p.site,
-      toilets: p.toilets,
-      totalLoaded,
-      totalSpent,
-      currentBalance,
+      ...w,
       status,
-      pendingRequest: pendingExpense,
+      pendingRequest: pendingRequest,
       rejectedRequest: rejectedExpense,
       verifiedRequest: verifiedExpense,
       siteExpenses: supervisorExpenses,
@@ -381,19 +394,21 @@ const SupervisorWalletFundsTab = ({
                 textTransform: 'uppercase',
                 letterSpacing: '0.04em'
               }}>
-                <th style={{ padding: '1rem 1.25rem' }}>Site Supervisor</th>
-                <th style={{ padding: '1rem 1.25rem' }}>Assigned Project & Site</th>
-                <th style={{ padding: '1rem 1.25rem' }}>Total Funds Released</th>
-                <th style={{ padding: '1rem 1.25rem' }}>Total Spent</th>
-                <th style={{ padding: '1rem 1.25rem' }}>Live Wallet Balance</th>
-                <th style={{ padding: '1rem 1.25rem' }}>Pending Fund Request</th>
-                <th className="no-print" style={{ padding: '1rem 1.25rem', textAlign: 'right' }}>Action</th>
+                 <th style={{ padding: '1rem 1.25rem' }}>ID</th>
+                 <th style={{ padding: '1rem 1.25rem' }}>Site Supervisor</th>
+                 <th style={{ padding: '1rem 1.25rem' }}>Assigned Project & Site</th>
+                 <th style={{ padding: '1rem 1.25rem' }}>Total Advanced</th>
+                 <th style={{ padding: '1rem 1.25rem' }}>Total Spent</th>
+                 <th style={{ padding: '1rem 1.25rem', color: '#059669' }}>Live Wallet Balance</th>
+                 <th style={{ padding: '1rem 1.25rem' }}>Ops Verification</th>
+                 <th style={{ padding: '1rem 1.25rem' }}>Pending Fund Request</th>
+                 <th className="no-print" style={{ padding: '1rem 1.25rem', textAlign: 'right' }}>Action</th>
               </tr>
             </thead>
             <tbody>
               {filteredWallets.length === 0 ? (
                 <tr>
-                  <td colSpan={7} style={{ padding: '3.5rem 1rem', textAlign: 'center', color: 'var(--text-secondary)' }}>
+                  <td colSpan={9} style={{ padding: '3.5rem 1rem', textAlign: 'center', color: 'var(--text-secondary)' }}>
                     <Wallet size={40} style={{ opacity: 0.4, marginBottom: '0.5rem' }} />
                     <div style={{ fontSize: '1rem', fontWeight: '700', color: 'var(--text-primary)' }}>No supervisor wallets found</div>
                     <div style={{ fontSize: '0.82rem', marginTop: '0.2rem' }}>No records match your current search query "{searchQuery}".</div>
@@ -409,13 +424,20 @@ const SupervisorWalletFundsTab = ({
 
                   return (
                     <tr 
-                      key={w.project.id}
+                      key={w.supervisor}
                       style={{
                         borderBottom: '1px solid var(--border-color)',
                         backgroundColor: hasPending ? 'rgba(234, 88, 12, 0.025)' : (idx % 2 === 1 ? 'rgba(0,0,0,0.015)' : 'transparent'),
                         transition: 'background-color 0.15s ease'
                       }}
                     >
+                      {/* 0. ID Column */}
+                      <td style={{ padding: '1.15rem 1.25rem' }}>
+                        <div style={{ fontSize: '0.75rem', fontFamily: 'monospace', color: 'var(--text-secondary)', fontWeight: '700', maxWidth: '100px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                          {req ? req.id.slice(0, 8).toUpperCase() : '—'}
+                        </div>
+                      </td>
+
                       {/* 1. Supervisor Profile */}
                       <td style={{ padding: '1.15rem 1.25rem' }}>
                         <div>
@@ -429,125 +451,135 @@ const SupervisorWalletFundsTab = ({
                         </div>
                       </td>
 
-                      {/* 2. Assigned Project & Site */}
-                      <td style={{ padding: '1.15rem 1.25rem' }}>
-                        <div style={{ fontWeight: '700', fontSize: '0.88rem', color: 'var(--text-primary)' }}>
-                          {w.projectName}
-                        </div>
-                        <div style={{ fontSize: '0.78rem', color: 'var(--text-secondary)', marginTop: '0.2rem', display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
-                          <Building2 size={12} /> {w.siteName} • ({w.toilets} Toilets)
-                        </div>
-                      </td>
+                       {/* 2. Assigned Project & Site */}
+                       <td style={{ padding: '1.15rem 1.25rem' }}>
+                         <div style={{ fontWeight: '700', fontSize: '0.88rem', color: 'var(--text-primary)' }}>
+                           {w.projectName}
+                         </div>
+                         <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', marginTop: '0.2rem' }}>
+                           {w.siteName}
+                         </div>
+                       </td>
 
-                      {/* 3. Total Funds Released */}
-                      <td style={{ padding: '1.15rem 1.25rem' }}>
-                        <div style={{ fontSize: '0.92rem', fontWeight: '800', color: 'var(--text-primary)' }}>
-                          {formatINR(w.totalLoaded)}
-                        </div>
-                        <div style={{ fontSize: '0.72rem', color: 'var(--text-secondary)', marginTop: '0.15rem' }}>
-                          Total Advance Released
-                        </div>
-                      </td>
+                       {/* NEW: Total Advanced Column */}
+                       <td style={{ padding: '1.15rem 1.25rem' }}>
+                         <div style={{ fontWeight: '700', fontSize: '0.88rem', color: 'var(--text-primary)' }}>
+                           {formatINR(w.totalLoaded)}
+                         </div>
+                       </td>
 
-                      {/* 4. Total Spent */}
-                      <td style={{ padding: '1.15rem 1.25rem' }}>
-                        <div style={{ fontSize: '0.92rem', fontWeight: '800', color: '#7c3aed' }}>
-                          {formatINR(w.totalSpent)}
-                        </div>
-                        <div style={{ fontSize: '0.72rem', color: 'var(--text-secondary)', marginTop: '0.15rem' }}>
-                          {spentPercent}% utilized
-                        </div>
-                      </td>
+                       {/* NEW: Total Spent Column */}
+                       <td style={{ padding: '1.15rem 1.25rem' }}>
+                         <div style={{ fontWeight: '700', fontSize: '0.88rem', color: '#ef4444' }}>
+                           {formatINR(w.totalSpent)}
+                         </div>
+                       </td>
 
-                      {/* 5. Live Wallet Balance */}
-                      <td style={{ padding: '1.15rem 1.25rem' }}>
-                        <div style={{ fontSize: '1.05rem', fontWeight: '800', color: isLow ? '#dc2626' : '#059669' }}>
-                          {formatINR(w.currentBalance)}
-                        </div>
-                        <div style={{ fontSize: '0.72rem', color: 'var(--text-secondary)', marginTop: '0.15rem' }}>
-                          Live Site Float
-                        </div>
-                      </td>
+                       {/* NEW: Live Wallet Balance Column */}
+                       <td style={{ padding: '1.15rem 1.25rem' }}>
+                         <div style={{ fontWeight: '800', fontSize: '0.92rem', color: w.currentBalance < 40000 ? '#ef4444' : '#059669' }}>
+                           {formatINR(w.currentBalance)}
+                         </div>
+                         {w.currentBalance < 40000 && (
+                           <div style={{ fontSize: '0.7rem', color: '#ef4444', fontWeight: '600', marginTop: '0.15rem' }}>Low Float</div>
+                         )}
+                       </td>
 
-                      {/* 6. Pending Fund Requisition / Bill Claim */}
-                      <td style={{ padding: '1.15rem 1.25rem' }}>
-                        {hasPending ? (
-                          <div
-                            style={{
-                              backgroundColor: 'rgba(234, 88, 12, 0.08)',
-                              color: '#ea580c',
-                              border: '1.5px solid rgba(234, 88, 12, 0.35)',
-                              borderRadius: '10px',
-                              padding: '0.4rem 0.8rem',
-                              display: 'inline-flex',
-                              flexDirection: 'column',
-                              gap: '0.15rem'
-                            }}
-                          >
-                            <span style={{ fontSize: '0.92rem', fontWeight: '800' }}>
-                              {formatINR(req.amount || req.approvedAmount || req.requestedAmount)}
-                            </span>
-                            <span style={{ fontSize: '0.72rem', fontWeight: '700', color: '#c2410c' }}>
-                              Invoice #{req.id}
-                            </span>
-                          </div>
-                        ) : (
-                          <span style={{ fontSize: '0.82rem', color: 'var(--text-secondary)' }}>
-                            —
-                          </span>
-                        )}
-                      </td>
+                       {/* 5. Ops Verification Column */}
+                       <td style={{ padding: '1.15rem 1.25rem' }}>
+                         {req ? (
+                           <span style={{
+                             display: 'inline-flex',
+                             alignItems: 'center',
+                             gap: '0.35rem',
+                             fontSize: '0.78rem',
+                             fontWeight: '800',
+                             padding: '0.35rem 0.75rem',
+                             borderRadius: '20px',
+                             backgroundColor: req.opsVerificationStatus === 'Verified' ? 'rgba(16, 185, 129, 0.12)' : (req.opsVerificationStatus === 'Rejected' ? 'rgba(239, 68, 68, 0.12)' : 'rgba(245, 158, 11, 0.12)'),
+                             color: req.opsVerificationStatus === 'Verified' ? '#10b981' : (req.opsVerificationStatus === 'Rejected' ? '#dc2626' : '#d97706')
+                           }}>
+                             {req.opsVerificationStatus === 'Verified' ? <CheckCircle2 size={13} strokeWidth={2.5} /> : (req.opsVerificationStatus === 'Rejected' ? <XCircle size={13} strokeWidth={2.5} /> : <Clock size={13} strokeWidth={2.5} />)}
+                             {req.opsVerificationStatus === 'Verified' ? 'Verified' : (req.opsVerificationStatus === 'Rejected' ? 'Rejected' : 'Pending')}
+                           </span>
+                         ) : (
+                           <span style={{ color: 'var(--text-secondary)' }}>—</span>
+                         )}
+                       </td>
 
-                      {/* 7. Action Column (Approve/Reject when pending, else Send to Vendor or Rejected) */}
+                       {/* 6. Pending Fund Request Column */}
+                       <td style={{ padding: '1.15rem 1.25rem' }}>
+                         {hasPending ? (
+                           <div style={{ fontSize: '0.95rem', fontWeight: '800', color: '#ea580c' }}>
+                             {formatINR(req.amount || req.approvedAmount || req.requestedAmount)}
+                           </div>
+                         ) : (
+                           <span style={{ fontSize: '0.82rem', color: 'var(--text-secondary)' }}>
+                             —
+                           </span>
+                         )}
+                       </td>
+
+                      {/* 7. Action Column (Approve/Reject when pending and ops verified) */}
                       <td className="no-print" style={{ padding: '1.15rem 1.25rem', textAlign: 'right', whiteSpace: 'nowrap' }}>
                         {hasPending ? (
-                          <div style={{ display: 'flex', alignItems: 'center', gap: '0.45rem', justifyContent: 'flex-end' }}>
-                            <button
-                              onClick={() => onQuickApprove && onQuickApprove(req)}
-                              style={{
-                                padding: '0.45rem 0.85rem',
-                                borderRadius: '8px',
-                                backgroundColor: '#10b981',
-                                color: '#ffffff',
-                                border: 'none',
-                                fontSize: '0.78rem',
-                                fontWeight: '700',
-                                display: 'inline-flex',
-                                alignItems: 'center',
-                                gap: '0.35rem',
-                                cursor: 'pointer',
-                                boxShadow: '0 2px 6px rgba(16, 185, 129, 0.25)',
-                                transition: 'transform 0.1s ease'
-                              }}
-                              title={`Approve Claim ₹${(req.amount || 0).toLocaleString()} for ${w.supervisor}`}
-                            >
-                              <Check size={14} strokeWidth={2.5} />
-                              Approve
-                            </button>
+                          req.opsVerificationStatus === 'Verified' ? (
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.45rem', justifyContent: 'flex-end' }}>
+                              <button
+                                onClick={() => req.purpose ? (onDisburseAdvance && onDisburseAdvance(req)) : (onQuickApprove && onQuickApprove(req))}
+                                style={{
+                                  padding: '0.45rem 0.85rem',
+                                  borderRadius: '8px',
+                                  backgroundColor: '#10b981',
+                                  color: '#ffffff',
+                                  border: 'none',
+                                  fontSize: '0.78rem',
+                                  fontWeight: '700',
+                                  display: 'inline-flex',
+                                  alignItems: 'center',
+                                  gap: '0.35rem',
+                                  cursor: 'pointer',
+                                  boxShadow: '0 2px 6px rgba(16, 185, 129, 0.25)',
+                                  transition: 'transform 0.1s ease'
+                                }}
+                                title={`Approve Claim ₹${((req.amount || req.approvedAmount) || 0).toLocaleString()} for ${w.supervisor}`}
+                              >
+                                <Check size={14} strokeWidth={2.5} />
+                                Approve
+                              </button>
 
-                            <button
-                              onClick={() => onRejectExpense && onRejectExpense(req)}
-                              style={{
-                                padding: '0.45rem 0.85rem',
-                                borderRadius: '8px',
-                                backgroundColor: '#ef4444',
-                                color: '#ffffff',
-                                border: 'none',
-                                fontSize: '0.78rem',
-                                fontWeight: '700',
-                                display: 'inline-flex',
-                                alignItems: 'center',
-                                gap: '0.35rem',
-                                cursor: 'pointer',
-                                boxShadow: '0 2px 6px rgba(239, 68, 68, 0.25)',
-                                transition: 'transform 0.1s ease'
-                              }}
-                              title={`Reject / Send for Correction for ${w.supervisor}`}
-                            >
-                              <X size={14} strokeWidth={2.5} />
-                              Reject
-                            </button>
-                          </div>
+                              <button
+                                onClick={() => req.purpose ? null : (onRejectExpense && onRejectExpense(req))}
+                                style={{
+                                  padding: '0.45rem 0.85rem',
+                                  borderRadius: '8px',
+                                  backgroundColor: '#ef4444',
+                                  color: '#ffffff',
+                                  border: 'none',
+                                  fontSize: '0.78rem',
+                                  fontWeight: '700',
+                                  display: 'inline-flex',
+                                  alignItems: 'center',
+                                  gap: '0.35rem',
+                                  cursor: req.purpose ? 'not-allowed' : 'pointer',
+                                  opacity: req.purpose ? 0.5 : 1,
+                                  boxShadow: req.purpose ? 'none' : '0 2px 6px rgba(239, 68, 68, 0.25)',
+                                  transition: 'transform 0.1s ease'
+                                }}
+                                disabled={!!req.purpose}
+                                title={`Reject for ${w.supervisor}`}
+                              >
+                                <X size={14} strokeWidth={2.5} />
+                                Reject
+                              </button>
+                            </div>
+                          ) : (
+                            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end' }}>
+                              <span style={{ fontSize: '0.78rem', color: 'var(--text-secondary)', fontStyle: 'italic' }}>
+                                Awaiting Ops Verification
+                              </span>
+                            </div>
+                          )
                         ) : isRejected ? (
                           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end' }}>
                             <span style={{

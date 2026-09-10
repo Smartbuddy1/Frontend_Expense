@@ -10,7 +10,6 @@ const CreateSupervisorModal = ({ isOpen, onClose, onCreateSupervisor, editingSup
     email: '',
     password: '',
     specialization: 'Site Operations & Field Lead',
-    advanceAmount: '50000',
     experience: '5+ Years'
   });
 
@@ -28,7 +27,6 @@ const CreateSupervisorModal = ({ isOpen, onClose, onCreateSupervisor, editingSup
         email: editingSupervisor.email || '',
         password: editingSupervisor.password || '',
         specialization: editingSupervisor.specialization || 'Site Operations & Field Lead',
-        advanceAmount: String(editingSupervisor.advanceAmount || '50000'),
         experience: editingSupervisor.experience || '5+ Years'
       });
     } else {
@@ -39,7 +37,6 @@ const CreateSupervisorModal = ({ isOpen, onClose, onCreateSupervisor, editingSup
         email: '',
         password: '',
         specialization: 'Site Operations & Field Lead',
-        advanceAmount: '50000',
         experience: '5+ Years'
       });
     }
@@ -57,8 +54,7 @@ const CreateSupervisorModal = ({ isOpen, onClose, onCreateSupervisor, editingSup
 
     onCreateSupervisor({
       ...formData,
-      name: fullName,
-      advanceAmount: Number(formData.advanceAmount) || 50000
+      name: fullName
     });
 
     onClose();
@@ -323,29 +319,7 @@ const CreateSupervisorModal = ({ isOpen, onClose, onCreateSupervisor, editingSup
             </select>
           </div>
 
-          {/* Advance Disbursed Amount */}
-          <div>
-            <label style={{ display: 'block', fontSize: '0.82rem', fontWeight: '800', color: '#334155', marginBottom: '0.4rem' }}>
-              <IndianRupee size={13} style={{ display: 'inline', marginRight: '4px', color: '#10b981' }} />
-              Initial Advance Float (₹)
-            </label>
-            <input
-              type="number"
-              placeholder="50000"
-              value={formData.advanceAmount}
-              onChange={(e) => setFormData({ ...formData, advanceAmount: e.target.value })}
-              style={{
-                width: '100%',
-                padding: '0.65rem 0.9rem',
-                borderRadius: '10px',
-                border: '1.5px solid #cbd5e1',
-                fontSize: '0.9rem',
-                color: '#0f172a',
-                outline: 'none',
-                boxSizing: 'border-box'
-              }}
-            />
-          </div>
+
 
           {/* Modal Actions Footer */}
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: '0.75rem', marginTop: '1rem', paddingTop: '1rem', borderTop: '1px solid #f1f5f9' }}>

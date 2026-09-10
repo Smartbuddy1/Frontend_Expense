@@ -4,7 +4,7 @@ import {
   ArrowRight, ArrowUpRight, ArrowDownRight, Activity, HardHat, Clock, ChevronRight,
   Tag, CheckCircle2, XCircle, Wrench, UserPlus, PlusCircle, Folder, Scale, PieChart as PieIcon
 } from 'lucide-react';
-import { ResponsiveContainer, PieChart, Pie, Cell, Tooltip, Legend } from 'recharts';
+import { ResponsiveContainer, PieChart, Pie, Cell, Tooltip, Legend, BarChart, Bar, XAxis, YAxis, CartesianGrid } from 'recharts';
 import { useLanguage } from '../../context/LanguageContext';
 import './operations-dashboard.css';
 
@@ -334,150 +334,96 @@ export const SiteStatusGaugeChart = ({ totalCount = 3, activeCount = 3, inactive
 /* ==========================================================================
    Modular Component 7: TopRevenueProjectsChart (5 Horizontal Bars Graph)
    ========================================================================== */
-export const TopRevenueProjectsChart = ({ projects = [], expenses = [], onViewAll, onSelectProject, setActiveTab }) => {
+export const TopRevenueProjectsChart = ({ projects = [], expenses = [], advances = [], onViewAll, onSelectProject, setActiveTab }) => {
   const { language } = useLanguage();
-  // Map actual projects to chart item structure
+  
+  // Calculate site-wise financials
   const actualItems = projects.map(proj => {
     let displayName = proj.name || 'Unnamed Project';
+    let supervisor = proj.supervisorName || 'Unassigned';
     
+    // Expenses
     const projectExpenses = expenses.filter(e => e.projectId === proj.id || e.projectName === proj.name);
-    const expSum = projectExpenses.reduce((acc, curr) => acc + (Number(curr.amount) || 0), 0);
-    const spentVal = expSum > 0 ? expSum : (Number(proj.spent) || 0);
+    const totalExpensesCount = projectExpenses.length;
+    // Only approved expenses are considered "Spent" from float
+    const approvedExpSum = projectExpenses.filter(e => e.status === 'Approved').reduce((acc, curr) => acc + (Number(curr.amount) || 0), 0);
+
+    // Advances
+    const projectAdvances = advances.filter(a => a.projectId === proj.id && a.rawStatus === 'disbursed');
+    const totalAdvance = projectAdvances.reduce((sum, a) => sum + a.amount, 0);
+
+    const cashInHand = totalAdvance - approvedExpSum;
 
     return {
       name: displayName,
+      supervisor,
       rawProject: proj,
-      spent: spentVal
+      totalAdvance,
+      spent: approvedExpSum,
+      cashInHand,
+      totalExpensesCount,
+      // used for sorting
+      sortKey: totalAdvance + approvedExpSum
     };
   });
 
-  // Combine and sort by spent descending
-  let combinedItems = [...actualItems];
-  combinedItems.sort((a, b) => b.spent - a.spent);
+  // Sort by highest activity
+  actualItems.sort((a, b) => b.sortKey - a.sortKey);
+  const topProjects = actualItems.slice(0, 5); // Show top 5 to fit nicely
 
-  // Take top 5
-  const topFive = combinedItems.slice(0, 5);
-
-  // Find max spent value to compute proportional bar widths
-  const maxSpent = Math.max(...topFive.map(item => item.spent), 1000);
-
-  const projectBars = topFive.map(item => {
-    const widthPercent = maxSpent > 0 ? (item.spent / maxSpent) * 85 : 0;
-    let valStr = '';
-    if (item.spent >= 100000) {
-      valStr = `₹${(item.spent / 100000).toFixed(1)}L`;
-    } else {
-      valStr = `₹${(item.spent / 1000).toFixed(1)}k`;
+  const CustomTooltip = ({ active, payload, label }) => {
+    if (active && payload && payload.length) {
+      const data = payload[0].payload;
+      return (
+        <div style={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: '8px', padding: '10px', boxShadow: '0 4px 6px rgba(0,0,0,0.05)' }}>
+          <p style={{ margin: '0 0 5px 0', fontWeight: '800', fontSize: '0.9rem', color: '#0f172a' }}>{label}</p>
+          <p style={{ margin: '0 0 8px 0', fontSize: '0.75rem', color: '#64748b' }}>Supervisor: <strong>{data.supervisor}</strong></p>
+          <div style={{ fontSize: '0.8rem' }}>
+            <p style={{ margin: '2px 0', color: '#3b82f6' }}>Advance Given: <strong>₹{data.totalAdvance.toLocaleString()}</strong></p>
+            <p style={{ margin: '2px 0', color: '#ef4444' }}>Amount Spent: <strong>₹{data.spent.toLocaleString()}</strong></p>
+            <p style={{ margin: '2px 0', color: '#10b981' }}>Cash In Hand: <strong>₹{data.cashInHand.toLocaleString()}</strong></p>
+            <p style={{ margin: '4px 0 0 0', color: '#475569', fontSize: '0.75rem' }}>Total Expenses: <strong>{data.totalExpensesCount}</strong></p>
+          </div>
+        </div>
+      );
     }
-    return {
-      name: item.name,
-      rawProject: item.rawProject,
-      width: `${Math.max(widthPercent, 15)}%`,
-      val: valStr
-    };
-  });
-
-  const handleRowClick = (proj) => {
-    if (proj.rawProject && onSelectProject) {
-      onSelectProject(proj.rawProject);
-    }
-    if (setActiveTab) {
-      setActiveTab('projects');
-    } else if (onViewAll) {
-      onViewAll();
-    }
+    return null;
   };
 
   return (
-    <div className="dash-panel-card" style={{ display: 'flex', flexDirection: 'column', justifyContent: 'space-between', height: '100%', boxSizing: 'border-box' }}>
+    <div className="dash-panel-card" style={{ display: 'flex', flexDirection: 'column', height: '100%', boxSizing: 'border-box' }}>
       <div className="dash-panel-header">
         <div>
-          <h2 className="dash-panel-title">{language === 'mr' ? 'प्रोजेक्ट्स खर्च' : 'Expense Projects'}</h2>
-          <p className="dash-panel-sub">{language === 'mr' ? 'साईटनिहाय नोंदवलेला एकूण खर्च' : 'Site-wise operational expenses logged'}</p>
+          <h2 className="dash-panel-title">{language === 'mr' ? 'प्रोजेक्ट्स खर्च आणि निधी' : 'Expense Projects Financials'}</h2>
+          <p className="dash-panel-sub">{language === 'mr' ? 'साईटनिहाय दिलेला ऍडव्हान्स, खर्च आणि शिल्लक रक्कम' : 'Site-wise Advance, Spent, and Cash in Hand'}</p>
         </div>
       </div>
 
-      {/* 5 Evenly-Spaced Horizontal Bar Chart Rows Filling the Entire Card */}
-      <div style={{
-        display: 'flex',
-        flexDirection: 'column',
-        justifyContent: 'space-around',
-        flex: 1,
-        gap: '0.9rem',
-        margin: '1rem 0 0.5rem 0'
-      }}>
-        {projectBars.map((proj) => (
-          <div 
-            key={proj.name} 
-            onClick={() => handleRowClick(proj)}
-            style={{ 
-              display: 'flex', 
-              alignItems: 'center', 
-              gap: '0.85rem',
-              cursor: 'pointer',
-              padding: '0.2rem 0.4rem',
-              borderRadius: '8px',
-              transition: 'background-color 0.2s ease'
-            }}
-            onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = 'rgba(37, 99, 235, 0.05)'; }}
-            onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = 'transparent'; }}
-            title={`Click to view ${proj.name}`}
-          >
-            <span style={{
-              width: '215px',
-              fontSize: '0.84rem',
-              fontWeight: '700',
-              color: 'var(--text-primary, #1e293b)',
-              textAlign: 'right',
-              whiteSpace: 'nowrap',
-              overflow: 'hidden',
-              textOverflow: 'ellipsis',
-              flexShrink: 0
-            }}>
-              {proj.name}
-            </span>
-            <div style={{ flex: 1, height: '26px', position: 'relative', display: 'flex', alignItems: 'center' }}>
-              <div
-                style={{
-                  width: proj.width,
-                  height: '24px',
-                  background: 'linear-gradient(90deg, #38bdf8 0%, #2563eb 100%)',
-                  borderRadius: '9999px',
-                  boxShadow: '0 3px 8px rgba(37, 99, 235, 0.28)',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'flex-end',
-                  paddingRight: '0.65rem',
-                  color: '#ffffff',
-                  fontSize: '0.74rem',
-                  fontWeight: '800',
-                  transition: 'width 0.6s cubic-bezier(0.4, 0, 0.2, 1)',
-                  minWidth: '55px'
-                }}
-              >
-                {proj.val}
-              </div>
-            </div>
-          </div>
-        ))}
-      </div>
-
-      {/* Dashed Scale Guideline at Bottom */}
-      <div style={{
-        display: 'flex',
-        justifyContent: 'space-between',
-        paddingLeft: '225px',
-        borderTop: '1px dashed var(--border-color, #e2e8f0)',
-        paddingTop: '0.5rem',
-        fontSize: '0.74rem',
-        color: 'var(--text-secondary, #94a3b8)',
-        fontWeight: '700'
-      }}>
-        <span>0</span>
-        <span>100</span>
-        <span>200</span>
-        <span>300</span>
-        <span>400</span>
+      <div style={{ flex: 1, minHeight: '280px', marginTop: '1rem', width: '100%' }}>
+        <ResponsiveContainer width="100%" height="100%">
+          <BarChart data={topProjects} margin={{ top: 10, right: 10, left: 0, bottom: 20 }}>
+            <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" />
+            <XAxis 
+              dataKey="name" 
+              tick={{ fontSize: 11, fill: '#64748b', fontWeight: 600 }}
+              axisLine={false}
+              tickLine={false}
+              interval={0}
+              tickFormatter={(val) => val.length > 15 ? val.substring(0, 15) + '...' : val}
+            />
+            <YAxis 
+              tick={{ fontSize: 11, fill: '#64748b', fontWeight: 600 }}
+              axisLine={false}
+              tickLine={false}
+              tickFormatter={(val) => val >= 1000 ? `₹${(val/1000).toFixed(0)}k` : `₹${val}`}
+            />
+            <Tooltip content={<CustomTooltip />} cursor={{ fill: 'transparent' }} />
+            <Legend wrapperStyle={{ fontSize: '11px', fontWeight: 700, paddingTop: '10px' }} />
+            <Bar dataKey="totalAdvance" name="Advance Given" fill="#3b82f6" radius={[4, 4, 0, 0]} maxBarSize={40} />
+            <Bar dataKey="spent" name="Amount Spent" fill="#ef4444" radius={[4, 4, 0, 0]} maxBarSize={40} />
+            <Bar dataKey="cashInHand" name="Cash In Hand" fill="#10b981" radius={[4, 4, 0, 0]} maxBarSize={40} />
+          </BarChart>
+        </ResponsiveContainer>
       </div>
     </div>
   );
@@ -917,6 +863,7 @@ const OperationsOverview = ({
   supervisors = [],
   expenses = [],
   advances = [],
+
   setActiveTab,
   onOpenCreateProject,
   onSelectProject,
@@ -931,8 +878,6 @@ const OperationsOverview = ({
   // Project Summary Table calculated dynamically
   const projectSummaryRows = projects.map(p => {
     const projectExpenses = expenses.filter(e => e.projectId === p.id && e.status === 'Approved').reduce((acc, curr) => acc + (curr.amount || 0), 0);
-    const projectAdvances = advances.filter(a => a.projectId === p.id && a.rawStatus === 'disbursed').reduce((acc, curr) => acc + (curr.amount || 0), 0);
-    const balance = projectAdvances - projectExpenses;
     
     return {
       project: p.code || p.name,
@@ -941,8 +886,7 @@ const OperationsOverview = ({
       status: p.status || 'In Progress',
       budget: `₹${(p.budget || 0).toLocaleString('en-IN')}`,
       expense: `₹${projectExpenses.toLocaleString('en-IN')}`,
-      advance: `₹${projectAdvances.toLocaleString('en-IN')}`,
-      balance: `₹${balance.toLocaleString('en-IN')}`,
+
     };
   });
 
@@ -1024,23 +968,15 @@ const OperationsOverview = ({
             onClick={() => setActiveTab && setActiveTab('expenses')}
           />
 
-          {/* Card 4: Cash & Advance */}
-          <QuickActionCard
-            title="Cash & Advance"
-            description="Manage supervisor floats & site cash settlements"
-            icon={IndianRupee}
-            iconBg="#7c3aed"
-            onClick={() => setActiveTab && setActiveTab('cashadvance')}
-          />
-
           {/* Card 5: Request Advance */}
           <QuickActionCard
             title="Request Advance"
-            description="Audit UTR bank matching & supervisor advance requests"
+            description="Audit supervisor advance requests"
             icon={Scale}
-            iconBg="#059669"
+            iconBg="#10b981"
             onClick={() => setActiveTab && setActiveTab('reconciliation')}
           />
+
         </div>
       </div>
 
@@ -1055,6 +991,7 @@ const OperationsOverview = ({
         <TopRevenueProjectsChart 
           projects={projects}
           expenses={expenses}
+          advances={advances}
           onViewAll={() => setActiveTab && setActiveTab('projects')} 
           onSelectProject={onSelectProject}
           setActiveTab={setActiveTab}

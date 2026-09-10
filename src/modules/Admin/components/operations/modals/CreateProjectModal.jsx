@@ -1,14 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { X, Mail, Lock } from 'lucide-react';
-
-const INDIAN_STATES = [
-  'Maharashtra', 'Andhra Pradesh', 'Arunachal Pradesh', 'Assam', 'Bihar', 
-  'Chhattisgarh', 'Goa', 'Gujarat', 'Haryana', 'Himachal Pradesh', 
-  'Jharkhand', 'Karnataka', 'Kerala', 'Madhya Pradesh', 'Manipur', 
-  'Meghalaya', 'Mizoram', 'Nagaland', 'Odisha', 'Punjab', 
-  'Rajasthan', 'Sikkim', 'Tamil Nadu', 'Telangana', 'Tripura', 
-  'Uttar Pradesh', 'Uttarakhand', 'West Bengal', 'Delhi', 'Jammu and Kashmir'
-];
+import { X } from 'lucide-react';
 
 const CreateProjectModal = ({ 
   isOpen, 
@@ -23,12 +14,7 @@ const CreateProjectModal = ({
     name: '',
     workOrderNo: '',
     saleOrderNo: '',
-    state: 'Maharashtra',
-    startDate: '',
-    status: '',
-    completedDate: '',
-    email: '',
-    password: '',
+    status: 'In Progress',
     remarks: '',
     supervisorId: ''
   });
@@ -40,12 +26,7 @@ const CreateProjectModal = ({
         name: editingProject.name || '',
         workOrderNo: editingProject.workOrderNo || '',
         saleOrderNo: editingProject.saleOrderNo || editingProject.id || '',
-        state: editingProject.state || 'Maharashtra',
-        startDate: editingProject.startDate || '',
-        status: editingProject.status || 'Ongoing',
-        completedDate: editingProject.completedDate || '',
-        email: editingProject.email || 'project.supervisor@aaryainnovtech.com',
-        password: editingProject.password || '••••••••',
+        status: editingProject.status || 'In Progress',
         remarks: editingProject.description || editingProject.remarks || '',
         supervisorId: editingProject.supervisorId || supervisors[0]?.id || ''
       });
@@ -55,12 +36,7 @@ const CreateProjectModal = ({
         name: '',
         workOrderNo: '',
         saleOrderNo: `SO-${new Date().getFullYear()}-${Math.floor(Math.random() * 900) + 100}`,
-        state: 'Maharashtra',
-        startDate: new Date().toISOString().split('T')[0],
-        status: 'Ongoing',
-        completedDate: '',
-        email: '',
-        password: '',
+        status: 'In Progress',
         remarks: '',
         supervisorId: supervisors[0]?.id || ''
       });
@@ -71,8 +47,8 @@ const CreateProjectModal = ({
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    if (!formData.name.trim() || !formData.client.trim()) {
-      alert('Please fill in required fields: Client Name and Project Name.');
+    if (!formData.name.trim() || !formData.supervisorId) {
+      alert('Please fill in required fields: Project Name and Site Supervisor.');
       return;
     }
 
@@ -81,21 +57,16 @@ const CreateProjectModal = ({
     const projectPayload = {
       id: editingProject ? editingProject.id : (formData.saleOrderNo || `PRJ-${Date.now().toString().slice(-4)}`),
       name: formData.name.trim(),
-      client: formData.client.trim(),
+      client: formData.client || 'Default Client',
       workOrderNo: formData.workOrderNo.trim(),
       saleOrderNo: formData.saleOrderNo.trim(),
-      state: formData.state,
-      location: editingProject?.location || `${formData.state}, India`,
-      startDate: formData.startDate || new Date().toISOString().split('T')[0],
-      status: formData.status || 'Ongoing',
-      completedDate: formData.completedDate,
-      email: formData.email.trim(),
-      password: formData.password,
+      location: editingProject?.location || 'Maharashtra, India',
+      status: formData.status || 'In Progress',
       description: formData.remarks.trim(),
       remarks: formData.remarks.trim(),
-      supervisorId: matchedSup ? matchedSup.id : 'SUP-01',
-      supervisorName: matchedSup ? matchedSup.name : 'Rohit Sharma',
-      supervisorPhone: matchedSup ? matchedSup.phone : '+91 98220 11223',
+      supervisorId: matchedSup ? matchedSup.id : undefined,
+      supervisorName: matchedSup ? matchedSup.name : 'Unassigned',
+      supervisorPhone: matchedSup ? matchedSup.phone : '',
       teamCount: editingProject?.teamCount || 8
     };
 
@@ -139,7 +110,7 @@ const CreateProjectModal = ({
           backgroundColor: '#ffffff'
         }}>
           <h2 style={{ fontSize: '1.65rem', fontWeight: '800', color: '#0f172a', margin: 0, fontFamily: 'serif' }}>
-            Project Details
+            {editingProject ? 'Edit Project' : 'Create Project'}
           </h2>
           <button 
             type="button"
@@ -176,12 +147,12 @@ const CreateProjectModal = ({
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '1.4rem' }}>
             <div>
               <label style={{ display: 'block', fontSize: '1.05rem', fontWeight: '700', color: '#1e293b', marginBottom: '0.5rem' }}>
-                Client Name *
+                Site Supervisor Name *
               </label>
               <select
                 required
-                value={formData.client}
-                onChange={(e) => setFormData({ ...formData, client: e.target.value })}
+                value={formData.supervisorId}
+                onChange={(e) => setFormData({ ...formData, supervisorId: e.target.value })}
                 style={{
                   width: '100%',
                   padding: '0.85rem 1.15rem',
@@ -194,17 +165,12 @@ const CreateProjectModal = ({
                   boxSizing: 'border-box'
                 }}
               >
-                <option value="">-- Select Client --</option>
-                {organizations.map((org) => (
-                  <option key={org.id} value={org.name}>
-                    {org.name}
+                <option value="">-- Select Site Supervisor --</option>
+                {supervisors.map((sup) => (
+                  <option key={sup.id} value={sup.id}>
+                    {sup.name}
                   </option>
                 ))}
-                <option value="Sangamner Municipal Council">Sangamner Municipal Council</option>
-                <option value="Pune Smart City Development Corp">Pune Smart City Development Corp</option>
-                <option value="MSRDC Maharashtra">MSRDC Maharashtra</option>
-                <option value="Nashik Municipal Corporation">Nashik Municipal Corporation</option>
-                <option value="Chhatrapati Sambhajinagar Smart City SPV">Chhatrapati Sambhajinagar Smart City SPV</option>
               </select>
             </div>
 
@@ -280,159 +246,7 @@ const CreateProjectModal = ({
             </div>
           </div>
 
-          {/* Row 3: State * & Project Start Date * */}
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '1.4rem' }}>
-            <div>
-              <label style={{ display: 'block', fontSize: '1.05rem', fontWeight: '700', color: '#1e293b', marginBottom: '0.5rem' }}>
-                State *
-              </label>
-              <select
-                required
-                value={formData.state}
-                onChange={(e) => setFormData({ ...formData, state: e.target.value })}
-                style={{
-                  width: '100%',
-                  padding: '0.85rem 1.15rem',
-                  borderRadius: '12px',
-                  border: '1.5px solid #cbd5e1',
-                  fontSize: '1.05rem',
-                  color: '#0f172a',
-                  outline: 'none',
-                  backgroundColor: '#ffffff',
-                  boxSizing: 'border-box'
-                }}
-              >
-                <option value="">-- Select State --</option>
-                {INDIAN_STATES.map((st) => (
-                  <option key={st} value={st}>{st}</option>
-                ))}
-              </select>
-            </div>
 
-            <div>
-              <label style={{ display: 'block', fontSize: '1.05rem', fontWeight: '700', color: '#1e293b', marginBottom: '0.5rem' }}>
-                Project Start Date *
-              </label>
-              <input
-                type="date"
-                required
-                value={formData.startDate}
-                onChange={(e) => setFormData({ ...formData, startDate: e.target.value })}
-                style={{
-                  width: '100%',
-                  padding: '0.85rem 1.15rem',
-                  borderRadius: '12px',
-                  border: '1.5px solid #cbd5e1',
-                  fontSize: '1.05rem',
-                  color: '#0f172a',
-                  outline: 'none',
-                  boxSizing: 'border-box'
-                }}
-              />
-            </div>
-          </div>
-
-          {/* Row 4: Project Status * & Project Completed Date */}
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '1.4rem' }}>
-            <div>
-              <label style={{ display: 'block', fontSize: '1.05rem', fontWeight: '700', color: '#1e293b', marginBottom: '0.5rem' }}>
-                Project Status *
-              </label>
-              <select
-                required
-                value={formData.status}
-                onChange={(e) => setFormData({ ...formData, status: e.target.value })}
-                style={{
-                  width: '100%',
-                  padding: '0.85rem 1.15rem',
-                  borderRadius: '12px',
-                  border: '1.5px solid #cbd5e1',
-                  fontSize: '1.05rem',
-                  color: '#0f172a',
-                  outline: 'none',
-                  backgroundColor: '#ffffff',
-                  boxSizing: 'border-box'
-                }}
-              >
-                <option value="">-- Select Status --</option>
-                <option value="Ongoing">Ongoing</option>
-                <option value="In Progress">In Progress</option>
-                <option value="Completed">Completed</option>
-                <option value="Planning">Planning</option>
-                <option value="Pending">Pending</option>
-              </select>
-            </div>
-
-            <div>
-              <label style={{ display: 'block', fontSize: '1.05rem', fontWeight: '700', color: '#1e293b', marginBottom: '0.5rem' }}>
-                Project Completed Date
-              </label>
-              <input
-                type="date"
-                value={formData.completedDate}
-                onChange={(e) => setFormData({ ...formData, completedDate: e.target.value })}
-                style={{
-                  width: '100%',
-                  padding: '0.85rem 1.15rem',
-                  borderRadius: '12px',
-                  border: '1.5px solid #cbd5e1',
-                  fontSize: '1.05rem',
-                  color: '#0f172a',
-                  outline: 'none',
-                  boxSizing: 'border-box'
-                }}
-              />
-            </div>
-          </div>
-
-          {/* Row 5: Email Address * & Password * */}
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '1.4rem' }}>
-            <div>
-              <label style={{ display: 'block', fontSize: '1.05rem', fontWeight: '700', color: '#1e293b', marginBottom: '0.5rem' }}>
-                Email Address *
-              </label>
-              <input
-                type="email"
-                required
-                placeholder="e.g. supervisor.site@aaryainnovtech.com"
-                value={formData.email}
-                onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                style={{
-                  width: '100%',
-                  padding: '0.85rem 1.15rem',
-                  borderRadius: '12px',
-                  border: '1.5px solid #cbd5e1',
-                  fontSize: '1.05rem',
-                  color: '#0f172a',
-                  outline: 'none',
-                  boxSizing: 'border-box'
-                }}
-              />
-            </div>
-
-            <div>
-              <label style={{ display: 'block', fontSize: '1.05rem', fontWeight: '700', color: '#1e293b', marginBottom: '0.5rem' }}>
-                Password *
-              </label>
-              <input
-                type="password"
-                required={!editingProject}
-                placeholder="••••••••"
-                value={formData.password}
-                onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                style={{
-                  width: '100%',
-                  padding: '0.85rem 1.15rem',
-                  borderRadius: '12px',
-                  border: '1.5px solid #cbd5e1',
-                  fontSize: '1.05rem',
-                  color: '#0f172a',
-                  outline: 'none',
-                  boxSizing: 'border-box'
-                }}
-              />
-            </div>
-          </div>
 
           {/* Row 6: Remarks (Full Width) */}
           <div>

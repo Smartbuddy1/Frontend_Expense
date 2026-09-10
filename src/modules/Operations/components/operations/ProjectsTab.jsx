@@ -17,10 +17,10 @@ const ProjectsTab = ({
   const filteredProjects = projects.filter(p => {
     const q = searchQuery.toLowerCase();
     const nameMatch = p.name ? p.name.toLowerCase().includes(q) : false;
-    const clientMatch = p.client ? p.client.toLowerCase().includes(q) : false;
+    const supMatch = p.supervisorName ? p.supervisorName.toLowerCase().includes(q) : false;
     const idMatch = p.id ? p.id.toLowerCase().includes(q) : false;
     const locMatch = p.location ? p.location.toLowerCase().includes(q) : false;
-    return !searchQuery || nameMatch || clientMatch || idMatch || locMatch;
+    return !searchQuery || nameMatch || supMatch || idMatch || locMatch;
   });
 
   const totalPages = Math.ceil(filteredProjects.length / itemsPerPage) || 1;
@@ -151,7 +151,7 @@ const ProjectsTab = ({
                 <div style={{ marginTop: '0.85rem' }}>
                   <p style={{ margin: 0, fontSize: '0.88rem', color: 'var(--text-secondary, #64748b)', lineHeight: 1.4 }}>
                     <span style={{ color: 'var(--text-secondary, #64748b)', fontWeight: '500' }}>Supervisor: </span>
-                    <strong style={{ color: 'var(--text-primary, #0f172a)', fontWeight: '800' }}>{project.client || 'Rohit Sharma'}</strong>
+                    <strong style={{ color: 'var(--text-primary, #0f172a)', fontWeight: '800' }}>{project.supervisorName || 'Rohit Sharma'}</strong>
                   </p>
                   <p style={{ margin: '0.45rem 0 0 0', fontSize: '0.84rem', color: 'var(--text-secondary, #64748b)', lineHeight: 1.4 }}>
                     {project.description || (language === 'mr' ? 'काही टिप्पणी नाही.' : 'No remark provided.')}
@@ -160,10 +160,8 @@ const ProjectsTab = ({
               </div>
 
               {/* Card Bottom: Start Date & Action Buttons (Edit + Delete) */}
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: '1.25rem', paddingTop: '0.85rem', borderTop: '1px solid var(--border-color, #f8fafc)' }}>
-                <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary, #64748b)', fontWeight: '600' }}>
-                  {language === 'mr' ? 'सुरुवात:' : 'Start:'} {project.startDate || '01/08/2026'}
-                </span>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', marginTop: '1.25rem', paddingTop: '0.85rem', borderTop: '1px solid var(--border-color, #f8fafc)' }}>
+
 
                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                   {/* Edit Button */}

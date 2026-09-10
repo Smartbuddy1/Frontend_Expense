@@ -277,9 +277,7 @@ const ProjectsTab = ({
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '1.35rem', width: '100%', boxSizing: 'border-box' }}>
         {paginatedProjects.map((project) => {
           const isCompleted = project.status === 'Completed';
-          const statusText = isCompleted 
-            ? (language === 'mr' ? 'पूर्ण (COMPLETED)' : 'COMPLETED')
-            : (language === 'mr' ? 'सक्रिय (ONGOING)' : 'ONGOING');
+          const statusText = (project.status || 'In Progress').toUpperCase();
 
           return (
             <div
@@ -318,17 +316,16 @@ const ProjectsTab = ({
                   >
                     {project.name}
                   </h3>
-                  <span style={{ fontSize: '0.75rem', fontWeight: '800', color: isCompleted ? '#10b981' : '#38bdf8', letterSpacing: '0.05em', flexShrink: 0 }}>
-                    {statusText}
-                  </span>
+                  {!['IN PROGRESS', 'PLANNED'].includes(statusText) && (
+                    <span style={{ fontSize: '0.75rem', fontWeight: '800', color: isCompleted ? '#10b981' : project.status === 'On Hold' ? '#f59e0b' : '#38bdf8', letterSpacing: '0.05em', flexShrink: 0, backgroundColor: isCompleted ? '#ecfdf5' : project.status === 'On Hold' ? '#fffbeb' : '#eff6ff', padding: '0.2rem 0.55rem', borderRadius: '6px', border: `1px solid ${isCompleted ? '#a7f3d0' : project.status === 'On Hold' ? '#fde68a' : '#bfdbfe'}` }}>
+                      {statusText}
+                    </span>
+                  )}
                 </div>
 
                 {/* Card Body: Client & Details */}
                 <div style={{ marginTop: '0.85rem' }}>
-                  <p style={{ margin: 0, fontSize: '0.88rem', color: 'var(--text-secondary, #64748b)', lineHeight: 1.4 }}>
-                    <span style={{ color: 'var(--text-secondary, #64748b)', fontWeight: '500' }}>{language === 'mr' ? 'क्लायंट: ' : 'Client: '}</span>
-                    <strong style={{ color: 'var(--text-primary, #0f172a)', fontWeight: '800' }}>{project.client || 'Sangamner Municipal Corporation'}</strong>
-                  </p>
+
                   <p style={{ margin: '0.45rem 0 0 0', fontSize: '0.84rem', color: 'var(--text-secondary, #64748b)', lineHeight: 1.4 }}>
                     {project.description || (language === 'mr' ? 'काही टिप्पणी नाही.' : 'No remark provided.')}
                   </p>
@@ -338,11 +335,9 @@ const ProjectsTab = ({
                 </div>
               </div>
 
-              {/* Card Bottom: Start Date & Action Buttons (Edit + Delete) */}
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: '1rem', paddingTop: '0.75rem', borderTop: '1px solid var(--border-color, #f8fafc)' }}>
-                <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary, #64748b)', fontWeight: '600' }}>
-                  {language === 'mr' ? 'सुरुवात:' : 'Start:'} {project.startDate || '01/08/2026'}
-                </span>
+              {/* Card Bottom: Action Buttons (Edit + Delete) */}
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', marginTop: '1rem', paddingTop: '0.75rem', borderTop: '1px solid var(--border-color, #f8fafc)' }}>
+
 
                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                   {/* Edit Button */}

@@ -4,10 +4,9 @@ import { useLanguage } from '../../../context/LanguageContext';
 
 const CreateProjectModal = ({ isOpen, onClose, onSave, editingProject, supervisors = [] }) => {
   const { language } = useLanguage();
-  const [formData, setFormData] = useState({
+  const [formData, setFormData] = useState(editingProject || {
     name: '',
     code: '',
-    client: '',
     location: '',
     phone: '',
     email: '',
@@ -29,7 +28,6 @@ const CreateProjectModal = ({ isOpen, onClose, onSave, editingProject, superviso
       setFormData({
         name: editingProject.name || '',
         code: editingProject.id || '',
-        client: editingProject.client || '',
         location: editingProject.location || '',
         phone: editingProject.phone || editingProject.clientPhone || '',
         email: editingProject.email || editingProject.clientEmail || '',
@@ -48,7 +46,6 @@ const CreateProjectModal = ({ isOpen, onClose, onSave, editingProject, superviso
       setFormData({
         name: '',
         code: `PRJ-SGM-${Math.floor(Math.random() * 90) + 10}`,
-        client: '',
         location: '',
         phone: '',
         email: '',
@@ -70,7 +67,7 @@ const CreateProjectModal = ({ isOpen, onClose, onSave, editingProject, superviso
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    if (!formData.name?.trim() || !formData.client?.trim() || !formData.location?.trim() || !formData.phone?.trim() || !formData.email?.trim() || !formData.description?.trim()) {
+    if (!formData.name?.trim() || !formData.location?.trim() || !formData.phone?.trim() || !formData.email?.trim() || !formData.description?.trim()) {
       alert('Please fill in all mandatory fields (*)');
       return;
     }
@@ -86,7 +83,6 @@ const CreateProjectModal = ({ isOpen, onClose, onSave, editingProject, superviso
     const projectPayload = {
       id: editingProject ? editingProject.id : formData.code,
       name: formData.name,
-      client: formData.client,
       location: formData.location || 'Maharashtra, India',
       phone: formData.phone || '',
       email: formData.email || '',
@@ -264,12 +260,10 @@ const CreateProjectModal = ({ isOpen, onClose, onSave, editingProject, superviso
               <label style={{ display: 'block', fontSize: '0.78rem', fontWeight: '800', color: '#475569', textTransform: 'uppercase', marginBottom: '0.35rem' }}>
                 Site Supervisor *
               </label>
-              <input
-                type="text"
+              <select
                 required
-                placeholder="e.g. Rohit Sharma"
-                value={formData.client}
-                onChange={(e) => setFormData({ ...formData, client: e.target.value })}
+                value={formData.supervisorId}
+                onChange={(e) => setFormData({ ...formData, supervisorId: e.target.value })}
                 style={{
                   width: '100%',
                   padding: '0.65rem 0.85rem',
@@ -280,7 +274,12 @@ const CreateProjectModal = ({ isOpen, onClose, onSave, editingProject, superviso
                   outline: 'none',
                   boxSizing: 'border-box'
                 }}
-              />
+              >
+                <option value="" disabled>Select Supervisor</option>
+                {supervisors.map(sup => (
+                  <option key={sup.id} value={sup.id}>{sup.name}</option>
+                ))}
+              </select>
             </div>
 
             {/* Location */}

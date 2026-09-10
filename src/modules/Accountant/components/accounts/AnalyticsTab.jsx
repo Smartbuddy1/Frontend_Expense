@@ -87,6 +87,49 @@ const AnalyticsTab = ({
     }
   };
 
+  // ──────────────────────────────────────────────────────────────
+  // Date range resolver — turns filter state into [from, to] Date objects
+  // ──────────────────────────────────────────────────────────────
+  const getDateRange = () => {
+    if (filterType === 'DATE_RANGE') {
+      return {
+        from: startDate ? new Date(startDate) : null,
+        to: endDate ? new Date(endDate + 'T23:59:59') : null
+      };
+    }
+    // Financial Year mode
+    const now = new Date();
+    const currentYear = now.getFullYear();
+    const currentMonth = now.getMonth(); // 0-indexed; April = 3
+    // FY runs Apr–Mar, e.g. FY 2026-27 starts Apr 2026
+    const fyStartYear = currentMonth >= 3 ? currentYear : currentYear - 1;
+
+    if (financialYear === 'CURRENT_FY') {
+      return {
+        from: new Date(`${fyStartYear}-04-01`),
+        to: new Date(`${fyStartYear + 1}-03-31T23:59:59`)
+      };
+    }
+    if (financialYear === 'PREV_FY') {
+      return {
+        from: new Date(`${fyStartYear - 1}-04-01`),
+        to: new Date(`${fyStartYear}-03-31T23:59:59`)
+      };
+    }
+    // 'ALL' — no date restriction
+    return { from: null, to: null };
+  };
+
+  const { from: dateFrom, to: dateTo } = getDateRange();
+
+  const inDateRange = (dateStr) => {
+    if (!dateStr) return true;
+    const d = new Date(dateStr);
+    if (dateFrom && d < dateFrom) return false;
+    if (dateTo && d > dateTo) return false;
+    return true;
+  };
+
   // Filter projects by selection
   const filteredProjects = projects.filter(p => {
     const matchesProject = selectedProject === 'ALL' || p.id === selectedProject;
@@ -95,34 +138,82 @@ const AnalyticsTab = ({
   });
   const activeProjectIds = new Set(filteredProjects.map(p => p.id));
 
-  // Filtered expenses & payments
-  const filteredExpenses = expenses.filter(e => activeProjectIds.has(e.projectId));
-  const filteredAdvances = advances.filter(a => activeProjectIds.has(a.projectId));
-  const filteredPayments = payments.filter(p => activeProjectIds.has(p.projectId));
+  // Filtered expenses & payments — now also apply date filter
+  const filteredExpenses = expenses.filter(e =>
+    activeProjectIds.has(e.projectId) && inDateRange(e.billDate || e.submittedAt)
+  );
+  const filteredAdvances = advances.filter(a =>
+    activeProjectIds.has(a.projectId) && inDateRange(a.requestDate || a.date)
+  );
+  const filteredPayments = payments.filter(p =>
+    activeProjectIds.has(p.projectId) && inDateRange(p.date)
+  );
 
-  // High level KPIs
+  // High level KPIs — budget/released are project-level (not date-filtered),
+  // but expenses use the date-filtered set
   const totalBudget = filteredProjects.reduce((acc, p) => acc + (p.budget || 0), 0);
   const totalReleased = filteredProjects.reduce((acc, p) => acc + (p.fundsReleased || 0), 0);
-  const totalExpenses = filteredProjects.reduce((acc, p) => acc + (p.expenses || 0), 0);
-  const totalBalance = filteredProjects.reduce((acc, p) => acc + (p.balance || 0), 0);
+  const totalExpenses = filteredExpenses
+    .filter(e => e.status === 'Accounts Verified & Paid')
+    .reduce((acc, e) => acc + (e.amount || 0), 0);
+  const totalAdvancesDisbursed = filteredAdvances
+    .filter(a => a.status === 'Disbursed')
+    .reduce((acc, a) => acc + (a.approvedAmount || 0), 0);
+  const totalBalance = totalAdvancesDisbursed - totalExpenses;
   const utilizationRate = totalBudget > 0 ? ((totalExpenses / totalBudget) * 100).toFixed(1) : 0;
   const releaseRate = totalBudget > 0 ? ((totalReleased / totalBudget) * 100).toFixed(1) : 0;
 
-  // Chart 1: Cumulative Cash Flow & Monthly Velocity Trend (Data up to current month Aug, future months blank)
-  const monthlyFlowData = [
-    { month: 'Jan', fullMonth: 'January 2026', Advances: 95000, Expenses: 40000, Released: 120000 },
-    { month: 'Feb', fullMonth: 'February 2026', Advances: 110000, Expenses: 65000, Released: 140000 },
-    { month: 'Mar', fullMonth: 'March 2026', Advances: 130000, Expenses: 80000, Released: 160000 },
-    { month: 'Apr', fullMonth: 'April 2026', Advances: 145000, Expenses: 92000, Released: 180000 },
-    { month: 'May', fullMonth: 'May 2026', Advances: 160000, Expenses: 105000, Released: 200000 },
-    { month: 'Jun', fullMonth: 'June 2026', Advances: 175000, Expenses: 110000, Released: 215000 },
-    { month: 'Jul', fullMonth: 'July 2026', Advances: 190000, Expenses: 125000, Released: 240000 },
-    { month: 'Aug', fullMonth: 'August 2026 (Current)', Advances: 220000, Expenses: 145000, Released: 280000 },
-    { month: 'Sep', fullMonth: 'September 2026 (Upcoming)', Advances: null, Expenses: null, Released: null },
-    { month: 'Oct', fullMonth: 'October 2026 (Upcoming)', Advances: null, Expenses: null, Released: null },
-    { month: 'Nov', fullMonth: 'November 2026 (Upcoming)', Advances: null, Expenses: null, Released: null },
-    { month: 'Dec', fullMonth: 'December 2026 (Upcoming)', Advances: null, Expenses: null, Released: null }
+  // ──────────────────────────────────────────────────────────────
+  // Chart 1: Monthly Cash Flow — derived from real filtered data
+  // ──────────────────────────────────────────────────────────────
+  const MONTH_LABELS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+  const MONTH_FULL = [
+    'January', 'February', 'March', 'April', 'May', 'June',
+    'July', 'August', 'September', 'October', 'November', 'December'
   ];
+
+  // Determine which year(s) to show months for
+  const referenceYear = dateFrom ? dateFrom.getFullYear() : new Date().getFullYear();
+  const currentDate = new Date();
+
+  const monthlyFlowData = MONTH_LABELS.map((mon, idx) => {
+    const monthDate = new Date(referenceYear, idx, 1);
+    const isFuture = monthDate > currentDate;
+
+    // Sum expenses verified this month
+    const monthExpenses = filteredExpenses
+      .filter(e => {
+        const d = new Date(e.billDate || e.submittedAt || '');
+        return d.getMonth() === idx && d.getFullYear() === referenceYear && e.status === 'Accounts Verified & Paid';
+      })
+      .reduce((acc, e) => acc + (e.amount || 0), 0);
+
+    // Sum advances disbursed this month
+    const monthAdvances = filteredAdvances
+      .filter(a => {
+        const d = new Date(a.requestDate || a.date || '');
+        return d.getMonth() === idx && d.getFullYear() === referenceYear && a.status === 'Disbursed';
+      })
+      .reduce((acc, a) => acc + (a.approvedAmount || 0), 0);
+
+    // Sum payments released this month
+    const monthReleased = filteredPayments
+      .filter(p => {
+        const d = new Date(p.date || '');
+        return d.getMonth() === idx && d.getFullYear() === referenceYear;
+      })
+      .reduce((acc, p) => acc + (p.amount || 0), 0);
+
+    return {
+      month: mon,
+      fullMonth: isFuture
+        ? `${MONTH_FULL[idx]} ${referenceYear} (Upcoming)`
+        : `${MONTH_FULL[idx]} ${referenceYear}`,
+      Advances: isFuture ? null : monthAdvances,
+      Expenses: isFuture ? null : monthExpenses,
+      Released: isFuture ? null : monthReleased,
+    };
+  });
 
   // Chart 2: Supervisor Disbursal vs Claim Efficiency (Fixed positions on X-axis, unselected items hidden with null so position never shifts)
   const supervisorData = allMasterSupervisors.map(supName => {
@@ -135,9 +226,13 @@ const AnalyticsTab = ({
       };
     }
 
-    const projs = filteredProjects.filter(p => p.supervisor === supName);
-    const totalAdv = projs.reduce((acc, p) => acc + (p.advance || p.fundsReleased || 0), 0);
-    const totalExp = projs.reduce((acc, p) => acc + (p.expenses || 0), 0);
+    // Use date-filtered advances and expenses for accurate chart data
+    const totalAdv = filteredAdvances
+      .filter(a => a.supervisor === supName && a.status === 'Disbursed')
+      .reduce((acc, a) => acc + (a.approvedAmount || 0), 0);
+    const totalExp = filteredExpenses
+      .filter(e => e.supervisor === supName && e.status === 'Accounts Verified & Paid')
+      .reduce((acc, e) => acc + (e.amount || 0), 0);
 
     return {
       name: supName,
@@ -177,7 +272,10 @@ const AnalyticsTab = ({
 
   // Chart 3: Project Budget Utilization & Burn Rate %
   const burnRateData = filteredProjects.map(p => {
-    const burn = p.budget > 0 ? Number(((p.expenses / p.budget) * 100).toFixed(1)) : 0;
+    const projExpenses = filteredExpenses
+      .filter(e => e.projectId === p.id && e.status === 'Accounts Verified & Paid')
+      .reduce((acc, e) => acc + (e.amount || 0), 0);
+    const burn = p.budget > 0 ? Number(((projExpenses / p.budget) * 100).toFixed(1)) : 0;
     return {
       name: p.name.length > 15 ? p.name.substring(0, 13) + '...' : p.name,
       fullName: p.name,

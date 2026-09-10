@@ -147,27 +147,7 @@ const AssignTeamModal = ({ isOpen, onClose, onAssign, project, projects = [], su
         <form onSubmit={handleSave} style={{ padding: '1.5rem', display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
           
           {/* 1. Site / Project Info Card or Selector */}
-          {isProjectGiven ? (
-            <div style={{
-              backgroundColor: '#f8fafc',
-              border: '1.5px solid #e2e8f0',
-              borderRadius: '14px',
-              padding: '1rem 1.15rem'
-            }}>
-              <span style={{ fontSize: '0.74rem', fontWeight: '800', color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
-                Target Site / Project
-              </span>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginTop: '0.35rem' }}>
-                <Building2 size={18} style={{ color: '#2563eb', flexShrink: 0 }} />
-                <strong style={{ color: '#0f172a', fontSize: '1rem', fontWeight: '800' }}>
-                  {project.name}
-                </strong>
-              </div>
-              <p style={{ margin: '0.35rem 0 0 0', fontSize: '0.82rem', color: '#64748b' }}>
-                Client: <strong>{project.client}</strong> • {project.location}
-              </p>
-            </div>
-          ) : (
+          {isProjectGiven ? null : (
             <div>
               <label style={{ display: 'block', fontSize: '0.84rem', fontWeight: '800', color: '#334155', marginBottom: '0.45rem' }}>
                 Select Target Project / Site *

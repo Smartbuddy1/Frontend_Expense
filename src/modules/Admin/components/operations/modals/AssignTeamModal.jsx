@@ -151,27 +151,7 @@ const AssignTeamModal = ({ isOpen, onClose, onAssign, project, projects = [], su
         <form onSubmit={handleSave} style={{ padding: '1.5rem', display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
           
           {/* 1. Site / Project Info Card or Selector */}
-          {isProjectGiven ? (
-            <div style={{
-              backgroundColor: '#f8fafc',
-              border: '1.5px solid #e2e8f0',
-              borderRadius: '14px',
-              padding: '1rem 1.15rem'
-            }}>
-              <span style={{ fontSize: '0.74rem', fontWeight: '800', color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
-                Target Site / Project
-              </span>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginTop: '0.35rem' }}>
-                <Building2 size={18} style={{ color: '#2563eb', flexShrink: 0 }} />
-                <strong style={{ color: '#0f172a', fontSize: '1rem', fontWeight: '800' }}>
-                  {project.name}
-                </strong>
-              </div>
-              <p style={{ margin: '0.35rem 0 0 0', fontSize: '0.82rem', color: '#64748b' }}>
-                Client: <strong>{project.client}</strong> • {project.location}
-              </p>
-            </div>
-          ) : (
+          {isProjectGiven ? null : (
             <div>
               <label style={{ display: 'block', fontSize: '0.84rem', fontWeight: '800', color: '#334155', marginBottom: '0.45rem' }}>
                 Select Target Project / Site *
@@ -234,63 +214,7 @@ const AssignTeamModal = ({ isOpen, onClose, onAssign, project, projects = [], su
             </select>
           </div>
 
-          {/* 3. Number of Team Members (Field Crew) */}
-          <div>
-            <label style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: '0.84rem', fontWeight: '800', color: '#334155', marginBottom: '0.45rem' }}>
-              <span style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-                <Users size={16} style={{ color: '#2563eb' }} />
-                <span>Total Team Members *</span>
-              </span>
-              <span style={{ fontSize: '0.78rem', color: '#2563eb', fontWeight: '700' }}>
-                {teamCount} Persons
-              </span>
-            </label>
-            <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
-              <input
-                type="number"
-                min="1"
-                max="100"
-                value={teamCount}
-                onChange={(e) => setTeamCount(Math.max(1, parseInt(e.target.value) || 1))}
-                style={{
-                  width: '100%',
-                  padding: '0.75rem 1rem',
-                  borderRadius: '12px',
-                  border: '1.5px solid #cbd5e1',
-                  backgroundColor: '#ffffff',
-                  fontSize: '0.95rem',
-                  fontWeight: '700',
-                  color: '#0f172a',
-                  outline: 'none',
-                  boxSizing: 'border-box'
-                }}
-              />
-            </div>
-            {/* Quick Count Selector Chips */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', marginTop: '0.5rem', flexWrap: 'wrap' }}>
-              <span style={{ fontSize: '0.75rem', color: '#64748b', fontWeight: '600', marginRight: '0.2rem' }}>Quick select:</span>
-              {[4, 6, 8, 10, 12, 15].map((count) => (
-                <button
-                  key={count}
-                  type="button"
-                  onClick={() => setTeamCount(count)}
-                  style={{
-                    padding: '0.25rem 0.65rem',
-                    borderRadius: '8px',
-                    border: teamCount === count ? '1.5px solid #2563eb' : '1px solid #e2e8f0',
-                    backgroundColor: teamCount === count ? '#eff6ff' : '#ffffff',
-                    color: teamCount === count ? '#2563eb' : '#64748b',
-                    fontSize: '0.78rem',
-                    fontWeight: teamCount === count ? '800' : '600',
-                    cursor: 'pointer',
-                    transition: 'all 0.15s ease'
-                  }}
-                >
-                  {count} Members
-                </button>
-              ))}
-            </div>
-          </div>
+
 
           {/* Quick Details of Currently Selected Supervisor */}
           {selectedSupervisorId && (

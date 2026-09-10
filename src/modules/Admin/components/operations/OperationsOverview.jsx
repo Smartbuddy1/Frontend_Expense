@@ -65,19 +65,7 @@ export const DashboardHeader = ({
     </div>
 
     <div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem', flexWrap: 'wrap' }}>
-      {onOpenTransferAdvance && (
-        <button
-          onClick={onOpenTransferAdvance}
-          style={{
-            padding: '0.5rem 1.1rem', borderRadius: '10px', border: '1.5px solid #a7f3d0',
-            backgroundColor: '#ecfdf5', color: '#059669', fontSize: '0.88rem', fontWeight: '800',
-            cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: '0.4rem'
-          }}
-        >
-          <Send size={16} />
-          <span>Transfer Advance</span>
-        </button>
-      )}
+
       {onExportPDF && (
         <button
           onClick={onExportPDF}
@@ -860,8 +848,13 @@ const OperationsOverview = ({
   organizations = [],
   accountants = [],
   expenses = [],
+  siteLogs = [],
+  operationalHeads = [],
   setActiveTab,
   onOpenCreateProject,
+  onOpenCreateSupervisor,
+  onOpenCreateAccountant,
+  onOpenCreateOperationalHead,
   onSelectProject,
   onApproveExpense,
   onRejectExpense,
@@ -935,7 +928,7 @@ const OperationsOverview = ({
         {/* Card 1: Total Operational Head */}
         <StatCard
           title="Total Operational Head"
-          value={String(organizations.length || 3)}
+          value={String(operationalHeads.length || 0)}
           badgeText="Active Head"
           badgeType="positive"
           icon={ShieldCheck}
@@ -986,34 +979,34 @@ const OperationsOverview = ({
         <div className="dash-quick-grid">
           {/* Card 1: Operational Head */}
           <QuickActionCard
-            title="Operational Head"
+            title="Create Head"
             icon={ShieldCheck}
             iconBg="#2563eb"
-            onClick={() => setActiveTab && setActiveTab('operational-head')}
+            onClick={() => onOpenCreateOperationalHead && onOpenCreateOperationalHead()}
           />
 
           {/* Card 2: Site Projects */}
           <QuickActionCard
-            title="Site Projects"
+            title="Create Project"
             icon={HardHat}
             iconBg="#ea580c"
-            onClick={() => setActiveTab && setActiveTab('projects')}
+            onClick={() => onOpenCreateProject && onOpenCreateProject()}
           />
 
           {/* Card 3: Site Supervisor */}
           <QuickActionCard
-            title="Site Supervisor"
+            title="Create Supervisor"
             icon={Users}
             iconBg="#06b6d4"
-            onClick={() => setActiveTab && setActiveTab('supervisors')}
+            onClick={() => onOpenCreateSupervisor && onOpenCreateSupervisor()}
           />
 
           {/* Card 4: Accountant */}
           <QuickActionCard
-            title="Accountant"
+            title="Create Accountant"
             icon={Briefcase}
             iconBg="#10b981"
-            onClick={() => setActiveTab && setActiveTab('accountant')}
+            onClick={() => onOpenCreateAccountant && onOpenCreateAccountant()}
           />
         </div>
       </div>

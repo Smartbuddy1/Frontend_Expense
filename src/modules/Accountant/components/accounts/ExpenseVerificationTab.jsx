@@ -46,6 +46,8 @@ const ExpenseVerificationTab = ({
   };
 
   const filteredExpenses = expenses.filter(exp => {
+    if (exp.status === 'Pending Operations Approval') return false;
+
     const matchesSearch = 
       exp.id.toLowerCase().includes(searchQuery.toLowerCase()) ||
       exp.itemDescription.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -56,8 +58,7 @@ const ExpenseVerificationTab = ({
     const matchesStatus = 
       statusFilter === 'ALL' ||
       (statusFilter === 'PENDING' && exp.status === 'Pending Accounts Verification') ||
-      (statusFilter === 'VERIFIED' && exp.status === 'Accounts Verified & Paid') ||
-      (statusFilter === 'CORRECTION' && exp.status === 'Sent for Correction');
+      (statusFilter === 'VERIFIED' && exp.status === 'Accounts Verified & Paid');
 
     const matchesSupervisor = selectedSupervisor === 'ALL' || exp.supervisor === selectedSupervisor;
     const matchesProject = selectedProject === 'ALL' || exp.projectId === selectedProject;
@@ -70,7 +71,6 @@ const ExpenseVerificationTab = ({
   const categories = [...new Set(expenses.map(e => e.category))];
   const pendingCount = expenses.filter(e => e.status === 'Pending Accounts Verification').length;
   const verifiedCount = expenses.filter(e => e.status === 'Accounts Verified & Paid').length;
-  const correctionCount = expenses.filter(e => e.status === 'Sent for Correction').length;
 
   const handlePrint = () => {
     window.print();
@@ -121,8 +121,7 @@ const ExpenseVerificationTab = ({
       e.projectName,
       e.supervisor,
       e.vendorName || '-',
-      formatPDFINR(e.amount),
-      e.status === 'Accounts Verified & Paid' ? 'Verified' : e.status === 'Sent for Correction' ? 'Correction' : 'Pending'
+      e.status === 'Accounts Verified & Paid' ? 'Verified' : 'Pending'
     ]);
 
     doc.autoTable({
@@ -341,7 +340,6 @@ const ExpenseVerificationTab = ({
               <option value="ALL">All Accounts Status</option>
               <option value="PENDING">Pending Verification</option>
               <option value="VERIFIED">Approved</option>
-              <option value="CORRECTION">Correction Requested</option>
             </select>
           </div>
         </div>
@@ -386,7 +384,6 @@ const ExpenseVerificationTab = ({
                 filteredExpenses.map((exp) => {
                   const isPending = exp.status === 'Pending Accounts Verification';
                   const isVerified = exp.status === 'Accounts Verified & Paid';
-                  const isCorrection = exp.status === 'Sent for Correction';
 
                   return (
                     <tr 
@@ -409,17 +406,11 @@ const ExpenseVerificationTab = ({
                         <div style={{ fontWeight: '700', color: 'var(--text-primary)' }}>
                           {exp.projectName}
                         </div>
-                        <div style={{ fontSize: '0.72rem', color: 'var(--text-secondary)', marginTop: '2px' }}>
-                          Site Procurement
-                        </div>
                       </td>
 
                       <td style={{ padding: '1rem', whiteSpace: 'nowrap' }}>
                         <div style={{ fontWeight: '800', color: 'var(--text-primary)', fontSize: '0.88rem' }}>
                           {exp.supervisor}
-                        </div>
-                        <div style={{ fontSize: '0.72rem', color: 'var(--text-secondary)', marginTop: '2px', display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
-                          <User size={11} color="#3b82f6" /> Site In-Charge
                         </div>
                       </td>
 
@@ -432,21 +423,20 @@ const ExpenseVerificationTab = ({
                           backgroundColor: 'rgba(59, 130, 246, 0.12)',
                           color: '#3b82f6',
                           display: 'inline-block',
-                          marginBottom: '4px'
+                          marginBottom: exp.itemDescription ? '0.35rem' : '0'
                         }}>
                           {exp.category}
                         </span>
-                        <div style={{ fontSize: '0.8rem', color: 'var(--text-primary)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }} title={exp.itemDescription}>
-                          {exp.itemDescription}
-                        </div>
+                        {exp.itemDescription && (
+                          <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>
+                            {exp.itemDescription}
+                          </div>
+                        )}
                       </td>
 
                       <td style={{ padding: '1rem' }}>
                         <div style={{ fontWeight: '700', color: 'var(--text-primary)', fontSize: '0.84rem' }}>
                           {exp.vendorName || 'Direct Site Vendor'}
-                        </div>
-                        <div style={{ fontSize: '0.72rem', color: 'var(--text-secondary)', fontFamily: 'monospace' }}>
-                          Invoice #{exp.billNumber || 'N/A'}
                         </div>
                       </td>
 
@@ -552,21 +542,6 @@ const ExpenseVerificationTab = ({
                             <CheckCircle2 size={12} /> Approved
                           </span>
                         )}
-                        {isCorrection && (
-                          <span style={{
-                            display: 'inline-flex',
-                            alignItems: 'center',
-                            gap: '0.3rem',
-                            fontSize: '0.75rem',
-                            fontWeight: '700',
-                            padding: '0.25rem 0.65rem',
-                            borderRadius: '20px',
-                            backgroundColor: 'rgba(239, 68, 68, 0.15)',
-                            color: '#ef4444'
-                          }}>
-                            Correction Requested
-                          </span>
-                        )}
                       </td>
 
                       <td className="no-print" style={{ padding: '1rem', textAlign: 'right' }}>
@@ -587,7 +562,7 @@ const ExpenseVerificationTab = ({
                               cursor: 'pointer'
                             }}
                           >
-                            <Eye size={14} /> Verify Bill
+                            <Eye size={14} /> View Bills
                           </button>
 
                           {isPending && (
@@ -607,7 +582,7 @@ const ExpenseVerificationTab = ({
                                   gap: '0.3rem',
                                   cursor: 'pointer'
                                 }}
-                                title="Quick Approve Vendor Invoice"
+                                title="Accept Vendor Invoice"
                               >
                                 <Check size={14} />
                               </button>
@@ -625,9 +600,9 @@ const ExpenseVerificationTab = ({
                                   alignItems: 'center',
                                   cursor: 'pointer'
                                 }}
-                                title="Send for Correction"
+                                title="Reject Vendor Invoice"
                               >
-                                <RotateCcw size={14} />
+                                <X size={14} />
                               </button>
                             </>
                           )}

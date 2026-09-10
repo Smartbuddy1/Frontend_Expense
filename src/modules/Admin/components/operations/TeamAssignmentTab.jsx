@@ -781,7 +781,10 @@ const TeamAssignmentTab = ({
 
                           {/* Delete Button (Red Box) */}
                           <button
-                            onClick={() => onDeleteSupervisor && onDeleteSupervisor(sup.id, sup.name)}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              onDeleteSupervisor && onDeleteSupervisor(sup.id, sup.name);
+                            }}
                             title={language === 'mr' ? 'सुपरवायझर हटवा' : 'Delete Supervisor'}
                             style={{
                               width: '32px',

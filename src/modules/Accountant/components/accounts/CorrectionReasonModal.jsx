@@ -68,7 +68,7 @@ const CorrectionReasonModal = ({ item, type = 'Expense', onClose, onSubmit }) =>
             </div>
             <div>
               <h3 style={{ fontSize: '1.1rem', fontWeight: '700', color: 'var(--text-primary)', margin: 0 }}>
-                Send Back for Correction
+                Reject Claim
               </h3>
               <p style={{ fontSize: '0.78rem', color: 'var(--text-secondary)', margin: 0 }}>
                 {type} #{item.id} • {item.projectName}
@@ -87,7 +87,7 @@ const CorrectionReasonModal = ({ item, type = 'Expense', onClose, onSubmit }) =>
         <form onSubmit={handleSubmit} style={{ padding: '1.5rem', display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
           <div>
             <label style={{ display: 'block', fontSize: '0.82rem', fontWeight: '600', color: 'var(--text-primary)', marginBottom: '0.5rem' }}>
-              Select Reason for Correction <span style={{ color: '#ef4444' }}>*</span>:
+              Select Reason for Rejection <span style={{ color: '#ef4444' }}>*</span>:
             </label>
             <select
               value={selectedReason}
@@ -173,7 +173,7 @@ const CorrectionReasonModal = ({ item, type = 'Expense', onClose, onSubmit }) =>
               }}
             >
               <Send size={16} />
-              Send Correction Request
+              Reject
             </button>
           </div>
         </form>

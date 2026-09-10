@@ -35,8 +35,8 @@ const ReconciliationTab = ({
     supervisor: a.supervisor,
     site: a.site || a.projectName,
     purpose: a.purpose || 'General site advance',
-    urgency: 'Standard Request',
-    urgencyType: 'medium',
+    urgency: a.urgency || 'Regular',
+    urgencyType: a.urgency === 'Immediate' ? 'high' : a.urgency === 'Within 24 Hours' ? 'medium' : 'low',
     date: a.date ? new Date(a.date).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }) : '',
     amount: a.amount,
     status: a.status,
@@ -146,7 +146,8 @@ const ReconciliationTab = ({
     projectId: '',
     site: '',
     purpose: '',
-    urgency: 'Immediate (Same Day)',
+    urgency: 'Regular',
+    urgencyType: 'medium',
     amount: '',
     notes: ''
   });
@@ -173,7 +174,7 @@ const ReconciliationTab = ({
         purpose: newReqForm.purpose,
       });
       setIsNewReqModalOpen(false);
-      setNewReqForm({ projectId: '', site: '', purpose: '', urgency: 'Immediate (Same Day)', amount: '', notes: '' });
+      setNewReqForm({ projectId: '', site: '', purpose: '', urgency: 'Immediate', amount: '', notes: '' });
       toast.success('Advance requisition submitted for approval!');
       onRefresh && onRefresh();
     } catch (err) {
@@ -313,61 +314,29 @@ const ReconciliationTab = ({
   // 1-Click CSV / Excel Exporter
   const handleExportExcel = () => {
     try {
-      if (isReconView) {
-        const csvRows = [
-          ['SR NO', 'REQUISITION ID', 'SUPERVISOR', 'SITE LOCATION', 'PURPOSE / REASON', 'URGENCY', 'DATE', 'AMOUNT (INR)', 'STATUS'],
-          ...filteredRequisitions.map((req, idx) => [
-            idx + 1,
-            `"${req.id || ''}"`,
-            `"${req.supervisor || ''}"`,
-            `"${req.site || ''}"`,
-            `"${req.purpose || ''}"`,
-            `"${req.urgency || ''}"`,
-            `"${req.date || ''}"`,
-            req.amount || 0,
-            `"${req.status || 'Approved'}"`
-          ])
-        ];
-        const csvContent = 'data:text/csv;charset=utf-8,\uFEFF' + csvRows.map(e => e.join(',')).join('\n');
-        const encodedUri = encodeURI(csvContent);
-        const link = document.createElement('a');
-        link.setAttribute('href', encodedUri);
-        link.setAttribute('download', `ASEMS_Advance_Requisitions_${new Date().toISOString().split('T')[0]}.csv`);
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-        toast.success('Advance requisitions downloaded as Excel/CSV!');
-      } else {
-        const csvRows = [
-          ['SR NO', 'SUPERVISOR NAME', 'PHONE NUMBER', 'ASSIGNED SITE', 'PROJECT NAME', 'TOTAL ADVANCE (INR)', 'TOTAL SPENT (INR)', 'CASH IN HAND (INR)', 'REQUEST (INR)', 'CASH STATUS'],
-          ...supervisorFloats.map((sup, idx) => {
-            const supReq = advanceRequisitions.find(r => 
-              (r.supervisor?.toLowerCase().includes(sup.name?.toLowerCase()) || sup.name?.toLowerCase().includes(r.supervisor?.toLowerCase())) && r.status === 'Pending'
-            );
-            return [
-              idx + 1,
-              `"${sup.name || ''}"`,
-              `"${sup.phone || ''}"`,
-              `"${sup.site || ''}"`,
-              `"${sup.project || ''}"`,
-              sup.advance || 0,
-              sup.settled || 0,
-              (sup.advance || 0) - (sup.settled || 0),
-              supReq ? `"${supReq.id} (₹${supReq.amount})"` : '"None"',
-              (sup.advance || 0) - (sup.settled || 0) < 5000 ? 'Low Cash' : 'Available'
-            ];
-          })
-        ];
-        const csvContent = 'data:text/csv;charset=utf-8,\uFEFF' + csvRows.map(e => e.join(',')).join('\n');
-        const encodedUri = encodeURI(csvContent);
-        const link = document.createElement('a');
-        link.setAttribute('href', encodedUri);
-        link.setAttribute('download', `ASEMS_Supervisor_Cash_Advance_${new Date().toISOString().split('T')[0]}.csv`);
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-        toast.success('Cash & Advance Excel downloaded!');
-      }
+      const csvRows = [
+        ['SR NO', 'REQUISITION ID', 'SUPERVISOR', 'SITE LOCATION', 'PURPOSE / REASON', 'URGENCY', 'DATE', 'AMOUNT (INR)', 'STATUS'],
+        ...filteredRequisitions.map((req, idx) => [
+          idx + 1,
+          `"${req.id || ''}"`,
+          `"${req.supervisor || ''}"`,
+          `"${req.site || ''}"`,
+          `"${req.purpose || ''}"`,
+          `"${req.urgency || ''}"`,
+          `"${req.date || ''}"`,
+          req.amount || 0,
+          `"${req.status || 'Approved'}"`
+        ])
+      ];
+      const csvContent = 'data:text/csv;charset=utf-8,\uFEFF' + csvRows.map(e => e.join(',')).join('\n');
+      const encodedUri = encodeURI(csvContent);
+      const link = document.createElement('a');
+      link.setAttribute('href', encodedUri);
+      link.setAttribute('download', `ASEMS_Advance_Requisitions_${new Date().toISOString().split('T')[0]}.csv`);
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      toast.success('Advance requisitions downloaded as Excel/CSV!');
     } catch (err) {
       console.error(err);
       toast.error('Failed to export Excel');
@@ -379,102 +348,45 @@ const ReconciliationTab = ({
     try {
       const doc = new jsPDF();
 
-      if (isReconView) {
-        // 1. Advance Requisitions PDF with Official Logo Header
-        const startY = await addPdfHeaderWithLogo(
-          doc,
-          'Site Advance Requisitions & Approvals Statement',
-          `Generated on: ${new Date().toLocaleString()} | Official Operations Register`
-        );
-
-        // Summary Box
-        const totalReqAmount = filteredRequisitions.reduce((sum, r) => sum + (Number(r.amount) || 0), 0);
-        autoTable(doc, {
-          startY: startY + 2,
-          head: [['TOTAL REQUISITIONS', 'TOTAL REQUISITIONED', 'APPROVED REQUESTS', 'PENDING REVIEW']],
-          body: [[
-            `${filteredRequisitions.length} Requisitions`,
-            `Rs. ${totalReqAmount.toLocaleString('en-IN')}`,
-            `${filteredRequisitions.filter(r => r.status === 'Approved').length}`,
-            `${filteredRequisitions.filter(r => r.status === 'Pending').length}`
-          ]],
-          theme: 'grid',
-          styles: { fontSize: 9, fontStyle: 'bold', halign: 'center' },
-          headStyles: { fillColor: [5, 150, 105], textColor: [255, 255, 255] }
-        });
-
-        // Requisition Table Data
-        const reqData = filteredRequisitions.map(r => [
-          r.id,
-          r.supervisor || 'Rohit Sharma',
-          r.site,
-          r.purpose,
-          r.urgency,
-          r.date,
-          `Rs. ${(r.amount || 0).toLocaleString('en-IN')}`,
-          r.status
-        ]);
-
-        autoTable(doc, {
-          startY: doc.lastAutoTable.finalY + 8,
-          head: [['REQ ID', 'SUPERVISOR', 'SITE LOCATION', 'PURPOSE / REASON', 'URGENCY', 'DATE', 'AMOUNT', 'STATUS']],
-          body: reqData,
-          theme: 'grid',
-          styles: { fontSize: 8 },
-          headStyles: { fillColor: [15, 23, 42], textColor: [255, 255, 255] }
-        });
-
-        // Add official company footer with Logo across all pages
-        await addPdfFooterWithLogo(doc);
-
-        const filename = `ASEMS_Advance_Requisitions_${new Date().toISOString().split('T')[0]}.pdf`;
-        doc.save(filename);
-        toast.success('Advance Requisitions PDF downloaded with official logo & footer!');
-        return;
-      }
-
-      // 2. Supervisor Cash & Advance Statement PDF
+      // 1. Advance Requisitions PDF with Official Logo Header
       const startY = await addPdfHeaderWithLogo(
         doc,
-        'Supervisor Cash & Advance Statement',
-        `Generated on: ${new Date().toLocaleString()} | Official Operations Ledger`
+        'Site Advance Requisitions & Approvals Statement',
+        `Generated on: ${new Date().toLocaleString()} | Official Operations Register`
       );
 
-      // Summary Box (Exact match to 4 Top KPI Cards on screen)
+      // Summary Box
+      const totalReqAmount = filteredRequisitions.reduce((sum, r) => sum + (Number(r.amount) || 0), 0);
       autoTable(doc, {
         startY: startY + 2,
-        head: [['TOTAL ADVANCE', 'TOTAL SPENT', 'BALANCE IN HAND', 'CLEAR STATUS']],
+        head: [['TOTAL REQUISITIONS', 'TOTAL REQUISITIONED', 'APPROVED REQUESTS', 'PENDING REVIEW']],
         body: [[
-          `Rs. ${totalAdvance.toLocaleString('en-IN')}`,
-          `Rs. ${totalSettled.toLocaleString('en-IN')}`,
-          `Rs. ${totalInHand.toLocaleString('en-IN')}`,
-          '100% Matched'
+          `${filteredRequisitions.length} Requisitions`,
+          `Rs. ${totalReqAmount.toLocaleString('en-IN')}`,
+          `${filteredRequisitions.filter(r => r.status === 'Approved').length}`,
+          `${filteredRequisitions.filter(r => r.status === 'Pending').length}`
         ]],
         theme: 'grid',
         styles: { fontSize: 9, fontStyle: 'bold', halign: 'center' },
-        headStyles: { fillColor: [37, 99, 235], textColor: [255, 255, 255] }
+        headStyles: { fillColor: [5, 150, 105], textColor: [255, 255, 255] }
       });
 
-      // Table Data (Exact 1:1 match to table on the Cash & Advance screen)
-      const supData = filteredFloats.map(s => {
-        const supReq = advanceRequisitions.find(r => 
-          (r.supervisor?.toLowerCase().includes(s.name?.toLowerCase()) || s.name?.toLowerCase().includes(r.supervisor?.toLowerCase())) && r.status === 'Pending'
-        );
-        return [
-          `${s.name}\n${s.phone || '-'}`,
-          `${s.site}\n(${s.project})`,
-          `Rs. ${s.advance.toLocaleString('en-IN')}`,
-          `Rs. ${s.settled.toLocaleString('en-IN')}`,
-          `Rs. ${(s.advance - s.settled).toLocaleString('en-IN')}`,
-          supReq ? `Rs. ${supReq.amount.toLocaleString('en-IN')}\n(${supReq.id} - Pending)` : 'None',
-          (s.advance - s.settled) < 5000 ? 'Low Cash' : 'Available'
-        ];
-      });
+      // Requisition Table Data
+      const reqData = filteredRequisitions.map(r => [
+        r.id,
+        r.supervisor || 'Rohit Sharma',
+        r.site,
+        r.purpose,
+        r.urgency,
+        r.date,
+        `Rs. ${(r.amount || 0).toLocaleString('en-IN')}`,
+        r.status
+      ]);
 
       autoTable(doc, {
         startY: doc.lastAutoTable.finalY + 8,
-        head: [['SUPERVISOR & CONTACT', 'SITE & PROJECT', 'TOTAL ADVANCE', 'TOTAL SPENT', 'CASH IN HAND', 'REQUEST', 'STATUS']],
-        body: supData,
+        head: [['REQ ID', 'SUPERVISOR', 'SITE LOCATION', 'PURPOSE / REASON', 'URGENCY', 'DATE', 'AMOUNT', 'STATUS']],
+        body: reqData,
         theme: 'grid',
         styles: { fontSize: 8 },
         headStyles: { fillColor: [15, 23, 42], textColor: [255, 255, 255] }
@@ -483,22 +395,19 @@ const ReconciliationTab = ({
       // Add official company footer with Logo across all pages
       await addPdfFooterWithLogo(doc);
 
-      // Save directly to Downloads folder
-      const filename = `ASEMS_Cash_Advance_${new Date().toISOString().split('T')[0]}.pdf`;
+      const filename = `ASEMS_Advance_Requisitions_${new Date().toISOString().split('T')[0]}.pdf`;
       doc.save(filename);
-      toast.success('Cash & Advance PDF downloaded successfully with official logo & footer!');
+      toast.success('Advance Requisitions PDF downloaded with official logo & footer!');
     } catch (err) {
       console.error(err);
       toast.error('Failed to export PDF: ' + err.message);
     }
   };
 
-  // Generate Official Statement Print HTML with Aarya Logo in Header & Footer
   const generateStatementHtml = (logoBase64) => {
     const logoSrc = logoBase64 || `${window.location.origin}/logo_new.png`;
 
-    if (isReconView) {
-      const totalReqAmount = filteredRequisitions.reduce((sum, r) => sum + (Number(r.amount) || 0), 0);
+    const totalReqAmount = filteredRequisitions.reduce((sum, r) => sum + (Number(r.amount) || 0), 0);
       const reqRows = filteredRequisitions.map((r, idx) => `
         <tr>
           <td style="text-align:center; font-weight:800; color:#059669;">${escapeHtml(r.id)}</td>
@@ -614,120 +523,6 @@ const ReconciliationTab = ({
         </body>
         </html>
       `;
-    }
-
-    const supRows = filteredFloats.map((s, idx) => {
-      const supReq = advanceRequisitions.find(r => 
-        (r.supervisor?.toLowerCase().includes(s.name?.toLowerCase()) || s.name?.toLowerCase().includes(r.supervisor?.toLowerCase())) && r.status === 'Pending'
-      );
-      return `
-      <tr>
-        <td style="text-align:center; font-weight:bold;">${idx + 1}</td>
-        <td><strong>${escapeHtml(s.name)}</strong><br/><span style="color:#2563eb; font-weight:700; font-size:10px;">${escapeHtml(s.phone || '-')}</span></td>
-        <td><strong>${escapeHtml(s.site)}</strong><br/><span style="color:#64748b; font-size:10px;">${escapeHtml(s.project)}</span></td>
-        <td style="text-align:right; font-weight:800;">₹${(s.advance || 0).toLocaleString('en-IN')}</td>
-        <td style="text-align:right; font-weight:800; color:#2563eb;">₹${(s.settled || 0).toLocaleString('en-IN')}</td>
-        <td style="text-align:right; font-weight:900; color:${((s.advance || 0) - (s.settled || 0)) < 5000 ? '#dc2626;' : '#059669;'}">₹${((s.advance || 0) - (s.settled || 0)).toLocaleString('en-IN')}</td>
-        <td style="text-align:center;">${supReq ? `<strong style="color:#b45309;">₹${supReq.amount.toLocaleString('en-IN')}</strong><br/><span style="font-size:9px; color:#b45309;">${escapeHtml(supReq.id)} (Pending)</span>` : '<span style="color:#94a3b8;">None</span>'}</td>
-        <td style="text-align:center;"><span style="padding:2px 7px; border-radius:9999px; font-weight:800; font-size:9px; background:${((s.advance || 0) - (s.settled || 0)) < 5000 ? '#fee2e2; color:#b91c1c;' : '#dcfce7; color:#15803d;'}">${((s.advance || 0) - (s.settled || 0)) < 5000 ? 'Low Cash' : 'Available'}</span></td>
-      </tr>
-    `;
-    }).join('');
-
-    return `
-      <!DOCTYPE html>
-      <html>
-      <head>
-        <title>Supervisor Cash & Advance Statement - Aarya Innovtech</title>
-        <style>
-          @page { size: A4 landscape; margin: 12mm; }
-          body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; padding: 15px; color: #0f172a; line-height: 1.4; }
-          .header { display: flex; align-items: center; justify-content: space-between; border-bottom: 2px solid #2563eb; padding-bottom: 12px; margin-bottom: 15px; }
-          .title { font-size: 17px; font-weight: 800; color: #0f172a; margin: 0; }
-          .subtitle { font-size: 10px; color: #64748b; margin-top: 3px; }
-          .summary-cards { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: 15px; }
-          .card { border: 1px solid #e2e8f0; border-radius: 8px; padding: 10px 14px; background: #f8fafc; }
-          .card-label { font-size: 9px; font-weight: 800; text-transform: uppercase; color: #64748b; }
-          .card-val { font-size: 16px; font-weight: 900; margin-top: 2px; }
-          table { width: 100%; border-collapse: collapse; margin-bottom: 15px; font-size: 10px; }
-          th { background: #f1f5f9; padding: 7px 9px; border: 1px solid #cbd5e1; text-align: left; font-weight: 800; text-transform: uppercase; font-size: 9px; color: #334155; }
-          td { padding: 7px 9px; border: 1px solid #e2e8f0; vertical-align: middle; }
-          tr:nth-child(even) { background-color: #f8fafc; }
-          .sec-title { font-size: 12px; font-weight: 800; color: #1e3a8a; margin: 14px 0 6px 0; text-transform: uppercase; }
-          .footer { border-top: 1.5px solid #cbd5e1; padding-top: 14px; margin-top: 25px; font-size: 10.5px; color: #475569; }
-          .footer-sig { display: flex; justify-content: space-between; margin-bottom: 14px; }
-          .footer-company { display: flex; justify-content: space-between; align-items: center; border-top: 1px dashed #e2e8f0; padding-top: 10px; font-size: 9.5px; color: #64748b; }
-        </style>
-      </head>
-      <body>
-        <div class="header">
-          <div style="display: flex; align-items: center; gap: 14px;">
-            <img src="${logoSrc}" alt="Aarya Innovtech Pvt. Ltd." style="height: 42px; width: auto; max-width: 170px; object-fit: contain; display: block;" />
-            <div>
-              <h1 class="title">Supervisor Cash & Advance Statement</h1>
-              <div class="subtitle">AARYA INNOVTECH PVT. LTD. | Official Site Operations Ledger</div>
-            </div>
-          </div>
-          <div style="text-align: right; font-size: 10px; color: #64748b;">
-            <strong>Generated Date:</strong> ${new Date().toLocaleDateString('en-GB')}<br/>
-            ${new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })}
-          </div>
-        </div>
-
-        <div class="summary-cards">
-          <div class="card" style="border-left: 4px solid #6366f1;">
-            <div class="card-label">Total Advance</div>
-            <div class="card-val" style="color: #4f46e5;">₹${totalAdvance.toLocaleString('en-IN')}</div>
-          </div>
-          <div class="card" style="border-left: 4px solid #3b82f6;">
-            <div class="card-label">Total Spent</div>
-            <div class="card-val" style="color: #2563eb;">₹${totalSettled.toLocaleString('en-IN')}</div>
-          </div>
-          <div class="card" style="border-left: 4px solid #10b981;">
-            <div class="card-label">Balance In Hand</div>
-            <div class="card-val" style="color: #059669;">₹${totalInHand.toLocaleString('en-IN')}</div>
-          </div>
-          <div class="card" style="border-left: 4px solid #8b5cf6;">
-            <div class="card-label">Clear Status</div>
-            <div class="card-val" style="color: #7c3aed;">100%</div>
-          </div>
-        </div>
-
-        <div class="sec-title">Supervisor Live Advance & Cash Balance Tracking</div>
-        <table>
-          <thead>
-            <tr>
-              <th style="width:30px; text-align:center;">SR</th>
-              <th>SUPERVISOR & CONTACT</th>
-              <th>ASSIGNED SITE & PROJECT</th>
-              <th style="text-align:right;">TOTAL ADVANCE</th>
-              <th style="text-align:right;">TOTAL SPENT</th>
-              <th style="text-align:right;">CASH IN HAND</th>
-              <th style="text-align:center;">REQUEST</th>
-              <th style="text-align:center;">STATUS</th>
-            </tr>
-          </thead>
-          <tbody>
-            ${supRows}
-          </tbody>
-        </table>
-
-        <div class="footer">
-          <div class="footer-sig">
-            <div>Audited By: <strong>Accounts & Operations Officer</strong></div>
-            <div>Approved Signature: _______________________ <strong>(Finance Head / Director)</strong></div>
-          </div>
-          <div class="footer-company">
-            <div style="display: flex; align-items: center; gap: 8px;">
-              <img src="${logoSrc}" alt="Logo" style="height: 20px; width: auto; max-width: 90px; object-fit: contain; display: block;" />
-              <div><strong>AARYA INNOVTECH PVT. LTD.</strong> | CIN: U29305MH2019PTC327551 | Ph: +91 9359604384 | Makhamalabad Road, Nashik</div>
-            </div>
-            <div>Generated by ASEMS System</div>
-          </div>
-        </div>
-      </body>
-      </html>
-    `;
   };
 
   // Print Dialog Trigger (Loads base64 logo & opens print window)
@@ -892,17 +687,10 @@ const ReconciliationTab = ({
             gap: '0.65rem',
             lineHeight: 1.2
           }}>
-            {isReconView ? 'Request Advance Money' : (
-              <>
-                <IndianRupee style={{ color: '#2563eb' }} size={30} />
-                {language === 'mr' ? 'कॅश आणि ॲडव्हान्स' : 'Cash & Advance'}
-              </>
-            )}
+            Request Advance Money
           </h1>
           <p style={{ fontSize: '1.02rem', color: 'var(--text-secondary, #475569)', margin: '0.35rem 0 0 0', fontWeight: '500' }}>
-            {isReconView
-              ? 'Requisition site petty cash, urgent material purchase funds, and track approval status.'
-              : (language === 'mr' ? 'सुपरवायझर ॲडव्हान्स फ्लोट, साईटवरील खर्च आणि शिल्लक कॅश ट्रॅकिंग.' : 'Supervisor advance floats, site expenses and live cash in hand tracking.')}
+            Requisition site petty cash, urgent material purchase funds, and track approval status.
           </p>
         </div>
 
@@ -914,9 +702,9 @@ const ReconciliationTab = ({
             style={{
               padding: '0.5rem 1.15rem',
               borderRadius: '10px',
-              border: isReconView ? '1.5px solid #c7d2fe' : '1.5px solid #dc2626',
-              backgroundColor: isReconView ? '#eef2ff' : 'var(--card-bg, #ffffff)',
-              color: isReconView ? '#4f46e5' : '#dc2626',
+              border: '1.5px solid #c7d2fe',
+              backgroundColor: '#eef2ff',
+              color: '#4f46e5',
               fontSize: '0.9rem',
               fontWeight: '800',
               cursor: 'pointer',
@@ -927,13 +715,13 @@ const ReconciliationTab = ({
               boxShadow: '0 1px 3px rgba(0,0,0,0.04)'
             }}
             onMouseEnter={(e) => {
-              e.currentTarget.style.backgroundColor = isReconView ? '#e0e7ff' : 'rgba(220, 38, 38, 0.12)';
+              e.currentTarget.style.backgroundColor = '#e0e7ff';
             }}
             onMouseLeave={(e) => {
-              e.currentTarget.style.backgroundColor = isReconView ? '#eef2ff' : 'var(--card-bg, #ffffff)';
+              e.currentTarget.style.backgroundColor = '#eef2ff';
             }}
           >
-            <Download size={16} style={{ color: isReconView ? '#4f46e5' : '#dc2626' }} />
+            <Download size={16} style={{ color: '#4f46e5' }} />
             <span>PDF</span>
           </button>
 
@@ -943,8 +731,8 @@ const ReconciliationTab = ({
             style={{
               padding: '0.5rem 1.15rem',
               borderRadius: '10px',
-              border: isReconView ? '1.5px solid #86efac' : '1.5px solid #16a34a',
-              backgroundColor: isReconView ? '#f0fdf4' : 'var(--card-bg, #ffffff)',
+              border: '1.5px solid #86efac',
+              backgroundColor: '#f0fdf4',
               color: '#16a34a',
               fontSize: '0.9rem',
               fontWeight: '800',
@@ -960,8 +748,8 @@ const ReconciliationTab = ({
               e.currentTarget.style.borderColor = '#15803d';
             }}
             onMouseLeave={(e) => {
-              e.currentTarget.style.backgroundColor = isReconView ? '#f0fdf4' : 'var(--card-bg, #ffffff)';
-              e.currentTarget.style.borderColor = isReconView ? '#86efac' : '#16a34a';
+              e.currentTarget.style.backgroundColor = '#f0fdf4';
+              e.currentTarget.style.borderColor = '#86efac';
             }}
           >
             <FileSpreadsheet size={16} style={{ color: '#16a34a' }} />
@@ -975,8 +763,8 @@ const ReconciliationTab = ({
               padding: '0.5rem 1.15rem',
               borderRadius: '10px',
               border: '1.5px solid var(--border-color, #cbd5e1)',
-              backgroundColor: isReconView ? '#f8fafc' : 'var(--card-bg, #ffffff)',
-              color: isReconView ? '#2563eb' : 'var(--text-primary, #1e293b)',
+              backgroundColor: '#f8fafc',
+              color: '#2563eb',
               fontSize: '0.9rem',
               fontWeight: '800',
               cursor: 'pointer',
@@ -987,7 +775,7 @@ const ReconciliationTab = ({
               boxShadow: '0 1px 3px rgba(0,0,0,0.04)'
             }}
             onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#f1f5f9'}
-            onMouseLeave={(e) => e.currentTarget.style.backgroundColor = isReconView ? '#f8fafc' : 'var(--card-bg, #ffffff)'}
+            onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#f8fafc'}
           >
             <Printer size={16} />
             <span>Print</span>
@@ -995,143 +783,33 @@ const ReconciliationTab = ({
         </div>
       </div>
 
-      {/* Search Input Bar (Top level search bar matching image) */}
-      {isReconView && (
-        <div style={{ position: 'relative', width: '100%', maxWidth: '480px' }}>
-          <Search size={17} style={{ position: 'absolute', left: '1.1rem', top: '50%', transform: 'translateY(-50%)', color: '#94a3b8', pointerEvents: 'none' }} />
-          <input
-            type="text"
-            placeholder="Search site, purpose, amount..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            style={{
-              width: '100%',
-              paddingLeft: '2.75rem',
-              paddingRight: '1rem',
-              paddingTop: '0.7rem',
-              paddingBottom: '0.7rem',
-              borderRadius: '12px',
-              backgroundColor: 'var(--input-bg, #ffffff)',
-              border: '1.5px solid var(--border-color, #cbd5e1)',
-              color: 'var(--text-primary, #0f172a)',
-              fontSize: '0.92rem',
-              outline: 'none',
-              boxSizing: 'border-box',
-              boxShadow: '0 1px 3px rgba(0,0,0,0.02)'
-            }}
-          />
+      {/* Search Input Bar */}
+      <div style={{ position: 'relative', width: '100%', maxWidth: '480px' }}>
+        <div style={{ position: 'absolute', left: '1rem', top: '50%', transform: 'translateY(-50%)', color: '#94a3b8', display: 'flex', alignItems: 'center' }}>
+          <Search size={18} />
         </div>
-      )}
-
-      {/* Cash & Advance: 4 KPI Cards */}
-      {!isReconView && (
-        <div style={{
-          display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))',
-          gap: '1.25rem',
-          width: '100%'
-        }}>
-          {/* Card 1: Total Advance */}
-          <div style={{
-            backgroundColor: 'var(--card-bg, #ffffff)',
-            borderRadius: '16px',
-            border: '1px solid var(--border-color, #e8ecf2)',
-            borderLeft: '5px solid #6366f1',
-            boxShadow: '0 2px 8px rgba(0, 0, 0, 0.02)',
-            padding: '1.2rem 1.4rem',
-            display: 'flex',
-            alignItems: 'center',
-            gap: '1.15rem'
-          }}>
-            <div style={{ width: '52px', height: '52px', borderRadius: '50%', backgroundColor: 'rgba(99, 102, 241, 0.18)', color: '#818cf8', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-              <IndianRupee size={22} strokeWidth={2.4} />
-            </div>
-            <div>
-              <div style={{ fontSize: '1.75rem', fontWeight: '800', color: 'var(--text-primary, #0f172a)', lineHeight: 1.1 }}>
-                ₹{totalAdvance.toLocaleString('en-IN')}
-              </div>
-              <div style={{ fontSize: '0.88rem', fontWeight: '600', color: 'var(--text-secondary, #64748b)', marginTop: '0.2rem' }}>
-                Advance
-              </div>
-            </div>
-          </div>
-
-          {/* Card 2: Total Spent */}
-          <div style={{
-            backgroundColor: 'var(--card-bg, #ffffff)',
-            borderRadius: '16px',
-            border: '1px solid var(--border-color, #e8ecf2)',
-            borderLeft: '5px solid #3b82f6',
-            boxShadow: '0 2px 8px rgba(0, 0, 0, 0.02)',
-            padding: '1.2rem 1.4rem',
-            display: 'flex',
-            alignItems: 'center',
-            gap: '1.15rem'
-          }}>
-            <div style={{ width: '52px', height: '52px', borderRadius: '50%', backgroundColor: 'rgba(59, 130, 246, 0.18)', color: '#60a5fa', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-              <Clock size={22} strokeWidth={2.4} />
-            </div>
-            <div>
-              <div style={{ fontSize: '1.75rem', fontWeight: '800', color: 'var(--text-primary, #0f172a)', lineHeight: 1.1 }}>
-                ₹{totalSettled.toLocaleString('en-IN')}
-              </div>
-              <div style={{ fontSize: '0.88rem', fontWeight: '600', color: 'var(--text-secondary, #64748b)', marginTop: '0.2rem' }}>
-                Total Spent
-              </div>
-            </div>
-          </div>
-
-          {/* Card 3: Balance */}
-          <div style={{
-            backgroundColor: 'var(--card-bg, #ffffff)',
-            borderRadius: '16px',
-            border: '1px solid var(--border-color, #e8ecf2)',
-            borderLeft: '5px solid #ef4444',
-            boxShadow: '0 2px 8px rgba(0, 0, 0, 0.02)',
-            padding: '1.2rem 1.4rem',
-            display: 'flex',
-            alignItems: 'center',
-            gap: '1.15rem'
-          }}>
-            <div style={{ width: '52px', height: '52px', borderRadius: '50%', backgroundColor: 'rgba(239, 68, 68, 0.18)', color: '#f87171', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-              <AlertCircle size={22} strokeWidth={2.4} />
-            </div>
-            <div>
-              <div style={{ fontSize: '1.75rem', fontWeight: '800', color: 'var(--text-primary, #0f172a)', lineHeight: 1.1 }}>
-                ₹{totalInHand.toLocaleString('en-IN')}
-              </div>
-              <div style={{ fontSize: '0.88rem', fontWeight: '600', color: 'var(--text-secondary, #64748b)', marginTop: '0.2rem' }}>
-                Balance
-              </div>
-            </div>
-          </div>
-
-          {/* Card 4: Audit */}
-          <div style={{
-            backgroundColor: 'var(--card-bg, #ffffff)',
-            borderRadius: '16px',
-            border: '1px solid var(--border-color, #e8ecf2)',
-            borderLeft: '5px solid #10b981',
-            boxShadow: '0 2px 8px rgba(0, 0, 0, 0.02)',
-            padding: '1.2rem 1.4rem',
-            display: 'flex',
-            alignItems: 'center',
-            gap: '1.15rem'
-          }}>
-            <div style={{ width: '52px', height: '52px', borderRadius: '50%', backgroundColor: 'rgba(16, 185, 129, 0.18)', color: '#34d399', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-              <CheckCircle2 size={22} strokeWidth={2.4} />
-            </div>
-            <div>
-              <div style={{ fontSize: '1.75rem', fontWeight: '800', color: '#10b981', lineHeight: 1.1 }}>
-                100%
-              </div>
-              <div style={{ fontSize: '0.88rem', fontWeight: '600', color: 'var(--text-secondary, #64748b)', marginTop: '0.2rem' }}>
-                Clear Status
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
+        <input
+          type="text"
+          placeholder="Search site, purpose, amount..."
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+          style={{
+            width: '100%',
+            paddingLeft: '2.75rem',
+            paddingRight: '1rem',
+            paddingTop: '0.7rem',
+            paddingBottom: '0.7rem',
+            borderRadius: '12px',
+            backgroundColor: 'var(--input-bg, #ffffff)',
+            border: '1.5px solid var(--border-color, #cbd5e1)',
+            color: 'var(--text-primary, #0f172a)',
+            fontSize: '0.92rem',
+            outline: 'none',
+            boxSizing: 'border-box',
+            boxShadow: '0 1px 3px rgba(0,0,0,0.02)'
+          }}
+        />
+      </div>
 
       {/* 3. Main Table Container */}
       <div style={{
@@ -1142,68 +820,31 @@ const ReconciliationTab = ({
         overflow: 'hidden',
         width: '100%'
       }}>
-        {isReconView ? (
-          /* ============================================================
-             REQUEST ADVANCE VIEW: Exact Match to User Screenshot
-             ============================================================ */
-          <div>
-            {/* Card Header */}
-            <div style={{
-              padding: '1.15rem 1.5rem',
-              borderBottom: '1px solid var(--border-color, #f1f5f9)',
-              display: 'flex',
-              justifyContent: 'space-between',
+        {/* Header inside table container */}
+        <div style={{ padding: '1.25rem', display: 'flex', justifyContent: 'flex-end', borderBottom: '1px solid var(--border-color, #e8ecf2)' }}>
+          <button
+            onClick={() => setIsNewReqModalOpen(true)}
+            style={{
+              padding: '0.65rem 1.25rem',
+              borderRadius: '10px',
+              border: 'none',
+              backgroundColor: '#2563eb',
+              color: '#ffffff',
+              fontSize: '0.9rem',
+              fontWeight: '800',
+              cursor: 'pointer',
+              display: 'inline-flex',
               alignItems: 'center',
-              flexWrap: 'wrap',
-              gap: '0.75rem'
-            }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                <History size={22} style={{ color: '#059669' }} />
-                <h2 style={{ fontSize: '1.25rem', fontWeight: '800', color: 'var(--text-primary, #0f172a)', margin: 0 }}>
-                  Recent Advance Requisitions
-                </h2>
-                <span style={{
-                  backgroundColor: '#d1fae5',
-                  color: '#065f46',
-                  border: '1px solid #a7f3d0',
-                  padding: '0.22rem 0.75rem',
-                  borderRadius: '9999px',
-                  fontSize: '0.82rem',
-                  fontWeight: '700',
-                  display: 'inline-flex',
-                  alignItems: 'center',
-                  gap: '0.35rem'
-                }}>
-                  <FileText size={12} />
-                  <span>Total Requests ({filteredRequisitions.length})</span>
-                </span>
-              </div>
-
-              {/* Request Advance Button */}
-              <button
-                type="button"
-                onClick={() => setIsNewReqModalOpen(true)}
-                style={{
-                  padding: '0.55rem 1.25rem',
-                  borderRadius: '10px',
-                  border: 'none',
-                  backgroundColor: '#2563eb',
-                  color: '#ffffff',
-                  fontSize: '0.9rem',
-                  fontWeight: '800',
-                  cursor: 'pointer',
-                  display: 'inline-flex',
-                  alignItems: 'center',
-                  gap: '0.45rem',
-                  boxShadow: '0 4px 12px rgba(37, 99, 235, 0.25)',
-                  transition: 'all 0.15s ease'
-                }}
-                onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#1d4ed8'}
-                onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#2563eb'}
-              >
-                <span>+ Request Advance</span>
-              </button>
-            </div>
+              gap: '0.45rem',
+              boxShadow: '0 4px 12px rgba(37, 99, 235, 0.25)',
+              transition: 'all 0.15s ease'
+            }}
+            onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#1d4ed8'}
+            onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#2563eb'}
+          >
+            <span>+ Request Advance</span>
+          </button>
+        </div>
 
             {/* Table */}
             <div style={{ overflowX: 'auto' }}>
@@ -1449,274 +1090,6 @@ const ReconciliationTab = ({
               </table>
             </div>
           </div>
-        ) : (
-          /* ============================================================
-             CASH & ADVANCE VIEW: Supervisor Floats Table
-             ============================================================ */
-          <div>
-            <div style={{
-              padding: '1rem 1.4rem',
-              borderBottom: '1px solid var(--border-color, #f1f5f9)',
-              display: 'flex',
-              justifyContent: 'space-between',
-              alignItems: 'center',
-              flexWrap: 'wrap',
-              gap: '1rem'
-            }}>
-              {/* Search Bar on Left */}
-              <div style={{ position: 'relative', width: '300px', maxWidth: '100%' }}>
-                <Search size={16} style={{ position: 'absolute', left: '0.85rem', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-secondary, #94a3b8)', pointerEvents: 'none' }} />
-                <input
-                  type="text"
-                  placeholder="Search supervisor, site, UTR..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  style={{
-                    width: '100%',
-                    paddingLeft: '2.4rem',
-                    paddingRight: '0.85rem',
-                    paddingTop: '0.55rem',
-                    paddingBottom: '0.55rem',
-                    borderRadius: '10px',
-                    backgroundColor: 'var(--input-bg, #f8fafc)',
-                    border: '1.5px solid var(--border-color, #e2e8f0)',
-                    color: 'var(--text-primary, #0f172a)',
-                    fontSize: '0.88rem',
-                    outline: 'none',
-                    boxSizing: 'border-box'
-                  }}
-                />
-              </div>
-
-              {/* Filter on Right */}
-              <div style={{ position: 'relative' }}>
-                <select
-                  value={filterType}
-                  onChange={(e) => setFilterType(e.target.value)}
-                  style={{
-                    padding: '0.55rem 1.8rem 0.55rem 1.9rem',
-                    borderRadius: '10px',
-                    border: '1.5px solid var(--border-color, #e2e8f0)',
-                    backgroundColor: 'var(--input-bg, #ffffff)',
-                    color: 'var(--text-primary, #334155)',
-                    fontSize: '0.85rem',
-                    fontWeight: '700',
-                    cursor: 'pointer',
-                    outline: 'none',
-                    appearance: 'none',
-                    WebkitAppearance: 'none'
-                  }}
-                >
-                  <option value="All">All Statuses</option>
-                  <option value="Available">Available</option>
-                  <option value="Low">Low Cash</option>
-                </select>
-                <Filter size={13} style={{ position: 'absolute', left: '0.65rem', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-secondary, #64748b)', pointerEvents: 'none' }} />
-                <ChevronDown size={13} style={{ position: 'absolute', right: '0.65rem', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-secondary, #64748b)', pointerEvents: 'none' }} />
-              </div>
-            </div>
-
-            {/* Cash & Advance Table */}
-            <div style={{ overflowX: 'auto' }}>
-              <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '0.92rem' }}>
-                <thead>
-                  <tr style={{
-                    backgroundColor: 'var(--table-header-bg, #fafbfc)',
-                    borderBottom: '1px solid var(--border-color, #e8ecf2)',
-                    color: 'var(--text-secondary, #475569)',
-                    fontSize: '0.76rem',
-                    fontWeight: '800',
-                    textTransform: 'uppercase',
-                    letterSpacing: '0.06em'
-                  }}>
-                    <th style={{ padding: '1rem 1.25rem', whiteSpace: 'nowrap' }}>SUPERVISOR & CONTACT</th>
-                    <th style={{ padding: '1rem 1.25rem', whiteSpace: 'nowrap' }}>SITE & PROJECT</th>
-                    <th style={{ padding: '1rem 1.25rem', whiteSpace: 'nowrap' }}>TOTAL ADVANCE</th>
-                    <th style={{ padding: '1rem 1.25rem', whiteSpace: 'nowrap' }}>TOTAL SPENT</th>
-                    <th style={{ padding: '1rem 1.25rem', whiteSpace: 'nowrap' }}>CASH IN HAND</th>
-                    <th style={{ padding: '1rem 1.25rem', whiteSpace: 'nowrap' }}>REQUEST</th>
-                    <th style={{ padding: '1rem 1.25rem', textAlign: 'center', whiteSpace: 'nowrap' }}>ACTIONS</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {filteredFloats.map((sup, idx, arr) => {
-                    const inHand = sup.advance - sup.settled;
-                    const percentSpent = sup.advance > 0 ? Math.round((sup.settled / sup.advance) * 100) : 0;
-                    const isLowFloat = inHand < 5000;
-
-                    return (
-                      <tr
-                        key={sup.id}
-                        style={{
-                          borderBottom: idx === arr.length - 1 ? 'none' : '1px solid var(--border-color, #f1f5f9)',
-                          transition: 'background-color 0.15s ease'
-                        }}
-                        onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'var(--table-hover, rgba(241, 245, 249, 0.6))'}
-                        onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
-                      >
-                          {/* SUPERVISOR & CONTACT */}
-                          <td style={{ padding: '1.15rem 1.25rem', verticalAlign: 'middle', whiteSpace: 'nowrap' }}>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                              <div style={{
-                                width: '38px',
-                                height: '38px',
-                                borderRadius: '12px',
-                                background: 'linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%)',
-                                color: '#ffffff',
-                                display: 'flex',
-                                alignItems: 'center',
-                                justifyContent: 'center',
-                                fontWeight: '800',
-                                fontSize: '0.95rem',
-                                flexShrink: 0,
-                                boxShadow: '0 4px 10px rgba(37, 99, 235, 0.2)'
-                              }}>
-                                {sup.name.charAt(0)}
-                              </div>
-                              <div>
-                                <strong style={{ color: 'var(--text-primary, #0f172a)', fontSize: '0.96rem', display: 'block' }}>{sup.name}</strong>
-                                <div style={{ fontSize: '0.8rem', color: '#2563eb', fontWeight: '700', marginTop: '0.15rem' }}>{sup.phone}</div>
-                              </div>
-                            </div>
-                          </td>
-
-                          {/* SITE & PROJECT */}
-                          <td style={{ padding: '1.15rem 1.25rem', verticalAlign: 'middle', whiteSpace: 'nowrap' }}>
-                            <strong style={{ color: 'var(--text-primary, #0f172a)', fontSize: '0.92rem', display: 'block' }}>
-                              {sup.site}
-                            </strong>
-                            <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary, #64748b)', marginTop: '0.15rem', maxWidth: '240px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                              {sup.project}
-                            </div>
-                          </td>
-
-                          {/* TOTAL ADVANCE */}
-                          <td style={{ padding: '1.15rem 1.25rem', verticalAlign: 'middle', whiteSpace: 'nowrap' }}>
-                            <span style={{ fontSize: '0.98rem', fontWeight: '800', color: 'var(--text-primary, #0f172a)' }}>
-                              ₹{sup.advance.toLocaleString('en-IN')}
-                            </span>
-                          </td>
-
-                          {/* TOTAL SPENT */}
-                          <td style={{ padding: '1.15rem 1.25rem', verticalAlign: 'middle', whiteSpace: 'nowrap' }}>
-                            <div style={{ color: '#2563eb', fontWeight: '800', fontSize: '0.98rem' }}>
-                              ₹{sup.settled.toLocaleString('en-IN')}
-                            </div>
-                            <div style={{ fontSize: '0.76rem', color: 'var(--text-secondary, #64748b)', marginTop: '0.15rem' }}>
-                              {percentSpent}% Used
-                            </div>
-                          </td>
-
-                          {/* CASH IN HAND */}
-                          <td style={{ padding: '1.15rem 1.25rem', verticalAlign: 'middle', whiteSpace: 'nowrap' }}>
-                            <span style={{
-                              fontSize: '1.05rem',
-                              fontWeight: '900',
-                              color: isLowFloat ? '#ef4444' : '#059669'
-                            }}>
-                              ₹{inHand.toLocaleString('en-IN')}
-                            </span>
-                          </td>
-
-                          {/* REQUEST */}
-                          <td style={{ padding: '1.15rem 1.25rem', verticalAlign: 'middle', whiteSpace: 'nowrap' }}>
-                            {(() => {
-                              const supReq = advanceRequisitions.find(r => 
-                                (r.supervisor?.toLowerCase().includes(sup.name?.toLowerCase()) || sup.name?.toLowerCase().includes(r.supervisor?.toLowerCase())) && r.status === 'Pending'
-                              );
-                              if (supReq) {
-                                return (
-                                  <div style={{ display: 'inline-flex', flexDirection: 'column', gap: '0.2rem' }}>
-                                    <span style={{
-                                      display: 'inline-flex',
-                                      alignItems: 'center',
-                                      gap: '0.35rem',
-                                      padding: '0.25rem 0.7rem',
-                                      borderRadius: '9999px',
-                                      fontSize: '0.82rem',
-                                      fontWeight: '800',
-                                      backgroundColor: '#fffbeb',
-                                      color: '#b45309',
-                                      border: '1px solid #fde68a'
-                                    }}>
-                                      <span style={{ width: '6px', height: '6px', borderRadius: '50%', backgroundColor: '#f59e0b' }} />
-                                      ₹{supReq.amount?.toLocaleString('en-IN')}
-                                    </span>
-                                    <span style={{ fontSize: '0.72rem', color: '#b45309', fontWeight: '700' }}>
-                                      {supReq.id} • {supReq.urgency === 'Immediate (Same Day)' ? 'Immediate' : '24h'}
-                                    </span>
-                                  </div>
-                                );
-                              }
-                              return (
-                                <span style={{ fontSize: '0.82rem', color: 'var(--text-secondary, #94a3b8)', fontWeight: '600' }}>
-                                  — No Request
-                                </span>
-                              );
-                            })()}
-                          </td>
-
-                          {/* ACTIONS */}
-                          <td style={{ padding: '1.15rem 1.25rem', verticalAlign: 'middle', textAlign: 'center', whiteSpace: 'nowrap' }}>
-                            <div style={{ display: 'inline-flex', alignItems: 'center', gap: '0.45rem', justifyContent: 'center' }}>
-                              <button
-                                onClick={() => {
-                                  setFloatForm(prev => ({ ...prev, supervisorId: sup.id }));
-                                  setIsIssueFloatOpen(true);
-                                }}
-                                style={{
-                                  padding: '0.42rem 0.85rem',
-                                  borderRadius: '8px',
-                                  border: '1px solid #bfdbfe',
-                                  backgroundColor: '#eff6ff',
-                                  color: '#2563eb',
-                                  fontSize: '0.84rem',
-                                  fontWeight: '800',
-                                  cursor: 'pointer',
-                                  display: 'inline-flex',
-                                  alignItems: 'center',
-                                  gap: '0.3rem',
-                                  transition: 'all 0.15s ease',
-                                  whiteSpace: 'nowrap'
-                                }}
-                              >
-                                <Plus size={13} />
-                                <span>Add Cash</span>
-                              </button>
-
-                              <button
-                                onClick={() => handleSettleAccount(sup)}
-                                style={{
-                                  padding: '0.42rem 0.85rem',
-                                  borderRadius: '8px',
-                                  border: '1px solid var(--border-color, #cbd5e1)',
-                                  backgroundColor: 'var(--input-bg, #f8fafc)',
-                                  color: 'var(--text-primary, #475569)',
-                                  fontSize: '0.84rem',
-                                  fontWeight: '700',
-                                  cursor: 'pointer',
-                                  display: 'inline-flex',
-                                  alignItems: 'center',
-                                  gap: '0.3rem',
-                                  transition: 'all 0.15s ease',
-                                  whiteSpace: 'nowrap'
-                                }}
-                              >
-                                <CheckCircle2 size={13} />
-                                <span>Clear</span>
-                              </button>
-                            </div>
-                          </td>
-                        </tr>
-                      );
-                    })}
-                </tbody>
-              </table>
-            </div>
-          </div>
-        )}
-      </div>
-
       {/* MODAL 1: Issue Advance Float */}
       {isIssueFloatOpen && (
         <div style={{
@@ -2286,9 +1659,9 @@ const ReconciliationTab = ({
                       boxSizing: 'border-box'
                     }}
                   >
-                    <option value="Immediate (Same Day)">Immediate (Same Day)</option>
+                    <option value="Immediate">Immediate</option>
                     <option value="Within 24 Hours">Within 24 Hours</option>
-                    <option value="Standard (2-3 Days)">Standard (2-3 Days)</option>
+                    <option value="Regular">Regular</option>
                   </select>
                 </div>
 

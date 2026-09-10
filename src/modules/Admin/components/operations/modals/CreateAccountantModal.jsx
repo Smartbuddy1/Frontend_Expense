@@ -52,7 +52,6 @@ const CreateAccountantModal = ({
     }
 
     const payload = {
-      id: editingAccountant ? editingAccountant.id : `ACC-${Date.now().toString().slice(-4)}`,
       name: formData.name.trim(),
       phone: formData.phone.trim() || '+91 98220 77889',
       email: formData.email.trim(),
@@ -61,6 +60,10 @@ const CreateAccountantModal = ({
       branch: formData.branch,
       status: formData.status
     };
+
+    if (editingAccountant) {
+      payload.id = editingAccountant.id;
+    }
 
     onSave(payload);
     onClose();
@@ -314,12 +317,12 @@ const CreateAccountantModal = ({
                 padding: '0.78rem 2rem',
                 borderRadius: '10px',
                 border: 'none',
-                backgroundColor: '#ea580c',
+                backgroundColor: '#2563eb',
                 color: '#ffffff',
                 fontSize: '0.96rem',
                 fontWeight: '800',
                 cursor: 'pointer',
-                boxShadow: '0 4px 14px rgba(234, 88, 12, 0.35)'
+                boxShadow: '0 4px 14px rgba(37, 99, 235, 0.35)'
               }}
             >
               {editingAccountant ? 'Update Accountant' : 'Create Accountant'}

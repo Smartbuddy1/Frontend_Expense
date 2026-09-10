@@ -20,7 +20,7 @@ import {
   HardHat,
   Globe
 } from 'lucide-react';
-import companyLogo from '../../../../public/company_logo.png';
+const companyLogo = '/company_logo.png';
 import Footer from './Footer';
 
 const Layout = () => {

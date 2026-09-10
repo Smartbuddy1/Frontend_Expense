@@ -52,7 +52,7 @@ const ExpensesTab = ({
   const totalAmount = expenses.reduce((acc, curr) => acc + (curr.amount || 0), 0);
   const pendingClaims = expenses.filter(e => e.status === 'Pending');
   const pendingAmount = pendingClaims.reduce((acc, curr) => acc + (curr.amount || 0), 0);
-  const approvedClaims = expenses.filter(e => e.status === 'Approved');
+  const approvedClaims = expenses.filter(e => e.status === 'Approved' || e.status === 'Payment Pending');
   const approvedAmount = approvedClaims.reduce((acc, curr) => acc + (curr.amount || 0), 0);
   const rejectedClaims = expenses.filter(e => e.status === 'Rejected');
 
@@ -580,25 +580,25 @@ const ExpensesTab = ({
         {/* Card 4: Approved Bills (Green Left Border - Filters Approved) */}
         <div
           onClick={() => {
-            setStatusFilter('Approved');
+            setStatusFilter('Payment Pending');
             setShowBudgetBreakdown(false);
           }}
           style={{
-            backgroundColor: statusFilter === 'Approved' && !showBudgetBreakdown ? 'rgba(16, 185, 129, 0.16)' : 'var(--card-bg, #ffffff)',
+            backgroundColor: statusFilter === 'Payment Pending' && !showBudgetBreakdown ? 'rgba(16, 185, 129, 0.16)' : 'var(--card-bg, #ffffff)',
             borderRadius: '16px',
-            border: statusFilter === 'Approved' && !showBudgetBreakdown ? '2px solid #10b981' : '1px solid var(--border-color, #e8ecf2)',
+            border: statusFilter === 'Payment Pending' && !showBudgetBreakdown ? '2px solid #10b981' : '1px solid var(--border-color, #e8ecf2)',
             borderLeft: '5px solid #10b981',
-            boxShadow: statusFilter === 'Approved' && !showBudgetBreakdown ? '0 8px 20px -4px rgba(16, 185, 129, 0.25)' : '0 2px 8px rgba(0, 0, 0, 0.02)',
+            boxShadow: statusFilter === 'Payment Pending' && !showBudgetBreakdown ? '0 8px 20px -4px rgba(16, 185, 129, 0.25)' : '0 2px 8px rgba(0, 0, 0, 0.02)',
             padding: '1.2rem 1.4rem',
             display: 'flex',
             alignItems: 'center',
             gap: '1.15rem',
             cursor: 'pointer',
-            transform: statusFilter === 'Approved' && !showBudgetBreakdown ? 'translateY(-2px)' : 'none',
+            transform: statusFilter === 'Payment Pending' && !showBudgetBreakdown ? 'translateY(-2px)' : 'none',
             transition: 'all 0.15s ease'
           }}
           onMouseEnter={(e) => e.currentTarget.style.transform = 'translateY(-3px)'}
-          onMouseLeave={(e) => e.currentTarget.style.transform = statusFilter === 'Approved' && !showBudgetBreakdown ? 'translateY(-2px)' : 'translateY(0)'}
+          onMouseLeave={(e) => e.currentTarget.style.transform = statusFilter === 'Payment Pending' && !showBudgetBreakdown ? 'translateY(-2px)' : 'translateY(0)'}
         >
           <div style={{
             width: '52px',

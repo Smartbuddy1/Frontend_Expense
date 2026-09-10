@@ -286,10 +286,7 @@ const ProgressMonitoringTab = ({
                   <span style={{ color: '#64748b' }}>Expense Logged: </span>
                   <strong style={{ color: '#ef4444' }}>₹{(project.spent || 0).toLocaleString()}</strong>
                 </div>
-                <div>
-                  <span style={{ color: '#64748b' }}>Advance Paid: </span>
-                  <strong style={{ color: '#059669' }}>₹{(project.advance || 0).toLocaleString()}</strong>
-                </div>
+
                 <div>
                   <span style={{ color: '#64748b' }}>Remaining Balance: </span>
                   <strong style={{ color: '#2563eb' }}>₹{(project.balance || 0).toLocaleString()}</strong>

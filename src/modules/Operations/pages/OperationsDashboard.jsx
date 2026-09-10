@@ -61,7 +61,7 @@ const mapTeamMember = (t) => ({
 
 const EXPENSE_STATUS_TO_DISPLAY = {
   submitted: 'Pending',
-  ops_approved: 'Approved',
+  ops_approved: 'Payment Pending',
   ops_rejected: 'Rejected',
   accounts_paid: 'Approved',
 };
@@ -89,6 +89,7 @@ const mapExpense = (e) => {
     reviewNotes: e.opsRemarks || '',
   };
 };
+
 
 const ADVANCE_STATUS_TO_DISPLAY = {
   requested: 'Pending',
@@ -136,6 +137,7 @@ import TeamAssignmentTab from '../components/operations/TeamAssignmentTab';
 import ExpensesTab from '../components/operations/ExpensesTab';
 import AlertsTab from '../components/operations/AlertsTab';
 import ReconciliationTab from '../components/operations/ReconciliationTab';
+
 import PublicFormTab from '../components/operations/PublicFormTab';
 
 // Modals
@@ -171,6 +173,7 @@ const OperationsDashboard = () => {
   const [teamMembers, setTeamMembers] = useState([]);
   const [expenses, setExpenses] = useState([]);
   const [advances, setAdvances] = useState([]);
+
   const [siteLogs, setSiteLogs] = useState([]);
   const [loadingCore, setLoadingCore] = useState(true);
 
@@ -189,6 +192,7 @@ const OperationsDashboard = () => {
       setProjects(projRes.data.projects.map(mapProject));
       setSupervisors(supRes.data.users.map(mapSupervisor));
       setAdvances(advRes.data.advances.map(mapAdvance));
+
       setTeamMembers(teamRes.data.teamMembers.map(mapTeamMember));
       setExpenses(expRes.data.expenses.map(mapExpense));
       setSiteLogs(logsRes.data.siteLogs.map(mapSiteLog));
@@ -223,65 +227,72 @@ const OperationsDashboard = () => {
   // Handlers — all of these now call the real backend, then refetch.
   const handleSaveSupervisor = async (supData) => {
     const fullName = supData.name || [supData.firstName, supData.surname].filter(Boolean).join(' ').trim() || 'Supervisor';
-
-    if (supData.id) {
-      toast.error('Editing an existing supervisor account is not supported yet — remove and re-create if details are wrong.');
-      return;
-    }
     const mobile = (supData.phone || '').replace(/\D/g, '');
     if (mobile.length < 10) {
       toast.error('A valid 10-digit mobile number is required to create a real login');
       return;
     }
-    const password = supData.password || 'changeme123';
 
     try {
-      const { data } = await axios.post(`${API}/users`, {
-        name: fullName,
-        mobile,
-        password,
-        role: 'site_supervisor',
-        email: supData.email || undefined,
-      });
+      if (supData.id) {
+        // Edit existing supervisor
+        const payload = {
+          name: fullName,
+          mobile,
+          email: supData.email || undefined,
+        };
+        if (supData.password) {
+          payload.password = supData.password;
+        }
+        await axios.patch(`${API}/users/${supData.id}`, payload);
+        
+        if (supData.assignedProjectId) {
+          await axios.patch(`${API}/projects/${supData.assignedProjectId}`, { supervisorId: supData.id });
+        }
+        
+        toast.success(`Supervisor "${fullName}" updated successfully!`);
+      } else {
+        // Create new supervisor
+        const password = supData.password || 'changeme123';
+        const { data } = await axios.post(`${API}/users`, {
+          name: fullName,
+          mobile,
+          password,
+          role: 'site_supervisor',
+          email: supData.email || undefined,
+        });
 
-      if (supData.assignedProjectId) {
-        await axios.patch(`${API}/projects/${supData.assignedProjectId}`, { supervisorId: data.user.id });
+        if (supData.assignedProjectId) {
+          await axios.patch(`${API}/projects/${supData.assignedProjectId}`, { supervisorId: data.user.id });
+        }
+
+        toast.success(`Supervisor "${fullName}" created! Login: ${mobile} / ${password}`, { duration: 8000 });
       }
-
-      toast.success(`Supervisor "${fullName}" created! Login: ${mobile} / ${password}`, { duration: 8000 });
       await fetchCore();
     } catch (err) {
-      toast.error(err.response?.data?.error || 'Could not create supervisor');
+      toast.error(err.response?.data?.error || 'Could not save supervisor');
     }
     setEditingSupervisor(null);
   };
 
-  const handleDeleteSupervisor = () => {
-    toast.error('Removing a supervisor account isn\'t supported yet — deactivate them with an admin instead of deleting, since their expense history has to stay intact.');
+  const handleDeleteSupervisor = async (supervisorId) => {
+    // Optimistic update
+    setSupervisors(prev => prev.filter(s => s.id !== supervisorId));
+    try {
+      await axios.delete(`${API}/users/${supervisorId}`);
+      toast.success('Supervisor removed successfully.');
+      fetchCore();
+    } catch (err) {
+      toast.error(err.response?.data?.error || 'Could not delete the supervisor');
+      fetchCore(); // Rollback
+    }
   };
 
   const handleSaveProject = async (projectData) => {
     try {
-      let organizationId;
-      if (projectData.client) {
-        const { data: orgData } = await axios.get(`${API}/organizations`);
-        const existingOrg = orgData.organizations.find(o => o.name.toLowerCase() === projectData.client.toLowerCase());
-        if (existingOrg) {
-          organizationId = existingOrg.id;
-        } else {
-          const { data: created } = await axios.post(`${API}/organizations`, {
-            name: projectData.client,
-            phone: projectData.phone || undefined,
-            email: projectData.email || undefined,
-          });
-          organizationId = created.organization.id;
-        }
-      }
-
       const payload = {
         name: projectData.name,
         site: projectData.location,
-        organizationId,
         supervisorId: projectData.supervisorId || undefined,
         budget: Number(projectData.budget) || undefined,
         category: projectData.category,
@@ -307,12 +318,15 @@ const OperationsDashboard = () => {
   };
 
   const handleDeleteProject = async (projectId) => {
+    // Optimistic update
+    setProjects(prev => prev.filter(p => p.id !== projectId));
     try {
       await axios.delete(`${API}/projects/${projectId}`);
       toast.success('Project removed.');
-      await fetchCore();
+      fetchCore();
     } catch (err) {
       toast.error(err.response?.data?.error || 'Could not delete the project');
+      fetchCore(); // Rollback
     }
   };
 
@@ -345,8 +359,18 @@ const OperationsDashboard = () => {
     }
     try {
       await axios.patch(`${API}/expenses/${expenseId}/approve`);
+      
+      const expense = expenses.find(e => e.id === expenseId);
+      if (expense && expense.projectId) {
+        await axios.patch(`${API}/projects/${expense.projectId}`, { status: 'active' });
+      }
+
       toast.success(`Expense ${expenseId} approved for disbursement!`);
       await fetchCore();
+      
+      setIsExpenseApprovalOpen(false);
+      setInspectingExpense(null);
+      handleTabChange('projects');
     } catch (err) {
       toast.error(err.response?.data?.error || 'Could not approve the expense');
     }
@@ -412,28 +436,30 @@ const OperationsDashboard = () => {
         actionTaken: ''
       });
     }
-    if (p.supervisorId) {
-      const totalAdvance = advances.filter(a => a.projectId === p.id && a.rawStatus === 'disbursed').reduce((s, a) => s + a.amount, 0);
-      const totalSpent = expenses.filter(e => e.projectId === p.id && e.status === 'Approved').reduce((s, e) => s + e.amount, 0);
-      const inHand = totalAdvance - totalSpent;
-      if (totalAdvance > 0 && inHand < 5000) {
-        liveAlerts.push({
-          id: `lowcash-${p.id}`,
-          projectCode: p.code,
-          projectName: p.name,
-          supervisor: p.supervisorName || 'Unassigned',
-          phone: p.supervisorPhone || '-',
-          location: p.location || p.site || '-',
-          type: 'Low Site Float',
-          priority: inHand < 0 ? 'High' : 'Medium',
-          title: `Low cash in hand: ₹${inHand.toLocaleString('en-IN')}`,
-          description: `${p.supervisorName || 'The supervisor'} has only ₹${inHand.toLocaleString('en-IN')} left on site at ${p.name}. Consider issuing an advance float.`,
-          time: 'Live',
-          actionTaken: ''
-        });
-      }
-    }
   });
+
+  // Urgent Advance Requests alert
+  const urgentAdvances = advances.filter(a => 
+    a.rawStatus === 'requested' && 
+    (a.purpose?.includes('[Immediate') || a.purpose?.includes('[Within 24') || a.purpose?.toLowerCase().includes('urgent'))
+  );
+
+  if (urgentAdvances.length > 0) {
+    liveAlerts.push({
+      id: 'urgent-advances',
+      projectCode: 'MULTIPLE',
+      projectName: 'Various Sites',
+      supervisor: 'Multiple Supervisors',
+      phone: '-',
+      location: '-',
+      type: 'Urgent Requisitions',
+      priority: 'High',
+      title: `${urgentAdvances.length} Urgent Cash Request${urgentAdvances.length > 1 ? 's' : ''}`,
+      description: `There ${urgentAdvances.length > 1 ? 'are' : 'is'} ${urgentAdvances.length} urgent cash requisition${urgentAdvances.length > 1 ? 's' : ''} pending approval. Review them immediately to prevent site work delays.`,
+      time: 'Live',
+      actionTaken: ''
+    });
+  }
 
   return (
     <div className="space-y-6 max-w-7xl mx-auto pb-12 animate-in fade-in duration-300 font-sans">
@@ -495,7 +521,7 @@ const OperationsDashboard = () => {
         />
       )}
 
-      {(activeTab === 'reconciliation' || activeTab === 'cashadvance') && (
+      {activeTab === 'reconciliation' && (
         <ReconciliationTab
           projects={projects}
           supervisors={supervisors}

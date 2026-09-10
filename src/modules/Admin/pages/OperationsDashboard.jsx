@@ -170,6 +170,7 @@ import CreateProjectModal from '../components/operations/modals/CreateProjectMod
 import CreateOrganizationModal from '../components/operations/modals/CreateOrganizationModal';
 import CreateTeamMemberModal from '../components/operations/modals/CreateTeamMemberModal';
 import CreateAccountantModal from '../components/operations/modals/CreateAccountantModal';
+import CreateSupervisorModal from '../components/operations/modals/CreateSupervisorModal';
 import AssignTeamModal from '../components/operations/modals/AssignTeamModal';
 import { useSearchParams } from 'react-router-dom';
 import ExpenseApprovalModal from '../components/operations/modals/ExpenseApprovalModal';
@@ -177,8 +178,8 @@ import SubmitExpenseModal from '../components/operations/modals/SubmitExpenseMod
 import ProjectDetailModal from '../components/operations/modals/ProjectDetailModal';
 import UpdateProgressModal from '../components/operations/modals/UpdateProgressModal';
 import ManageMilestonesModal from '../components/operations/modals/ManageMilestonesModal';
-import CreateSupervisorModal from '../components/operations/modals/CreateSupervisorModal';
 import TransferAdvanceModal from '../components/operations/modals/TransferAdvanceModal';
+import CreateOperationalHeadModal from '../components/operations/modals/CreateOperationalHeadModal';
 
 
 const OperationsDashboard = () => {
@@ -248,6 +249,9 @@ const OperationsDashboard = () => {
   const [isCreateOrgOpen, setIsCreateOrgOpen] = useState(false);
   const [editingOrg, setEditingOrg] = useState(null);
 
+  const [isCreateHeadOpen, setIsCreateHeadOpen] = useState(false);
+  const [editingHead, setEditingHead] = useState(null);
+
   const [isCreateProjectOpen, setIsCreateProjectOpen] = useState(false);
   const [editingProject, setEditingProject] = useState(null);
 
@@ -278,33 +282,48 @@ const OperationsDashboard = () => {
   const [editingAccountant, setEditingAccountant] = useState(null);
 
   const handleSaveAccountant = async (accData) => {
-    if (accData.id) {
-      toast.error('Editing an existing accountant account is not supported yet.');
-      return;
-    }
     const mobile = (accData.phone || '').replace(/\D/g, '');
-    if (mobile.length < 10) {
-      toast.error('A valid 10-digit mobile number is required to create a real login');
-      return;
-    }
-    const password = accData.password || 'changeme123';
+    
     try {
-      await axios.post(`${API}/users`, {
-        name: accData.name,
-        mobile,
-        password,
-        role: 'accountant',
-        email: accData.email || undefined,
-      });
-      toast.success(`Accountant "${accData.name}" created! Login: ${mobile} / ${password}`, { duration: 8000 });
+      if (accData.id) {
+        // Edit mode
+        await axios.patch(`${API}/users/${accData.id}`, {
+          name: accData.name,
+          mobile: mobile.length >= 10 ? mobile : undefined,
+          email: accData.email || undefined,
+        });
+        toast.success(`Accountant "${accData.name}" updated!`);
+      } else {
+        // Create mode
+        if (mobile.length < 10) {
+          toast.error('A valid 10-digit mobile number is required to create a real login');
+          return;
+        }
+        const password = accData.password || 'changeme123';
+        await axios.post(`${API}/users`, {
+          name: accData.name,
+          mobile,
+          password,
+          role: 'accountant',
+          email: accData.email || undefined,
+        });
+        toast.success(`Accountant "${accData.name}" created! Login: ${mobile} / ${password}`, { duration: 8000 });
+      }
       await fetchCore();
     } catch (err) {
-      toast.error(err.response?.data?.error || 'Could not create accountant');
+      toast.error(err.response?.data?.error || 'Could not save accountant');
     }
   };
 
-  const handleDeleteAccountant = () => {
-    toast.error('Removing an accountant account isn\'t supported yet — deactivate them with an admin instead of deleting, since their approval history has to stay intact.');
+  const handleDeleteAccountant = async (accId) => {
+    if (!window.confirm('Are you sure you want to delete this accountant?')) return;
+    try {
+      await axios.delete(`${API}/users/${accId}`);
+      toast.success('Accountant removed');
+      await fetchCore();
+    } catch (err) {
+      toast.error(err.response?.data?.error || 'Could not delete the accountant');
+    }
   };
 
   const [isTransferAdvanceOpen, setIsTransferAdvanceOpen] = useState(false);
@@ -354,7 +373,7 @@ const OperationsDashboard = () => {
         amount: advData.amount,
         purpose: advData.purpose || 'Direct transfer by Admin',
       });
-      toast.success(`₹${Number(advData.amount).toLocaleString('en-IN')} ॲडव्हान्स ${advData.supervisorName} यांच्या खात्यात जोडला गेला!`);
+      toast.success(`₹${Number(advData.amount).toLocaleString('en-IN')} Advance transferred to ${advData.supervisorName}'s account!`);
       await fetchCore();
     } catch (err) {
       toast.error(err.response?.data?.error || 'Could not transfer the advance');
@@ -364,41 +383,66 @@ const OperationsDashboard = () => {
   // Handlers
   const handleSaveSupervisor = async (supData) => {
     const fullName = supData.name || [supData.firstName, supData.surname].filter(Boolean).join(' ').trim() || 'Supervisor';
-
-    if (supData.id) {
-      toast.error('Editing an existing supervisor account is not supported yet — remove and re-create if details are wrong.');
-      return;
-    }
     const mobile = (supData.phone || '').replace(/\D/g, '');
-    if (mobile.length < 10) {
-      toast.error('A valid 10-digit mobile number is required to create a real login');
-      return;
-    }
-    const password = supData.password || 'changeme123';
 
     try {
-      const { data } = await axios.post(`${API}/users`, {
-        name: fullName,
-        mobile,
-        password,
-        role: 'site_supervisor',
-        email: supData.email || undefined,
-      });
+      if (supData.id) {
+        // Edit mode
+        await axios.patch(`${API}/users/${supData.id}`, {
+          name: fullName,
+          mobile: mobile.length >= 10 ? mobile : undefined,
+          email: supData.email || undefined,
+        });
 
-      if (supData.assignedProjectId) {
-        await axios.patch(`${API}/projects/${supData.assignedProjectId}`, { supervisorId: data.user.id });
+        if (supData.assignedProjectId) {
+          await axios.patch(`${API}/projects/${supData.assignedProjectId}`, { supervisorId: supData.id });
+        }
+        
+        toast.success(`Supervisor "${fullName}" updated!`);
+      } else {
+        // Create mode
+        if (mobile.length < 10) {
+          toast.error('A valid 10-digit mobile number is required to create a real login');
+          return;
+        }
+        const password = supData.password || 'changeme123';
+
+        const { data } = await axios.post(`${API}/users`, {
+          name: fullName,
+          mobile,
+          password,
+          role: 'site_supervisor',
+          email: supData.email || undefined,
+        });
+
+        if (supData.assignedProjectId) {
+          await axios.patch(`${API}/projects/${supData.assignedProjectId}`, { supervisorId: data.user.id });
+        }
+
+        toast.success(`Supervisor "${fullName}" created! Login: ${mobile} / ${password}`, { duration: 8000 });
       }
-
-      toast.success(`Supervisor "${fullName}" created! Login: ${mobile} / ${password}`, { duration: 8000 });
+      
       await fetchCore();
     } catch (err) {
-      toast.error(err.response?.data?.error || 'Could not create supervisor');
+      toast.error(err.response?.data?.error || 'Could not save supervisor');
     }
     setEditingSupervisor(null);
   };
 
-  const handleDeleteSupervisor = () => {
-    toast.error('Removing a supervisor account isn\'t supported yet — deactivate them with an admin instead of deleting, since their expense history has to stay intact.');
+  const handleDeleteSupervisor = async (supervisorId, supervisorName) => {
+    if (!window.confirm(`Are you sure you want to remove supervisor "${supervisorName}"?`)) return;
+    
+    // Optimistic update
+    setSupervisors(prev => prev.filter(s => s.id !== supervisorId));
+    
+    try {
+      await axios.delete(`${API}/users/${supervisorId}`);
+      toast.success('Supervisor removed.');
+      fetchCore();
+    } catch (err) {
+      toast.error(err.response?.data?.error || 'Could not delete the supervisor');
+      fetchCore(); // rollback
+    }
   };
 
   const handleSaveOrganization = async (orgData) => {
@@ -512,12 +556,16 @@ const OperationsDashboard = () => {
   };
 
   const handleDeleteProject = async (projectId) => {
+    // Optimistic update
+    setProjects(prev => prev.filter(p => p.id !== projectId));
     try {
       await axios.delete(`${API}/projects/${projectId}`);
       toast.success('Project removed.');
-      await fetchCore();
+      // fetchCore() is optional here since we already updated state, but good for sync
+      fetchCore(); 
     } catch (err) {
       toast.error(err.response?.data?.error || 'Could not delete the project');
+      fetchCore(); // rollback
     }
   };
 
@@ -708,14 +756,18 @@ const OperationsDashboard = () => {
           teamMembers={teamMembers}
           expenses={expenses}
           siteLogs={siteLogs}
+          operationalHeads={operationalHeads}
           setActiveTab={handleTabChange}
           onOpenCreateProject={() => { setEditingProject(null); setIsCreateProjectOpen(true); }}
+          onOpenCreateSupervisor={() => { setEditingSupervisor(null); setIsCreateSupervisorOpen(true); }}
+          onOpenCreateAccountant={() => { setEditingAccountant(null); setIsCreateAccountantOpen(true); }}
+          onOpenCreateOperationalHead={() => { setEditingHead(null); setIsCreateHeadOpen(true); }}
           onOpenSubmitExpense={() => setIsSubmitExpenseOpen(true)}
           onSelectProject={(p) => { setSelectedProjectDetail(p); setIsProjectDetailOpen(true); }}
           onApproveExpense={handleApproveExpense}
           onRejectExpense={handleRejectExpense}
-          onOpenTransferAdvance={() => setIsTransferAdvanceOpen(true)}
           onOpenPhotoGallery={() => setIsPhotoGalleryOpen(true)}
+          onOpenTransferAdvance={() => setIsTransferAdvanceOpen(true)}
         />
       )}
 
@@ -813,6 +865,13 @@ const OperationsDashboard = () => {
         editingOrg={editingOrg}
       />
 
+      <CreateOperationalHeadModal
+        isOpen={isCreateHeadOpen}
+        onClose={() => { setIsCreateHeadOpen(false); setEditingHead(null); }}
+        onSave={handleSaveOperationalHead}
+        editingHead={editingHead}
+      />
+
       <CreateSupervisorModal
         isOpen={isCreateSupervisorOpen}
         onClose={() => { setIsCreateSupervisorOpen(false); setEditingSupervisor(null); }}
@@ -834,6 +893,14 @@ const OperationsDashboard = () => {
         onClose={() => { setIsCreateAccountantOpen(false); setEditingAccountant(null); }}
         onSave={handleSaveAccountant}
         editingAccountant={editingAccountant}
+      />
+
+      <CreateSupervisorModal
+        isOpen={isCreateSupervisorOpen}
+        onClose={() => { setIsCreateSupervisorOpen(false); setEditingSupervisor(null); }}
+        onCreateSupervisor={handleSaveSupervisor}
+        editingSupervisor={editingSupervisor}
+        projects={projects}
       />
 
       <CreateProjectModal

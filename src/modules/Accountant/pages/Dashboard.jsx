@@ -27,9 +27,7 @@ import KPIHeaderCards from '../components/accounts/KPIHeaderCards';
 import OverviewTab from '../components/accounts/OverviewTab';
 import AnalyticsTab from '../components/accounts/AnalyticsTab';
 import ExpenseVerificationTab from '../components/accounts/ExpenseVerificationTab';
-import AdvanceDisbursalTab from '../components/accounts/AdvanceDisbursalTab';
 import SupervisorWalletFundsTab from '../components/accounts/SupervisorWalletFundsTab';
-import PaymentLedgerTab from '../components/accounts/PaymentLedgerTab';
 import FinancialReportsTab from '../components/accounts/FinancialReportsTab';
 import PublicFormTab from '../components/accounts/PublicFormTab';
 import { useAuth } from '../context/AuthContext';
@@ -45,7 +43,7 @@ const EXPENSE_STATUS_TO_DISPLAY = {
   submitted: 'Pending Operations Approval',
   ops_approved: 'Pending Accounts Verification',
   accounts_paid: 'Accounts Verified & Paid',
-  ops_rejected: 'Sent for Correction',
+  ops_rejected: 'Rejected',
 };
 
 const ADVANCE_STATUS_TO_DISPLAY = {
@@ -93,6 +91,8 @@ const mapExpenseForAccounts = (e) => ({
   billUrl: e.receiptUrl || null,
   status: EXPENSE_STATUS_TO_DISPLAY[e.status] || 'Pending Operations Approval',
   opsApproval: e.opsApprovedById ? { status: 'Approved', approvedBy: e.opsApprovedBy?.name || 'Operations' } : (e.status === 'ops_rejected' ? { status: 'Rejected' } : null),
+  opsVerificationStatus: e.status === 'submitted' ? 'Pending' : (e.status === 'ops_rejected' ? 'Rejected' : 'Verified'),
+  urgency: 'Regular', // Expenses don't have urgency in schema, default to Regular
   submittedAt: e.createdAt,
 });
 
@@ -109,6 +109,8 @@ const mapAdvanceForAccounts = (a) => ({
   purpose: a.purpose || '',
   requestDate: a.createdAt,
   date: a.createdAt,
+  urgency: a.urgency || 'Regular',
+  opsVerificationStatus: a.status === 'requested' ? 'Pending' : (a.status === 'rejected' ? 'Rejected' : 'Verified'),
   status: ADVANCE_STATUS_TO_DISPLAY[a.status] || 'Pending Operations Approval',
   paymentDetails: a.status === 'disbursed' ? { amountPaid: Number(a.amount) } : null,
 });
@@ -151,8 +153,6 @@ const TABS = [
   { id: 'overview', label: 'Overview', icon: Layers, count: null },
   { id: 'verification', label: 'Expense Verification', icon: Clock, countKey: 'pendingExpenses' },
   { id: 'wallets', label: 'Wallet Funds', icon: Wallet, countKey: 'pendingAdvances' },
-  { id: 'advances', label: 'Advance Disbursal', icon: Send, countKey: 'pendingAdvances' },
-  { id: 'ledger', label: 'Payment Ledger', icon: CreditCard, count: null },
   { id: 'analytics', label: 'Analytics', icon: Activity, count: null },
   { id: 'reports', label: 'Financial Reports', icon: FileSpreadsheet, count: null },
   { id: 'public-form', label: 'Public Form', icon: Folder, count: null }
@@ -246,6 +246,7 @@ const Dashboard = () => {
   const [payments, setPayments] = useState([]);
   const [settlements, setSettlements] = useState([]);
   const [auditLogs, setAuditLogs] = useState([]);
+  const [categories, setCategories] = useState([]);
   const [loadingCore, setLoadingCore] = useState(true);
 
   // Projects, expenses, advances, payments, and settlements all come from the
@@ -254,15 +255,18 @@ const Dashboard = () => {
   const fetchCore = useCallback(async () => {
     setLoadingCore(true);
     try {
-      const [projRes, expRes, advRes, payRes, settleRes] = await Promise.all([
+      const [projRes, expRes, advRes, payRes, settleRes, catRes] = await Promise.all([
         axios.get(`${API}/projects`, { params: { pageSize: 100 } }),
         axios.get(`${API}/expenses`, { params: { pageSize: 100 } }),
         axios.get(`${API}/advances`),
         axios.get(`${API}/payments-ledger`),
         axios.get(`${API}/settlements`),
+        axios.get(`${API}/expenses/categories`),
       ]);
       const mappedProjects = projRes.data.projects.map(mapProjectForAccounts);
-      const mappedExpenses = expRes.data.expenses.map(mapExpenseForAccounts);
+      const mappedExpenses = expRes.data.expenses
+        .filter(e => e.status !== 'submitted' && e.status !== 'ops_rejected')
+        .map(mapExpenseForAccounts);
       const mappedAdvances = advRes.data.advances.map(mapAdvanceForAccounts);
 
       // Compute actual expenses, advances, and balances per project for the accountant dashboard
@@ -280,6 +284,7 @@ const Dashboard = () => {
       setAdvances(mappedAdvances);
       setPayments(payRes.data.entries.map(mapPaymentForAccounts));
       setSettlements(settleRes.data.settlements.map(mapSettlementForAccounts));
+      setCategories(catRes.data.categories || []);
     } catch (err) {
       console.error(err);
     } finally {
@@ -305,13 +310,17 @@ const Dashboard = () => {
     }, 4000);
   };
 
-  // 1. Approve Expense Handler (Module 6) — marks an Operations-approved expense as paid
+  // 1. Approve Expense Handler — instantly marks ops-approved expense as paid (no modal)
   const handleApproveExpense = async (expense) => {
     try {
-      await axios.patch(`${API}/expenses/${expense.id}/pay`);
+      await axios.patch(`${API}/expenses/${expense.id}/pay`, {
+        paymentMode: 'Bank Transfer',
+        paymentRef: '',
+        notes: ''
+      });
       await fetchCore();
       setInspectingExpense(null);
-      showToast(`Claim ${expense.id} (₹${expense.amount.toLocaleString()}) verified and approved successfully!`);
+      showToast(`Claim ${expense.id} (₹${Number(expense.amount).toLocaleString()}) approved & marked paid successfully!`);
     } catch (err) {
       showToast(err.response?.data?.error || 'Failed to approve expense', 'error');
     }
@@ -324,37 +333,58 @@ const Dashboard = () => {
       await fetchCore();
       setInspectingExpense(null);
       setCorrectingItem(null);
-      showToast(`Claim ${expense.id} sent back to ${expense.supervisor} with correction note.`, 'warning');
+      showToast(`Claim ${expense.id} rejected.`, 'warning');
     } catch (err) {
       showToast(err.response?.data?.error || 'Failed to reject expense', 'error');
     }
   };
 
-  // 3. Disburse Advance Handler (Module 3)
-  const handleTriggerAdvancePayment = (adv) => {
-    setPaymentItem(adv);
-    setPaymentType('Advance');
+  // 3. Disburse Advance Handler — instantly disburses ops-approved advance (no modal)
+  const handleTriggerAdvancePayment = async (adv) => {
+    try {
+      await axios.patch(`${API}/advances/${adv.id}/disburse`, {
+        paidTo: adv.supervisor || '',
+        paymentMode: 'Bank Transfer',
+        refNumber: '',
+        notes: `Advance disbursed for ${adv.projectName || 'project'}`
+      });
+      await fetchCore();
+      showToast(`Advance ₹${Number(adv.approvedAmount || adv.requestedAmount || 0).toLocaleString()} disbursed to ${adv.supervisor} successfully!`);
+    } catch (err) {
+      showToast(err.response?.data?.error || 'Failed to disburse advance', 'error');
+    }
   };
 
   // 4. Submit Payment Handler (Module 7)
   const handlePaymentSubmitted = async (item, paymentData) => {
-    if (paymentType !== 'Advance') {
-      setPaymentItem(null);
-      return;
-    }
-    try {
-      await axios.patch(`${API}/advances/${item.id}/disburse`, {
-        paidTo: paymentData.paidTo,
-        paymentMode: paymentData.paymentMode,
-        refNumber: paymentData.refNumber,
-        notes: paymentData.notes,
-      });
-      await fetchCore();
-      showToast(`Advance ${item.id} (₹${paymentData.amount.toLocaleString()}) disbursed to ${paymentData.paidTo}!`);
-    } catch (err) {
-      showToast(err.response?.data?.error || 'Failed to disburse advance', 'error');
-    } finally {
-      setPaymentItem(null);
+    if (paymentType === 'Advance') {
+      try {
+        await axios.patch(`${API}/advances/${item.id}/disburse`, {
+          paidTo: paymentData.paidTo,
+          paymentMode: paymentData.paymentMode,
+          refNumber: paymentData.refNumber,
+          notes: paymentData.notes
+        });
+        await fetchCore();
+        setPaymentItem(null);
+        showToast(`Advance ${item.id} disbursed successfully`);
+      } catch (err) {
+        showToast(err.response?.data?.error || 'Failed to disburse advance', 'error');
+      }
+    } else if (paymentType === 'Expense Reimbursement') {
+      try {
+        await axios.patch(`${API}/expenses/${item.id}/pay`, {
+          paymentMode: paymentData.paymentMode,
+          paymentRef: paymentData.refNumber,
+          notes: paymentData.notes
+        });
+        await fetchCore();
+        setPaymentItem(null);
+        setInspectingExpense(null);
+        showToast(`Claim ${item.id} (₹${item.amount.toLocaleString()}) verified and approved successfully!`);
+      } catch (err) {
+        showToast(err.response?.data?.error || 'Failed to approve expense', 'error');
+      }
     }
   };
 
@@ -462,6 +492,7 @@ const Dashboard = () => {
           advances={advances}
           settlements={settlements}
           auditLogs={auditLogs}
+          categories={categories}
           onNavigateTab={(t) => handleTabChange(t)}
           onInspectExpense={(exp) => setInspectingExpense(exp)}
           onDisburseAdvance={(adv) => handleTriggerAdvancePayment(adv)}
@@ -501,21 +532,6 @@ const Dashboard = () => {
         />
       )}
 
-      {activeTab === 'advances' && (
-        <AdvanceDisbursalTab
-          advances={advances}
-          projects={projects}
-          onDisburseAdvance={(adv) => handleTriggerAdvancePayment(adv)}
-          onRejectAdvance={(adv) => setCorrectingItem(adv)}
-        />
-      )}
-
-      {activeTab === 'ledger' && (
-        <PaymentLedgerTab
-          payments={payments}
-          onRecordNewPayment={() => {}}
-        />
-      )}
 
       {activeTab === 'reports' && (
         <FinancialReportsTab

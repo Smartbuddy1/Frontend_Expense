@@ -39,6 +39,7 @@ const OverviewTab = ({
   advances, 
   settlements, 
   auditLogs,
+  categories,
   onNavigateTab,
   onInspectExpense,
   onDisburseAdvance 
@@ -51,20 +52,28 @@ const OverviewTab = ({
     }).format(val);
   };
 
-  const projectChartData = projects.map(p => ({
-    name: p.name.split(' ')[0],
-    fullName: p.name,
-    Released: p.fundsReleased,
-    Expenses: p.expenses,
-    WalletBalance: p.balance
-  }));
+  const supervisorMap = {};
+  projects.forEach(p => {
+    const supervisor = p.supervisor || 'Unassigned';
+    if (!supervisorMap[supervisor]) {
+      supervisorMap[supervisor] = { name: supervisor, fullName: supervisor, Released: 0, Expenses: 0, WalletBalance: 0 };
+    }
+    supervisorMap[supervisor].Released += (p.fundsReleased || 0);
+    supervisorMap[supervisor].Expenses += (p.expenses || 0);
+    supervisorMap[supervisor].WalletBalance += (p.balance || 0);
+  });
+  const projectChartData = Object.values(supervisorMap);
 
   const categoryMap = {};
-  expenses.filter(e => e.status === 'Accounts Verified & Paid').forEach(e => {
+  if (categories && categories.length > 0) {
+    categories.forEach(c => {
+      categoryMap[c.name] = 0;
+    });
+  }
+  expenses.forEach(e => {
     categoryMap[e.category] = (categoryMap[e.category] || 0) + (e.amount || 0);
   });
   const categoryData = Object.entries(categoryMap)
-    .filter(([_, value]) => value > 0)
     .map(([name, value]) => ({ name, value }));
   const totalCategoryExpense = categoryData.reduce((acc, c) => acc + (c.value || 0), 0);
   const CATEGORY_COLORS = ['#3b82f6', '#10b981', '#f59e0b', '#8b5cf6', '#ec4899', '#06b6d4', '#64748b'];
@@ -96,20 +105,7 @@ const OverviewTab = ({
       icon: Wallet,
       color: '#10b981' // Green
     },
-    {
-      id: 'advances',
-      title: 'Advance Payouts',
-      desc: 'Disburse requested site funds',
-      icon: Send,
-      color: '#2563eb' // Vibrant Blue
-    },
-    {
-      id: 'ledger',
-      title: 'Payment Ledger',
-      desc: 'Bank transfer trail & vouchers',
-      icon: CreditCard,
-      color: '#06b6d4' // Vibrant Cyan
-    },
+
     {
       id: 'analytics',
       title: 'Financial Analytics',

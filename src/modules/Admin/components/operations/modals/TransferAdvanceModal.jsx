@@ -101,7 +101,7 @@ export const TransferAdvanceModal = ({
               <Send size={20} color="#ffffff" />
             </div>
             <div>
-              <h3 style={{ margin: 0, fontSize: '1.15rem', fontWeight: '800' }}>Direct Advance Transfer</h3>
+              <h3 style={{ margin: 0, fontSize: '1.15rem', fontWeight: '800', color: '#ffffff' }}>Direct Advance Transfer</h3>
               <p style={{ margin: '0.15rem 0 0 0', fontSize: '0.82rem', color: '#94a3b8' }}>
                 Log advance float transferred to site supervisor
               </p>

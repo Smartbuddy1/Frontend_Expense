@@ -108,30 +108,7 @@ const KPIHeaderCards = ({ projects, expenses, advances, settlements, onNavigateT
       pillType: totalPendingCount > 0 ? 'warning' : 'success',
       targetTab: 'verification'
     },
-    {
-      id: 'corrections',
-      title: 'Correction Required',
-      value: `${correctionList.length}`,
-      icon: XCircle,
-      iconBg: '#e11d48', // Red / Rose
-      pillText: correctionList.length > 0 ? `${correctionList.length} Needs check` : '0 Critical',
-      pillType: correctionList.length > 0 ? 'danger' : 'success',
-      targetTab: 'verification'
-    },
-    {
-      id: 'reports',
-      title: 'Financial Reports',
-      value: `${auditReadinessPercent}%`,
-      icon: FileSpreadsheet,
-      iconBg: isFullyAuditReady ? '#059669' : '#e11d48',
-      pillText: isFullyAuditReady 
-        ? 'Audit Ready' 
-        : (correctionList.length > 0 
-            ? `${correctionList.length} Correction Required` 
-            : `${pendingAuditCount} Pending Audit`),
-      pillType: isFullyAuditReady ? 'success' : (auditReadinessPercent >= 75 ? 'warning' : 'danger'),
-      targetTab: 'reports'
-    }
+
   ];
 
   return (

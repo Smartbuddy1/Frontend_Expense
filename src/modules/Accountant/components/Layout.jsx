@@ -48,8 +48,6 @@ const Layout = () => {
     { name: 'Dashboard', href: '/dashboard?tab=overview', icon: LayoutDashboard, tabKey: 'overview' },
     { name: 'Expense Verification', href: '/dashboard?tab=verification', icon: FileText, tabKey: 'verification' },
     { name: 'Wallet Funds', href: '/dashboard?tab=wallets', icon: Wallet, tabKey: 'wallets' },
-    { name: 'Advance Payouts', href: '/dashboard?tab=advances', icon: Users, tabKey: 'advances' },
-    { name: 'Payment Ledger', href: '/dashboard?tab=ledger', icon: Monitor, tabKey: 'ledger' },
     { name: 'Analytics', href: '/dashboard?tab=analytics', icon: Activity, tabKey: 'analytics' },
     { name: 'Financial Reports', href: '/dashboard?tab=reports', icon: PieChart, tabKey: 'reports' },
     { name: 'Public Form', href: '/dashboard?tab=public-form', icon: Globe, tabKey: 'public-form' },
