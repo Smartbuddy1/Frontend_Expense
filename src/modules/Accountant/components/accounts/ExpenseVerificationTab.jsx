@@ -46,19 +46,19 @@ const ExpenseVerificationTab = ({
   };
 
   const filteredExpenses = expenses.filter(exp => {
-    if (exp.status === 'Pending Operations Approval') return false;
-
     const matchesSearch = 
       exp.id.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      exp.itemDescription.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      exp.supervisor.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      (exp.itemDescription || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
+      (exp.supervisor || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
       (exp.vendorName && exp.vendorName.toLowerCase().includes(searchQuery.toLowerCase())) ||
       (exp.billNumber && exp.billNumber.toLowerCase().includes(searchQuery.toLowerCase()));
 
     const matchesStatus = 
       statusFilter === 'ALL' ||
+      (statusFilter === 'OPS_PENDING' && exp.status === 'Pending Operations Approval') ||
       (statusFilter === 'PENDING' && exp.status === 'Pending Accounts Verification') ||
-      (statusFilter === 'VERIFIED' && exp.status === 'Accounts Verified & Paid');
+      (statusFilter === 'VERIFIED' && exp.status === 'Accounts Verified & Paid') ||
+      (statusFilter === 'REJECTED' && exp.status === 'Rejected');
 
     const matchesSupervisor = selectedSupervisor === 'ALL' || exp.supervisor === selectedSupervisor;
     const matchesProject = selectedProject === 'ALL' || exp.projectId === selectedProject;
@@ -337,9 +337,11 @@ const ExpenseVerificationTab = ({
                 boxShadow: '0 1px 3px rgba(0,0,0,0.02)'
               }}
             >
-              <option value="ALL">All Accounts Status</option>
-              <option value="PENDING">Pending Verification</option>
-              <option value="VERIFIED">Approved</option>
+              <option value="ALL">All Status</option>
+              <option value="OPS_PENDING">Pending Operations Approval</option>
+              <option value="PENDING">Pending Accounts Verification</option>
+              <option value="VERIFIED">Accounts Verified & Paid</option>
+              <option value="REJECTED">Rejected</option>
             </select>
           </div>
         </div>

@@ -32,11 +32,12 @@ const ReconciliationTab = ({
   // Advance Requisitions — real supervisor-submitted advance requests from the backend.
   const advanceRequisitions = useMemo(() => advances.map(a => ({
     id: a.id,
+    displayId: a.displayId || `REQ-${a.id.slice(0, 4).toUpperCase()}`,
     supervisor: a.supervisor,
     site: a.site || a.projectName,
     purpose: a.purpose || 'General site advance',
     urgency: a.urgency || 'Regular',
-    urgencyType: a.urgency === 'Immediate' ? 'high' : a.urgency === 'Within 24 Hours' ? 'medium' : 'low',
+    urgencyType: a.urgencyType || 'medium',
     date: a.date ? new Date(a.date).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }) : '',
     amount: a.amount,
     status: a.status,
@@ -61,6 +62,23 @@ const ReconciliationTab = ({
       onRefresh && onRefresh();
     } catch (err) {
       toast.error(err.response?.data?.error || 'Failed to reject requisition');
+    }
+  };
+
+  const handleUpdateUrgency = async (id, newUrgency) => {
+    const advance = advances.find(a => a.id === id);
+    if (!advance) return;
+    try {
+      await axios.put(`${API}/advances/${id}`, {
+        projectId: advance.projectId,
+        amount: Number(advance.amount),
+        purpose: advance.purpose,
+        urgency: newUrgency
+      });
+      toast.success('Urgency updated successfully');
+      onRefresh && onRefresh();
+    } catch (err) {
+      toast.error(err.response?.data?.error || 'Failed to update urgency');
     }
   };
 
@@ -172,6 +190,7 @@ const ReconciliationTab = ({
         projectId: newReqForm.projectId,
         amount: Number(newReqForm.amount),
         purpose: newReqForm.purpose,
+        urgency: newReqForm.urgency
       });
       setIsNewReqModalOpen(false);
       setNewReqForm({ projectId: '', site: '', purpose: '', urgency: 'Immediate', amount: '', notes: '' });
@@ -783,32 +802,62 @@ const ReconciliationTab = ({
         </div>
       </div>
 
-      {/* Search Input Bar */}
-      <div style={{ position: 'relative', width: '100%', maxWidth: '480px' }}>
-        <div style={{ position: 'absolute', left: '1rem', top: '50%', transform: 'translateY(-50%)', color: '#94a3b8', display: 'flex', alignItems: 'center' }}>
-          <Search size={18} />
+      {/* Search Input Bar & Total Count */}
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', width: '100%', gap: '1rem', flexWrap: 'wrap' }}>
+        <div style={{ position: 'relative', width: '100%', maxWidth: '480px', display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+          <div style={{ position: 'relative' }}>
+            <div style={{ position: 'absolute', left: '1rem', top: '50%', transform: 'translateY(-50%)', color: '#94a3b8', display: 'flex', alignItems: 'center' }}>
+              <Search size={18} />
+            </div>
+            <input
+              type="text"
+              placeholder="Search site, purpose, amount..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              style={{
+                width: '100%',
+                paddingLeft: '2.75rem',
+                paddingRight: '1rem',
+                paddingTop: '0.7rem',
+                paddingBottom: '0.7rem',
+                borderRadius: '12px',
+                backgroundColor: 'var(--input-bg, #ffffff)',
+                border: '1.5px solid var(--border-color, #cbd5e1)',
+                color: 'var(--text-primary, #0f172a)',
+                fontSize: '0.92rem',
+                outline: 'none',
+                boxSizing: 'border-box',
+                boxShadow: '0 1px 3px rgba(0,0,0,0.02)'
+              }}
+            />
+          </div>
+          <div style={{ paddingLeft: '0.4rem', color: '#64748b', fontSize: '0.88rem', fontWeight: '600' }}>
+            Total Requests: <strong style={{ color: '#0f172a' }}>{filteredRequisitions.length}</strong>
+          </div>
         </div>
-        <input
-          type="text"
-          placeholder="Search site, purpose, amount..."
-          value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
+
+        <button
+          onClick={() => setIsNewReqModalOpen(true)}
           style={{
-            width: '100%',
-            paddingLeft: '2.75rem',
-            paddingRight: '1rem',
-            paddingTop: '0.7rem',
-            paddingBottom: '0.7rem',
-            borderRadius: '12px',
-            backgroundColor: 'var(--input-bg, #ffffff)',
-            border: '1.5px solid var(--border-color, #cbd5e1)',
-            color: 'var(--text-primary, #0f172a)',
-            fontSize: '0.92rem',
-            outline: 'none',
-            boxSizing: 'border-box',
-            boxShadow: '0 1px 3px rgba(0,0,0,0.02)'
+            padding: '0.65rem 1.25rem',
+            borderRadius: '10px',
+            border: 'none',
+            backgroundColor: '#2563eb',
+            color: '#ffffff',
+            fontSize: '0.9rem',
+            fontWeight: '800',
+            cursor: 'pointer',
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: '0.45rem',
+            boxShadow: '0 4px 12px rgba(37, 99, 235, 0.25)',
+            transition: 'all 0.15s ease'
           }}
-        />
+          onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#1d4ed8'}
+          onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#2563eb'}
+        >
+          <span>+ Request Advance</span>
+        </button>
       </div>
 
       {/* 3. Main Table Container */}
@@ -820,31 +869,7 @@ const ReconciliationTab = ({
         overflow: 'hidden',
         width: '100%'
       }}>
-        {/* Header inside table container */}
-        <div style={{ padding: '1.25rem', display: 'flex', justifyContent: 'flex-end', borderBottom: '1px solid var(--border-color, #e8ecf2)' }}>
-          <button
-            onClick={() => setIsNewReqModalOpen(true)}
-            style={{
-              padding: '0.65rem 1.25rem',
-              borderRadius: '10px',
-              border: 'none',
-              backgroundColor: '#2563eb',
-              color: '#ffffff',
-              fontSize: '0.9rem',
-              fontWeight: '800',
-              cursor: 'pointer',
-              display: 'inline-flex',
-              alignItems: 'center',
-              gap: '0.45rem',
-              boxShadow: '0 4px 12px rgba(37, 99, 235, 0.25)',
-              transition: 'all 0.15s ease'
-            }}
-            onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#1d4ed8'}
-            onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#2563eb'}
-          >
-            <span>+ Request Advance</span>
-          </button>
-        </div>
+
 
             {/* Table */}
             <div style={{ overflowX: 'auto' }}>
@@ -887,7 +912,7 @@ const ReconciliationTab = ({
                         {/* REQUISITION ID */}
                         <td style={{ padding: '1.2rem 1.25rem', verticalAlign: 'middle', whiteSpace: 'nowrap' }}>
                           <strong style={{ color: '#059669', fontSize: '0.94rem', fontWeight: '800' }}>
-                            {req.id}
+                            {req.displayId}
                           </strong>
                         </td>
 
@@ -935,20 +960,36 @@ const ReconciliationTab = ({
 
                         {/* URGENCY */}
                         <td style={{ padding: '1.2rem 1.25rem', verticalAlign: 'middle', whiteSpace: 'nowrap' }}>
-                          <span style={{
-                            fontSize: '0.78rem',
-                            fontWeight: '700',
-                            padding: '0.32rem 0.75rem',
-                            borderRadius: '8px',
-                            backgroundColor: isHighUrgency ? '#fee2e2' : isMediumUrgency ? '#dbeafe' : '#f1f5f9',
-                            color: isHighUrgency ? '#dc2626' : isMediumUrgency ? '#2563eb' : '#64748b',
+                          <div style={{
                             display: 'inline-flex',
                             alignItems: 'center',
-                            gap: '0.35rem'
+                            gap: '0.35rem',
+                            backgroundColor: isHighUrgency ? '#fee2e2' : isMediumUrgency ? '#dbeafe' : '#f1f5f9',
+                            padding: '0.2rem 0.5rem',
+                            borderRadius: '8px',
                           }}>
-                            <Clock size={12} />
-                            <span>{req.urgency}</span>
-                          </span>
+                            <Clock size={12} style={{ color: isHighUrgency ? '#dc2626' : isMediumUrgency ? '#2563eb' : '#64748b' }} />
+                            <select
+                              value={req.urgency}
+                              onChange={(e) => handleUpdateUrgency(req.id, e.target.value)}
+                              disabled={req.status !== 'Pending'}
+                              style={{
+                                fontSize: '0.78rem',
+                                fontWeight: '700',
+                                border: 'none',
+                                backgroundColor: 'transparent',
+                                color: isHighUrgency ? '#dc2626' : isMediumUrgency ? '#2563eb' : '#64748b',
+                                cursor: req.status === 'Pending' ? 'pointer' : 'not-allowed',
+                                outline: 'none',
+                                padding: '0',
+                                appearance: 'none',
+                              }}
+                            >
+                              <option value="Immediate">Immediate</option>
+                              <option value="Within 24 Hours">Within 24 Hours</option>
+                              <option value="Regular">Regular</option>
+                            </select>
+                          </div>
                         </td>
 
                         {/* DATE */}
@@ -1039,29 +1080,7 @@ const ReconciliationTab = ({
                               </span>
                             ) : (
                               <>
-                                {/* View Bill Button */}
-                                <button
-                                  onClick={() => toast.success(`Opening verified invoice / bill for ${req.id}`)}
-                                  style={{
-                                    padding: '0.42rem 0.95rem',
-                                    borderRadius: '9px',
-                                    border: '1.5px solid var(--border-color, #cbd5e1)',
-                                    backgroundColor: 'var(--card-bg, #ffffff)',
-                                    color: 'var(--text-primary, #0f172a)',
-                                    fontSize: '0.86rem',
-                                    fontWeight: '800',
-                                    cursor: 'pointer',
-                                    display: 'inline-flex',
-                                    alignItems: 'center',
-                                    gap: '0.35rem',
-                                    boxShadow: '0 1px 2px rgba(0,0,0,0.03)',
-                                    transition: 'all 0.15s ease'
-                                  }}
-                                  onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'var(--input-bg, #f8fafc)'}
-                                  onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'var(--card-bg, #ffffff)'}
-                                >
-                                  <span>View Bill</span>
-                                </button>
+
 
                                 {/* Approved Badge Button */}
                                 <span style={{

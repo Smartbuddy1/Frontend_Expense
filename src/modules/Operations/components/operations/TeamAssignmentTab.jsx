@@ -80,28 +80,28 @@ const TeamAssignmentTab = ({
   const handleExportCSV = () => {
     try {
       const csvRows = [
-        ['SR NO', 'Supervisor Name', 'Phone', 'Email', 'Specialization', 'Assigned Project', 'Client', 'Location', 'Status'],
+        ['SR NO', 'Supervisor Name', 'Phone', 'Email', 'Specialization', 'Assigned Project', 'Location', 'Status'],
         ...filteredSupervisors.map((sup, idx) => {
           const assignedProject = projects.find(p => 
+            p.supervisor_id === sup.id || 
             (p.supervisorId && sup.id && p.supervisorId === sup.id) ||
-            (p.supervisorName && sup.name && p.supervisorName.trim().toLowerCase() === sup.name.trim().toLowerCase()) ||
-            (sup.activeProjects && sup.activeProjects.some(ap => ap === p.id || ap === p.code || ap === p.name))
+            (p.assignees && Array.isArray(p.assignees) && p.assignees.some(a => a.id === sup.id))
           );
+          
           return [
             idx + 1,
-            `"${sup.name || ''}"`,
-            `"${sup.phone || ''}"`,
-            `"${sup.email || ''}"`,
+            `"${sup.name || '-'}"`,
+            `"${sup.phone || '-'}"`,
+            `"${sup.email || '-'}"`,
             `"${sup.specialization || 'Site Supervisor'}"`,
             `"${assignedProject?.name || 'Unassigned'}"`,
-            `"${assignedProject?.client || '-'}"`,
             `"${assignedProject?.location || '-'}"`,
             assignedProject ? 'ACTIVE' : 'INACTIVE'
-          ];
+          ].join(',');
         })
       ];
 
-      const csvContent = 'data:text/csv;charset=utf-8,' + csvRows.map(e => e.join(',')).join('\n');
+      const csvContent = 'data:text/csv;charset=utf-8,' + csvRows.map(e => Array.isArray(e) ? e.join(',') : e).join('\n');
       const encodedUri = encodeURI(csvContent);
       const link = document.createElement('a');
       link.setAttribute('href', encodedUri);
@@ -131,37 +131,34 @@ const TeamAssignmentTab = ({
       // Prepare table data
       const tableData = filteredSupervisors.map((sup, idx) => {
         const assignedProject = projects.find(p => 
+          p.supervisor_id === sup.id || 
           (p.supervisorId && sup.id && p.supervisorId === sup.id) ||
-          (p.supervisorName && sup.name && p.supervisorName.trim().toLowerCase() === sup.name.trim().toLowerCase()) ||
-          (sup.activeProjects && sup.activeProjects.some(ap => ap === p.id || ap === p.code || ap === p.name))
+          (p.assignees && Array.isArray(p.assignees) && p.assignees.some(a => a.id === sup.id))
         );
 
         const projectName = assignedProject ? assignedProject.name : 'Unassigned / Available';
-        const clientName = assignedProject?.client || '-';
         const status = assignedProject ? 'ACTIVE (On-Site)' : 'INACTIVE (Available)';
 
         return [
           idx + 1,
           `${sup.name || 'Supervisor'}\nTel: ${sup.phone || '-'}${sup.email ? '\n' + sup.email : ''}`,
           projectName,
-          clientName,
           status
         ];
       });
 
       autoTable(doc, {
         startY: startY + 2,
-        head: [['SR NO', 'SUPERVISOR & CONTACT', 'PROJECT', 'CLIENT', 'STATUS']],
+        head: [['SR NO', 'SUPERVISOR & CONTACT', 'PROJECT', 'STATUS']],
         body: tableData,
         theme: 'grid',
         styles: { fontSize: 8, cellPadding: 3 },
         headStyles: { fillColor: [37, 99, 235], textColor: [255, 255, 255], fontStyle: 'bold' },
         columnStyles: {
           0: { cellWidth: 15, halign: 'center' },
-          1: { cellWidth: 55 },
-          2: { cellWidth: 50 },
-          3: { cellWidth: 40 },
-          4: { cellWidth: 30, halign: 'center' }
+          1: { cellWidth: 65 },
+          2: { cellWidth: 60 },
+          3: { cellWidth: 40, halign: 'center' }
         }
       });
 
@@ -182,12 +179,13 @@ const TeamAssignmentTab = ({
     const rows = filteredSupervisors.map((sup, idx) => {
       const assignedProject = projects.find(p => 
         (p.supervisorId && sup.id && p.supervisorId === sup.id) ||
+        (p.supervisor_id && sup.id && p.supervisor_id === sup.id) ||
         (p.supervisorName && sup.name && p.supervisorName.trim().toLowerCase() === sup.name.trim().toLowerCase()) ||
-        (sup.activeProjects && sup.activeProjects.some(ap => ap === p.id || ap === p.code || ap === p.name))
+        (sup.activeProjects && sup.activeProjects.some(ap => ap === p.id || ap === p.code || ap === p.name)) ||
+        (p.assignees && Array.isArray(p.assignees) && p.assignees.some(a => a.id === sup.id))
       );
 
       const projectName = assignedProject ? assignedProject.name : 'Unassigned / Available';
-      const clientName = assignedProject?.client || '-';
       const location = assignedProject?.location || '-';
       const statusText = assignedProject ? 'ACTIVE (On-Site)' : 'INACTIVE (Available)';
       const statusClass = assignedProject ? 'badge-active' : 'badge-inactive';
@@ -201,10 +199,7 @@ const TeamAssignmentTab = ({
           </td>
           <td>
             <strong>${escapeHtml(projectName)}</strong><br/>
-            <span style="color: #64748b; font-size: 10px;">Loc: ${escapeHtml(location)}</span>
-          </td>
-          <td>
-            <strong>${escapeHtml(clientName)}</strong>
+            <span style="font-size: 0.85em; color: #666;">${escapeHtml(location)}</span>
           </td>
           <td style="text-align: center;">
             <span class="badge ${statusClass}">${statusText}</span>
@@ -263,10 +258,9 @@ const TeamAssignmentTab = ({
         <table>
           <thead>
             <tr>
-              <th style="width: 40px; text-align: center;">SR</th>
+              <th style="width: 40px; text-align: center;">SR NO</th>
               <th>SUPERVISOR & CONTACT</th>
               <th>PROJECT</th>
-              <th>CLIENT</th>
               <th style="text-align: center;">STATUS</th>
             </tr>
           </thead>
@@ -483,7 +477,7 @@ const TeamAssignmentTab = ({
           <Search size={20} style={{ position: 'absolute', left: '1rem', top: '50%', transform: 'translateY(-50%)', color: '#94a3b8', pointerEvents: 'none' }} />
           <input
             type="text"
-            placeholder={language === 'mr' ? 'सुपरवायझर, साईट किंवा फोन नंबर शोधा...' : 'Search by Supervisor, Site, Client, or Phone...'}
+            placeholder={language === 'mr' ? 'पर्यवेक्षक, साइट, किंवा फोन नंबर शोधा...' : 'Search by Supervisor, Site, or Phone...'}
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             style={{
@@ -746,8 +740,8 @@ const TeamAssignmentTab = ({
               }}>
                 <th style={{ padding: '1.2rem 1.15rem', width: '60px', textAlign: 'center', whiteSpace: 'nowrap' }}>SR NO</th>
                 <th style={{ padding: '1.2rem 1.35rem', whiteSpace: 'nowrap' }}>SUPERVISOR & CONTACT</th>
+                <th style={{ padding: '1.2rem 1.35rem', whiteSpace: 'nowrap' }}>EMAIL ADDRESS</th>
                 <th style={{ padding: '1.2rem 1.35rem', whiteSpace: 'nowrap' }}>PROJECT</th>
-                <th style={{ padding: '1.2rem 1.35rem', whiteSpace: 'nowrap' }}>CLIENT</th>
                 <th style={{ padding: '1.2rem 1.35rem', whiteSpace: 'nowrap' }}>STATUS</th>
                 <th style={{ padding: '1.2rem 1.35rem', textAlign: 'center', whiteSpace: 'nowrap' }}>ACTIONS</th>
               </tr>
@@ -763,8 +757,10 @@ const TeamAssignmentTab = ({
                 filteredSupervisors.map((sup, idx) => {
                   const assignedProject = projects.find(p => 
                     (p.supervisorId && sup.id && p.supervisorId === sup.id) ||
+                    (p.supervisor_id && sup.id && p.supervisor_id === sup.id) ||
                     (p.supervisorName && sup.name && p.supervisorName.trim().toLowerCase() === sup.name.trim().toLowerCase()) ||
-                    (sup.activeProjects && sup.activeProjects.some(ap => ap === p.id || ap === p.code || ap === p.name))
+                    (sup.activeProjects && sup.activeProjects.some(ap => ap === p.id || ap === p.code || ap === p.name)) ||
+                    (p.assignees && Array.isArray(p.assignees) && p.assignees.some(a => a.id === sup.id))
                   );
                   const isOnSite = Boolean(assignedProject || sup.status === 'On-Site');
 
@@ -819,6 +815,16 @@ const TeamAssignmentTab = ({
                         </div>
                       </td>
 
+                      {/* Email Address */}
+                      <td style={{ padding: '1.2rem 1.35rem' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                          <Mail size={14} style={{ color: '#64748b' }} />
+                          <span style={{ color: '#334155', fontSize: '0.9rem', fontWeight: '500' }}>
+                            {sup.email || <span style={{ color: '#94a3b8', fontStyle: 'italic' }}>N/A</span>}
+                          </span>
+                        </div>
+                      </td>
+
                       {/* Project */}
                       <td style={{ padding: '1.2rem 1.35rem' }}>
                         {assignedProject ? (
@@ -838,18 +844,6 @@ const TeamAssignmentTab = ({
                           </span>
                         )}
                       </td>
-
-                      {/* Client */}
-                      <td style={{ padding: '1.2rem 1.35rem' }}>
-                        {assignedProject?.client ? (
-                          <strong style={{ color: 'var(--text-primary, #334155)', fontSize: '0.92rem', fontWeight: '700' }}>
-                            {assignedProject.client}
-                          </strong>
-                        ) : (
-                          <span style={{ color: '#94a3b8', fontSize: '0.88rem' }}>-</span>
-                        )}
-                      </td>
-
 
                       {/* Status */}
                       <td style={{ padding: '1.2rem 1.35rem' }}>

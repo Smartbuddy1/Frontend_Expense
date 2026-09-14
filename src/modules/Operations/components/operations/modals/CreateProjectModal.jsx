@@ -4,6 +4,8 @@ import { useLanguage } from '../../../context/LanguageContext';
 
 const CreateProjectModal = ({ isOpen, onClose, onSave, editingProject, supervisors = [] }) => {
   const { language } = useLanguage();
+  const [supervisorMode, setSupervisorMode] = useState('single'); // 'single' | 'multiple'
+  const [selectedSupervisorIds, setSelectedSupervisorIds] = useState([]);
   const [formData, setFormData] = useState(editingProject || {
     name: '',
     code: '',
@@ -25,6 +27,14 @@ const CreateProjectModal = ({ isOpen, onClose, onSave, editingProject, superviso
   useEffect(() => {
     if (editingProject) {
       const matchedSup = supervisors.find(s => s.id === editingProject.supervisorId || s.name === editingProject.supervisorName);
+      // Check if project has multiple supervisors
+      if (editingProject.supervisorIds && editingProject.supervisorIds.length > 1) {
+        setSupervisorMode('multiple');
+        setSelectedSupervisorIds(editingProject.supervisorIds);
+      } else {
+        setSupervisorMode('single');
+        setSelectedSupervisorIds([]);
+      }
       setFormData({
         name: editingProject.name || '',
         code: editingProject.id || '',
@@ -43,6 +53,8 @@ const CreateProjectModal = ({ isOpen, onClose, onSave, editingProject, superviso
         health: editingProject.health || 'On Track',
       });
     } else {
+      setSupervisorMode('single');
+      setSelectedSupervisorIds([]);
       setFormData({
         name: '',
         code: `PRJ-SGM-${Math.floor(Math.random() * 90) + 10}`,
@@ -65,19 +77,46 @@ const CreateProjectModal = ({ isOpen, onClose, onSave, editingProject, superviso
 
   if (!isOpen) return null;
 
+  const handleToggleSupervisorId = (id) => {
+    setSelectedSupervisorIds(prev => {
+      const isSelected = prev.includes(id);
+      if (!isSelected) {
+        // Auto-fill phone and email for newly added supervisor
+        const selectedSup = supervisors.find(s => s.id === id);
+        setFormData(fd => ({
+          ...fd,
+          phone: selectedSup?.phone || fd.phone,
+          email: selectedSup?.email || fd.email
+        }));
+        return [...prev, id];
+      }
+      return prev.filter(x => x !== id);
+    });
+  };
+
   const handleSubmit = (e) => {
     e.preventDefault();
-    if (!formData.name?.trim() || !formData.location?.trim() || !formData.phone?.trim() || !formData.email?.trim() || !formData.description?.trim()) {
+    if (!formData.name?.trim() || !formData.phone?.trim() || !formData.email?.trim() || !formData.description?.trim()) {
       alert('Please fill in all mandatory fields (*)');
       return;
     }
+    if (supervisorMode === 'multiple' && selectedSupervisorIds.length === 0) {
+      alert('Please select at least one supervisor.');
+      return;
+    }
 
-    const selectedSup = supervisors.find(s => s.id === formData.supervisorId);
-    const resolvedSupervisorName = selectedSup 
-      ? selectedSup.name 
+    // Resolve supervisor info
+    const primarySupId = supervisorMode === 'single'
+      ? formData.supervisorId
+      : selectedSupervisorIds[0];
+    const selectedSup = supervisors.find(s => s.id === primarySupId);
+    const resolvedSupervisorName = selectedSup
+      ? (supervisorMode === 'multiple'
+          ? selectedSupervisorIds.map(id => supervisors.find(s => s.id === id)?.name || '').filter(Boolean).join(', ')
+          : selectedSup.name)
       : (editingProject?.supervisorName || 'Rohit Sharma');
-    const resolvedSupervisorPhone = selectedSup 
-      ? selectedSup.phone 
+    const resolvedSupervisorPhone = selectedSup
+      ? selectedSup.phone
       : (editingProject?.supervisorPhone || '+91 98220 11223');
 
     const projectPayload = {
@@ -95,7 +134,8 @@ const CreateProjectModal = ({ isOpen, onClose, onSave, editingProject, superviso
       status: formData.status,
       health: formData.health || 'On Track',
       progress: editingProject ? editingProject.progress : 0,
-      supervisorId: formData.supervisorId || editingProject?.supervisorId || 'SUP-ROHIT',
+      supervisorId: primarySupId || editingProject?.supervisorId || 'SUP-ROHIT',
+      supervisorIds: supervisorMode === 'multiple' ? selectedSupervisorIds : [primarySupId || editingProject?.supervisorId],
       supervisorName: resolvedSupervisorName,
       supervisorPhone: resolvedSupervisorPhone,
       teamCount: Number(formData.teamCount) || 8,
@@ -233,7 +273,7 @@ const CreateProjectModal = ({ isOpen, onClose, onSave, editingProject, superviso
           {/* Project Name */}
           <div>
             <label style={{ display: 'block', fontSize: '0.78rem', fontWeight: '800', color: '#475569', textTransform: 'uppercase', marginBottom: '0.35rem' }}>
-              {language === 'mr' ? 'प्रोजेक्टचे नाव *' : 'Project Name *'}
+              {language === 'mr' ? 'प्रोजेक्ट / साईटचे नाव *' : 'Project / Site Name *'}
             </label>
             <input
               type="text"
@@ -254,16 +294,53 @@ const CreateProjectModal = ({ isOpen, onClose, onSave, editingProject, superviso
             />
           </div>
 
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
-            {/* Site Supervisor */}
-            <div>
-              <label style={{ display: 'block', fontSize: '0.78rem', fontWeight: '800', color: '#475569', textTransform: 'uppercase', marginBottom: '0.35rem' }}>
+          {/* Site Supervisor - Mode Toggle + Input */}
+          <div>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.5rem' }}>
+              <label style={{ fontSize: '0.78rem', fontWeight: '800', color: '#475569', textTransform: 'uppercase' }}>
                 Site Supervisor *
               </label>
+              {/* Single / Multiple Toggle */}
+              <div style={{ display: 'flex', gap: '0.35rem', backgroundColor: '#f1f5f9', borderRadius: '8px', padding: '0.2rem' }}>
+                {['single', 'multiple'].map(mode => (
+                  <button
+                    key={mode}
+                    type="button"
+                    onClick={() => { setSupervisorMode(mode); setSelectedSupervisorIds([]); }}
+                    style={{
+                      padding: '0.28rem 0.75rem',
+                      borderRadius: '6px',
+                      border: 'none',
+                      fontSize: '0.75rem',
+                      fontWeight: '700',
+                      cursor: 'pointer',
+                      transition: 'all 0.18s ease',
+                      backgroundColor: supervisorMode === mode ? '#2563eb' : 'transparent',
+                      color: supervisorMode === mode ? '#ffffff' : '#64748b',
+                      boxShadow: supervisorMode === mode ? '0 2px 6px rgba(37,99,235,0.3)' : 'none'
+                    }}
+                  >
+                    {mode === 'single' ? '👤 Single' : '👥 Multiple'}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* SINGLE mode: dropdown */}
+            {supervisorMode === 'single' && (
               <select
                 required
                 value={formData.supervisorId}
-                onChange={(e) => setFormData({ ...formData, supervisorId: e.target.value })}
+                onChange={(e) => {
+                  const selectedId = e.target.value;
+                  const selectedSup = supervisors.find(s => s.id === selectedId);
+                  setFormData({ 
+                    ...formData, 
+                    supervisorId: selectedId,
+                    phone: selectedSup?.phone || formData.phone,
+                    email: selectedSup?.email || formData.email
+                  });
+                }}
                 style={{
                   width: '100%',
                   padding: '0.65rem 0.85rem',
@@ -280,85 +357,74 @@ const CreateProjectModal = ({ isOpen, onClose, onSave, editingProject, superviso
                   <option key={sup.id} value={sup.id}>{sup.name}</option>
                 ))}
               </select>
-            </div>
+            )}
 
-            {/* Location */}
-            <div>
-              <label style={{ display: 'block', fontSize: '0.78rem', fontWeight: '800', color: '#475569', textTransform: 'uppercase', marginBottom: '0.35rem' }}>
-                Site Location *
-              </label>
-              <input
-                type="text"
-                required
-                placeholder="e.g. Sangamner Bus Stand, Maharashtra"
-                value={formData.location}
-                onChange={(e) => setFormData({ ...formData, location: e.target.value })}
-                style={{
-                  width: '100%',
-                  padding: '0.65rem 0.85rem',
-                  borderRadius: '10px',
-                  border: '1px solid #cbd5e1',
-                  fontSize: '0.88rem',
-                  color: '#0f172a',
-                  outline: 'none',
-                  boxSizing: 'border-box'
-                }}
-              />
-            </div>
+            {/* MULTIPLE mode: checkbox list */}
+            {supervisorMode === 'multiple' && (
+              <div style={{
+                border: '1px solid #cbd5e1',
+                borderRadius: '10px',
+                overflow: 'hidden',
+                maxHeight: '180px',
+                overflowY: 'auto'
+              }}>
+                {supervisors.length === 0 && (
+                  <p style={{ padding: '0.75rem 1rem', color: '#94a3b8', fontSize: '0.84rem', margin: 0 }}>No supervisors available.</p>
+                )}
+                {supervisors.map((sup, idx) => {
+                  const checked = selectedSupervisorIds.includes(sup.id);
+                  return (
+                    <label
+                      key={sup.id}
+                      onClick={() => handleToggleSupervisorId(sup.id)}
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '0.65rem',
+                        padding: '0.55rem 0.85rem',
+                        cursor: 'pointer',
+                        backgroundColor: checked ? 'rgba(37,99,235,0.06)' : (idx % 2 === 0 ? '#fafafa' : '#ffffff'),
+                        borderBottom: idx < supervisors.length - 1 ? '1px solid #f1f5f9' : 'none',
+                        transition: 'background 0.15s ease',
+                        userSelect: 'none'
+                      }}
+                    >
+                      <div style={{
+                        width: '18px',
+                        height: '18px',
+                        borderRadius: '5px',
+                        border: `2px solid ${checked ? '#2563eb' : '#cbd5e1'}`,
+                        backgroundColor: checked ? '#2563eb' : '#ffffff',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        flexShrink: 0,
+                        transition: 'all 0.15s ease'
+                      }}>
+                        {checked && <span style={{ color: '#fff', fontSize: '11px', fontWeight: '900', lineHeight: 1 }}>✓</span>}
+                      </div>
+                      <span style={{ fontSize: '0.87rem', fontWeight: checked ? '700' : '500', color: checked ? '#1e3a8a' : '#334155' }}>
+                        {sup.name}
+                      </span>
+                      {checked && (
+                        <span style={{ marginLeft: 'auto', fontSize: '0.72rem', fontWeight: '700', color: '#2563eb', backgroundColor: 'rgba(37,99,235,0.1)', padding: '0.15rem 0.5rem', borderRadius: '20px' }}>
+                          Selected
+                        </span>
+                      )}
+                    </label>
+                  );
+                })}
+              </div>
+            )}
+
+            {/* Show selected count in multiple mode */}
+            {supervisorMode === 'multiple' && selectedSupervisorIds.length > 0 && (
+              <p style={{ margin: '0.4rem 0 0', fontSize: '0.78rem', color: '#2563eb', fontWeight: '700' }}>
+                ✓ {selectedSupervisorIds.length} supervisor{selectedSupervisorIds.length > 1 ? 's' : ''} selected
+              </p>
+            )}
           </div>
 
-          {/* Phone and Email */}
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
-            {/* Phone */}
-            <div>
-              <label style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', fontSize: '0.78rem', fontWeight: '800', color: '#475569', textTransform: 'uppercase', marginBottom: '0.35rem' }}>
-                <Phone size={13} style={{ color: '#2563eb' }} />
-                Phone Number *
-              </label>
-              <input
-                type="tel"
-                required
-                placeholder="e.g. +91 98765 43210"
-                value={formData.phone}
-                onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                style={{
-                  width: '100%',
-                  padding: '0.65rem 0.85rem',
-                  borderRadius: '10px',
-                  border: '1px solid #cbd5e1',
-                  fontSize: '0.88rem',
-                  color: '#0f172a',
-                  outline: 'none',
-                  boxSizing: 'border-box'
-                }}
-              />
-            </div>
-
-            {/* Email */}
-            <div>
-              <label style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', fontSize: '0.78rem', fontWeight: '800', color: '#475569', textTransform: 'uppercase', marginBottom: '0.35rem' }}>
-                <Mail size={13} style={{ color: '#2563eb' }} />
-                Email Address *
-              </label>
-              <input
-                type="email"
-                required
-                placeholder="e.g. supervisor@aaryainnovtech.com"
-                value={formData.email}
-                onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                style={{
-                  width: '100%',
-                  padding: '0.65rem 0.85rem',
-                  borderRadius: '10px',
-                  border: '1px solid #cbd5e1',
-                  fontSize: '0.88rem',
-                  color: '#0f172a',
-                  outline: 'none',
-                  boxSizing: 'border-box'
-                }}
-              />
-            </div>
-          </div>
 
           {/* Description */}
           <div>

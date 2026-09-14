@@ -61,9 +61,9 @@ const mapTeamMember = (t) => ({
 
 const EXPENSE_STATUS_TO_DISPLAY = {
   submitted: 'Pending',
-  ops_approved: 'Payment Pending',
+  ops_approved: 'Approved',
   ops_rejected: 'Rejected',
-  accounts_paid: 'Approved',
+  accounts_paid: 'Paid',
 };
 
 const mapExpense = (e) => {
@@ -109,6 +109,8 @@ const mapAdvance = (a) => ({
   supervisorMobile: a.requestedBy?.mobile || '',
   purpose: a.purpose || '',
   amount: Number(a.amount),
+  urgency: a.urgency || 'Regular',
+  urgencyType: (a.urgency || 'Regular').toLowerCase() === 'immediate' ? 'high' : 'medium',
   status: ADVANCE_STATUS_TO_DISPLAY[a.status] || 'Pending',
   rawStatus: a.status,
   date: a.createdAt,
@@ -135,10 +137,8 @@ import OperationsOverview from '../components/operations/OperationsOverview';
 import ProjectsTab from '../components/operations/ProjectsTab';
 import TeamAssignmentTab from '../components/operations/TeamAssignmentTab';
 import ExpensesTab from '../components/operations/ExpensesTab';
-import AlertsTab from '../components/operations/AlertsTab';
 import ReconciliationTab from '../components/operations/ReconciliationTab';
 
-import PublicFormTab from '../components/operations/PublicFormTab';
 
 // Modals
 import CreateProjectModal from '../components/operations/modals/CreateProjectModal';
@@ -173,6 +173,7 @@ const OperationsDashboard = () => {
   const [teamMembers, setTeamMembers] = useState([]);
   const [expenses, setExpenses] = useState([]);
   const [advances, setAdvances] = useState([]);
+  const [categories, setCategories] = useState([]);
 
   const [siteLogs, setSiteLogs] = useState([]);
   const [loadingCore, setLoadingCore] = useState(true);
@@ -181,21 +182,22 @@ const OperationsDashboard = () => {
   const fetchCore = useCallback(async () => {
     setLoadingCore(true);
     try {
-      const [projRes, supRes, teamRes, expRes, advRes, logsRes] = await Promise.all([
+      const [projRes, supRes, teamRes, expRes, advRes, logsRes, catRes] = await Promise.all([
         axios.get(`${API}/projects`, { params: { pageSize: 100 } }),
         axios.get(`${API}/users`, { params: { role: 'site_supervisor' } }),
         axios.get(`${API}/team-members`),
         axios.get(`${API}/expenses`, { params: { pageSize: 100 } }),
         axios.get(`${API}/advances`),
         axios.get(`${API}/site-logs`),
+        axios.get(`${API}/expenses/categories`),
       ]);
       setProjects(projRes.data.projects.map(mapProject));
       setSupervisors(supRes.data.users.map(mapSupervisor));
       setAdvances(advRes.data.advances.map(mapAdvance));
-
       setTeamMembers(teamRes.data.teamMembers.map(mapTeamMember));
       setExpenses(expRes.data.expenses.map(mapExpense));
       setSiteLogs(logsRes.data.siteLogs.map(mapSiteLog));
+      setCategories(catRes.data.categories || []);
     } catch (err) {
       toast.error('Could not load live operations data from the server');
       console.error(err);
@@ -416,51 +418,6 @@ const OperationsDashboard = () => {
 
   const pendingExpensesCount = expenses.filter(e => e.status === 'Pending').length;
 
-  // Real, live alerts derived from actual project/wallet data — not stored
-  // anywhere, recomputed on every fetch from whatever's actually true right now.
-  const liveAlerts = [];
-  projects.forEach(p => {
-    if (p.health === 'At Risk' || p.health === 'Delayed') {
-      liveAlerts.push({
-        id: `health-${p.id}`,
-        projectCode: p.code,
-        projectName: p.name,
-        supervisor: p.supervisorName || 'Unassigned',
-        phone: p.supervisorPhone || '-',
-        location: p.location || p.site || '-',
-        type: 'Project Health',
-        priority: p.health === 'Delayed' ? 'High' : 'Medium',
-        title: `Project marked "${p.health}"`,
-        description: `${p.name} is at ${p.progress || 0}% progress and currently flagged ${p.health}. Review recent site logs and coordinate with the supervisor.`,
-        time: 'Live',
-        actionTaken: ''
-      });
-    }
-  });
-
-  // Urgent Advance Requests alert
-  const urgentAdvances = advances.filter(a => 
-    a.rawStatus === 'requested' && 
-    (a.purpose?.includes('[Immediate') || a.purpose?.includes('[Within 24') || a.purpose?.toLowerCase().includes('urgent'))
-  );
-
-  if (urgentAdvances.length > 0) {
-    liveAlerts.push({
-      id: 'urgent-advances',
-      projectCode: 'MULTIPLE',
-      projectName: 'Various Sites',
-      supervisor: 'Multiple Supervisors',
-      phone: '-',
-      location: '-',
-      type: 'Urgent Requisitions',
-      priority: 'High',
-      title: `${urgentAdvances.length} Urgent Cash Request${urgentAdvances.length > 1 ? 's' : ''}`,
-      description: `There ${urgentAdvances.length > 1 ? 'are' : 'is'} ${urgentAdvances.length} urgent cash requisition${urgentAdvances.length > 1 ? 's' : ''} pending approval. Review them immediately to prevent site work delays.`,
-      time: 'Live',
-      actionTaken: ''
-    });
-  }
-
   return (
     <div className="space-y-6 max-w-7xl mx-auto pb-12 animate-in fade-in duration-300 font-sans">
       <Toaster position="top-right" toastOptions={{ duration: 3000 }} />
@@ -473,6 +430,7 @@ const OperationsDashboard = () => {
           teamMembers={teamMembers}
           expenses={expenses}
           advances={advances}
+          categories={categories}
           siteLogs={siteLogs}
           setActiveTab={handleTabChange}
           onOpenCreateProject={() => { setEditingProject(null); setIsCreateProjectOpen(true); }}
@@ -530,17 +488,6 @@ const OperationsDashboard = () => {
           activeView={activeTab}
           onRefresh={fetchCore}
         />
-      )}
-
-      {activeTab === 'alerts' && (
-        <AlertsTab
-          alerts={liveAlerts}
-          onSelectProject={(p) => { setSelectedProjectDetail(p); setIsProjectDetailOpen(true); }}
-        />
-      )}
-
-      {activeTab === 'public-form' && (
-        <PublicFormTab />
       )}
 
       {/* Modals */}

@@ -2,7 +2,8 @@ import React, { useState } from 'react';
 import {
   Building2, Users, IndianRupee, Layers, Monitor, CreditCard,
   ArrowRight, ArrowUpRight, ArrowDownRight, Activity, HardHat, Clock, ChevronRight,
-  Tag, CheckCircle2, XCircle, Wrench, UserPlus, PlusCircle, Folder, Scale, PieChart as PieIcon
+  Tag, CheckCircle2, XCircle, Wrench, UserPlus, PlusCircle, Folder, Scale, PieChart as PieIcon,
+  Calendar, FileText, X
 } from 'lucide-react';
 import { ResponsiveContainer, PieChart, Pie, Cell, Tooltip, Legend, BarChart, Bar, XAxis, YAxis, CartesianGrid } from 'recharts';
 import { useLanguage } from '../../context/LanguageContext';
@@ -433,172 +434,334 @@ export const TopRevenueProjectsChart = ({ projects = [], expenses = [], advances
    Modular Component 8: RecentActivityFeed (With 1-Click Quick Approve/Reject)
    ========================================================================== */
 export const RecentActivityFeed = ({ expenses = [], onApproveExpense, onRejectExpense, onViewAll }) => {
-  // Map actual expenses to activities
-  const activities = expenses.slice(0, 4).map(e => {
-    const projName = e.projectName || 'Site';
-    const cleanProj = projName.includes('Site') ? projName.replace(' Site ', '-') : projName;
-    const supFirstName = e.supervisorName ? e.supervisorName.split(' ')[0] : 'Staff';
-    return {
-      id: e.id,
-      title: `${cleanProj} ${e.category || 'Expense'} (${supFirstName})`,
-      sub: e.description || 'inhouse site work',
-      val: `₹${(e.amount || 0).toLocaleString('en-IN')}`,
-      time: e.time || '12:00 PM',
-      status: e.status ? e.status.toLowerCase() : 'pending',
-      isRed: e.status === 'Pending'
-    };
-  });
+  const [inspectModalClaim, setInspectModalClaim] = useState(null);
+  const pendingExpenses = expenses.filter(e => e.status === 'Pending').slice(0, 5);
 
   return (
-    <div className="dash-panel-card">
-      <div className="dash-panel-header">
+    <div className="dash-panel-card" style={{ display: 'flex', flexDirection: 'column' }}>
+      <div className="dash-panel-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
         <div>
-          <h2 className="dash-panel-title">Recent Activity (Expense Review)</h2>
-          <p className="dash-panel-sub">Supervisor site expense submissions requiring verification & approval</p>
+          <h2 className="dash-panel-title">Recent Bill Approvals</h2>
+          <p className="dash-panel-sub">Pending supervisor site expense submissions requiring verification</p>
         </div>
+        <button 
+          onClick={onViewAll}
+          style={{
+            padding: '0.45rem 1rem',
+            borderRadius: '8px',
+            backgroundColor: 'var(--input-bg, #f8fafc)',
+            border: '1.5px solid var(--border-color, #cbd5e1)',
+            color: '#2563eb',
+            fontSize: '0.85rem',
+            fontWeight: '700',
+            cursor: 'pointer',
+            transition: 'all 0.15s ease'
+          }}
+          onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = '#2563eb'; e.currentTarget.style.color = '#ffffff'; e.currentTarget.style.borderColor = '#2563eb'; }}
+          onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = 'var(--input-bg, #f8fafc)'; e.currentTarget.style.color = '#2563eb'; e.currentTarget.style.borderColor = 'var(--border-color, #cbd5e1)'; }}
+        >
+          View All
+        </button>
       </div>
 
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem', marginTop: '0.25rem' }}>
-        {activities.map((item) => {
-          const status = item.status;
-          return (
-            <div
-              key={item.id}
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'space-between',
-                padding: '0.65rem 0.85rem',
-                borderRadius: '12px',
-                backgroundColor: status === 'approved'
-                  ? 'rgba(16, 185, 129, 0.12)'
-                  : status === 'rejected'
-                    ? 'rgba(239, 68, 68, 0.12)'
-                    : 'var(--input-bg, #f8fafc)',
-                border: `1px solid ${status === 'approved' ? '#10b981' : status === 'rejected' ? '#ef4444' : 'var(--border-color, #f1f5f9)'}`,
-                transition: 'all 0.25s ease'
-              }}
-            >
-              <div style={{ display: 'flex', alignItems: 'center', gap: '0.85rem', minWidth: 0 }}>
-                <div style={{
-                  width: '38px',
-                  height: '38px',
-                  borderRadius: '50%',
-                  backgroundColor: status === 'approved' ? '#10b981' : status === 'rejected' ? '#64748b' : item.isRed ? '#f43f5e' : '#10b981',
+      <div style={{ overflowX: 'auto', width: '100%', marginTop: '0.5rem' }}>
+        <table style={{ width: '100%', minWidth: '800px', borderCollapse: 'collapse', textAlign: 'left', fontSize: '0.92rem' }}>
+          <thead>
+            <tr style={{
+              backgroundColor: 'var(--table-header-bg, #fafbfc)',
+              borderBottom: '1px solid var(--border-color, #e8ecf2)',
+              color: 'var(--text-secondary, #475569)',
+              fontSize: '0.76rem',
+              fontWeight: '800',
+              textTransform: 'uppercase',
+              letterSpacing: '0.06em'
+            }}>
+              <th style={{ padding: '0.85rem 1rem', whiteSpace: 'nowrap' }}>VOUCHER ID</th>
+              <th style={{ padding: '0.85rem 1rem', whiteSpace: 'nowrap' }}>DATE</th>
+              <th style={{ padding: '0.85rem 1rem', whiteSpace: 'nowrap' }}>PROJECT</th>
+              <th style={{ padding: '0.85rem 1rem', whiteSpace: 'nowrap' }}>CATEGORY</th>
+              <th style={{ padding: '0.85rem 1rem', whiteSpace: 'nowrap' }}>SUPERVISOR</th>
+              <th style={{ padding: '0.85rem 1rem', whiteSpace: 'nowrap' }}>AMOUNT</th>
+              <th style={{ padding: '0.85rem 1rem', textAlign: 'center', whiteSpace: 'nowrap' }}>ACTIONS</th>
+            </tr>
+          </thead>
+          <tbody>
+            {pendingExpenses.length === 0 ? (
+              <tr>
+                <td colSpan={7} style={{ padding: '2.5rem 1rem', textAlign: 'center', color: 'var(--text-secondary, #94a3b8)' }}>
+                  <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.6rem' }}>
+                    <FileText size={32} style={{ color: 'var(--text-secondary, #cbd5e1)' }} />
+                    <span style={{ fontSize: '0.95rem', fontWeight: '700', color: 'var(--text-secondary, #64748b)' }}>
+                      No pending bills to approve.
+                    </span>
+                  </div>
+                </td>
+              </tr>
+            ) : (
+              pendingExpenses.map((exp, idx) => (
+                <tr
+                  key={exp.id}
+                  style={{
+                    borderBottom: idx === pendingExpenses.length - 1 ? 'none' : '1px solid var(--border-color, #f1f5f9)',
+                    transition: 'background-color 0.15s ease'
+                  }}
+                  onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'var(--table-hover, rgba(241, 245, 249, 0.6))'}
+                  onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
+                >
+                  {/* VOUCHER ID */}
+                  <td style={{ padding: '0.85rem 1rem', verticalAlign: 'middle', whiteSpace: 'nowrap' }}>
+                    <strong style={{ color: 'var(--text-primary, #0f172a)', fontSize: '0.9rem', fontWeight: '800', fontFamily: 'monospace', letterSpacing: '0.03em' }}>
+                      {exp.voucherNo || exp.id}
+                    </strong>
+                  </td>
+
+                  {/* DATE */}
+                  <td style={{ padding: '0.85rem 1rem', verticalAlign: 'middle' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                      <Calendar size={13} style={{ color: '#2563eb', flexShrink: 0 }} />
+                      <span style={{ color: 'var(--text-primary, #0f172a)', fontWeight: '700', fontSize: '0.85rem', whiteSpace: 'nowrap' }}>
+                        {exp.date ? new Date(exp.date).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }) : '23 Aug 2026'}
+                      </span>
+                    </div>
+                  </td>
+
+                  {/* PROJECT / SITE */}
+                  <td style={{ padding: '0.85rem 1rem', verticalAlign: 'middle' }}>
+                    <div style={{ color: 'var(--text-primary, #0f172a)', fontWeight: '700', fontSize: '0.88rem' }}>
+                      {exp.projectName || 'Site Project'}
+                    </div>
+                  </td>
+
+                  {/* CATEGORY */}
+                  <td style={{ padding: '0.85rem 1rem', verticalAlign: 'middle' }}>
+                    {(() => {
+                      const cat = exp.category || 'Material';
+                      const isTransport = cat.toLowerCase().includes('conveyance') || cat.toLowerCase().includes('transport') || cat.toLowerCase().includes('travel') || cat.toLowerCase().includes('local');
+                      const isLabor = cat.toLowerCase().includes('labor') || cat.toLowerCase().includes('wages');
+                      const isFood = cat.toLowerCase().includes('food') || cat.toLowerCase().includes('tea');
+                      const isEquip = cat.toLowerCase().includes('equipment') || cat.toLowerCase().includes('rental');
+
+                      let label = 'MATERIAL';
+                      let bg = 'rgba(239, 68, 68, 0.12)';
+                      let color = '#f87171';
+                      let border = 'rgba(239, 68, 68, 0.3)';
+
+                      if (isTransport) {
+                        label = 'TRANSPORT';
+                        bg = 'rgba(34, 197, 94, 0.12)';
+                        color = '#4ade80';
+                        border = 'rgba(34, 197, 94, 0.3)';
+                      } else if (isLabor) {
+                        label = 'LABOR';
+                        bg = 'rgba(59, 130, 246, 0.12)';
+                        color = '#60a5fa';
+                        border = 'rgba(59, 130, 246, 0.3)';
+                      } else if (isFood) {
+                        label = 'FOOD & TEA';
+                        bg = 'rgba(245, 158, 11, 0.12)';
+                        color = '#fbbf24';
+                        border = 'rgba(245, 158, 11, 0.3)';
+                      } else if (isEquip) {
+                        label = 'EQUIPMENT';
+                        bg = 'rgba(168, 85, 247, 0.12)';
+                        color = '#c084fc';
+                        border = 'rgba(168, 85, 247, 0.3)';
+                      }
+
+                      return (
+                        <span style={{ fontSize: '0.72rem', fontWeight: '800', padding: '0.2rem 0.55rem', borderRadius: '9999px', backgroundColor: bg, color: color, border: `1px solid ${border}`, display: 'inline-block', letterSpacing: '0.04em' }}>
+                          {label}
+                        </span>
+                      );
+                    })()}
+                  </td>
+
+                  {/* SUPERVISOR */}
+                  <td style={{ padding: '0.85rem 1rem', verticalAlign: 'middle' }}>
+                    <div style={{ color: 'var(--text-primary, #0f172a)', fontWeight: '700', fontSize: '0.88rem' }}>
+                      {exp.supervisorName || 'Unknown'}
+                    </div>
+                  </td>
+
+                  {/* AMOUNT */}
+                  <td style={{ padding: '0.85rem 1rem', verticalAlign: 'middle' }}>
+                    <div style={{ color: '#0f172a', fontWeight: '800', fontSize: '0.95rem' }}>
+                      ₹{(exp.amount || 0).toLocaleString('en-IN')}
+                    </div>
+                  </td>
+
+                  {/* ACTIONS */}
+                  <td style={{ padding: '0.85rem 1rem', verticalAlign: 'middle', textAlign: 'center' }}>
+                    <div style={{ display: 'flex', gap: '0.4rem', justifyContent: 'center' }}>
+                      <button
+                        onClick={() => setInspectModalClaim(exp)}
+                        style={{
+                          padding: '0.45rem 0.8rem',
+                          borderRadius: '8px',
+                          backgroundColor: 'var(--input-bg, #f1f5f9)',
+                          border: '1px solid var(--border-color, #cbd5e1)',
+                          color: 'var(--text-primary, #0f172a)',
+                          fontSize: '0.78rem',
+                          fontWeight: '700',
+                          cursor: 'pointer',
+                          transition: 'all 0.15s ease',
+                          whiteSpace: 'nowrap'
+                        }}
+                        onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'var(--table-hover, #e2e8f0)'}
+                        onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'var(--input-bg, #f1f5f9)'}
+                      >
+                        View Bill
+                      </button>
+                      <button
+                        onClick={() => onApproveExpense && onApproveExpense(exp.id, 'Approved and forwarded to Accounts')}
+                        style={{ background: 'linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)', color: '#ffffff', border: 'none', borderRadius: '8px', padding: '0.45rem 0.8rem', fontSize: '0.78rem', fontWeight: '800', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: '0.35rem', boxShadow: '0 2px 6px rgba(59, 130, 246, 0.3)' }}
+                        onMouseEnter={(e) => e.currentTarget.style.opacity = '0.9'}
+                        onMouseLeave={(e) => e.currentTarget.style.opacity = '1'}
+                      >
+                        <CheckCircle2 size={13} />
+                        Approve & Forward
+                      </button>
+                      <button
+                        onClick={() => onRejectExpense && onRejectExpense(exp.id, 'Rejected by operations')}
+                        style={{ backgroundColor: '#ffffff', color: '#ef4444', border: '1.5px solid #fca5a5', borderRadius: '8px', padding: '0.45rem 0.8rem', fontSize: '0.78rem', fontWeight: '800', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: '0.35rem' }}
+                        onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = '#fef2f2'; e.currentTarget.style.borderColor = '#ef4444'; }}
+                        onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = '#ffffff'; e.currentTarget.style.borderColor = '#fca5a5'; }}
+                      >
+                        <XCircle size={13} />
+                        Reject
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              ))
+            )}
+          </tbody>
+        </table>
+      </div>
+
+      {/* Bill Preview Modal */}
+      {inspectModalClaim && (
+        <div style={{
+          position: 'fixed',
+          inset: 0,
+          backgroundColor: 'rgba(15, 23, 42, 0.75)',
+          backdropFilter: 'blur(4px)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          zIndex: 9999,
+          padding: '1rem'
+        }}>
+          <div style={{
+            background: 'var(--card-bg, #ffffff)',
+            borderRadius: '16px',
+            border: '1px solid var(--border-color, #334155)',
+            maxWidth: '520px',
+            width: '100%',
+            padding: '1.5rem',
+            boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.5)',
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '1rem'
+          }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <h3 style={{ fontSize: '1.1rem', fontWeight: '800', color: 'var(--text-primary, #0f172a)', margin: 0 }}>
+                Vendor Bill Preview ({inspectModalClaim.voucherNo})
+              </h3>
+              <button onClick={() => setInspectModalClaim(null)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-secondary, #64748b)' }}>
+                <X size={20} />
+              </button>
+            </div>
+
+            <img
+              src={inspectModalClaim.billPhotoUrl}
+              alt="Bill Voucher"
+              style={{ width: '100%', maxHeight: '340px', objectFit: 'cover', borderRadius: '10px', border: '1px solid var(--border-color, #e2e8f0)' }}
+            />
+
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '0.82rem', color: 'var(--text-secondary, #475569)' }}>
+              <span>{inspectModalClaim.projectName}</span>
+              <strong style={{ color: 'var(--text-primary, #0f172a)', fontSize: '1rem' }}>₹{inspectModalClaim.amount?.toLocaleString('en-IN')}</strong>
+            </div>
+
+            <div style={{ display: 'flex', gap: '0.6rem' }}>
+              <button
+                onClick={() => {
+                  const claimId = inspectModalClaim.id;
+                  if (onApproveExpense) {
+                    onApproveExpense(claimId, 'Approved and forwarded to Accounts');
+                  }
+                  setInspectModalClaim(null);
+                }}
+                style={{
+                  flex: 1.4,
+                  padding: '0.65rem',
+                  borderRadius: '10px',
+                  border: 'none',
+                  background: 'linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)',
                   color: '#ffffff',
+                  fontWeight: '800',
+                  fontSize: '0.85rem',
+                  cursor: 'pointer',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
-                  fontWeight: '900',
-                  fontSize: '1rem',
-                  flexShrink: 0,
-                  boxShadow: '0 2px 8px rgba(0, 0, 0, 0.12)'
-                }}>
-                  ₹
-                </div>
-                <div style={{ minWidth: 0 }}>
-                  <p style={{ margin: 0, fontSize: '0.85rem', fontWeight: '800', color: 'var(--text-primary, #0f172a)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                    {item.title}
-                  </p>
-                  <p style={{ margin: '0.15rem 0 0 0', fontSize: '0.72rem', color: 'var(--text-secondary, #64748b)', fontWeight: '500' }}>
-                    {item.sub}
-                  </p>
-                </div>
-              </div>
+                  gap: '0.4rem',
+                  boxShadow: '0 2px 8px rgba(59, 130, 246, 0.3)'
+                }}
+              >
+                <CheckCircle2 size={15} />
+                <span>+ Approve & Forward</span>
+              </button>
 
-              <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', flexShrink: 0 }}>
-                <div style={{ textAlign: 'right' }}>
-                  <p style={{ margin: 0, fontSize: '0.88rem', fontWeight: '800', color: status === 'rejected' ? 'var(--text-secondary, #94a3b8)' : item.isRed ? '#f43f5e' : '#10b981' }}>
-                    {item.val}
-                  </p>
-                  <p style={{ margin: '0.15rem 0 0 0', fontSize: '0.7rem', color: 'var(--text-secondary, #94a3b8)', fontWeight: '600' }}>
-                    {item.time}
-                  </p>
-                </div>
+              <button
+                onClick={() => {
+                  const claimId = inspectModalClaim.id;
+                  if (onRejectExpense) {
+                    onRejectExpense(claimId, 'Claim rejected from bill review');
+                  }
+                  setInspectModalClaim(null);
+                }}
+                style={{
+                  flex: 0.9,
+                  padding: '0.65rem',
+                  borderRadius: '10px',
+                  backgroundColor: 'rgba(239, 68, 68, 0.08)',
+                  border: '1px solid rgba(239, 68, 68, 0.3)',
+                  color: '#ef4444',
+                  fontWeight: '800',
+                  fontSize: '0.85rem',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: '0.35rem'
+                }}
+              >
+                <X size={14} />
+                <span>Reject</span>
+              </button>
 
-                {/* 1-Click Quick Approve & Forward / Reject Action Buttons */}
-                {status === 'pending' ? (
-                  <div style={{ display: 'flex', gap: '0.35rem', alignItems: 'center' }}>
-                    <button
-                      onClick={() => onApproveExpense && onApproveExpense(item.id, 'Approved and forwarded to Accounts')}
-                      title="Approve and Forward to Accounts"
-                      style={{
-                        background: 'linear-gradient(135deg, #6366f1 0%, #4f46e5 100%)',
-                        color: '#ffffff',
-                        border: 'none',
-                        borderRadius: '7px',
-                        padding: '0.32rem 0.65rem',
-                        fontSize: '0.74rem',
-                        fontWeight: '800',
-                        cursor: 'pointer',
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '0.25rem',
-                        boxShadow: '0 2px 6px rgba(99, 102, 241, 0.35)',
-                        whiteSpace: 'nowrap'
-                      }}
-                    >
-                      <CheckCircle2 size={12} />
-                      + Approve & Forward
-                    </button>
-                    <button
-                      onClick={() => onRejectExpense && onRejectExpense(item.id, 'Rejected by operations')}
-                      title="Reject Claim"
-                      style={{
-                        backgroundColor: 'rgba(239, 68, 68, 0.08)',
-                        color: '#ef4444',
-                        border: '1px solid rgba(239, 68, 68, 0.3)',
-                        borderRadius: '7px',
-                        padding: '0.32rem 0.55rem',
-                        fontSize: '0.74rem',
-                        fontWeight: '800',
-                        cursor: 'pointer',
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '0.2rem',
-                        whiteSpace: 'nowrap'
-                      }}
-                    >
-                      <XCircle size={12} />
-                      Reject
-                    </button>
-                  </div>
-                ) : (
-                  <button
-                    onClick={() => onApproveExpense && onApproveExpense(item.id, 'Reset to Pending', 'Pending')}
-                    title="Click to reset back to Pending"
-                    style={{
-                      fontSize: '0.72rem',
-                      fontWeight: '800',
-                      padding: '0.28rem 0.6rem',
-                      borderRadius: '8px',
-                      backgroundColor: status === 'approved' ? 'rgba(16, 185, 129, 0.12)' : 'rgba(239, 68, 68, 0.12)',
-                      border: `1px solid ${status === 'approved' ? 'rgba(16, 185, 129, 0.3)' : 'rgba(239, 68, 68, 0.3)'}`,
-                      color: status === 'approved' ? '#10b981' : '#f87171',
-                      cursor: 'pointer',
-                      display: 'inline-flex',
-                      alignItems: 'center',
-                      gap: '0.25rem'
-                    }}
-                  >
-                    {status === 'approved' ? (
-                      <>
-                        <CheckCircle2 size={12} />
-                        Approved
-                      </>
-                    ) : (
-                      <>
-                        <XCircle size={12} />
-                        Rejected
-                      </>
-                    )}
-                  </button>
-                )}
-              </div>
+              <button
+                onClick={() => setInspectModalClaim(null)}
+                style={{
+                  flex: 0.8,
+                  padding: '0.65rem',
+                  borderRadius: '10px',
+                  backgroundColor: 'var(--input-bg, #f1f5f9)',
+                  border: '1px solid var(--border-color, #cbd5e1)',
+                  color: 'var(--text-primary, #475569)',
+                  fontWeight: '700',
+                  fontSize: '0.85rem',
+                  cursor: 'pointer'
+                }}
+              >
+                Close
+              </button>
             </div>
-          );
-        })}
-      </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
@@ -863,6 +1026,7 @@ const OperationsOverview = ({
   supervisors = [],
   expenses = [],
   advances = [],
+  categories = [],
 
   setActiveTab,
   onOpenCreateProject,
@@ -871,24 +1035,39 @@ const OperationsOverview = ({
   onRejectExpense
 }) => {
   const { language } = useLanguage();
-
   const pendingBillsCount = expenses.filter(e => e.status === 'Pending').length;
-  const approvedTotalSpent = expenses.filter(e => e.status === 'Approved').reduce((acc, curr) => acc + (curr.amount || 0), 0);
 
-  // Project Summary Table calculated dynamically
-  const projectSummaryRows = projects.map(p => {
-    const projectExpenses = expenses.filter(e => e.projectId === p.id && e.status === 'Approved').reduce((acc, curr) => acc + (curr.amount || 0), 0);
-    
-    return {
-      project: p.code || p.name,
-      site: p.location || p.site || 'N/A',
-      supervisor: p.supervisorName || 'Unassigned',
-      status: p.status || 'In Progress',
-      budget: `₹${(p.budget || 0).toLocaleString('en-IN')}`,
-      expense: `₹${projectExpenses.toLocaleString('en-IN')}`,
-
-    };
+  // Supervisor-wise chart data (matching Accountant overview bar chart)
+  const supervisorMap = {};
+  projects.forEach(p => {
+    const supervisor = p.supervisorName || 'Unassigned';
+    if (!supervisorMap[supervisor]) {
+      supervisorMap[supervisor] = { name: supervisor, Released: 0, Expenses: 0, WalletBalance: 0 };
+    }
+    // Use advances disbursed as "Released"
+    const projAdvances = advances.filter(a => a.projectId === p.id && a.rawStatus === 'disbursed');
+    const projReleased = projAdvances.reduce((s, a) => s + a.amount, 0);
+    const projExpenses = expenses.filter(e => e.projectId === p.id && e.status === 'Approved').reduce((s, e) => s + e.amount, 0);
+    supervisorMap[supervisor].Released += projReleased;
+    supervisorMap[supervisor].Expenses += projExpenses;
+    supervisorMap[supervisor].WalletBalance += Math.max(0, projReleased - projExpenses);
   });
+  const supervisorChartData = Object.values(supervisorMap);
+
+  // Category-wise chart data (matching Accountant overview pie chart)
+  const CATEGORY_COLORS = ['#3b82f6', '#10b981', '#f59e0b', '#8b5cf6', '#ec4899', '#06b6d4', '#64748b'];
+  const categoryMap = {};
+  if (categories && categories.length > 0) {
+    categories.forEach(c => { categoryMap[c.name] = 0; });
+  }
+  expenses.forEach(e => {
+    if (e.category) categoryMap[e.category] = (categoryMap[e.category] || 0) + (e.amount || 0);
+  });
+  const categoryChartData = Object.entries(categoryMap)
+    .map(([name, value]) => ({ name, value }))
+    .filter(c => c.value > 0);
+
+  const formatINR = (val) => new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', maximumFractionDigits: 0 }).format(val);
 
   return (
     <div className="dash-container">
@@ -980,31 +1159,142 @@ const OperationsOverview = ({
         </div>
       </div>
 
-      {/* 4. Analytics & Charts Row (2 Balanced Columns: Bar Chart & Pie Chart) */}
+      {/* 4. Analytics & Charts Row (2 Balanced Columns: matching Accountant charts) */}
       <div style={{
         display: 'grid',
         gridTemplateColumns: 'repeat(auto-fit, minmax(420px, 1fr))',
         gap: '1.25rem',
         marginTop: '1.25rem'
       }}>
-        {/* Left: Top Projects Breakdown Bar Chart */}
-        <TopRevenueProjectsChart 
-          projects={projects}
-          expenses={expenses}
-          advances={advances}
-          onViewAll={() => setActiveTab && setActiveTab('projects')} 
-          onSelectProject={onSelectProject}
-          setActiveTab={setActiveTab}
-        />
+        {/* Left: Funds Released vs Expenses vs Site Wallets (Bar Chart) */}
+        <div style={{
+          backgroundColor: 'var(--card-bg, #ffffff)',
+          borderRadius: '20px',
+          padding: '1.5rem',
+          border: '1px solid var(--border-color, #eef2f6)',
+          boxShadow: '0 4px 20px -2px rgba(0,0,0,0.04)',
+          display: 'flex',
+          flexDirection: 'column'
+        }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '1.25rem', flexWrap: 'wrap', gap: '0.6rem' }}>
+            <div style={{ minWidth: 0, flex: 1 }}>
+              <h3 style={{ fontSize: '1.05rem', fontWeight: '700', color: 'var(--text-primary)', margin: 0, lineHeight: 1.3 }}>
+                Funds Released vs Expenses vs Site Wallets
+              </h3>
+              <p style={{ fontSize: '0.78rem', color: 'var(--text-secondary)', margin: '0.2rem 0 0' }}>
+                Site-by-site expenditure and wallet fund comparison
+              </p>
+            </div>
+            <button
+              onClick={() => setActiveTab && setActiveTab('expenses')}
+              style={{ background: 'transparent', border: 'none', color: '#3b82f6', fontSize: '0.8rem', fontWeight: '600', display: 'flex', alignItems: 'center', gap: '0.2rem', cursor: 'pointer', flexShrink: 0 }}
+            >
+              Bill Approve <ArrowUpRight size={14} />
+            </button>
+          </div>
+          <div style={{ width: '100%', height: '330px' }}>
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={supervisorChartData} maxBarSize={28} barGap={4} margin={{ top: 15, right: 10, left: -15, bottom: 25 }}>
+                <CartesianGrid strokeDasharray="3 3" vertical={false} opacity={0.25} />
+                <Legend verticalAlign="top" align="right" iconType="circle" wrapperStyle={{ fontSize: '0.78rem', paddingBottom: '14px' }} />
+                <XAxis
+                  dataKey="name"
+                  interval={0}
+                  tick={({ x, y, payload }) => {
+                    if (!payload || !payload.value) return null;
+                    return (
+                      <g transform={`translate(${x},${y + 6})`}>
+                        <text x={0} y={0} dy={6} textAnchor="end" transform="rotate(-35)" fill="var(--text-secondary)" fontSize={10.5} fontWeight={600}>
+                          {String(payload.value)}
+                        </text>
+                      </g>
+                    );
+                  }}
+                  height={56}
+                  stroke="var(--text-secondary)"
+                  tickLine={false}
+                />
+                <YAxis stroke="var(--text-secondary)" fontSize={11} tickFormatter={(v) => `₹${v/1000}k`} tickLine={false} />
+                <Tooltip
+                  formatter={(value) => [formatINR(value)]}
+                  contentStyle={{ backgroundColor: 'var(--card-bg)', borderRadius: '10px', border: '1px solid var(--border-color)', color: 'var(--text-primary)' }}
+                />
+                <Bar dataKey="Released" fill="#3b82f6" maxBarSize={28} radius={[4, 4, 0, 0]} name="Funds Released" />
+                <Bar dataKey="Expenses" fill="#7c3aed" maxBarSize={28} radius={[4, 4, 0, 0]} name="Approved Expenses" />
+                <Bar dataKey="WalletBalance" fill="#10b981" maxBarSize={28} radius={[4, 4, 0, 0]} name="Site Wallet Balance" />
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
 
-        {/* Right: Interactive Pie Chart (Expense & Budget Distribution) */}
-        <BudgetDistributionPieChart 
-          expenses={expenses} 
-          projects={projects} 
-          onViewAll={() => setActiveTab && setActiveTab('expenses')}
-          onSelectProject={onSelectProject}
-          setActiveTab={setActiveTab}
-        />
+        {/* Right: Expense Breakdown by Category (Donut Pie Chart) */}
+        <div style={{
+          backgroundColor: 'var(--card-bg, #ffffff)',
+          borderRadius: '20px',
+          padding: '1.5rem',
+          border: '1px solid var(--border-color, #eef2f6)',
+          boxShadow: '0 4px 20px -2px rgba(0,0,0,0.04)',
+          display: 'flex',
+          flexDirection: 'column'
+        }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem' }}>
+            <div>
+              <h3 style={{ fontSize: '1.05rem', fontWeight: '700', color: 'var(--text-primary)', margin: 0 }}>
+                Expense Breakdown by Category
+              </h3>
+              <p style={{ fontSize: '0.78rem', color: 'var(--text-secondary)', margin: 0 }}>
+                Materials, Labour, Lodging, Transport &amp; Food
+              </p>
+            </div>
+            <button
+              onClick={() => setActiveTab && setActiveTab('expenses')}
+              style={{ background: 'transparent', border: 'none', color: '#3b82f6', fontSize: '0.8rem', fontWeight: '600', display: 'flex', alignItems: 'center', gap: '0.2rem', cursor: 'pointer' }}
+            >
+              View Bills <ArrowUpRight size={14} />
+            </button>
+          </div>
+
+          {/* Pie + Legend container */}
+          <div className="overview-pie-container">
+            <div className="overview-pie-chart-box">
+              <ResponsiveContainer width="100%" height="100%">
+                <PieChart>
+                  <Pie
+                    data={categoryChartData}
+                    cx="50%"
+                    cy="50%"
+                    innerRadius={46}
+                    outerRadius={74}
+                    paddingAngle={4}
+                    dataKey="value"
+                  >
+                    {categoryChartData.map((entry, index) => (
+                      <Cell key={`cell-${index}`} fill={CATEGORY_COLORS[index % CATEGORY_COLORS.length]} />
+                    ))}
+                  </Pie>
+                  <Tooltip
+                    formatter={(value) => [formatINR(value)]}
+                    contentStyle={{ backgroundColor: 'var(--card-bg)', borderRadius: '10px', border: '1px solid var(--border-color)', color: 'var(--text-primary)' }}
+                  />
+                </PieChart>
+              </ResponsiveContainer>
+            </div>
+            <div className="overview-pie-legend">
+              {categoryChartData.map((cat, idx) => (
+                <div key={idx} className="overview-pie-legend-row">
+                  <div className="overview-pie-legend-label">
+                    <span className="overview-pie-legend-dot" style={{ backgroundColor: CATEGORY_COLORS[idx % CATEGORY_COLORS.length] }} />
+                    <span className="overview-pie-legend-name">{cat.name}</span>
+                  </div>
+                  <strong className="overview-pie-legend-amount">{formatINR(cat.value)}</strong>
+                </div>
+              ))}
+              {categoryChartData.length === 0 && (
+                <p style={{ color: 'var(--text-secondary)', fontSize: '0.82rem', margin: '1rem 0' }}>No expense data yet.</p>
+              )}
+            </div>
+          </div>
+        </div>
       </div>
 
       {/* 5. Live Operations Activity (Expense Claims Review) */}

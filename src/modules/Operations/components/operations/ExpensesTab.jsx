@@ -52,7 +52,7 @@ const ExpensesTab = ({
   const totalAmount = expenses.reduce((acc, curr) => acc + (curr.amount || 0), 0);
   const pendingClaims = expenses.filter(e => e.status === 'Pending');
   const pendingAmount = pendingClaims.reduce((acc, curr) => acc + (curr.amount || 0), 0);
-  const approvedClaims = expenses.filter(e => e.status === 'Approved' || e.status === 'Payment Pending');
+  const approvedClaims = expenses.filter(e => e.status === 'Approved');
   const approvedAmount = approvedClaims.reduce((acc, curr) => acc + (curr.amount || 0), 0);
   const rejectedClaims = expenses.filter(e => e.status === 'Rejected');
 
@@ -62,22 +62,49 @@ const ExpensesTab = ({
     ...expenses.map(e => e.supervisorName || e.submittedBy).filter(Boolean)
   ])).sort();
 
+  // Derive unique categories dynamically
+  const dynamicCategories = Array.from(new Set(expenses.map(e => e.category).filter(Boolean))).sort();
+  const categories = ['All', ...dynamicCategories];
+
   // Filtering
   const filteredExpenses = expenses.filter(e => {
-    const titleStr = e.description || e.title || '';
-    const projectStr = e.projectName || '';
-    const supStr = e.supervisorName || e.submittedBy || '';
-    const vendorStr = e.vendorName || e.vendor || '';
-    const idStr = e.id || '';
-    const voucherStr = e.voucherNo || e.invoiceNumber || '';
+    const query = searchQuery.toLowerCase().trim();
+
+    const titleStr = String(e.description || e.title || '');
+    const projectStr = String(e.projectName || 'Site Project');
+    const supStr = String(e.supervisorName || e.submittedBy || 'Site Supervisor');
+    const vendorStr = String(e.vendorName || e.vendor || '');
+    const idStr = String(e.id || '');
+    const voucherStr = String(e.voucherNo || e.id || '');
+    const categoryStr = String(e.category || 'Material');
+    const amountStr = String(e.amount || 0);
+    const amountFormattedStr = Number(e.amount || 0).toLocaleString('en-IN');
+    
+    // How the category is displayed on screen
+    let categoryDisplayStr = 'MATERIAL';
+    const catLow = categoryStr.toLowerCase();
+    if (catLow.includes('conveyance') || catLow.includes('transport') || catLow.includes('travel') || catLow.includes('local')) {
+      categoryDisplayStr = 'TRANSPORT';
+    } else if (catLow.includes('labor') || catLow.includes('wages')) {
+      categoryDisplayStr = 'LABOR';
+    } else if (catLow.includes('food') || catLow.includes('tea')) {
+      categoryDisplayStr = 'FOOD & TEA';
+    } else if (catLow.includes('equipment') || catLow.includes('rental')) {
+      categoryDisplayStr = 'EQUIPMENT';
+    }
 
     const matchesSearch =
-      titleStr.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      projectStr.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      supStr.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      vendorStr.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      idStr.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      voucherStr.toLowerCase().includes(searchQuery.toLowerCase());
+      query === '' ||
+      titleStr.toLowerCase().includes(query) ||
+      projectStr.toLowerCase().includes(query) ||
+      supStr.toLowerCase().includes(query) ||
+      vendorStr.toLowerCase().includes(query) ||
+      idStr.toLowerCase().includes(query) ||
+      voucherStr.toLowerCase().includes(query) ||
+      categoryStr.toLowerCase().includes(query) ||
+      categoryDisplayStr.toLowerCase().includes(query) ||
+      amountStr.includes(query) ||
+      amountFormattedStr.includes(query);
 
     const matchesStatus = statusFilter === 'All' || e.status === statusFilter;
     const matchesCategory = categoryFilter === 'All' || e.category === categoryFilter;
@@ -85,8 +112,6 @@ const ExpensesTab = ({
 
     return matchesSearch && matchesStatus && matchesCategory && matchesSupervisor;
   });
-
-  const categories = ['All', 'Material Purchase', 'Local Conveyance', 'Labor Wages', 'Site Food & Refreshment', 'Equipment Rental'];
 
   // 1-Click Excel CSV Exporter
   const handleExportCSV = () => {
@@ -532,73 +557,30 @@ const ExpensesTab = ({
           </div>
         </div>
 
-        {/* Card 3: Active Sites (Blue Left Border - Toggles Site Budget Breakdown) */}
-        <div
-          onClick={() => {
-            setShowBudgetBreakdown(!showBudgetBreakdown);
-          }}
-          style={{
-            backgroundColor: showBudgetBreakdown ? 'rgba(59, 130, 246, 0.16)' : 'var(--card-bg, #ffffff)',
-            borderRadius: '16px',
-            border: showBudgetBreakdown ? '2px solid #3b82f6' : '1px solid var(--border-color, #e8ecf2)',
-            borderLeft: '5px solid #3b82f6',
-            boxShadow: showBudgetBreakdown ? '0 8px 20px -4px rgba(59, 130, 246, 0.25)' : '0 2px 8px rgba(0, 0, 0, 0.02)',
-            padding: '1.2rem 1.4rem',
-            display: 'flex',
-            alignItems: 'center',
-            gap: '1.15rem',
-            cursor: 'pointer',
-            transform: showBudgetBreakdown ? 'translateY(-2px)' : 'none',
-            transition: 'all 0.15s ease'
-          }}
-          onMouseEnter={(e) => e.currentTarget.style.transform = 'translateY(-3px)'}
-          onMouseLeave={(e) => e.currentTarget.style.transform = showBudgetBreakdown ? 'translateY(-2px)' : 'translateY(0)'}
-        >
-          <div style={{
-            width: '52px',
-            height: '52px',
-            borderRadius: '50%',
-            backgroundColor: 'rgba(59, 130, 246, 0.18)',
-            color: '#60a5fa',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            flexShrink: 0
-          }}>
-            <Building size={22} strokeWidth={2.4} />
-          </div>
-          <div>
-            <div style={{ fontSize: '1.85rem', fontWeight: '800', color: 'var(--text-primary, #0f172a)', lineHeight: 1.1 }}>
-              {projects.length || 3}
-            </div>
-            <div style={{ fontSize: '0.88rem', fontWeight: '600', color: 'var(--text-secondary, #64748b)', marginTop: '0.2rem' }}>
-              Active Sites
-            </div>
-          </div>
-        </div>
+
 
         {/* Card 4: Approved Bills (Green Left Border - Filters Approved) */}
         <div
           onClick={() => {
-            setStatusFilter('Payment Pending');
+            setStatusFilter('Approved');
             setShowBudgetBreakdown(false);
           }}
           style={{
-            backgroundColor: statusFilter === 'Payment Pending' && !showBudgetBreakdown ? 'rgba(16, 185, 129, 0.16)' : 'var(--card-bg, #ffffff)',
+            backgroundColor: statusFilter === 'Approved' && !showBudgetBreakdown ? 'rgba(16, 185, 129, 0.16)' : 'var(--card-bg, #ffffff)',
             borderRadius: '16px',
-            border: statusFilter === 'Payment Pending' && !showBudgetBreakdown ? '2px solid #10b981' : '1px solid var(--border-color, #e8ecf2)',
+            border: statusFilter === 'Approved' && !showBudgetBreakdown ? '2px solid #10b981' : '1px solid var(--border-color, #e8ecf2)',
             borderLeft: '5px solid #10b981',
-            boxShadow: statusFilter === 'Payment Pending' && !showBudgetBreakdown ? '0 8px 20px -4px rgba(16, 185, 129, 0.25)' : '0 2px 8px rgba(0, 0, 0, 0.02)',
+            boxShadow: statusFilter === 'Approved' && !showBudgetBreakdown ? '0 8px 20px -4px rgba(16, 185, 129, 0.25)' : '0 2px 8px rgba(0, 0, 0, 0.02)',
             padding: '1.2rem 1.4rem',
             display: 'flex',
             alignItems: 'center',
             gap: '1.15rem',
             cursor: 'pointer',
-            transform: statusFilter === 'Payment Pending' && !showBudgetBreakdown ? 'translateY(-2px)' : 'none',
+            transform: statusFilter === 'Approved' && !showBudgetBreakdown ? 'translateY(-2px)' : 'none',
             transition: 'all 0.15s ease'
           }}
           onMouseEnter={(e) => e.currentTarget.style.transform = 'translateY(-3px)'}
-          onMouseLeave={(e) => e.currentTarget.style.transform = statusFilter === 'Payment Pending' && !showBudgetBreakdown ? 'translateY(-2px)' : 'translateY(0)'}
+          onMouseLeave={(e) => e.currentTarget.style.transform = statusFilter === 'Approved' && !showBudgetBreakdown ? 'translateY(-2px)' : 'translateY(0)'}
         >
           <div style={{
             width: '52px',
@@ -799,8 +781,8 @@ const ExpensesTab = ({
             >
               <option value="All">All Statuses</option>
               <option value="Pending">Pending Review</option>
-              <option value="Forwarded">Forwarded to Accounts</option>
               <option value="Approved">Approved Bills</option>
+              <option value="Paid">Paid Bills</option>
               <option value="Rejected">Rejected Bills</option>
             </select>
             <Filter size={14} style={{ position: 'absolute', left: '0.75rem', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-secondary, #64748b)', pointerEvents: 'none' }} />
@@ -857,10 +839,9 @@ const ExpensesTab = ({
                 textTransform: 'uppercase',
                 letterSpacing: '0.06em'
               }}>
-                <th style={{ padding: '1rem 1.25rem', whiteSpace: 'nowrap', minWidth: '145px', width: '145px' }}>BILL ID</th>
+                <th style={{ padding: '1rem 1.25rem', whiteSpace: 'nowrap', minWidth: '145px', width: '145px' }}>VOUCHER ID</th>
                 <th style={{ padding: '1rem 1.25rem', whiteSpace: 'nowrap', minWidth: '135px' }}>DATE</th>
                 <th style={{ padding: '1rem 1.25rem', whiteSpace: 'nowrap', minWidth: '180px' }}>PROJECT</th>
-                <th style={{ padding: '1rem 1.25rem', whiteSpace: 'nowrap', minWidth: '170px' }}>ITEM</th>
                 <th style={{ padding: '1rem 1.25rem', whiteSpace: 'nowrap', minWidth: '130px' }}>CATEGORY</th>
                 <th style={{ padding: '1rem 1.25rem', whiteSpace: 'nowrap', minWidth: '140px' }}>SUPERVISOR</th>
                 <th style={{ padding: '1rem 1.25rem', whiteSpace: 'nowrap', minWidth: '110px' }}>AMOUNT</th>
@@ -870,7 +851,7 @@ const ExpensesTab = ({
             <tbody>
               {filteredExpenses.length === 0 ? (
                 <tr>
-                  <td colSpan={8} style={{ padding: '3.5rem 1rem', textAlign: 'center', color: 'var(--text-secondary, #94a3b8)' }}>
+                  <td colSpan={7} style={{ padding: '3.5rem 1rem', textAlign: 'center', color: 'var(--text-secondary, #94a3b8)' }}>
                     <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.6rem' }}>
                       <FileText size={36} style={{ color: 'var(--text-secondary, #cbd5e1)' }} />
                       <span style={{ fontSize: '1rem', fontWeight: '700', color: 'var(--text-secondary, #64748b)' }}>
@@ -886,7 +867,7 @@ const ExpensesTab = ({
                 filteredExpenses.map((exp, idx) => {
                   const isPending = exp.status === 'Pending';
                   const isApproved = exp.status === 'Approved';
-                  const isForwarded = exp.status === 'Forwarded';
+                  const isPaid = exp.status === 'Paid';
                   const isRejected = exp.status === 'Rejected';
 
                 return (
@@ -899,7 +880,7 @@ const ExpensesTab = ({
                     onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'var(--table-hover, rgba(241, 245, 249, 0.6))'}
                     onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
                   >
-                    {/* BILL ID */}
+                    {/* VOUCHER ID */}
                     <td style={{ padding: '1.15rem 1.25rem', verticalAlign: 'middle', whiteSpace: 'nowrap', minWidth: '145px', width: '145px' }}>
                       <strong style={{ 
                         color: 'var(--text-primary, #0f172a)', 
@@ -910,7 +891,7 @@ const ExpensesTab = ({
                         display: 'inline-block',
                         letterSpacing: '0.03em'
                       }}>
-                        {exp.id}
+                        {exp.voucherNo || exp.id}
                       </strong>
                     </td>
 
@@ -934,38 +915,6 @@ const ExpensesTab = ({
                       <div style={{ color: 'var(--text-primary, #0f172a)', fontWeight: '700', fontSize: '0.92rem' }}>
                         {exp.projectName || 'Site Project'}
                       </div>
-                      <div style={{ fontSize: '0.78rem', color: 'var(--text-secondary, #64748b)', marginTop: '0.15rem', fontWeight: '500' }}>
-                        {exp.voucherNo || 'VCH-GEN'}
-                      </div>
-                    </td>
-
-                    {/* ITEM / REASON */}
-                    <td style={{ padding: '1.15rem 1.25rem', verticalAlign: 'middle', maxWidth: '200px' }}>
-                      {(() => {
-                        const desc = exp.description || exp.title || '';
-                        const d = desc.toLowerCase();
-                        let shortName = desc;
-
-                        if (d.includes('cement') || d.includes('pvc') || d.includes('pipe') || d.includes('foundation') || d.includes('bags')) {
-                          shortName = 'Cement & Pipes';
-                        } else if (d.includes('tempo') || d.includes('freight') || d.includes('swargate') || d.includes('travel') || d.includes('transport')) {
-                          shortName = 'Tempo / Transport';
-                        } else if (d.includes('excavation') || d.includes('labor') || d.includes('helper') || d.includes('wages') || d.includes('workers')) {
-                          shortName = 'Labor Wages';
-                        } else if (d.includes('food') || d.includes('tea') || d.includes('refreshment')) {
-                          shortName = 'Food & Tea';
-                        } else if (d.includes('generator') || d.includes('equipment') || d.includes('machine')) {
-                          shortName = 'Equipment Rental';
-                        } else if (desc.length > 25) {
-                          shortName = desc.split(' ').slice(0, 3).join(' ');
-                        }
-
-                        return (
-                          <div style={{ color: 'var(--text-primary, #0f172a)', fontWeight: '700', fontSize: '0.92rem' }}>
-                            {shortName || 'Site Expense'}
-                          </div>
-                        );
-                      })()}
                     </td>
 
                     {/* CATEGORY */}
@@ -1064,8 +1013,8 @@ const ExpensesTab = ({
                           View Bill
                         </button>
 
-                        {/* Pending / Forwarded State: Single Approve & Forward Button + Separate Reject Button */}
-                        {isPending || isForwarded ? (
+                        {/* Pending State: Single Approve & Forward Button + Separate Reject Button */}
+                        {isPending ? (
                           <>
                             {/* Single Approve & Forward Button */}
                             <button
@@ -1140,14 +1089,8 @@ const ExpensesTab = ({
                               <span>Reject</span>
                             </button>
                           </>
-                        ) : isApproved ? (
+                        ) : isApproved || isPaid ? (
                           <button
-                            onClick={() => {
-                              if (onApproveExpense) {
-                                onApproveExpense(exp.id, 'Reset to Pending', 'Pending');
-                              }
-                            }}
-                            title="Click to reset back to Pending"
                             style={{
                               padding: '0.45rem 0.85rem',
                               borderRadius: '8px',
@@ -1162,27 +1105,14 @@ const ExpensesTab = ({
                               gap: '0.35rem',
                               whiteSpace: 'nowrap',
                               minWidth: '120px',
-                              cursor: 'pointer',
-                              transition: 'all 0.15s ease'
-                            }}
-                            onMouseEnter={(e) => {
-                              e.currentTarget.style.backgroundColor = 'rgba(16, 185, 129, 0.22)';
-                            }}
-                            onMouseLeave={(e) => {
-                              e.currentTarget.style.backgroundColor = 'rgba(16, 185, 129, 0.12)';
+                              cursor: 'default',
                             }}
                           >
                             <CheckCircle2 size={14} />
-                            <span>Approved</span>
+                            <span>{isPaid ? 'Paid' : 'Approved'}</span>
                           </button>
                         ) : (
                           <button
-                            onClick={() => {
-                              if (onApproveExpense) {
-                                onApproveExpense(exp.id, 'Reset to Pending', 'Pending');
-                              }
-                            }}
-                            title="Click to reset back to Pending"
                             style={{
                               padding: '0.45rem 0.85rem',
                               borderRadius: '8px',
@@ -1197,14 +1127,7 @@ const ExpensesTab = ({
                               gap: '0.35rem',
                               whiteSpace: 'nowrap',
                               minWidth: '120px',
-                              cursor: 'pointer',
-                              transition: 'all 0.15s ease'
-                            }}
-                            onMouseEnter={(e) => {
-                              e.currentTarget.style.backgroundColor = 'rgba(239, 68, 68, 0.22)';
-                            }}
-                            onMouseLeave={(e) => {
-                              e.currentTarget.style.backgroundColor = 'rgba(239, 68, 68, 0.12)';
+                              cursor: 'default',
                             }}
                           >
                             <X size={14} />
@@ -1494,7 +1417,7 @@ const ExpensesTab = ({
             </div>
 
             <div style={{ display: 'flex', gap: '0.6rem' }}>
-              {inspectModalClaim.status !== 'Approved' && inspectModalClaim.status !== 'Rejected' && (
+              {inspectModalClaim.status !== 'Approved' && inspectModalClaim.status !== 'Paid' && inspectModalClaim.status !== 'Rejected' && (
                 <>
                   <button
                     onClick={() => {

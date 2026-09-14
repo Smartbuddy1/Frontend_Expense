@@ -265,7 +265,6 @@ const Dashboard = () => {
       ]);
       const mappedProjects = projRes.data.projects.map(mapProjectForAccounts);
       const mappedExpenses = expRes.data.expenses
-        .filter(e => e.status !== 'submitted' && e.status !== 'ops_rejected')
         .map(mapExpenseForAccounts);
       const mappedAdvances = advRes.data.advances.map(mapAdvanceForAccounts);
 

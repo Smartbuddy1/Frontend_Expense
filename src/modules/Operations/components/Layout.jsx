@@ -101,18 +101,6 @@ const Layout = () => {
       icon: Scale,
       tab: 'reconciliation',
     },
-    {
-      name: 'Alerts',
-      href: '/operations?tab=alerts',
-      icon: AlertTriangle,
-      tab: 'alerts',
-    },
-    {
-      name: 'Public Form',
-      href: '/operations?tab=public-form',
-      icon: Globe,
-      tab: 'public-form',
-    },
   ];
 
   return (
