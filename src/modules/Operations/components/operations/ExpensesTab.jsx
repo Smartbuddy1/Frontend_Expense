@@ -93,18 +93,19 @@ const ExpensesTab = ({
       categoryDisplayStr = 'EQUIPMENT';
     }
 
-    const matchesSearch =
-      query === '' ||
-      titleStr.toLowerCase().includes(query) ||
-      projectStr.toLowerCase().includes(query) ||
-      supStr.toLowerCase().includes(query) ||
-      vendorStr.toLowerCase().includes(query) ||
-      idStr.toLowerCase().includes(query) ||
-      voucherStr.toLowerCase().includes(query) ||
-      categoryStr.toLowerCase().includes(query) ||
-      categoryDisplayStr.toLowerCase().includes(query) ||
-      amountStr.includes(query) ||
-      amountFormattedStr.includes(query);
+    const queryTerms = query.split(/\s+/).filter(Boolean);
+    const matchesSearch = queryTerms.length === 0 || queryTerms.every(term => 
+      titleStr.toLowerCase().includes(term) ||
+      projectStr.toLowerCase().includes(term) ||
+      supStr.toLowerCase().includes(term) ||
+      vendorStr.toLowerCase().includes(term) ||
+      idStr.toLowerCase().includes(term) ||
+      voucherStr.toLowerCase().includes(term) ||
+      categoryStr.toLowerCase().includes(term) ||
+      categoryDisplayStr.toLowerCase().includes(term) ||
+      amountStr.includes(term) ||
+      amountFormattedStr.includes(term)
+    );
 
     const matchesStatus = statusFilter === 'All' || e.status === statusFilter;
     const matchesCategory = categoryFilter === 'All' || e.category === categoryFilter;

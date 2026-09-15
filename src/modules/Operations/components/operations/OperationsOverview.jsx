@@ -1064,8 +1064,7 @@ const OperationsOverview = ({
     if (e.category) categoryMap[e.category] = (categoryMap[e.category] || 0) + (e.amount || 0);
   });
   const categoryChartData = Object.entries(categoryMap)
-    .map(([name, value]) => ({ name, value }))
-    .filter(c => c.value > 0);
+    .map(([name, value]) => ({ name, value }));
 
   const formatINR = (val) => new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', maximumFractionDigits: 0 }).format(val);
 
