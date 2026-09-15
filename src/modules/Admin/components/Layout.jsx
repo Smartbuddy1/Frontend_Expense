@@ -7,7 +7,7 @@ import {
   User, Menu, ShieldCheck, FileText, HardHat, UserCheck, Briefcase,
   Phone, Shield
 } from 'lucide-react';
-const newLogo = '/logo_new.png';
+const newLogo = `${import.meta.env.BASE_URL}logo_new.png`;
 import Footer from './Footer';
 
 const Layout = () => {
