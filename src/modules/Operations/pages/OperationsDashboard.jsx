@@ -372,7 +372,6 @@ const OperationsDashboard = () => {
       
       setIsExpenseApprovalOpen(false);
       setInspectingExpense(null);
-      handleTabChange('projects');
     } catch (err) {
       toast.error(err.response?.data?.error || 'Could not approve the expense');
     }

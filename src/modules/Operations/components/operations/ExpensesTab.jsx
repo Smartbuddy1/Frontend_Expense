@@ -923,35 +923,41 @@ const ExpensesTab = ({
                       {(() => {
                         const cat = exp.category || 'Material';
                         const isTransport = cat.toLowerCase().includes('conveyance') || cat.toLowerCase().includes('transport') || cat.toLowerCase().includes('travel') || cat.toLowerCase().includes('local');
-                        const isLabor = cat.toLowerCase().includes('labor') || cat.toLowerCase().includes('wages');
-                        const isFood = cat.toLowerCase().includes('food') || cat.toLowerCase().includes('tea');
+                        const isLabor = cat.toLowerCase().includes('labor') || cat.toLowerCase().includes('wages') || cat.toLowerCase().includes('contractor');
+                        const isFood = cat.toLowerCase().includes('food') || cat.toLowerCase().includes('tea') || cat.toLowerCase().includes('allowance');
                         const isEquip = cat.toLowerCase().includes('equipment') || cat.toLowerCase().includes('rental');
+                        const isLodging = cat.toLowerCase().includes('lodging') || cat.toLowerCase().includes('hotel');
+                        const isMisc = cat.toLowerCase().includes('miscellaneous') || cat.toLowerCase().includes('emergency') || cat.toLowerCase().includes('other');
 
-                        let label = 'MATERIAL';
+                        let label = cat.toUpperCase();
                         let bg = 'rgba(239, 68, 68, 0.12)';
-                        let color = '#f87171';
+                        let color = '#f87171'; // Default: Red (Material)
                         let border = 'rgba(239, 68, 68, 0.3)';
 
                         if (isTransport) {
-                          label = 'TRANSPORT';
                           bg = 'rgba(34, 197, 94, 0.12)';
-                          color = '#4ade80';
+                          color = '#4ade80'; // Green
                           border = 'rgba(34, 197, 94, 0.3)';
                         } else if (isLabor) {
-                          label = 'LABOR';
                           bg = 'rgba(59, 130, 246, 0.12)';
-                          color = '#60a5fa';
+                          color = '#60a5fa'; // Blue
                           border = 'rgba(59, 130, 246, 0.3)';
                         } else if (isFood) {
-                          label = 'FOOD & TEA';
                           bg = 'rgba(245, 158, 11, 0.12)';
-                          color = '#fbbf24';
+                          color = '#fbbf24'; // Yellow
                           border = 'rgba(245, 158, 11, 0.3)';
                         } else if (isEquip) {
-                          label = 'EQUIPMENT';
                           bg = 'rgba(168, 85, 247, 0.12)';
-                          color = '#c084fc';
+                          color = '#c084fc'; // Purple
                           border = 'rgba(168, 85, 247, 0.3)';
+                        } else if (isLodging) {
+                          bg = 'rgba(236, 72, 153, 0.12)';
+                          color = '#f472b6'; // Pink
+                          border = 'rgba(236, 72, 153, 0.3)';
+                        } else if (isMisc) {
+                          bg = 'rgba(100, 116, 139, 0.12)';
+                          color = '#94a3b8'; // Slate
+                          border = 'rgba(100, 116, 139, 0.3)';
                         }
 
                         return (
