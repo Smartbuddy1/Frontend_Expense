@@ -35,6 +35,7 @@ import {
 import confetti from 'canvas-confetti';
 import { useWallet } from '../context/WalletContext';
 import { useLanguage } from '../context/LanguageContext';
+import { toast } from '../../../components/Toast';
 
 const PublicExpenseForm = () => {
   const wallet = useWallet();
@@ -182,27 +183,27 @@ const PublicExpenseForm = () => {
     const selectedSite = formData.site === 'Other / Custom Location' ? formData.customSite.trim() : formData.site;
 
     if (!selectedSite) {
-      alert(language === 'mr' ? 'कृपया साइट किंवा ठिकाणाचे नाव टाका!' : language === 'hi' ? 'कृपया साइट या स्थान का नाम डालें!' : 'Please enter or select a site/location!');
+      toast.error(language === 'mr' ? 'कृपया साइट किंवा ठिकाणाचे नाव टाका!' : language === 'hi' ? 'कृपया साइट या स्थान का नाम डालें!' : 'Please enter or select a site/location!');
       return;
     }
 
     if (!formData.submitterName.trim()) {
-      alert(language === 'mr' ? 'कृपया तुमचे नाव भरा!' : language === 'hi' ? 'कृपया अपना नाम भरें!' : 'Please enter your name!');
+      toast.error(language === 'mr' ? 'कृपया तुमचे नाव भरा!' : language === 'hi' ? 'कृपया अपना नाम भरें!' : 'Please enter your name!');
       return;
     }
 
     if (!formData.amount || isNaN(formData.amount) || parseFloat(formData.amount) <= 0) {
-      alert(language === 'mr' ? 'कृपया वैध रक्कम भरा!' : language === 'hi' ? 'कृपया सही राशि भरें!' : 'Please enter a valid amount!');
+      toast.error(language === 'mr' ? 'कृपया वैध रक्कम भरा!' : language === 'hi' ? 'कृपया सही राशि भरें!' : 'Please enter a valid amount!');
       return;
     }
 
     if (!formData.paidTo || !formData.paidTo.trim()) {
-      alert(language === 'mr' ? 'कृपया ज्याला पैसे दिले त्याचे नाव भरा!' : language === 'hi' ? 'कृपया जिसे भुगतान किया उसका नाम भरें!' : 'Please enter Vendor / Person name!');
+      toast.error(language === 'mr' ? 'कृपया ज्याला पैसे दिले त्याचे नाव भरा!' : language === 'hi' ? 'कृपया जिसे भुगतान किया उसका नाम भरें!' : 'Please enter Vendor / Person name!');
       return;
     }
 
     if (!formData.receiptName) {
-      alert(language === 'mr' ? 'कृपया बिलाचा फोटो किंवा डॉक्युमेंट जोडा (आवश्यक)!' : language === 'hi' ? 'कृपया बिल की फोटो या डॉक्युमेंट जोड़ें (आवश्यक)!' : 'Please attach Bill / Receipt Proof (Required)!');
+      toast.error(language === 'mr' ? 'कृपया बिलाचा फोटो किंवा डॉक्युमेंट जोडा (आवश्यक)!' : language === 'hi' ? 'कृपया बिल की फोटो या डॉक्युमेंट जोड़ें (आवश्यक)!' : 'Please attach Bill / Receipt Proof (Required)!');
       return;
     }
 

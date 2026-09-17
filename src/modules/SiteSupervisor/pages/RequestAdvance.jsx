@@ -21,6 +21,7 @@ import {
 import { useWallet } from '../context/WalletContext';
 import { useLanguage } from '../context/LanguageContext';
 import { exportToExcel, triggerPrint, exportToPDF } from '../utils/exportUtils';
+import { toast } from '../../../components/Toast';
 
 const RequestAdvance = () => {
   const { requestAdvance, walletBalance, totalAdvance, advancesList, projects, defaultTargetProject, deleteAdvance, updateAdvance } = useWallet();
@@ -48,7 +49,7 @@ const RequestAdvance = () => {
   const handleEditSubmit = async (e) => {
     e.preventDefault();
     if (!editAdvanceData.projectId || !editAdvanceData.amount || !editAdvanceData.purpose) {
-      alert("Please fill all required fields!");
+      toast.error("Please fill all required fields!");
       return;
     }
     setSubmitting(true);
@@ -56,9 +57,9 @@ const RequestAdvance = () => {
       await updateAdvance(editAdvanceData.id, editAdvanceData);
       setIsEditModalOpen(false);
       setEditAdvanceData(null);
-      alert('Advance updated successfully!');
+      toast.success('Advance updated successfully!');
     } catch (err) {
-      alert(err.response?.data?.error || 'Failed to update advance');
+      toast.error(err.response?.data?.error || 'Failed to update advance');
     } finally {
       setSubmitting(false);
     }
@@ -81,19 +82,19 @@ const RequestAdvance = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!projectId) {
-      alert(language === 'mr' ? 'कृपया साइट लोकेशन निवडा!' : language === 'hi' ? 'कृपया साइट लोकेशन चुनें!' : 'Please select a Site Location!');
+      toast.error(language === 'mr' ? 'कृपया साइट लोकेशन निवडा!' : language === 'hi' ? 'कृपया साइट लोकेशन चुनें!' : 'Please select a Site Location!');
       return;
     }
     if (!amount || isNaN(amount) || parseFloat(amount) <= 0) {
-      alert(language === 'mr' ? 'कृपया योग्य अ‍ॅडव्हान्स रक्कम भरा!' : language === 'hi' ? 'कृपया सही एडवांस राशि भरें!' : 'Please enter a valid advance amount!');
+      toast.error(language === 'mr' ? 'कृपया योग्य अ‍ॅडव्हान्स रक्कम भरा!' : language === 'hi' ? 'कृपया सही एडवांस राशि भरें!' : 'Please enter a valid advance amount!');
       return;
     }
     if (!urgency) {
-      alert(language === 'mr' ? 'कृपया तातडीचा प्रकार (Urgency Level) निवडा!' : language === 'hi' ? 'कृपया तात्कालिकता (Urgency Level) चुनें!' : 'Please select an Urgency Level!');
+      toast.error(language === 'mr' ? 'कृपया तातडीचा प्रकार (Urgency Level) निवडा!' : language === 'hi' ? 'कृपया तात्कालिकता (Urgency Level) चुनें!' : 'Please select an Urgency Level!');
       return;
     }
     if (!purpose || !purpose.trim()) {
-      alert(language === 'mr' ? 'कृपया अ‍ॅडव्हान्सचे कारण / स्पष्टीकरण भरा (Mandatory)!' : language === 'hi' ? 'कृपया एडवांस का कारण / स्पष्टीकरण भरें (Mandatory)!' : 'Please enter Purpose / Reason for advance (Mandatory)!');
+      toast.error(language === 'mr' ? 'कृपया अ‍ॅडव्हान्सचे कारण / स्पष्टीकरण भरा (Mandatory)!' : language === 'hi' ? 'कृपया एडवांस का कारण / स्पष्टीकरण भरें (Mandatory)!' : 'Please enter Purpose / Reason for advance (Mandatory)!');
       return;
     }
 
@@ -109,13 +110,13 @@ const RequestAdvance = () => {
       setAmount('');
       setPurpose('');
       setIsModalOpen(false);
-      alert(language === 'mr'
+      toast.success(language === 'mr'
         ? `₹${parseFloat(amount).toLocaleString()} ची अ‍ॅडव्हान्स मागणी मंजुरीसाठी पाठवली गेली आहे!`
         : language === 'hi'
         ? `₹${parseFloat(amount).toLocaleString()} की एडवांस मांग स्वीकृति के लिए भेज दी गई है!`
         : `Requisition of ₹${parseFloat(amount).toLocaleString()} submitted for Project Head approval!`);
     } catch (err) {
-      alert(err.response?.data?.error || err.message || (language === 'mr' ? 'अडचण आली, पुन्हा प्रयत्न करा.' : language === 'hi' ? 'समस्या आई, कृपया पुनः प्रयास करें.' : 'Could not submit the request, please try again.'));
+      toast.error(err.response?.data?.error || err.message || (language === 'mr' ? 'अडचण आली, पुन्हा प्रयत्न करा.' : language === 'hi' ? 'समस्या आई, कृपया पुनः प्रयास करें.' : 'Could not submit the request, please try again.'));
     } finally {
       setSubmitting(false);
     }
@@ -583,7 +584,7 @@ const RequestAdvance = () => {
                               try {
                                 await deleteAdvance(item.id);
                               } catch(err) {
-                                alert(err.response?.data?.error || 'Failed to delete advance request.');
+                                toast.error(err.response?.data?.error || 'Failed to delete advance request.');
                               }
                             }
                           }}

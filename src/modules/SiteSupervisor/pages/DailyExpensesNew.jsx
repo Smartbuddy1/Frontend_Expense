@@ -28,6 +28,7 @@ import {
 import { useWallet } from '../context/WalletContext';
 import { useLanguage } from '../context/LanguageContext';
 import { exportToExcel, triggerPrint, exportToPDF } from '../utils/exportUtils';
+import { toast } from '../../../components/Toast';
 
 const DailyExpenses = () => {
   const { project, projects, defaultTargetProject, categories, walletBalance, expensesList, recordExpense, todaySpend, deleteExpense, updateExpense } = useWallet();
@@ -75,11 +76,11 @@ const DailyExpenses = () => {
   const handleEditSubmit = async (e) => {
     e.preventDefault();
     if (!editExpenseData.projectId || !editExpenseData.category || !editExpenseData.amount || !editExpenseData.paidTo.trim()) {
-      alert("Please fill all required fields!");
+      toast.error("Please fill all required fields!");
       return;
     }
     if (!editExpenseData.receiptName && !editExpenseData.previewUrl) {
-      alert(language === 'mr' ? 'कृपया बिलाचा फोटो किंवा डॉक्युमेंट पुरावा जोडा (Bill Proof अनिवार्य आहे)!' : language === 'hi' ? 'कृपया बिल की फोटो या डॉक्युमेंट प्रमाण जोड़ें (Bill Proof अनिवार्य है)!' : 'Please attach a bill photo or document proof (Mandatory)!');
+      toast.error(language === 'mr' ? 'कृपया बिलाचा फोटो किंवा डॉक्युमेंट पुरावा जोडा (Bill Proof अनिवार्य आहे)!' : language === 'hi' ? 'कृपया बिल की फोटो या डॉक्युमेंट प्रमाण जोड़ें (Bill Proof अनिवार्य है)!' : 'Please attach a bill photo or document proof (Mandatory)!');
       return;
     }
     setSubmitting(true);
@@ -87,9 +88,9 @@ const DailyExpenses = () => {
       await updateExpense(editExpenseData.id, editExpenseData);
       setIsEditModalOpen(false);
       setEditExpenseData(null);
-      alert('Expense updated successfully!');
+      toast.success('Expense updated successfully!');
     } catch (err) {
-      alert(err.response?.data?.error || 'Failed to update expense');
+      toast.error(err.response?.data?.error || 'Failed to update expense');
     } finally {
       setSubmitting(false);
     }
@@ -137,23 +138,23 @@ const DailyExpenses = () => {
     e.preventDefault();
 
     if (!formData.projectId) {
-      alert(language === 'mr' ? 'कृपया साइट लोकेशन निवडा!' : language === 'hi' ? 'कृपया साइट लोकेशन चुनें!' : 'Please select a Site Location!');
+      toast.error(language === 'mr' ? 'कृपया साइट लोकेशन निवडा!' : language === 'hi' ? 'कृपया साइट लोकेशन चुनें!' : 'Please select a Site Location!');
       return;
     }
     if (!formData.category) {
-      alert(language === 'mr' ? 'कृपया खर्चाचा प्रकार निवडा!' : language === 'hi' ? 'कृपया खर्च का प्रकार चुनें!' : 'Please select an Expense Category!');
+      toast.error(language === 'mr' ? 'कृपया खर्चाचा प्रकार निवडा!' : language === 'hi' ? 'कृपया खर्च का प्रकार चुनें!' : 'Please select an Expense Category!');
       return;
     }
     if (!formData.amount || isNaN(formData.amount) || parseFloat(formData.amount) <= 0) {
-      alert(language === 'mr' ? 'कृपया योग्य रक्कम भरा!' : language === 'hi' ? 'कृपया सही राशि भरें!' : 'Please enter a valid amount!');
+      toast.error(language === 'mr' ? 'कृपया योग्य रक्कम भरा!' : language === 'hi' ? 'कृपया सही राशि भरें!' : 'Please enter a valid amount!');
       return;
     }
     if (!formData.paidTo || !formData.paidTo.trim()) {
-      alert(language === 'mr' ? 'कृपया कोणाला पैसे दिले (Vendor / Person Name) ते भरा!' : language === 'hi' ? 'कृपया किसे भुगतान किया (Vendor / Person Name) यह भरें!' : 'Please enter Paid To (Vendor / Person Name)!');
+      toast.error(language === 'mr' ? 'कृपया कोणाला पैसे दिले (Vendor / Person Name) ते भरा!' : language === 'hi' ? 'कृपया किसे भुगतान किया (Vendor / Person Name) यह भरें!' : 'Please enter Paid To (Vendor / Person Name)!');
       return;
     }
     if (!formData.receiptName) {
-      alert(language === 'mr' ? 'कृपया बिलाचा फोटो किंवा डॉक्युमेंट पुरावा जोडा (Bill Proof अनिवार्य आहे)!' : language === 'hi' ? 'कृपया बिल की फोटो या डॉक्युमेंट प्रमाण जोड़ें (Bill Proof अनिवार्य है)!' : 'Please attach a bill photo or document proof (Mandatory)!');
+      toast.error(language === 'mr' ? 'कृपया बिलाचा फोटो किंवा डॉक्युमेंट पुरावा जोडा (Bill Proof अनिवार्य आहे)!' : language === 'hi' ? 'कृपया बिल की फोटो या डॉक्युमेंट प्रमाण जोड़ें (Bill Proof अनिवार्य है)!' : 'Please attach a bill photo or document proof (Mandatory)!');
       return;
     }
 
@@ -181,9 +182,9 @@ const DailyExpenses = () => {
       });
 
       setIsAddModalOpen(false);
-      alert(language === 'mr' ? 'खर्च आणि बिलाचा पुरावा यशस्वीरीत्या नोंदवला गेला!' : language === 'hi' ? 'खर्च और बिल का प्रमाण सफलतापूर्वक दर्ज हो गया!' : 'Expense and bill proof recorded successfully!');
+      toast.success(language === 'mr' ? 'खर्च आणि बिलाचा पुरावा यशस्वीरीत्या नोंदवला गेला!' : language === 'hi' ? 'खर्च और बिल का प्रमाण सफलतापूर्वक दर्ज हो गया!' : 'Expense and bill proof recorded successfully!');
     } catch (err) {
-      alert(err.response?.data?.error || (language === 'mr' ? 'खर्च नोंदवण्यात अडचण आली, पुन्हा प्रयत्न करा.' : language === 'hi' ? 'खर्च दर्ज करने में समस्या आई, पुनः प्रयास करें.' : 'Could not save the expense, please try again.'));
+      toast.error(err.response?.data?.error || (language === 'mr' ? 'खर्च नोंदवण्यात अडचण आली, पुन्हा प्रयत्न करा.' : language === 'hi' ? 'खर्च दर्ज करने में समस्या आई, पुनः प्रयास करें.' : 'Could not save the expense, please try again.'));
     } finally {
       setSubmitting(false);
     }
@@ -833,7 +834,7 @@ const DailyExpenses = () => {
                               try {
                                 await deleteExpense(exp.id);
                               } catch(err) {
-                                alert(err.response?.data?.error || 'Failed to delete expense.');
+                                toast.error(err.response?.data?.error || 'Failed to delete expense.');
                               }
                             }
                           }}
@@ -1214,7 +1215,7 @@ const DailyExpenses = () => {
 
             <button
               onClick={() => {
-                alert(`Downloading ${viewReceiptModal.receiptName || 'receipt'}...`);
+                toast.info(`Downloading ${viewReceiptModal.receiptName || 'receipt'}...`);
                 setViewReceiptModal(null);
               }}
               style={{

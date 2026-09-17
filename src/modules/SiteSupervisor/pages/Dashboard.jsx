@@ -33,6 +33,7 @@ import {
 } from 'lucide-react';
 import { useWallet } from '../context/WalletContext';
 import { useLanguage } from '../context/LanguageContext';
+import { toast } from '../../../components/Toast';
 
 const Dashboard = () => {
   const navigate = useNavigate();
@@ -140,23 +141,23 @@ const Dashboard = () => {
     e.preventDefault();
     
     if (!expenseForm.projectId) {
-      alert(language === 'mr' ? 'कृपया साइट लोकेशन निवडा!' : language === 'hi' ? 'कृपया साइट लोकेशन चुनें!' : 'Please select a Site Location!');
+      toast.error(language === 'mr' ? 'कृपया साइट लोकेशन निवडा!' : language === 'hi' ? 'कृपया साइट लोकेशन चुनें!' : 'Please select a Site Location!');
       return;
     }
     if (!expenseForm.category) {
-      alert(language === 'mr' ? 'कृपया खर्चाचा प्रकार निवडा!' : language === 'hi' ? 'कृपया खर्च का प्रकार चुनें!' : 'Please select an Expense Category!');
+      toast.error(language === 'mr' ? 'कृपया खर्चाचा प्रकार निवडा!' : language === 'hi' ? 'कृपया खर्च का प्रकार चुनें!' : 'Please select an Expense Category!');
       return;
     }
     if (!expenseForm.amount || isNaN(expenseForm.amount) || parseFloat(expenseForm.amount) <= 0) {
-      alert(language === 'mr' ? 'कृपया योग्य रक्कम भरा!' : language === 'hi' ? 'कृपया सही राशि भरें!' : 'Please enter a valid amount!');
+      toast.error(language === 'mr' ? 'कृपया योग्य रक्कम भरा!' : language === 'hi' ? 'कृपया सही राशि भरें!' : 'Please enter a valid amount!');
       return;
     }
     if (!expenseForm.paidTo || !expenseForm.paidTo.trim()) {
-      alert(language === 'mr' ? 'कृपया कोणाला पैसे दिले (Vendor / Person Name) ते भरा!' : language === 'hi' ? 'कृपया किसे भुगतान किया (Vendor / Person Name) यह भरें!' : 'Please enter Paid To (Vendor / Person Name)!');
+      toast.error(language === 'mr' ? 'कृपया कोणाला पैसे दिले (Vendor / Person Name) ते भरा!' : language === 'hi' ? 'कृपया किसे भुगतान किया (Vendor / Person Name) यह भरें!' : 'Please enter Paid To (Vendor / Person Name)!');
       return;
     }
     if (!expenseForm.receiptName) {
-      alert(language === 'mr' ? 'कृपया बिलाचा फोटो किंवा डॉक्युमेंट पुरावा जोडा (Bill Proof अनिवार्य आहे)!' : language === 'hi' ? 'कृपया बिल की फोटो या डॉक्युमेंट प्रमाण जोड़ें (Bill Proof अनिवार्य है)!' : 'Please attach a bill photo or document proof (Mandatory)!');
+      toast.error(language === 'mr' ? 'कृपया बिलाचा फोटो किंवा डॉक्युमेंट पुरावा जोडा (Bill Proof अनिवार्य आहे)!' : language === 'hi' ? 'कृपया बिल की फोटो या डॉक्युमेंट प्रमाण जोड़ें (Bill Proof अनिवार्य है)!' : 'Please attach a bill photo or document proof (Mandatory)!');
       return;
     }
 
@@ -181,25 +182,25 @@ const Dashboard = () => {
       receiptFile: null
     });
     setActiveModal(null);
-    alert(language === 'mr' ? 'खर्च आणि बिलाचा पुरावा यशस्वीरीत्या नोंदवला गेला!' : language === 'hi' ? 'खर्च और बिल का प्रमाण सफलतापूर्वक दर्ज हो गया!' : 'Expense and bill proof recorded successfully!');
+    toast.success(language === 'mr' ? 'खर्च आणि बिलाचा पुरावा यशस्वीरीत्या नोंदवला गेला!' : language === 'hi' ? 'खर्च और बिल का प्रमाण सफलतापूर्वक दर्ज हो गया!' : 'Expense and bill proof recorded successfully!');
   };
 
   const handleRequestAdvance = (e) => {
     e.preventDefault();
     if (!advanceForm.projectId) {
-      alert(language === 'mr' ? 'कृपया साइट लोकेशन निवडा!' : language === 'hi' ? 'कृपया साइट लोकेशन चुनें!' : 'Please select a Site Location!');
+      toast.error(language === 'mr' ? 'कृपया साइट लोकेशन निवडा!' : language === 'hi' ? 'कृपया साइट लोकेशन चुनें!' : 'Please select a Site Location!');
       return;
     }
     if (!advanceForm.amount || isNaN(advanceForm.amount) || parseFloat(advanceForm.amount) <= 0) {
-      alert(language === 'mr' ? 'कृपया योग्य अ‍ॅडव्हान्स रक्कम भरा!' : language === 'hi' ? 'कृपया सही एडवांस राशि भरें!' : 'Please enter a valid advance amount!');
+      toast.error(language === 'mr' ? 'कृपया योग्य अ‍ॅडव्हान्स रक्कम भरा!' : language === 'hi' ? 'कृपया सही एडवांस राशि भरें!' : 'Please enter a valid advance amount!');
       return;
     }
     if (!advanceForm.urgency) {
-      alert(language === 'mr' ? 'कृपया तातडीचा प्रकार (Urgency Level) निवडा!' : language === 'hi' ? 'कृपया तात्कालिकता (Urgency Level) चुनें!' : 'Please select an Urgency Level!');
+      toast.error(language === 'mr' ? 'कृपया तातडीचा प्रकार (Urgency Level) निवडा!' : language === 'hi' ? 'कृपया तात्कालिकता (Urgency Level) चुनें!' : 'Please select an Urgency Level!');
       return;
     }
     if (!advanceForm.reason || !advanceForm.reason.trim()) {
-      alert(language === 'mr' ? 'कृपया अ‍ॅडव्हान्सचे कारण / स्पष्टीकरण भरा (Mandatory)!' : language === 'hi' ? 'कृपया एडवांस का कारण / स्पष्टीकरण भरें (Mandatory)!' : 'Please enter Purpose / Reason for advance (Mandatory)!');
+      toast.error(language === 'mr' ? 'कृपया अ‍ॅडव्हान्सचे कारण / स्पष्टीकरण भरा (Mandatory)!' : language === 'hi' ? 'कृपया एडवांस का कारण / स्पष्टीकरण भरें (Mandatory)!' : 'Please enter Purpose / Reason for advance (Mandatory)!');
       return;
     }
 
@@ -209,7 +210,7 @@ const Dashboard = () => {
       urgency: advanceForm.urgency,
       projectId: advanceForm.projectId
     });
-    alert(language === 'mr'
+    toast.success(language === 'mr'
       ? `₹${parseFloat(advanceForm.amount).toLocaleString()} ची अ‍ॅडव्हान्स मागणी मंजुरीसाठी पाठवली गेली आहे!`
       : language === 'hi'
       ? `₹${parseFloat(advanceForm.amount).toLocaleString()} का एडवांस अनुरोध स्वीकृति के लिए भेज दिया गया है!`
@@ -718,7 +719,7 @@ const Dashboard = () => {
                     <td data-label="RECEIPT" style={{ padding: '0.85rem 1rem', textAlign: 'center', whiteSpace: 'nowrap' }}>
                       {exp.receipt ? (
                         <button 
-                          onClick={() => alert(`Showing receipt for `)}
+                          onClick={() => toast.info(`Showing receipt for ${exp.id}`)}
                           style={{
                             background: 'rgba(59, 130, 246, 0.1)',
                             color: '#3b82f6',
@@ -1289,7 +1290,7 @@ const Dashboard = () => {
             </div>
 
             <button 
-              onClick={() => { alert('Bills uploaded successfully!'); setActiveModal(null); }}
+              onClick={() => { toast.success('Bills uploaded successfully!'); setActiveModal(null); }}
               style={{
                 width: '100%',
                 padding: '0.85rem',

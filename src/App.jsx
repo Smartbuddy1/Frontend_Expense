@@ -6,6 +6,7 @@ import SupervisorApp from './modules/SiteSupervisor/App';
 import OperationsApp from './modules/Operations/App';
 import { Smartphone, Lock, Eye, EyeOff, Sun, Moon, AlertCircle, ArrowRight, FileText } from 'lucide-react';
 import logoImg from './modules/Admin/assets/logo.png';
+import { ToastContainer } from './components/Toast';
 
 // Base path the app is deployed under (e.g. "/" locally, "/expense/" on
 // aaryainnovtech.com/expense/) — set at build time via `vite build --base`.
