@@ -4,6 +4,7 @@ import { AuthProvider, useAuth } from './context/AuthContext';
 import { LanguageProvider } from './context/LanguageContext';
 import Layout from './components/Layout';
 import OperationsDashboard from './pages/OperationsDashboard';
+import ErrorBoundary from '../../components/ErrorBoundary';
 
 const ProtectedRoute = ({ children }) => {
   const { user, loading } = useAuth();
@@ -19,24 +20,26 @@ const ProtectedRoute = ({ children }) => {
 
 function App() {
   return (
-    <AuthProvider>
-      <LanguageProvider>
-        <Router basename={`${import.meta.env.BASE_URL.replace(/\/$/, '')}/operations`}>
-          <Routes>
-            {/* Protected Layout Routes */}
-            <Route path="/" element={<ProtectedRoute><Layout /></ProtectedRoute>}>
-              {/* Redirect / to /operations */}
-              <Route index element={<Navigate to="/operations" replace />} />
-              <Route path="operations" element={<OperationsDashboard />} />
-              <Route path="dashboard" element={<OperationsDashboard />} />
-            </Route>
+    <ErrorBoundary>
+      <AuthProvider>
+        <LanguageProvider>
+          <Router basename={`${import.meta.env.BASE_URL.replace(/\/$/, '')}/operations`}>
+            <Routes>
+              {/* Protected Layout Routes */}
+              <Route path="/" element={<ProtectedRoute><Layout /></ProtectedRoute>}>
+                {/* Redirect / to /operations */}
+                <Route index element={<Navigate to="/operations" replace />} />
+                <Route path="operations" element={<OperationsDashboard />} />
+                <Route path="dashboard" element={<OperationsDashboard />} />
+              </Route>
 
-            {/* Fallback */}
-            <Route path="*" element={<Navigate to="/operations" replace />} />
-          </Routes>
-        </Router>
-      </LanguageProvider>
-    </AuthProvider>
+              {/* Fallback */}
+              <Route path="*" element={<Navigate to="/operations" replace />} />
+            </Routes>
+          </Router>
+        </LanguageProvider>
+      </AuthProvider>
+    </ErrorBoundary>
   );
 }
 

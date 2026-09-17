@@ -4,6 +4,7 @@ import { AuthProvider, useAuth } from './context/AuthContext';
 import { LanguageProvider } from './context/LanguageContext';
 import Layout from './components/Layout';
 import OperationsDashboard from './pages/OperationsDashboard';
+import ErrorBoundary from '../../components/ErrorBoundary';
 
 // Optional: Protected Route Wrapper if you want to keep authentication logic
 const ProtectedRoute = ({ children }) => {
@@ -20,24 +21,26 @@ const ProtectedRoute = ({ children }) => {
 
 function App() {
   return (
-    <AuthProvider>
-      <LanguageProvider>
-        <Router basename={`${import.meta.env.BASE_URL.replace(/\/$/, '')}/admin`}>
-          <Routes>
-            {/* Protected Layout Routes */}
-            <Route path="/" element={<ProtectedRoute><Layout /></ProtectedRoute>}>
-              {/* Redirect / to /dashboard */}
-              <Route index element={<Navigate to="/dashboard" replace />} />
-              <Route path="dashboard" element={<OperationsDashboard />} />
-              <Route path="operations" element={<OperationsDashboard />} />
-            </Route>
-            
-            {/* Fallback */}
-            <Route path="*" element={<Navigate to="/dashboard" replace />} />
-          </Routes>
-        </Router>
-      </LanguageProvider>
-    </AuthProvider>
+    <ErrorBoundary>
+      <AuthProvider>
+        <LanguageProvider>
+          <Router basename={`${import.meta.env.BASE_URL.replace(/\/$/, '')}/admin`}>
+            <Routes>
+              {/* Protected Layout Routes */}
+              <Route path="/" element={<ProtectedRoute><Layout /></ProtectedRoute>}>
+                {/* Redirect / to /dashboard */}
+                <Route index element={<Navigate to="/dashboard" replace />} />
+                <Route path="dashboard" element={<OperationsDashboard />} />
+                <Route path="operations" element={<OperationsDashboard />} />
+              </Route>
+              
+              {/* Fallback */}
+              <Route path="*" element={<Navigate to="/dashboard" replace />} />
+            </Routes>
+          </Router>
+        </LanguageProvider>
+      </AuthProvider>
+    </ErrorBoundary>
   );
 }
 

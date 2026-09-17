@@ -183,12 +183,12 @@ const OperationsDashboard = () => {
     setLoadingCore(true);
     try {
       const [projRes, supRes, teamRes, expRes, advRes, logsRes, catRes] = await Promise.all([
-        axios.get(`${API}/projects`, { params: { pageSize: 100 } }),
-        axios.get(`${API}/users`, { params: { role: 'site_supervisor' } }),
-        axios.get(`${API}/team-members`),
-        axios.get(`${API}/expenses`, { params: { pageSize: 100 } }),
-        axios.get(`${API}/advances`),
-        axios.get(`${API}/site-logs`),
+        axios.get(`${API}/projects`, { params: { pageSize: 5000 } }),
+        axios.get(`${API}/users`, { params: { role: 'site_supervisor', pageSize: 5000 } }),
+        axios.get(`${API}/team-members`, { params: { pageSize: 5000 } }),
+        axios.get(`${API}/expenses`, { params: { pageSize: 5000 } }),
+        axios.get(`${API}/advances`, { params: { pageSize: 5000 } }),
+        axios.get(`${API}/site-logs`, { params: { pageSize: 5000 } }),
         axios.get(`${API}/expenses/categories`),
       ]);
       setProjects(projRes.data.projects.map(mapProject));
