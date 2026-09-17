@@ -1,0 +1,24 @@
+name: Deploy Frontend to EC2
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Connect to EC2 and deploy
+        uses: appleboy/ssh-action@v1.2.2
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ${{ secrets.EC2_USER }}
+          key: ${{ secrets.EC2_SSH_KEY }}
+          script: |
+            cd /var/www/expense/Frontend_Expense
+            git pull origin main
+            npm install
+            npm run build:expense
+            # Assuming nginx is already pointing to the dist folder, 
+            # if a reload is needed: sudo systemctl reload nginx
