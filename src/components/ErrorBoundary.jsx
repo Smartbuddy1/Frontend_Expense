@@ -3,43 +3,62 @@ import React from 'react';
 class ErrorBoundary extends React.Component {
   constructor(props) {
     super(props);
-    this.state = { hasError: false, error: null };
+    this.state = { hasError: false, error: null, errorInfo: null };
   }
 
   static getDerivedStateFromError(error) {
-    return { hasError: true, error };
+    // Update state so the next render will show the fallback UI.
+    return { hasError: true };
   }
 
   componentDidCatch(error, errorInfo) {
-    console.error("ErrorBoundary caught an error", error, errorInfo);
+    // You can also log the error to an error reporting service
+    console.error("Uncaught error:", error, errorInfo);
+    this.setState({
+      error: error,
+      errorInfo: errorInfo
+    });
   }
 
   render() {
     if (this.state.hasError) {
+      // You can render any custom fallback UI
       return (
-        <div className="flex h-screen w-full items-center justify-center bg-gray-50 p-4 font-sans text-gray-800">
-          <div className="max-w-md rounded-xl bg-white p-8 shadow-xl text-center border border-gray-100">
-            <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-red-100 mb-4">
-              <svg className="h-6 w-6 text-red-600" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-              </svg>
-            </div>
-            <h2 className="text-xl font-bold text-gray-900 mb-2">Something went wrong</h2>
-            <p className="text-sm text-gray-500 mb-6">
-              The application encountered an unexpected error. Try refreshing the page.
-            </p>
-            <button
-              onClick={() => window.location.reload()}
-              className="w-full rounded-lg bg-blue-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-blue-500 transition-colors"
-            >
-              Refresh Page
-            </button>
-          </div>
+        <div style={{
+          padding: '2rem',
+          textAlign: 'center',
+          fontFamily: 'var(--font-sans)',
+          minHeight: '100vh',
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          justifyContent: 'center',
+          backgroundColor: 'var(--bg-color)',
+          color: 'var(--text-primary)'
+        }}>
+          <h2 style={{ color: '#ef4444', marginBottom: '1rem' }}>Something went wrong.</h2>
+          <p style={{ color: 'var(--text-secondary)', marginBottom: '2rem' }}>
+            The application encountered an unexpected error. Please try refreshing the page.
+          </p>
+          <button 
+            onClick={() => window.location.reload()}
+            style={{
+              padding: '0.75rem 1.5rem',
+              borderRadius: '0.5rem',
+              backgroundColor: 'var(--primary-color)',
+              color: 'white',
+              border: 'none',
+              cursor: 'pointer',
+              fontWeight: '600'
+            }}
+          >
+            Refresh Page
+          </button>
         </div>
       );
     }
 
-    return this.props.children;
+    return this.props.children; 
   }
 }
 

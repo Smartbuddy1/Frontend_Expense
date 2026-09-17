@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { UploadCloud, FileText, Image, CheckCircle2, Clock, Trash2, Eye, ShieldCheck, Sparkles, Search, X } from 'lucide-react';
 import { useWallet } from '../context/WalletContext';
+import { toast } from '../../../components/Toast';
 
 // Infers a rough file-type label from the receipt's name so the archive still
 // shows something like "PDF Invoice" without WalletContext needing to track it.
@@ -65,9 +66,9 @@ const UploadBills = () => {
       setVendor('');
       setAmount('');
       setReceiptFile(null);
-      alert('Bill uploaded successfully and submitted for audit verification!');
+      toast.success('Bill uploaded successfully and submitted for audit verification!');
     } catch (err) {
-      alert(err.response?.data?.error || 'Could not upload the bill, please try again.');
+      toast.error(err.response?.data?.error || 'Could not upload the bill, please try again.');
     } finally {
       setSubmitting(false);
     }

@@ -15,6 +15,7 @@ import {
 import { useLanguage } from '../context/LanguageContext';
 import { useWallet } from '../context/WalletContext';
 import { exportToExcel, triggerPrint, exportToPDF } from '../utils/exportUtils';
+import { toast } from '../../../components/Toast';
 
 const AssignedProjects = () => {
   const { t, language } = useLanguage();
@@ -440,7 +441,7 @@ const AssignedProjects = () => {
 
               <button
                 onClick={() => {
-                  alert(`Downloading Work Order & Blueprint PDF for ${selectedProjectModal.name}...`);
+                  toast.info(`Downloading Work Order & Blueprint PDF for ${selectedProjectModal.name}...`);
                   setSelectedProjectModal(null);
                 }}
                 style={{
