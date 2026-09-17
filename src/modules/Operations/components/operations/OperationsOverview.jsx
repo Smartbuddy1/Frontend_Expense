@@ -1060,7 +1060,7 @@ const OperationsOverview = ({
   if (categories && categories.length > 0) {
     categories.forEach(c => { categoryMap[c.name] = 0; });
   }
-  expenses.forEach(e => {
+  expenses.filter(e => e.status === 'Accounts Verified & Paid').forEach(e => {
     if (e.category) categoryMap[e.category] = (categoryMap[e.category] || 0) + (e.amount || 0);
   });
   const categoryChartData = Object.entries(categoryMap)
