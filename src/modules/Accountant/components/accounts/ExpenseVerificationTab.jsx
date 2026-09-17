@@ -11,7 +11,8 @@ import {
   Printer,
   FileSpreadsheet,
   Download,
-  X
+  X,
+  AlertCircle
 } from 'lucide-react';
 import jsPDF from 'jspdf';
 import 'jspdf-autotable';
