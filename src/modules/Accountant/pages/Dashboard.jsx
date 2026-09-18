@@ -258,7 +258,7 @@ const Dashboard = () => {
       const [projRes, expRes, advRes, payRes, settleRes, catRes] = await Promise.all([
         axios.get(`${API}/projects`, { params: { pageSize: 100 } }),
         axios.get(`${API}/expenses`, { params: { pageSize: 100 } }),
-        axios.get(`${API}/advances`),
+        axios.get(`${API}/advances`, { params: { pageSize: 100 } }),
         axios.get(`${API}/payments-ledger`),
         axios.get(`${API}/settlements`),
         axios.get(`${API}/expenses/categories`),
