@@ -54,15 +54,33 @@ const OverviewTab = ({
 
   const supervisorMap = {};
   projects.forEach(p => {
-    const supervisor = p.supervisor || 'Unassigned';
-    if (!supervisorMap[supervisor]) {
-      supervisorMap[supervisor] = { name: supervisor, fullName: supervisor, Released: 0, Expenses: 0, WalletBalance: 0 };
+    const sName = p.supervisor || 'Unassigned';
+    if (!supervisorMap[sName]) {
+      supervisorMap[sName] = { name: sName, fullName: sName, Released: 0, Expenses: 0, WalletBalance: 0 };
     }
-    supervisorMap[supervisor].Released += (p.fundsReleased || 0);
-    supervisorMap[supervisor].Expenses += (p.expenses || 0);
-    supervisorMap[supervisor].WalletBalance += (p.balance || 0);
   });
-  const projectChartData = Object.values(supervisorMap);
+
+  advances.forEach(a => {
+    if (a.status === 'Disbursed') {
+      const sName = a.supervisor || 'Unassigned';
+      if (!supervisorMap[sName]) supervisorMap[sName] = { name: sName, fullName: sName, Released: 0, Expenses: 0, WalletBalance: 0 };
+      supervisorMap[sName].Released += (a.approvedAmount || a.requestedAmount || 0);
+    }
+  });
+
+  expenses.forEach(e => {
+    if (e.status === 'Accounts Verified & Paid') {
+      const sName = e.supervisor || 'Unassigned';
+      if (!supervisorMap[sName]) supervisorMap[sName] = { name: sName, fullName: sName, Released: 0, Expenses: 0, WalletBalance: 0 };
+      supervisorMap[sName].Expenses += (e.amount || 0);
+    }
+  });
+
+  Object.values(supervisorMap).forEach(s => {
+    s.WalletBalance = s.Released - s.Expenses;
+  });
+
+  const projectChartData = Object.values(supervisorMap).filter(s => s.Released > 0 || s.Expenses > 0);
 
   const categoryMap = {};
   if (categories && categories.length > 0) {
@@ -71,7 +89,9 @@ const OverviewTab = ({
     });
   }
   expenses.forEach(e => {
-    categoryMap[e.category] = (categoryMap[e.category] || 0) + (e.amount || 0);
+    if (e.status === 'Accounts Verified & Paid') {
+      categoryMap[e.category] = (categoryMap[e.category] || 0) + (e.amount || 0);
+    }
   });
   const categoryData = Object.entries(categoryMap)
     .map(([name, value]) => ({ name, value }));
@@ -285,7 +305,7 @@ const OverviewTab = ({
                 />
                 <YAxis stroke="var(--text-secondary)" fontSize={11} tickFormatter={(v) => `₹${v/1000}k`} tickLine={false} />
                 <Tooltip 
-                  formatter={(value) => [formatINR(value)]}
+                  formatter={(value, name) => [formatINR(value), name]}
                   contentStyle={{ backgroundColor: 'var(--surface-bg)', borderRadius: '10px', border: '1px solid var(--border-color)', color: 'var(--text-primary)' }}
                 />
                 <Bar dataKey="Released" fill="#3b82f6" maxBarSize={28} radius={[4, 4, 0, 0]} name="Funds Released" />
@@ -312,7 +332,7 @@ const OverviewTab = ({
                 Expense Breakdown by Category
               </h3>
               <p style={{ fontSize: '0.78rem', color: 'var(--text-secondary)', margin: 0 }}>
-                Materials, Labour, Lodging, Transport & Food
+                Top expense categories across all sites
               </p>
             </div>
             <button 
@@ -341,7 +361,7 @@ const OverviewTab = ({
                     ))}
                   </Pie>
                   <Tooltip 
-                    formatter={(value) => [formatINR(value)]}
+                    formatter={(value, name) => [formatINR(value), name]}
                     contentStyle={{ backgroundColor: 'var(--surface-bg)', borderRadius: '10px', border: '1px solid var(--border-color)', color: 'var(--text-primary)' }}
                   />
                 </PieChart>

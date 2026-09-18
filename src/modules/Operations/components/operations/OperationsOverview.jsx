@@ -1042,19 +1042,33 @@ const OperationsOverview = ({
   // Supervisor-wise chart data (matching Accountant overview bar chart)
   const supervisorMap = {};
   projects.forEach(p => {
-    const supervisor = p.supervisorName || 'Unassigned';
-    if (!supervisorMap[supervisor]) {
-      supervisorMap[supervisor] = { name: supervisor, Released: 0, Expenses: 0, WalletBalance: 0 };
+    const sName = p.supervisorName || 'Unassigned';
+    if (!supervisorMap[sName]) {
+      supervisorMap[sName] = { name: sName, Released: 0, Expenses: 0, WalletBalance: 0 };
     }
-    // Use advances disbursed as "Released"
-    const projAdvances = advances.filter(a => a.projectId === p.id && a.rawStatus === 'disbursed');
-    const projReleased = projAdvances.reduce((s, a) => s + a.amount, 0);
-    const projExpenses = expenses.filter(e => e.projectId === p.id && e.status === 'Approved').reduce((s, e) => s + e.amount, 0);
-    supervisorMap[supervisor].Released += projReleased;
-    supervisorMap[supervisor].Expenses += projExpenses;
-    supervisorMap[supervisor].WalletBalance += Math.max(0, projReleased - projExpenses);
   });
-  const supervisorChartData = Object.values(supervisorMap);
+
+  advances.forEach(a => {
+    if (a.rawStatus === 'disbursed') {
+      const sName = a.supervisor || 'Unassigned';
+      if (!supervisorMap[sName]) supervisorMap[sName] = { name: sName, Released: 0, Expenses: 0, WalletBalance: 0 };
+      supervisorMap[sName].Released += (a.amount || 0);
+    }
+  });
+
+  expenses.forEach(e => {
+    if (e.status === 'Approved' || e.status === 'Paid') {
+      const sName = e.supervisorName || e.submittedBy || 'Unassigned';
+      if (!supervisorMap[sName]) supervisorMap[sName] = { name: sName, Released: 0, Expenses: 0, WalletBalance: 0 };
+      supervisorMap[sName].Expenses += (e.amount || 0);
+    }
+  });
+
+  Object.values(supervisorMap).forEach(s => {
+    s.WalletBalance = s.Released - s.Expenses;
+  });
+
+  const supervisorChartData = Object.values(supervisorMap).filter(s => s.Released > 0 || s.Expenses > 0);
 
   // Category-wise chart data (matching Accountant overview pie chart)
   const CATEGORY_COLORS = ['#3b82f6', '#10b981', '#f59e0b', '#8b5cf6', '#ec4899', '#06b6d4', '#64748b'];
@@ -1063,7 +1077,9 @@ const OperationsOverview = ({
     categories.forEach(c => { categoryMap[c.name] = 0; });
   }
   expenses.forEach(e => {
-    if (e.category) categoryMap[e.category] = (categoryMap[e.category] || 0) + (e.amount || 0);
+    if (e.status === 'Approved' || e.status === 'Paid') {
+      if (e.category) categoryMap[e.category] = (categoryMap[e.category] || 0) + (e.amount || 0);
+    }
   });
   const categoryChartData = Object.entries(categoryMap)
     .map(([name, value]) => ({ name, value }));
@@ -1217,7 +1233,7 @@ const OperationsOverview = ({
                 />
                 <YAxis stroke="var(--text-secondary)" fontSize={11} tickFormatter={(v) => `₹${v/1000}k`} tickLine={false} />
                 <Tooltip
-                  formatter={(value) => [formatINR(value)]}
+                  formatter={(value, name) => [formatINR(value), name]}
                   contentStyle={{ backgroundColor: 'var(--card-bg)', borderRadius: '10px', border: '1px solid var(--border-color)', color: 'var(--text-primary)' }}
                 />
                 <Bar dataKey="Released" fill="#3b82f6" maxBarSize={28} radius={[4, 4, 0, 0]} name="Funds Released" />
@@ -1244,7 +1260,7 @@ const OperationsOverview = ({
                 Expense Breakdown by Category
               </h3>
               <p style={{ fontSize: '0.78rem', color: 'var(--text-secondary)', margin: 0 }}>
-                Materials, Labour, Lodging, Transport &amp; Food
+                Top expense categories across all sites
               </p>
             </div>
             <button
@@ -1274,7 +1290,7 @@ const OperationsOverview = ({
                     ))}
                   </Pie>
                   <Tooltip
-                    formatter={(value) => [formatINR(value)]}
+                    formatter={(value, name) => [formatINR(value), name]}
                     contentStyle={{ backgroundColor: 'var(--card-bg)', borderRadius: '10px', border: '1px solid var(--border-color)', color: 'var(--text-primary)' }}
                   />
                 </PieChart>

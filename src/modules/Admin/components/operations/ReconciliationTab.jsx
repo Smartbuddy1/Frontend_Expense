@@ -2,9 +2,7 @@ import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import axios from 'axios';
 import {
   Scale, Plus, FileText, Download, CheckCircle2, Clock,
-  AlertCircle, ArrowUpRight, ArrowDownRight, Building,
-  Search, Filter, RefreshCw, UserCheck, ShieldCheck,
-  ChevronDown, Phone, IndianRupee, Printer, ExternalLink, Calendar
+  AlertCircle, Search, Filter, ChevronDown, IndianRupee, Printer, Calendar
 } from 'lucide-react';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
@@ -16,11 +14,9 @@ const API = import.meta.env.VITE_API_BASE_URL;
 
 const ReconciliationTab = ({
   projects = [],
-  supervisors = [],
   expenses = [],
   advances = [],
   onNavigateTab,
-  onOpenTransferAdvance,
   onRefresh
 }) => {
   const { language } = useLanguage();
@@ -38,6 +34,7 @@ const ReconciliationTab = ({
     }
   }, []);
 
+  // eslint-disable-next-line
   useEffect(() => { fetchLedger(); }, [fetchLedger]);
 
   const ledgerRecords = useMemo(() => rawLedger
@@ -113,7 +110,6 @@ const ReconciliationTab = ({
   const totalAdvance = supervisorFloats.reduce((sum, s) => sum + s.advance, 0);
   const totalSettled = supervisorFloats.reduce((sum, s) => sum + s.settled, 0);
   const totalInHand = totalAdvance - totalSettled;
-  const discrepancy = 0; // 100% matched
 
   // Issues cash to a supervisor via the real advance-transfer endpoint (auto-approved,
   // skips the request step since Admin is authorizing it on the spot), then

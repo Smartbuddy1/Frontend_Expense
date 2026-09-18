@@ -4,8 +4,10 @@ import {
   RefreshCw, Search, ExternalLink, ClipboardList,
   AlertCircle, IndianRupee, X
 } from 'lucide-react';
+import axios from 'axios';
+import { toast } from '../../../../components/Toast';
 
-const LOCAL_KEY = 'supervisor_expenses_list';
+const API = import.meta.env.VITE_API_BASE_URL;
 
 const PublicFormTab = () => {
   const [submissions, setSubmissions] = useState([]);
@@ -14,33 +16,47 @@ const PublicFormTab = () => {
   const [filterCategory, setFilterCategory] = useState('All');
   const [viewEntry, setViewEntry] = useState(null);
 
-  const load = () => {
+  const load = React.useCallback(async () => {
     try {
-      const raw = localStorage.getItem(LOCAL_KEY);
-      setSubmissions(raw ? JSON.parse(raw) : []);
-    } catch {
+      const token = localStorage.getItem('token');
+      const res = await axios.get(`${API}/public-forms`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      setSubmissions(res.data.submissions || []);
+    } catch (err) {
+      console.error('Failed to load public form submissions', err);
       setSubmissions([]);
+    }
+  }, []);
+
+  useEffect(() => { load(); }, [load]);
+
+  const handleDelete = async (id) => {
+    if (!window.confirm('Delete this submission?')) return;
+    try {
+      const token = localStorage.getItem('token');
+      await axios.delete(`${API}/public-forms/${id}`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      load();
+    } catch (err) {
+      console.error('Failed to delete submission', err);
+      toast.error('Failed to delete submission');
     }
   };
 
-  useEffect(() => { load(); }, []);
-
-  const handleDelete = (id) => {
-    if (!window.confirm('Delete this submission?')) return;
+  const handleMarkApproved = async (id) => {
     try {
-      const list = JSON.parse(localStorage.getItem(LOCAL_KEY) || '[]');
-      localStorage.setItem(LOCAL_KEY, JSON.stringify(list.filter(e => e.id !== id)));
-      load();
-    } catch {}
-  };
-
-  const handleMarkApproved = (id) => {
-    try {
-      const list = JSON.parse(localStorage.getItem(LOCAL_KEY) || '[]');
-      localStorage.setItem(LOCAL_KEY, JSON.stringify(list.map(e => e.id === id ? { ...e, status: 'Approved' } : e)));
+      const token = localStorage.getItem('token');
+      await axios.patch(`${API}/public-forms/${id}/approve`, {}, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
       load();
       if (viewEntry?.id === id) setViewEntry(prev => ({ ...prev, status: 'Approved' }));
-    } catch {}
+    } catch (err) {
+      console.error('Failed to approve submission', err);
+      toast.error('Failed to approve submission');
+    }
   };
 
   const categories = ['All', ...Array.from(new Set(submissions.map(s => s && s.category).filter(Boolean)))];
@@ -241,7 +257,7 @@ const PublicFormTab = () => {
 
                       {/* Voucher ID */}
                       <td style={{ padding: '0.75rem 1rem' }}>
-                        <span style={{ fontWeight: '700', color: '#6366f1', fontSize: '0.82rem', fontFamily: 'monospace' }}>{entry.id}</span>
+                        <span style={{ fontWeight: '700', color: '#6366f1', fontSize: '0.82rem', fontFamily: 'monospace' }}>EXP-{String(entry.id).substring(0, 6).toUpperCase()}</span>
                       </td>
 
                       {/* Submitted By */}
@@ -291,8 +307,12 @@ const PublicFormTab = () => {
 
                       {/* Date */}
                       <td style={{ padding: '0.75rem 1rem' }}>
-                        <div style={{ fontSize: '0.78rem', color: 'var(--text-primary)', fontWeight: '600', whiteSpace: 'nowrap' }}>{entry.date || '—'}</div>
-                        {entry.time && <div style={{ fontSize: '0.7rem', color: 'var(--text-secondary)', marginTop: '0.05rem' }}>{entry.time}</div>}
+                        <div style={{ fontSize: '0.78rem', color: 'var(--text-primary)', fontWeight: '600', whiteSpace: 'nowrap' }}>
+                          {entry.date || new Date(entry.createdAt).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })}
+                        </div>
+                        <div style={{ fontSize: '0.7rem', color: 'var(--text-secondary)', marginTop: '0.05rem' }}>
+                          {entry.time || new Date(entry.createdAt).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true })}
+                        </div>
                       </td>
 
                       {/* Status */}
@@ -359,7 +379,7 @@ const PublicFormTab = () => {
                 </div>
                 <div>
                   <div style={{ fontWeight: '800', color: 'var(--text-primary)', fontSize: '0.95rem' }}>Submission Details</div>
-                  <div style={{ fontSize: '0.72rem', color: '#6366f1', fontWeight: '700', fontFamily: 'monospace' }}>{viewEntry.id}</div>
+                  <div style={{ fontSize: '0.72rem', color: '#6366f1', fontWeight: '700', fontFamily: 'monospace' }}>EXP-{String(viewEntry.id).substring(0, 6).toUpperCase()}</div>
                 </div>
               </div>
               <button onClick={() => setViewEntry(null)} style={{ background: 'transparent', border: 'none', color: 'var(--text-secondary)', cursor: 'pointer', fontSize: '1.4rem', lineHeight: 1, padding: '0.25rem' }}>
@@ -387,14 +407,14 @@ const PublicFormTab = () => {
               {/* Details List */}
               <div style={{ display: 'flex', flexDirection: 'column', gap: '0' }}>
                 {[
-                  ['Voucher ID', viewEntry.id],
+                  ['Voucher ID', `EXP-${String(viewEntry.id).substring(0, 6).toUpperCase()}`],
                   ['Submitted By', viewEntry.submitterName],
                   ['Role / Department', viewEntry.role],
                   ['Site / Location', viewEntry.site],
                   ['Category', viewEntry.category],
                   ['Payment Mode', viewEntry.paymentMode],
                   ['Vendor / Paid To', viewEntry.paidTo],
-                  ['Date & Time', `${viewEntry.date || ''} ${viewEntry.time ? '• ' + viewEntry.time : ''}`],
+                  ['Date & Time', `${viewEntry.date || new Date(viewEntry.createdAt).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })} • ${viewEntry.time || new Date(viewEntry.createdAt).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true })}`],
                   ['Description', viewEntry.description || '—'],
                   ['GPS Location', viewEntry.gpsAddress || viewEntry.gpsLocation || '—'],
                   ['Receipt / Bill', viewEntry.receiptName || '—'],

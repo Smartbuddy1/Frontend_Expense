@@ -208,12 +208,12 @@ const TAB_METADATA = {
     color: '#06b6d4'
   },
   reports: {
-    prefix: 'Financial',
+    prefix: 'Enterprise',
     highlight: 'Reports',
-    title: 'Financial Reports',
-    subtitle: 'Official financial audit reports, project variance & expense breakdown',
+    title: 'Enterprise Reports',
+    subtitle: 'Generate and export detailed analytics.',
     icon: FileSpreadsheet,
-    color: '#ec4899'
+    color: '#3b82f6'
   },
   'public-form': {
     prefix: 'Public',
@@ -270,11 +270,15 @@ const Dashboard = () => {
 
       // Compute actual expenses, advances, and balances per project for the accountant dashboard
       mappedProjects.forEach(p => {
-        const projExp = mappedExpenses.filter(e => e.projectId === p.id && e.status === 'Accounts Verified & Paid').reduce((acc, e) => acc + e.amount, 0);
+        const projExpPaid = mappedExpenses.filter(e => e.projectId === p.id && e.status === 'Accounts Verified & Paid').reduce((acc, e) => acc + e.amount, 0);
+        const projExpTotal = mappedExpenses.filter(e => e.projectId === p.id && e.status !== 'Rejected').reduce((acc, e) => acc + e.amount, 0);
+        
         const projAdv = mappedAdvances.filter(a => a.projectId === p.id && a.status === 'Disbursed').reduce((acc, a) => acc + a.approvedAmount, 0);
-        p.expenses = projExp;
+        
+        p.expenses = projExpPaid;
         p.advance = projAdv;
-        p.balance = projAdv - projExp;
+        p.ledgerBalance = projAdv - projExpPaid; // Official ledger balance
+        p.balance = projAdv - projExpTotal; // Available float
         p.fundsReleased = projAdv; 
       });
 
@@ -479,6 +483,7 @@ const Dashboard = () => {
                 }
               </p>
             </div>
+            <div id="header-actions-portal"></div>
           </div>
         );
       })()}

@@ -36,6 +36,9 @@ import confetti from 'canvas-confetti';
 import { useWallet } from '../context/WalletContext';
 import { useLanguage } from '../context/LanguageContext';
 import { toast } from '../../../components/Toast';
+import axios from 'axios';
+
+const API = import.meta.env.VITE_API_BASE_URL;
 
 const PublicExpenseForm = () => {
   const wallet = useWallet();
@@ -177,7 +180,7 @@ const PublicExpenseForm = () => {
     setFormData(prev => ({ ...prev, amount: (current + val).toString() }));
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
 
     const selectedSite = formData.site === 'Other / Custom Location' ? formData.customSite.trim() : formData.site;
@@ -238,16 +241,19 @@ const PublicExpenseForm = () => {
       submittedVia: 'Public Expense Form'
     };
 
-    // Save to context / localStorage
+    // Save to backend API
     try {
-      if (wallet && wallet.recordExpense) {
-        wallet.recordExpense(newExpense);
-      } else {
-        const existing = JSON.parse(localStorage.getItem('supervisor_expenses_list') || '[]');
-        localStorage.setItem('supervisor_expenses_list', JSON.stringify([newExpense, ...existing]));
+      const response = await axios.post(`${API}/public-forms`, newExpense);
+      if (response.data && response.data.submission) {
+        const dbId = response.data.submission.id;
+        newExpense.id = dbId;
+        newExpense.displayId = `EXP-${String(dbId).substring(0, 6).toUpperCase()}`;
       }
     } catch (err) {
-      console.error('Failed to save to local storage', err);
+      console.error('Failed to submit public expense', err);
+      toast.error(language === 'mr' ? 'सबमिट करताना त्रुटी आली!' : 'Failed to submit expense!');
+      setIsSubmitting(false);
+      return;
     }
 
     // Trigger Confetti
