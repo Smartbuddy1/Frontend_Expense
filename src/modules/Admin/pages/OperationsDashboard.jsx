@@ -89,7 +89,7 @@ const EXPENSE_STATUS_TO_DISPLAY = {
   submitted: 'Pending',
   ops_approved: 'Approved',
   ops_rejected: 'Rejected',
-  accounts_paid: 'Approved',
+  accounts_paid: 'Paid',
 };
 
 const mapExpense = (e) => {
