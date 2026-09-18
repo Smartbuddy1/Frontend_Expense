@@ -27,7 +27,7 @@ const UploadBills = () => {
       amount: exp.amount,
       date: exp.date,
       type: inferFileType(exp.receiptName),
-      status: exp.status === 'Approved' ? 'Verified' : 'Under Review',
+      status: exp.status === 'Approved' ? 'Verified' : exp.status === 'Rejected' ? 'Rejected' : 'Under Review',
     }));
 
   const [searchTerm, setSearchTerm] = useState('');
@@ -320,7 +320,7 @@ const UploadBills = () => {
                     <span style={{
                       fontSize: '0.75rem',
                       fontWeight: '700',
-                      color: bill.status === 'Verified' ? '#10b981' : '#f59e0b'
+                      color: bill.status === 'Verified' ? '#10b981' : bill.status === 'Rejected' ? '#ef4444' : '#f59e0b'
                     }}>
                       {bill.status}
                     </span>

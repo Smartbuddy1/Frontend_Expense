@@ -91,7 +91,7 @@ const mapExpenseForAccounts = (e) => ({
   billUrl: e.receiptUrl || null,
   status: EXPENSE_STATUS_TO_DISPLAY[e.status] || 'Pending Operations Approval',
   opsApproval: e.opsApprovedById ? { status: 'Approved', approvedBy: e.opsApprovedBy?.name || 'Operations' } : (e.status === 'ops_rejected' ? { status: 'Rejected' } : null),
-  opsVerificationStatus: e.status === 'submitted' ? 'Pending' : (e.status === 'ops_rejected' ? 'Rejected' : 'Verified'),
+  opsVerificationStatus: e.status === 'submitted' ? 'Pending' : ((e.status === 'ops_rejected' && !e.opsApprovedById) ? 'Rejected' : 'Verified'),
   urgency: 'Regular', // Expenses don't have urgency in schema, default to Regular
   submittedAt: e.createdAt,
 });
@@ -338,6 +338,17 @@ const Dashboard = () => {
     }
   };
 
+  const handleRejectAdvance = async (advance, reason) => {
+    try {
+      await axios.patch(`${API}/advances/${advance.id}/reject`, { remarks: reason });
+      await fetchCore();
+      setCorrectingItem(null);
+      showToast(`Advance ${advance.id} rejected.`, 'warning');
+    } catch (err) {
+      showToast(err.response?.data?.error || 'Failed to reject advance', 'error');
+    }
+  };
+
   // 3. Disburse Advance Handler — instantly disburses ops-approved advance (no modal)
   const handleTriggerAdvancePayment = async (adv) => {
     try {
@@ -562,9 +573,9 @@ const Dashboard = () => {
       {correctingItem && (
         <CorrectionReasonModal
           item={correctingItem}
-          type="Claim"
+          type={correctingItem.purpose ? "Advance" : "Claim"}
           onClose={() => setCorrectingItem(null)}
-          onSubmit={(item, reason) => handleRejectExpense(item, reason)}
+          onSubmit={(item, reason) => item.purpose ? handleRejectAdvance(item, reason) : handleRejectExpense(item, reason)}
         />
       )}
 

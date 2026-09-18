@@ -674,7 +674,9 @@ export const RecentActivityFeed = ({ expenses = [], onApproveExpense, onRejectEx
             </div>
 
             <img
-              src={inspectModalClaim.billPhotoUrl}
+              src={inspectModalClaim.billPhotoUrl 
+                ? (inspectModalClaim.billPhotoUrl.startsWith('http') ? inspectModalClaim.billPhotoUrl : `${import.meta.env.VITE_API_BASE_URL || ''}${inspectModalClaim.billPhotoUrl.startsWith('/') ? '' : '/'}${inspectModalClaim.billPhotoUrl}`)
+                : 'https://images.unsplash.com/photo-1554224155-8d04cb21cd6c?w=600&auto=format&fit=crop&q=80'}
               alt="Bill Voucher"
               style={{ width: '100%', maxHeight: '340px', objectFit: 'cover', borderRadius: '10px', border: '1px solid var(--border-color, #e2e8f0)' }}
             />

@@ -12,7 +12,8 @@ import {
   FileSpreadsheet,
   Download,
   X,
-  AlertCircle
+  AlertCircle,
+  XCircle
 } from 'lucide-react';
 import jsPDF from 'jspdf';
 import 'jspdf-autotable';
@@ -47,6 +48,11 @@ const ExpenseVerificationTab = ({
   };
 
   const filteredExpenses = expenses.filter(exp => {
+    // Only show expenses if operations has approved them
+    if (exp.opsVerificationStatus !== 'Verified') {
+      return false;
+    }
+
     const matchesSearch = 
       exp.id.toLowerCase().includes(searchQuery.toLowerCase()) ||
       (exp.itemDescription || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -56,7 +62,6 @@ const ExpenseVerificationTab = ({
 
     const matchesStatus = 
       statusFilter === 'ALL' ||
-      (statusFilter === 'OPS_PENDING' && exp.status === 'Pending Operations Approval') ||
       (statusFilter === 'PENDING' && exp.status === 'Pending Accounts Verification') ||
       (statusFilter === 'VERIFIED' && exp.status === 'Accounts Verified & Paid') ||
       (statusFilter === 'REJECTED' && exp.status === 'Rejected');
@@ -339,7 +344,6 @@ const ExpenseVerificationTab = ({
               }}
             >
               <option value="ALL">All Status</option>
-              <option value="OPS_PENDING">Pending Operations Approval</option>
               <option value="PENDING">Pending Accounts Verification</option>
               <option value="VERIFIED">Accounts Verified & Paid</option>
               <option value="REJECTED">Rejected</option>
@@ -368,7 +372,7 @@ const ExpenseVerificationTab = ({
                 <th style={{ padding: '0.9rem 1rem', fontWeight: '700' }}>Invoice ID & Date</th>
                 <th style={{ padding: '0.9rem 1rem', fontWeight: '700' }}>Project & Site</th>
                 <th style={{ padding: '0.9rem 1rem', fontWeight: '700' }}>Site Supervisor</th>
-                <th style={{ padding: '0.9rem 1rem', fontWeight: '700' }}>Category & Description</th>
+                <th style={{ padding: '0.9rem 1rem', fontWeight: '700' }}>Category</th>
                 <th style={{ padding: '0.9rem 1rem', fontWeight: '700' }}>Payee (Vendor / Contractor)</th>
                 <th style={{ padding: '0.9rem 1rem', fontWeight: '700' }}>Amount</th>
                 <th style={{ padding: '0.9rem 1rem', fontWeight: '700' }}>Ops Verification</th>
@@ -387,6 +391,7 @@ const ExpenseVerificationTab = ({
                 filteredExpenses.map((exp) => {
                   const isPending = exp.status === 'Pending Accounts Verification';
                   const isVerified = exp.status === 'Accounts Verified & Paid';
+                  const isRejected = exp.status === 'Sent for Correction' || exp.status === 'Rejected';
 
                   return (
                     <tr 
@@ -398,10 +403,18 @@ const ExpenseVerificationTab = ({
                     >
                       <td style={{ padding: '1rem', whiteSpace: 'nowrap' }}>
                         <div style={{ fontWeight: '700', color: 'var(--text-primary)', fontFamily: 'monospace' }}>
-                          {exp.id}
+                          {exp.id ? exp.id.split('-')[0].toUpperCase() : ''}
                         </div>
                         <div style={{ fontSize: '0.72rem', color: 'var(--text-secondary)', marginTop: '2px' }}>
-                          {exp.billDate || exp.submittedAt}
+                          {(() => {
+                            const dateStr = exp.billDate || exp.submittedAt;
+                            if (!dateStr) return '';
+                            try {
+                              return new Date(dateStr).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
+                            } catch (e) {
+                              return dateStr.split('T')[0];
+                            }
+                          })()}
                         </div>
                       </td>
 
@@ -425,16 +438,10 @@ const ExpenseVerificationTab = ({
                           borderRadius: '6px',
                           backgroundColor: 'rgba(59, 130, 246, 0.12)',
                           color: '#3b82f6',
-                          display: 'inline-block',
-                          marginBottom: exp.itemDescription ? '0.35rem' : '0'
+                          display: 'inline-block'
                         }}>
                           {exp.category}
                         </span>
-                        {exp.itemDescription && (
-                          <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>
-                            {exp.itemDescription}
-                          </div>
-                        )}
                       </td>
 
                       <td style={{ padding: '1rem' }}>
@@ -543,6 +550,21 @@ const ExpenseVerificationTab = ({
                             color: '#10b981'
                           }}>
                             <CheckCircle2 size={12} /> Approved
+                          </span>
+                        )}
+                        {isRejected && (
+                          <span style={{
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            gap: '0.3rem',
+                            fontSize: '0.75rem',
+                            fontWeight: '700',
+                            padding: '0.25rem 0.65rem',
+                            borderRadius: '20px',
+                            backgroundColor: 'rgba(239, 68, 68, 0.15)',
+                            color: '#ef4444'
+                          }}>
+                            <XCircle size={12} /> Sent for Correction
                           </span>
                         )}
                       </td>

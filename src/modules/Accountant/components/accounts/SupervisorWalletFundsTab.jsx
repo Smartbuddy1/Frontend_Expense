@@ -401,6 +401,7 @@ const SupervisorWalletFundsTab = ({
                  <th style={{ padding: '1rem 1.25rem' }}>Total Spent</th>
                  <th style={{ padding: '1rem 1.25rem', color: '#059669' }}>Live Wallet Balance</th>
                  <th style={{ padding: '1rem 1.25rem' }}>Ops Verification</th>
+                 <th style={{ padding: '1rem 1.25rem' }}>Urgency</th>
                  <th style={{ padding: '1rem 1.25rem' }}>Pending Fund Request</th>
                  <th className="no-print" style={{ padding: '1rem 1.25rem', textAlign: 'right' }}>Action</th>
               </tr>
@@ -501,7 +502,24 @@ const SupervisorWalletFundsTab = ({
                            }}>
                              {req.opsVerificationStatus === 'Verified' ? <CheckCircle2 size={13} strokeWidth={2.5} /> : (req.opsVerificationStatus === 'Rejected' ? <XCircle size={13} strokeWidth={2.5} /> : <Clock size={13} strokeWidth={2.5} />)}
                              {req.opsVerificationStatus === 'Verified' ? 'Verified' : (req.opsVerificationStatus === 'Rejected' ? 'Rejected' : 'Pending')}
-                           </span>
+                            </span>
+                          ) : (
+                            <span style={{ color: 'var(--text-secondary)' }}>—</span>
+                          )}
+                        </td>
+
+                       {/* 5b. Urgency Column */}
+                       <td style={{ padding: '1.15rem 1.25rem', whiteSpace: 'nowrap' }}>
+                         {req && req.urgency ? (
+                           <div style={{
+                             display: 'inline-flex', alignItems: 'center', gap: '0.35rem',
+                             backgroundColor: req.urgency === 'Immediate' ? '#fee2e2' : req.urgency === 'Within 24 Hours' ? '#dbeafe' : '#f1f5f9',
+                             padding: '0.35rem 0.65rem', borderRadius: '8px',
+                             color: req.urgency === 'Immediate' ? '#dc2626' : req.urgency === 'Within 24 Hours' ? '#2563eb' : '#64748b'
+                           }}>
+                             <Clock size={12} />
+                             <span style={{ fontSize: '0.78rem', fontWeight: '700' }}>{req.urgency}</span>
+                           </div>
                          ) : (
                            <span style={{ color: 'var(--text-secondary)' }}>—</span>
                          )}
@@ -549,25 +567,31 @@ const SupervisorWalletFundsTab = ({
                               </button>
 
                               <button
-                                onClick={() => req.purpose ? null : (onRejectExpense && onRejectExpense(req))}
+                                onClick={() => req.purpose ? (onRejectAdvance && onRejectAdvance(req)) : (onRejectExpense && onRejectExpense(req))}
                                 style={{
                                   padding: '0.45rem 0.85rem',
-                                  borderRadius: '8px',
-                                  backgroundColor: '#ef4444',
-                                  color: '#ffffff',
-                                  border: 'none',
-                                  fontSize: '0.78rem',
-                                  fontWeight: '700',
+                                  borderRadius: '10px',
+                                  border: '1.5px solid #fecdd3',
+                                  backgroundColor: '#fff1f2',
+                                  color: '#e11d48',
+                                  fontSize: '0.84rem',
+                                  fontWeight: '800',
+                                  cursor: 'pointer',
                                   display: 'inline-flex',
                                   alignItems: 'center',
-                                  gap: '0.35rem',
-                                  cursor: req.purpose ? 'not-allowed' : 'pointer',
-                                  opacity: req.purpose ? 0.5 : 1,
-                                  boxShadow: req.purpose ? 'none' : '0 2px 6px rgba(239, 68, 68, 0.25)',
-                                  transition: 'transform 0.1s ease'
+                                  gap: '0.45rem',
+                                  boxShadow: '0 1px 3px rgba(0,0,0,0.03)',
+                                  transition: 'all 0.15s ease'
                                 }}
-                                disabled={!!req.purpose}
-                                title={`Reject for ${w.supervisor}`}
+                                onMouseEnter={(e) => {
+                                  e.currentTarget.style.backgroundColor = '#fbe1e5';
+                                  e.currentTarget.style.borderColor = '#fda4af';
+                                }}
+                                onMouseLeave={(e) => {
+                                  e.currentTarget.style.backgroundColor = '#fff1f2';
+                                  e.currentTarget.style.borderColor = '#fecdd3';
+                                }}
+                                title={`Reject request for ${w.supervisor}`}
                               >
                                 <X size={14} strokeWidth={2.5} />
                                 Reject

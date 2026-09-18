@@ -23,7 +23,8 @@ import {
   Sparkles,
   Layers,
   ArrowDownRight,
-  Edit2
+  Edit2,
+  XCircle
 } from 'lucide-react';
 import { useWallet } from '../context/WalletContext';
 import { useLanguage } from '../context/LanguageContext';
@@ -756,11 +757,11 @@ const DailyExpenses = () => {
                         borderRadius: '1rem',
                         fontSize: '0.75rem',
                         fontWeight: '700',
-                        backgroundColor: exp.status === 'Approved' ? 'rgba(16, 185, 129, 0.15)' : 'rgba(245, 158, 11, 0.15)',
-                        color: exp.status === 'Approved' ? '#10b981' : '#f59e0b'
+                        backgroundColor: exp.status === 'Approved' ? 'rgba(16, 185, 129, 0.15)' : exp.status === 'Rejected' ? 'rgba(239, 68, 68, 0.15)' : 'rgba(245, 158, 11, 0.15)',
+                        color: exp.status === 'Approved' ? '#10b981' : exp.status === 'Rejected' ? '#ef4444' : '#f59e0b'
                       }}>
-                        {exp.status === 'Approved' ? <CheckCircle2 size={12} /> : <Clock size={12} />}
-                        {exp.status === 'Approved' ? t('approved') : t('pending')}
+                        {exp.status === 'Approved' ? <CheckCircle2 size={12} /> : exp.status === 'Rejected' ? <XCircle size={12} /> : <Clock size={12} />}
+                        {exp.status === 'Approved' ? t('approved') : exp.status === 'Rejected' ? (language === 'mr' ? 'नाकारले' : language === 'hi' ? 'अस्वीकृत' : 'Rejected') : t('pending')}
                       </span>
                     </td>
                     <td data-label="RECEIPT" style={{ padding: '0.85rem 1rem', textAlign: 'center', whiteSpace: 'nowrap' }}>

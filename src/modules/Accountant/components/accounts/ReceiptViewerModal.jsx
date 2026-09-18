@@ -110,10 +110,17 @@ const ReceiptViewerModal = ({ expense, onClose, onApprove, onReject }) => {
             padding: '1rem',
             backgroundColor: '#0f172a',
             borderRadius: '14px',
-            border: '1px solid var(--border-color)'
+            border: '1px solid var(--border-color)',
+            flexDirection: 'column'
           }}>
+            <p style={{ color: 'white', fontSize: '0.8rem', wordBreak: 'break-all' }}>
+              DEBUG billUrl: {expense.billUrl || 'null'}<br />
+              DEBUG SRC: {expense.billUrl ? (expense.billUrl.startsWith('http') ? expense.billUrl : `${import.meta.env.VITE_API_BASE_URL || ''}${expense.billUrl.startsWith('/') ? '' : '/'}${expense.billUrl}`) : 'fallback'}
+            </p>
             <img
-              src={expense.billUrl || 'https://images.unsplash.com/photo-1554224155-8d04cb21cd6c?auto=format&fit=crop&w=800&q=80'}
+              src={expense.billUrl 
+                ? (expense.billUrl.startsWith('http') ? expense.billUrl : `${import.meta.env.VITE_API_BASE_URL || ''}${expense.billUrl.startsWith('/') ? '' : '/'}${expense.billUrl}`)
+                : 'https://images.unsplash.com/photo-1554224155-8d04cb21cd6c?auto=format&fit=crop&w=800&q=80'}
               alt="Bill Receipt"
               style={{
                 maxWidth: '100%',
