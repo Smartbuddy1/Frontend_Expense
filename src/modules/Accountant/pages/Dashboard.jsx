@@ -91,7 +91,7 @@ const mapExpenseForAccounts = (e) => ({
   billUrl: e.receiptUrl || null,
   status: EXPENSE_STATUS_TO_DISPLAY[e.status] || 'Pending Operations Approval',
   opsApproval: e.opsApprovedById ? { status: 'Approved', approvedBy: e.opsApprovedBy?.name || 'Operations' } : (e.status === 'ops_rejected' ? { status: 'Rejected' } : null),
-  opsVerificationStatus: e.status === 'submitted' ? 'Pending' : ((e.status === 'ops_rejected' && !e.opsApprovedById) ? 'Rejected' : 'Verified'),
+  opsVerificationStatus: e.status === 'submitted' ? 'Pending' : (e.status === 'ops_rejected' ? 'Rejected' : 'Verified'),
   urgency: 'Regular', // Expenses don't have urgency in schema, default to Regular
   submittedAt: e.createdAt,
 });
