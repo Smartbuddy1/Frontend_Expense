@@ -1,6 +1,7 @@
 import React, { createContext, useState, useContext, useEffect, useCallback } from 'react';
 import axios from 'axios';
 import { useAuth } from './AuthContext';
+import { toast } from '../../../components/Toast';
 
 const WalletContext = createContext(null);
 
@@ -120,6 +121,7 @@ export const WalletProvider = ({ children }) => {
       await loadProjectWallet(effectiveId);
     } catch (err) {
       console.error('Failed to load wallet data from the server', err);
+      toast.error('Could not load your wallet data — check your connection and try again.');
     } finally {
       setLoading(false);
     }

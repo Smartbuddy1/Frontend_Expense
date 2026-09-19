@@ -3,7 +3,7 @@ import {
   Building2, Users, IndianRupee, Layers, Monitor, CreditCard,
   ArrowRight, ArrowUpRight, ArrowDownRight, Activity, HardHat, Clock, ChevronRight,
   Tag, CheckCircle2, XCircle, Wrench, UserPlus, PlusCircle, Folder, Scale, PieChart as PieIcon,
-  Calendar, FileText, X
+  Calendar, FileText, X, Eye
 } from 'lucide-react';
 import { ResponsiveContainer, PieChart, Pie, Cell, Tooltip, Legend, BarChart, Bar, XAxis, YAxis, CartesianGrid } from 'recharts';
 import { useLanguage } from '../../context/LanguageContext';
@@ -46,7 +46,7 @@ export const StatusBadge = ({ text, type = 'positive' }) => {
    ========================================================================== */
 export const DashboardHeader = ({ title = 'Welcome to', highlight = 'Dashboard', subtitle = 'Hello Admin, here is your system overview.' }) => (
   <div className="dash-header" style={{ marginBottom: '0.5rem' }}>
-    <h1 className="dash-header-title" style={{ fontSize: '1.75rem', fontWeight: '800', color: '#0f172a', margin: 0, letterSpacing: '-0.02em' }}>
+    <h1 className="dash-header-title" style={{ fontSize: '1.75rem', fontWeight: '800', color: 'var(--text-primary, #0f172a)', margin: 0, letterSpacing: '-0.02em' }}>
       {title} <span style={{ color: '#2563eb' }}>{highlight}</span>
     </h1>
     <p className="dash-header-sub" style={{ fontSize: '0.92rem', color: '#64748b', margin: '0.35rem 0 0 0', fontWeight: '500' }}>
@@ -204,7 +204,7 @@ export const RevenueChart = () => {
   return (
     <div className="dash-analytics-card">
       <div className="dash-card-header">
-        <h2 style={{ fontSize: '1.05rem', fontWeight: '800', color: '#0f172a', margin: '0 0 0.2rem 0' }}>
+        <h2 style={{ fontSize: '1.05rem', fontWeight: '800', color: 'var(--text-primary, #0f172a)', margin: '0 0 0.2rem 0' }}>
           7-Day Daily Revenue (₹)
         </h2>
         <p style={{ fontSize: '0.8rem', color: '#64748b', margin: 0, fontWeight: '500' }}>
@@ -224,7 +224,7 @@ export const RevenueChart = () => {
         <div style={{ position: 'absolute', left: 0, right: 0, top: '90px', borderBottom: '1px dashed #e2e8f0', display: 'flex', alignItems: 'center' }}>
           <span style={{ fontSize: '0.72rem', color: '#94a3b8', position: 'absolute', left: '0.25rem', top: '-10px', fontWeight: '600' }}>₹3</span>
         </div>
-        <div style={{ position: 'absolute', left: 0, right: 0, bottom: '24px', borderBottom: '1px solid #e2e8f0', display: 'flex', alignItems: 'center' }}>
+        <div style={{ position: 'absolute', left: 0, right: 0, bottom: '24px', borderBottom: '1px solid var(--border-color, #e2e8f0)', display: 'flex', alignItems: 'center' }}>
           <span style={{ fontSize: '0.72rem', color: '#94a3b8', position: 'absolute', left: '0.25rem', top: '-10px', fontWeight: '600' }}>₹0</span>
         </div>
 
@@ -264,7 +264,7 @@ export const RevenueChart = () => {
 export const SiteStatusGaugeChart = ({ totalCount = 3, activeCount = 3, inactiveCount = 0, maintCount = 0, waterLowCount = 0 }) => (
   <div className="dash-analytics-card">
     <div className="dash-card-header">
-      <h2 style={{ fontSize: '1.05rem', fontWeight: '800', color: '#0f172a', margin: '0 0 0.2rem 0' }}>
+      <h2 style={{ fontSize: '1.05rem', fontWeight: '800', color: 'var(--text-primary, #0f172a)', margin: '0 0 0.2rem 0' }}>
         Site Status Distribution
       </h2>
       <p style={{ fontSize: '0.8rem', color: '#64748b', margin: 0, fontWeight: '500' }}>
@@ -290,14 +290,14 @@ export const SiteStatusGaugeChart = ({ totalCount = 3, activeCount = 3, inactive
           width: '122px',
           height: '122px',
           borderRadius: '50%',
-          backgroundColor: '#ffffff',
+          backgroundColor: 'var(--card-bg, #ffffff)',
           display: 'flex',
           flexDirection: 'column',
           alignItems: 'center',
           justifyContent: 'center',
           boxShadow: 'inset 0 2px 8px rgba(0,0,0,0.06)'
         }}>
-          <span style={{ fontSize: '2.1rem', fontWeight: '900', color: '#0f172a', lineHeight: 1 }}>{totalCount}</span>
+          <span style={{ fontSize: '2.1rem', fontWeight: '900', color: 'var(--text-primary, #0f172a)', lineHeight: 1 }}>{totalCount}</span>
           <span style={{ fontSize: '0.75rem', fontWeight: '700', color: '#64748b', marginTop: '0.25rem' }}>Total Sites</span>
         </div>
       </div>
@@ -376,14 +376,14 @@ export const TopRevenueProjectsChart = ({ projects = [], expenses = [], advances
     if (active && payload && payload.length) {
       const data = payload[0].payload;
       return (
-        <div style={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: '8px', padding: '10px', boxShadow: '0 4px 6px rgba(0,0,0,0.05)' }}>
-          <p style={{ margin: '0 0 5px 0', fontWeight: '800', fontSize: '0.9rem', color: '#0f172a' }}>{label}</p>
+        <div style={{ background: '#fff', border: '1px solid var(--border-color, #e2e8f0)', borderRadius: '8px', padding: '10px', boxShadow: '0 4px 6px rgba(0,0,0,0.05)' }}>
+          <p style={{ margin: '0 0 5px 0', fontWeight: '800', fontSize: '0.9rem', color: 'var(--text-primary, #0f172a)' }}>{label}</p>
           <p style={{ margin: '0 0 8px 0', fontSize: '0.75rem', color: '#64748b' }}>Supervisor: <strong>{data.supervisor}</strong></p>
           <div style={{ fontSize: '0.8rem' }}>
             <p style={{ margin: '2px 0', color: '#3b82f6' }}>Advance Given: <strong>₹{data.totalAdvance.toLocaleString()}</strong></p>
             <p style={{ margin: '2px 0', color: '#ef4444' }}>Amount Spent: <strong>₹{data.spent.toLocaleString()}</strong></p>
             <p style={{ margin: '2px 0', color: '#10b981' }}>Cash In Hand: <strong>₹{data.cashInHand.toLocaleString()}</strong></p>
-            <p style={{ margin: '4px 0 0 0', color: '#475569', fontSize: '0.75rem' }}>Total Expenses: <strong>{data.totalExpensesCount}</strong></p>
+            <p style={{ margin: '4px 0 0 0', color: 'var(--text-secondary, #475569)', fontSize: '0.75rem' }}>Total Expenses: <strong>{data.totalExpensesCount}</strong></p>
           </div>
         </div>
       );
@@ -534,46 +534,9 @@ export const RecentActivityFeed = ({ expenses = [], onApproveExpense, onRejectEx
 
                   {/* CATEGORY */}
                   <td style={{ padding: '0.85rem 1rem', verticalAlign: 'middle' }}>
-                    {(() => {
-                      const cat = exp.category || 'Material';
-                      const isTransport = cat.toLowerCase().includes('conveyance') || cat.toLowerCase().includes('transport') || cat.toLowerCase().includes('travel') || cat.toLowerCase().includes('local');
-                      const isLabor = cat.toLowerCase().includes('labor') || cat.toLowerCase().includes('wages');
-                      const isFood = cat.toLowerCase().includes('food') || cat.toLowerCase().includes('tea');
-                      const isEquip = cat.toLowerCase().includes('equipment') || cat.toLowerCase().includes('rental');
-
-                      let label = 'MATERIAL';
-                      let bg = 'rgba(239, 68, 68, 0.12)';
-                      let color = '#f87171';
-                      let border = 'rgba(239, 68, 68, 0.3)';
-
-                      if (isTransport) {
-                        label = 'TRANSPORT';
-                        bg = 'rgba(34, 197, 94, 0.12)';
-                        color = '#4ade80';
-                        border = 'rgba(34, 197, 94, 0.3)';
-                      } else if (isLabor) {
-                        label = 'LABOR';
-                        bg = 'rgba(59, 130, 246, 0.12)';
-                        color = '#60a5fa';
-                        border = 'rgba(59, 130, 246, 0.3)';
-                      } else if (isFood) {
-                        label = 'FOOD & TEA';
-                        bg = 'rgba(245, 158, 11, 0.12)';
-                        color = '#fbbf24';
-                        border = 'rgba(245, 158, 11, 0.3)';
-                      } else if (isEquip) {
-                        label = 'EQUIPMENT';
-                        bg = 'rgba(168, 85, 247, 0.12)';
-                        color = '#c084fc';
-                        border = 'rgba(168, 85, 247, 0.3)';
-                      }
-
-                      return (
-                        <span style={{ fontSize: '0.72rem', fontWeight: '800', padding: '0.2rem 0.55rem', borderRadius: '9999px', backgroundColor: bg, color: color, border: `1px solid ${border}`, display: 'inline-block', letterSpacing: '0.04em' }}>
-                          {label}
-                        </span>
-                      );
-                    })()}
+                    <span style={{ color: 'var(--text-secondary, #475569)', fontWeight: '700', fontSize: '0.85rem', textTransform: 'uppercase' }}>
+                      {exp.category || 'Material'}
+                    </span>
                   </td>
 
                   {/* SUPERVISOR */}
@@ -585,7 +548,7 @@ export const RecentActivityFeed = ({ expenses = [], onApproveExpense, onRejectEx
 
                   {/* AMOUNT */}
                   <td style={{ padding: '0.85rem 1rem', verticalAlign: 'middle' }}>
-                    <div style={{ color: '#0f172a', fontWeight: '800', fontSize: '0.95rem' }}>
+                    <div style={{ color: 'var(--text-primary, #0f172a)', fontWeight: '800', fontSize: '0.95rem' }}>
                       ₹{(exp.amount || 0).toLocaleString('en-IN')}
                     </div>
                   </td>
@@ -594,41 +557,42 @@ export const RecentActivityFeed = ({ expenses = [], onApproveExpense, onRejectEx
                   <td style={{ padding: '0.85rem 1rem', verticalAlign: 'middle', textAlign: 'center' }}>
                     <div style={{ display: 'flex', gap: '0.4rem', justifyContent: 'center' }}>
                       <button
+                        title="View Bill"
                         onClick={() => setInspectModalClaim(exp)}
                         style={{
-                          padding: '0.45rem 0.8rem',
+                          padding: '0.45rem',
                           borderRadius: '8px',
                           backgroundColor: 'var(--input-bg, #f1f5f9)',
                           border: '1px solid var(--border-color, #cbd5e1)',
                           color: 'var(--text-primary, #0f172a)',
-                          fontSize: '0.78rem',
-                          fontWeight: '700',
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
                           cursor: 'pointer',
-                          transition: 'all 0.15s ease',
-                          whiteSpace: 'nowrap'
+                          transition: 'all 0.15s ease'
                         }}
                         onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'var(--table-hover, #e2e8f0)'}
                         onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'var(--input-bg, #f1f5f9)'}
                       >
-                        View Bill
+                        <Eye size={16} />
                       </button>
                       <button
+                        title="Approve & Forward"
                         onClick={() => onApproveExpense && onApproveExpense(exp.id, 'Approved and forwarded to Accounts')}
-                        style={{ background: 'linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)', color: '#ffffff', border: 'none', borderRadius: '8px', padding: '0.45rem 0.8rem', fontSize: '0.78rem', fontWeight: '800', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: '0.35rem', boxShadow: '0 2px 6px rgba(59, 130, 246, 0.3)' }}
+                        style={{ background: 'linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)', color: '#ffffff', border: 'none', borderRadius: '8px', padding: '0.45rem', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', transition: 'all 0.15s ease', boxShadow: '0 2px 6px rgba(59, 130, 246, 0.3)' }}
                         onMouseEnter={(e) => e.currentTarget.style.opacity = '0.9'}
                         onMouseLeave={(e) => e.currentTarget.style.opacity = '1'}
                       >
-                        <CheckCircle2 size={13} />
-                        Approve & Forward
+                        <CheckCircle2 size={16} />
                       </button>
                       <button
+                        title="Reject"
                         onClick={() => onRejectExpense && onRejectExpense(exp.id, 'Rejected by operations')}
-                        style={{ backgroundColor: '#ffffff', color: '#ef4444', border: '1.5px solid #fca5a5', borderRadius: '8px', padding: '0.45rem 0.8rem', fontSize: '0.78rem', fontWeight: '800', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: '0.35rem' }}
+                        style={{ backgroundColor: 'var(--card-bg, #ffffff)', color: '#ef4444', border: '1px solid #fca5a5', borderRadius: '8px', padding: '0.45rem', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', transition: 'all 0.15s ease' }}
                         onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = '#fef2f2'; e.currentTarget.style.borderColor = '#ef4444'; }}
                         onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = '#ffffff'; e.currentTarget.style.borderColor = '#fca5a5'; }}
                       >
-                        <XCircle size={13} />
-                        Reject
+                        <XCircle size={16} />
                       </button>
                     </div>
                   </td>
@@ -962,7 +926,7 @@ export const BudgetDistributionPieChart = ({
           <span style={{ fontSize: '0.72rem', color: '#64748b', fontWeight: '800', textTransform: 'uppercase', display: 'block', letterSpacing: '0.05em' }}>
             Total Expense
           </span>
-          <span style={{ fontSize: '1.2rem', fontWeight: '900', color: '#0f172a', lineHeight: 1.1 }}>
+          <span style={{ fontSize: '1.2rem', fontWeight: '900', color: 'var(--text-primary, #0f172a)', lineHeight: 1.1 }}>
             {totalExpenseVal >= 100000
               ? `₹${(totalExpenseVal / 100000).toFixed(2)}L`
               : `₹${(totalExpenseVal / 1000).toFixed(0)}k`}
@@ -1034,7 +998,10 @@ const OperationsOverview = ({
   onOpenCreateProject,
   onSelectProject,
   onApproveExpense,
-  onRejectExpense
+  onRejectExpense,
+  onOpenCreateSupervisor,
+  onOpenSubmitExpense,
+  onOpenRequestAdvance
 }) => {
   const { language } = useLanguage();
   const pendingBillsCount = expenses.filter(e => e.status === 'Pending').length;
@@ -1143,34 +1110,34 @@ const OperationsOverview = ({
             description="Register and track site projects & operations"
             icon={Building2}
             iconBg="#059669"
-            onClick={() => setActiveTab && setActiveTab('projects')}
+            onClick={onOpenCreateProject}
           />
 
-          {/* Card 2: Assign Supervisors & Teams */}
+          {/* Card 2: Assign Supervisors & Team */}
           <QuickActionCard
-            title="Assign Supervisors & Team"
-            description="Deploy Rohit, Amit, Sagar & field crew"
+            title="Create Supervisor"
+            description="Register new supervisors & field crew"
             icon={Users}
             iconBg="#2563eb"
-            onClick={() => setActiveTab && setActiveTab('team')}
+            onClick={onOpenCreateSupervisor}
           />
 
-          {/* Card 3: Bill Approve */}
+          {/* Card 3: Submit Expense */}
           <QuickActionCard
-            title="Bill Approve"
-            description="Review and audit daily site claims & bills"
+            title="Submit Expense"
+            description="Submit a new expense or claim"
             icon={IndianRupee}
             iconBg="#ea580c"
-            onClick={() => setActiveTab && setActiveTab('expenses')}
+            onClick={onOpenSubmitExpense}
           />
 
-          {/* Card 5: Request Advance */}
+          {/* Card 4: Request Advance */}
           <QuickActionCard
             title="Request Advance"
-            description="Audit supervisor advance requests"
+            description="View advance requests and reconciliations"
             icon={Scale}
             iconBg="#10b981"
-            onClick={() => setActiveTab && setActiveTab('reconciliation')}
+            onClick={onOpenRequestAdvance}
           />
 
         </div>

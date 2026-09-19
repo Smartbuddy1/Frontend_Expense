@@ -126,7 +126,7 @@ const Layout = () => {
         }}>
           <Link to="/dashboard" onClick={() => setIsSidebarOpen(false)} style={{ textDecoration: 'none', display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
             <div style={{
-              backgroundColor: '#ffffff',
+              backgroundColor: 'var(--card-bg, #ffffff)',
               height: '44px',
               padding: '0.2rem 0.85rem',
               borderRadius: '12px',
@@ -393,7 +393,7 @@ const Layout = () => {
                 borderRadius: '50%',
                 backgroundColor: '#dbeafe',
                 border: '2px solid #3b82f6',
-                color: '#1e293b',
+                color: 'var(--text-primary, #1e293b)',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',

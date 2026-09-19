@@ -66,7 +66,7 @@ const ReconciliationTab = ({
           .filter(a => a.projectId === p.id && a.rawStatus === 'disbursed')
           .reduce((sum, a) => sum + a.amount, 0);
         const totalSpent = expenses
-          .filter(e => e.projectId === p.id && e.status === 'Approved')
+          .filter(e => e.projectId === p.id && (e.status === 'Approved' || e.status === 'Paid'))
           .reduce((sum, e) => sum + e.amount, 0);
         const inHand = totalAdvance - totalSpent;
         const lastLedgerEntry = ledgerRecords

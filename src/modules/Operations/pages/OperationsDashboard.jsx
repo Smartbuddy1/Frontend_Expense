@@ -48,6 +48,7 @@ const mapSupervisor = (u) => ({
   experience: '—',
   activeProjects: [],
   advanceAmount: 0,
+  walletBalance: Number(u.walletBalance) || 0,
 });
 
 const mapTeamMember = (t) => ({
@@ -148,6 +149,8 @@ import ExpenseApprovalModal from '../components/operations/modals/ExpenseApprova
 import SubmitExpenseModal from '../components/operations/modals/SubmitExpenseModal';
 import ProjectDetailModal from '../components/operations/modals/ProjectDetailModal';
 import CreateSupervisorModal from '../components/operations/modals/CreateSupervisorModal';
+import UpdateProgressModal from '../components/operations/modals/UpdateProgressModal';
+import RequestAdvanceModal from '../components/operations/modals/RequestAdvanceModal';
 
 const OperationsDashboard = () => {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -225,6 +228,11 @@ const OperationsDashboard = () => {
 
   const [isCreateSupervisorOpen, setIsCreateSupervisorOpen] = useState(false);
   const [editingSupervisor, setEditingSupervisor] = useState(null);
+
+  const [isUpdateProgressOpen, setIsUpdateProgressOpen] = useState(false);
+  const [targetProjectForProgress, setTargetProjectForProgress] = useState(null);
+
+  const [isRequestAdvanceOpen, setIsRequestAdvanceOpen] = useState(false);
 
   // Handlers — all of these now call the real backend, then refetch.
   const handleSaveSupervisor = async (supData) => {
@@ -333,19 +341,24 @@ const OperationsDashboard = () => {
   };
 
   const handleAssignTeam = async (assignmentData) => {
-    const { projectId, supervisorId, assignedTeam, teamCount } = assignmentData;
+    const { projectId, projectIds, supervisorId, assignedTeam, teamCount } = assignmentData;
     try {
-      await axios.patch(`${API}/projects/${projectId}`, { supervisorId: supervisorId || undefined });
+      const pIds = (projectIds && projectIds.length > 0) ? projectIds : [projectId];
+      
+      await Promise.all(pIds.map(async (pid) => {
+        await axios.patch(`${API}/projects/${pid}`, { supervisorId: supervisorId || undefined });
 
-      const currentProject = projects.find(p => p.id === projectId);
-      const currentTeam = currentProject?.assignedTeam || [];
-      const toAdd = (assignedTeam || []).filter(id => !currentTeam.includes(id));
-      const toRemove = currentTeam.filter(id => !(assignedTeam || []).includes(id));
+        const currentProject = projects.find(p => p.id === pid);
+        const currentTeam = currentProject?.assignedTeam || [];
+        const toAdd = (assignedTeam || []).filter(id => !currentTeam.includes(id));
+        const toRemove = currentTeam.filter(id => !(assignedTeam || []).includes(id));
 
-      await Promise.all([
-        ...toAdd.map(teamMemberId => axios.post(`${API}/projects/${projectId}/team`, { teamMemberId })),
-        ...toRemove.map(teamMemberId => axios.delete(`${API}/projects/${projectId}/team/${teamMemberId}`)),
-      ]);
+        await Promise.all([
+          ...toAdd.map(teamMemberId => axios.post(`${API}/projects/${pid}/team`, { teamMemberId })),
+          ...toRemove.map(teamMemberId => axios.delete(`${API}/projects/${pid}/team/${teamMemberId}`)),
+        ]);
+      }));
+
 
       toast.success(`Supervisor & Field Crew (${teamCount || (assignedTeam || []).length} Members) assigned successfully!`);
       await fetchCore();
@@ -361,11 +374,6 @@ const OperationsDashboard = () => {
     }
     try {
       await axios.patch(`${API}/expenses/${expenseId}/approve`);
-      
-      const expense = expenses.find(e => e.id === expenseId);
-      if (expense && expense.projectId) {
-        await axios.patch(`${API}/projects/${expense.projectId}`, { status: 'active' });
-      }
 
       toast.success(`Expense ${expenseId} approved for disbursement!`);
       await fetchCore();
@@ -415,6 +423,41 @@ const OperationsDashboard = () => {
     }
   };
 
+  const handleUpdateProgress = async (updateData) => {
+    const { projectId, progress, health, milestones, status, newLog } = updateData;
+    try {
+      const patchBody = { progress };
+      if (DISPLAY_TO_HEALTH[health]) patchBody.health = DISPLAY_TO_HEALTH[health];
+      if (DISPLAY_TO_STATUS[status]) patchBody.status = DISPLAY_TO_STATUS[status];
+      else if (health === 'Completed') patchBody.status = 'completed';
+      await axios.patch(`${API}/projects/${projectId}`, patchBody);
+
+      const original = projects.find(p => p.id === projectId);
+      const originalMilestones = original?.milestones || [];
+      await Promise.all((milestones || []).map(async (m) => {
+        const orig = originalMilestones.find(om => om.id === m.id);
+        if (orig && orig.status !== m.status) {
+          await axios.patch(`${API}/projects/${projectId}/milestones/${m.id}`, { status: m.status });
+        }
+      }));
+
+      if (newLog) {
+        await axios.post(`${API}/site-logs`, {
+          projectId,
+          title: newLog.title,
+          workSummary: newLog.workSummary,
+          laborCount: newLog.laborCount,
+          issues: newLog.issues && newLog.issues !== 'None' ? newLog.issues : undefined,
+        });
+      }
+
+      toast.success(`Site progress updated to ${progress}%!`);
+      await fetchCore();
+    } catch (err) {
+      toast.error(err.response?.data?.error || 'Failed to update progress');
+    }
+  };
+
   const pendingExpensesCount = expenses.filter(e => e.status === 'Pending').length;
 
   return (
@@ -433,7 +476,9 @@ const OperationsDashboard = () => {
           siteLogs={siteLogs}
           setActiveTab={handleTabChange}
           onOpenCreateProject={() => { setEditingProject(null); setIsCreateProjectOpen(true); }}
+          onOpenCreateSupervisor={() => { setEditingSupervisor(null); setIsCreateSupervisorOpen(true); }}
           onOpenSubmitExpense={() => setIsSubmitExpenseOpen(true)}
+          onOpenRequestAdvance={() => setIsRequestAdvanceOpen(true)}
           onSelectProject={(p) => { setSelectedProjectDetail(p); setIsProjectDetailOpen(true); }}
           onApproveExpense={handleApproveExpense}
           onRejectExpense={handleRejectExpense}
@@ -530,6 +575,40 @@ const OperationsDashboard = () => {
         onSubmit={handleSubmitNewExpense}
         projects={projects}
         supervisors={supervisors}
+      />
+
+      <ProjectDetailModal
+        isOpen={isProjectDetailOpen}
+        onClose={() => { setIsProjectDetailOpen(false); setSelectedProjectDetail(null); }}
+        project={selectedProjectDetail}
+        supervisors={supervisors}
+        teamMembers={teamMembers}
+        expenses={expenses}
+        onOpenAssign={(p) => {
+          setIsProjectDetailOpen(false);
+          setTargetProjectForTeam(p);
+          setIsAssignTeamOpen(true);
+        }}
+        onOpenProgress={(p) => {
+          setIsProjectDetailOpen(false);
+          setTargetProjectForProgress(p);
+          setIsUpdateProgressOpen(true);
+        }}
+      />
+
+      <UpdateProgressModal
+        isOpen={isUpdateProgressOpen}
+        onClose={() => { setIsUpdateProgressOpen(false); setTargetProjectForProgress(null); }}
+        project={targetProjectForProgress}
+        onUpdateProgress={handleUpdateProgress}
+        supervisors={supervisors}
+      />
+
+      <RequestAdvanceModal
+        isOpen={isRequestAdvanceOpen}
+        onClose={() => setIsRequestAdvanceOpen(false)}
+        projects={projects}
+        onRefresh={fetchCore}
       />
 
     </div>

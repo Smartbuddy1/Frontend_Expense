@@ -10,6 +10,7 @@ import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import { useLanguage } from '../../context/LanguageContext';
 import { addPdfHeaderWithLogo, addPdfFooterWithLogo, escapeHtml } from '../../utils/pdfHeaderHelper';
+import Pagination from '../../../../components/ui/Pagination';
 
 const TeamAssignmentTab = ({
   projects = [],
@@ -23,25 +24,8 @@ const TeamAssignmentTab = ({
 }) => {
   const { language } = useLanguage();
   const [searchQuery, setSearchQuery] = useState('');
-  const [siteFilter, setSiteFilter] = useState('All'); // 'All', 'Sangamner', 'Pune', 'Nashik'
-  const [isSiteDropdownOpen, setIsSiteDropdownOpen] = useState(false);
-  const [supervisorFilter, setSupervisorFilter] = useState('All');
-  const [isSupervisorDropdownOpen, setIsSupervisorDropdownOpen] = useState(false);
-
-  const siteOptions = [
-    { value: 'All', label: 'All Sites (All Locations)' },
-    { value: 'Sangamner', label: 'Sangamner Site' },
-    { value: 'Pune', label: 'Pune Site' },
-    { value: 'Nashik', label: 'Nashik Site' },
-  ];
-
-  const supervisorOptions = [
-    { value: 'All', label: 'All Supervisors' },
-    ...supervisors.map(s => ({
-      value: s.id || s.name,
-      label: s.name
-    }))
-  ];
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 10;
 
   // Filtered Supervisors matching search query, site filter, and supervisor filter
   const filteredSupervisors = supervisors.filter((sup) => {
@@ -56,25 +40,27 @@ const TeamAssignmentTab = ({
       if (!match) return false;
     }
 
-    if (supervisorFilter !== 'All') {
-      const matchSup = (sup.id && sup.id === supervisorFilter) || (sup.name && sup.name === supervisorFilter);
-      if (!matchSup) return false;
-    }
-
-    if (siteFilter !== 'All') {
-      const assignedProject = projects.find(p => 
-        (p.supervisorId && sup.id && p.supervisorId === sup.id) ||
-        (p.supervisorName && sup.name && p.supervisorName.trim().toLowerCase() === sup.name.trim().toLowerCase()) ||
-        (sup.activeProjects && sup.activeProjects.some(ap => ap === p.id || ap === p.code || ap === p.name))
-      );
-      if (!assignedProject) return false;
-      const matchesSite = assignedProject.name.toLowerCase().includes(siteFilter.toLowerCase()) ||
-        assignedProject.location?.toLowerCase().includes(siteFilter.toLowerCase());
-      if (!matchesSite) return false;
-    }
-
     return true;
   });
+
+  React.useEffect(() => {
+    setCurrentPage(1);
+  }, [searchQuery]);
+
+  const totalPages = Math.ceil(filteredSupervisors.length / itemsPerPage) || 1;
+  const safePage = Math.min(currentPage, totalPages);
+  const paginatedSupervisors = filteredSupervisors.slice(
+    (safePage - 1) * itemsPerPage,
+    safePage * itemsPerPage
+  );
+
+  const handlePrev = () => {
+    if (currentPage > 1) setCurrentPage(prev => prev - 1);
+  };
+
+  const handleNext = () => {
+    if (currentPage < totalPages) setCurrentPage(prev => prev + 1);
+  };
 
   // 1-Click CSV / Excel Export Handler for Supervisors
   const handleExportCSV = () => {
@@ -338,7 +324,7 @@ const TeamAssignmentTab = ({
           <h1 style={{
             fontSize: '1.85rem',
             fontWeight: '900',
-            color: '#0f172a',
+            color: 'var(--text-primary, #0f172a)',
             margin: 0,
             lineHeight: 1.2,
             display: 'flex',
@@ -369,9 +355,9 @@ const TeamAssignmentTab = ({
             style={{
               padding: '0.45rem 1rem',
               borderRadius: '8px',
-              border: '1.5px solid #cbd5e1',
-              backgroundColor: '#ffffff',
-              color: '#0f172a',
+              border: '1.5px solid var(--border-color, #cbd5e1)',
+              backgroundColor: 'var(--card-bg, #ffffff)',
+              color: 'var(--text-primary, #0f172a)',
               fontSize: '0.92rem',
               fontWeight: '600',
               cursor: 'pointer',
@@ -390,7 +376,7 @@ const TeamAssignmentTab = ({
               e.currentTarget.style.borderColor = '#cbd5e1';
             }}
           >
-            <Printer size={16} style={{ color: '#0f172a' }} />
+            <Printer size={16} style={{ color: 'var(--text-primary, #0f172a)' }} />
             <span>Print</span>
           </button>
 
@@ -401,7 +387,7 @@ const TeamAssignmentTab = ({
               padding: '0.45rem 1rem',
               borderRadius: '8px',
               border: '1.5px solid #16a34a',
-              backgroundColor: '#ffffff',
+              backgroundColor: 'var(--card-bg, #ffffff)',
               color: '#16a34a',
               fontSize: '0.92rem',
               fontWeight: '600',
@@ -432,7 +418,7 @@ const TeamAssignmentTab = ({
               padding: '0.45rem 1rem',
               borderRadius: '8px',
               border: '1.5px solid #dc2626',
-              backgroundColor: '#ffffff',
+              backgroundColor: 'var(--card-bg, #ffffff)',
               color: '#dc2626',
               fontSize: '0.92rem',
               fontWeight: '600',
@@ -496,192 +482,6 @@ const TeamAssignmentTab = ({
 
         {/* Right Side: Location Filter Dropdown & Blue + Add Supervisor Button */}
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', flexWrap: 'wrap' }}>
-          {/* Location Filter Dropdown */}
-          <div style={{ position: 'relative' }}>
-            <button
-              type="button"
-              onClick={() => {
-                setIsSiteDropdownOpen(!isSiteDropdownOpen);
-                setIsSupervisorDropdownOpen(false);
-              }}
-              style={{
-                padding: '0.65rem 1.15rem 0.65rem 2.45rem',
-                borderRadius: '10px',
-                backgroundColor: isSiteDropdownOpen ? '#dbeafe' : 'var(--input-bg, #eff6ff)',
-                border: `1.5px solid ${isSiteDropdownOpen ? '#2563eb' : 'var(--border-color, #bfdbfe)'}`,
-                color: '#2563eb',
-                fontSize: '0.9rem',
-                fontWeight: '800',
-                cursor: 'pointer',
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: '0.5rem',
-                boxShadow: '0 1px 3px rgba(37, 99, 235, 0.08)',
-                transition: 'all 0.15s ease',
-                position: 'relative'
-              }}
-            >
-              <MapPin size={16} style={{ position: 'absolute', left: '0.75rem', color: '#2563eb' }} />
-              <span>{siteOptions.find(o => o.value === siteFilter)?.label || 'All Sites'}</span>
-              <ChevronDown size={16} style={{ color: '#2563eb', transform: isSiteDropdownOpen ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s' }} />
-            </button>
-
-            {/* Floating Dropdown Menu */}
-            {isSiteDropdownOpen && (
-              <div style={{
-                position: 'absolute',
-                top: 'calc(100% + 6px)',
-                right: 0,
-                minWidth: '240px',
-                backgroundColor: 'var(--card-bg, #ffffff)',
-                borderRadius: '12px',
-                border: '1.5px solid var(--border-color, #bfdbfe)',
-                boxShadow: '0 10px 25px -5px rgba(37, 99, 235, 0.15), 0 4px 10px rgba(0, 0, 0, 0.05)',
-                zIndex: 50,
-                padding: '0.4rem',
-                overflow: 'hidden'
-              }}>
-                {siteOptions.map((opt) => {
-                  const isSelected = siteFilter === opt.value;
-                  return (
-                    <button
-                      key={opt.value}
-                      type="button"
-                      onClick={() => {
-                        setSiteFilter(opt.value);
-                        setIsSiteDropdownOpen(false);
-                      }}
-                      style={{
-                        width: '100%',
-                        padding: '0.6rem 0.95rem',
-                        borderRadius: '8px',
-                        border: 'none',
-                        backgroundColor: isSelected ? '#2563eb' : 'transparent',
-                        color: isSelected ? '#ffffff' : 'var(--text-primary, #1e293b)',
-                        fontSize: '0.9rem',
-                        fontWeight: isSelected ? '800' : '600',
-                        cursor: 'pointer',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'space-between',
-                        textAlign: 'left',
-                        transition: 'all 0.12s ease'
-                      }}
-                      onMouseEnter={(e) => {
-                        if (!isSelected) {
-                          e.currentTarget.style.backgroundColor = 'var(--table-hover, #eff6ff)';
-                          e.currentTarget.style.color = '#2563eb';
-                        }
-                      }}
-                      onMouseLeave={(e) => {
-                        if (!isSelected) {
-                          e.currentTarget.style.backgroundColor = 'transparent';
-                          e.currentTarget.style.color = 'var(--text-primary, #1e293b)';
-                        }
-                      }}
-                    >
-                      <span>{opt.label}</span>
-                      {isSelected && <CheckCircle2 size={16} style={{ color: '#ffffff' }} />}
-                    </button>
-                  );
-                })}
-              </div>
-            )}
-          </div>
-
-          {/* Supervisor Filter Dropdown */}
-          <div style={{ position: 'relative' }}>
-            <button
-              type="button"
-              onClick={() => {
-                setIsSupervisorDropdownOpen(!isSupervisorDropdownOpen);
-                setIsSiteDropdownOpen(false);
-              }}
-              style={{
-                padding: '0.65rem 1.15rem 0.65rem 2.45rem',
-                borderRadius: '10px',
-                backgroundColor: isSupervisorDropdownOpen ? '#dbeafe' : 'var(--input-bg, #eff6ff)',
-                border: `1.5px solid ${isSupervisorDropdownOpen ? '#2563eb' : 'var(--border-color, #bfdbfe)'}`,
-                color: '#2563eb',
-                fontSize: '0.9rem',
-                fontWeight: '800',
-                cursor: 'pointer',
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: '0.5rem',
-                boxShadow: '0 1px 3px rgba(37, 99, 235, 0.08)',
-                transition: 'all 0.15s ease',
-                position: 'relative'
-              }}
-            >
-              <UserCheck size={16} style={{ position: 'absolute', left: '0.75rem', color: '#2563eb' }} />
-              <span>{supervisorOptions.find(o => o.value === supervisorFilter)?.label || 'All Supervisors'}</span>
-              <ChevronDown size={16} style={{ color: '#2563eb', transform: isSupervisorDropdownOpen ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s' }} />
-            </button>
-
-            {/* Floating Dropdown Menu */}
-            {isSupervisorDropdownOpen && (
-              <div style={{
-                position: 'absolute',
-                top: 'calc(100% + 6px)',
-                right: 0,
-                minWidth: '240px',
-                maxHeight: '300px',
-                overflowY: 'auto',
-                backgroundColor: 'var(--card-bg, #ffffff)',
-                borderRadius: '12px',
-                border: '1.5px solid var(--border-color, #bfdbfe)',
-                boxShadow: '0 10px 25px -5px rgba(37, 99, 235, 0.15), 0 4px 10px rgba(0, 0, 0, 0.05)',
-                zIndex: 50,
-                padding: '0.4rem'
-              }}>
-                {supervisorOptions.map((opt) => {
-                  const isSelected = supervisorFilter === opt.value;
-                  return (
-                    <button
-                      key={opt.value}
-                      type="button"
-                      onClick={() => {
-                        setSupervisorFilter(opt.value);
-                        setIsSupervisorDropdownOpen(false);
-                      }}
-                      style={{
-                        width: '100%',
-                        padding: '0.6rem 0.95rem',
-                        borderRadius: '8px',
-                        border: 'none',
-                        backgroundColor: isSelected ? '#2563eb' : 'transparent',
-                        color: isSelected ? '#ffffff' : 'var(--text-primary, #1e293b)',
-                        fontSize: '0.9rem',
-                        fontWeight: isSelected ? '800' : '600',
-                        cursor: 'pointer',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'space-between',
-                        textAlign: 'left',
-                        transition: 'all 0.12s ease'
-                      }}
-                      onMouseEnter={(e) => {
-                        if (!isSelected) {
-                          e.currentTarget.style.backgroundColor = 'var(--table-hover, #eff6ff)';
-                          e.currentTarget.style.color = '#2563eb';
-                        }
-                      }}
-                      onMouseLeave={(e) => {
-                        if (!isSelected) {
-                          e.currentTarget.style.backgroundColor = 'transparent';
-                          e.currentTarget.style.color = 'var(--text-primary, #1e293b)';
-                        }
-                      }}
-                    >
-                      <span>{opt.label}</span>
-                      {isSelected && <CheckCircle2 size={16} style={{ color: '#ffffff' }} />}
-                    </button>
-                  );
-                })}
-              </div>
-            )}
-          </div>
 
           {/* ➕ Blue + Add Supervisor Button (Placed right below Excel & PDF) */}
           <button
@@ -730,7 +530,7 @@ const TeamAssignmentTab = ({
           <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '0.95rem' }}>
             <thead>
               <tr style={{
-                backgroundColor: '#ffffff',
+                backgroundColor: 'var(--card-bg, #ffffff)',
                 borderBottom: '1px solid #edf2f7',
                 color: '#64748b',
                 fontSize: '0.85rem',
@@ -747,21 +547,22 @@ const TeamAssignmentTab = ({
               </tr>
             </thead>
             <tbody>
-              {filteredSupervisors.length === 0 ? (
+              {paginatedSupervisors.length === 0 ? (
                 <tr>
                   <td colSpan={6} style={{ padding: '3rem', textAlign: 'center', color: '#94a3b8', fontSize: '0.95rem' }}>
                     {language === 'mr' ? 'कोणतेही सुपरवायझर आढळले नाहीत.' : 'No supervisors found matching your criteria.'}
                   </td>
                 </tr>
               ) : (
-                filteredSupervisors.map((sup, idx) => {
-                  const assignedProject = projects.find(p => 
+                paginatedSupervisors.map((sup, idx) => {
+                  const assignedProjects = projects.filter(p => 
                     (p.supervisorId && sup.id && p.supervisorId === sup.id) ||
                     (p.supervisor_id && sup.id && p.supervisor_id === sup.id) ||
                     (p.supervisorName && sup.name && p.supervisorName.trim().toLowerCase() === sup.name.trim().toLowerCase()) ||
                     (sup.activeProjects && sup.activeProjects.some(ap => ap === p.id || ap === p.code || ap === p.name)) ||
                     (p.assignees && Array.isArray(p.assignees) && p.assignees.some(a => a.id === sup.id))
                   );
+                  const assignedProject = assignedProjects.length > 0 ? assignedProjects[0] : null;
                   const isOnSite = Boolean(assignedProject || sup.status === 'On-Site');
 
                   return (
@@ -819,7 +620,7 @@ const TeamAssignmentTab = ({
                       <td style={{ padding: '1.2rem 1.35rem' }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                           <Mail size={14} style={{ color: '#64748b' }} />
-                          <span style={{ color: '#334155', fontSize: '0.9rem', fontWeight: '500' }}>
+                          <span style={{ color: 'var(--text-secondary, #334155)', fontSize: '0.9rem', fontWeight: '500' }}>
                             {sup.email || <span style={{ color: '#94a3b8', fontStyle: 'italic' }}>N/A</span>}
                           </span>
                         </div>
@@ -827,16 +628,20 @@ const TeamAssignmentTab = ({
 
                       {/* Project */}
                       <td style={{ padding: '1.2rem 1.35rem' }}>
-                        {assignedProject ? (
-                          <div>
-                            <strong style={{ color: 'var(--text-primary, #0f172a)', fontSize: '0.98rem', fontWeight: '800', display: 'block' }}>
-                              {assignedProject.name}
-                            </strong>
-                            {assignedProject.location && (
-                              <span style={{ fontSize: '0.82rem', color: 'var(--text-secondary, #64748b)' }}>
-                                Loc: {assignedProject.location}
-                              </span>
-                            )}
+                        {assignedProjects && assignedProjects.length > 0 ? (
+                          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                            {assignedProjects.map((ap) => (
+                              <div key={ap.id}>
+                                <strong style={{ color: 'var(--text-primary, #0f172a)', fontSize: '0.98rem', fontWeight: '800', display: 'block' }}>
+                                  {ap.name}
+                                </strong>
+                                {ap.location && (
+                                  <span style={{ fontSize: '0.82rem', color: 'var(--text-secondary, #64748b)' }}>
+                                    Loc: {ap.location}
+                                  </span>
+                                )}
+                              </div>
+                            ))}
                           </div>
                         ) : (
                           <span style={{ fontSize: '0.88rem', color: '#94a3b8', fontStyle: 'italic' }}>
@@ -869,6 +674,37 @@ const TeamAssignmentTab = ({
                       {/* Actions: Edit + Delete */}
                       <td style={{ padding: '1.2rem 1.35rem', textAlign: 'center' }}>
                         <div style={{ display: 'inline-flex', alignItems: 'center', gap: '0.45rem' }}>
+
+                          {/* Assign Supervisor Button */}
+                          <button
+                            onClick={() => onOpenAssignTeam && onOpenAssignTeam({ supervisorId: sup.id, supervisorName: sup.name, supervisorPhone: sup.phone, supervisorOnly: true })}
+                            title={language === 'mr' ? 'प्रोजेक्ट साईट नेमा / बदला' : 'Assign / Change Project'}
+                            style={{
+                              width: '32px',
+                              height: '32px',
+                              borderRadius: '8px',
+                              backgroundColor: 'var(--input-bg, #f8fafc)',
+                              color: 'var(--text-secondary, #475569)',
+                              border: '1px solid var(--border-color, #cbd5e1)',
+                              display: 'inline-flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              cursor: 'pointer',
+                              transition: 'all 0.15s ease'
+                            }}
+                            onMouseEnter={(e) => {
+                              e.currentTarget.style.backgroundColor = '#10b981';
+                              e.currentTarget.style.color = '#ffffff';
+                              e.currentTarget.style.borderColor = '#10b981';
+                            }}
+                            onMouseLeave={(e) => {
+                              e.currentTarget.style.backgroundColor = 'var(--input-bg, #f8fafc)';
+                              e.currentTarget.style.color = 'var(--text-secondary, #475569)';
+                              e.currentTarget.style.borderColor = 'var(--border-color, #cbd5e1)';
+                            }}
+                          >
+                            <UserPlus size={14} />
+                          </button>
 
                           {/* Edit Supervisor Button */}
                           <button
@@ -945,6 +781,15 @@ const TeamAssignmentTab = ({
           </table>
         </div>
       </div>
+
+      <Pagination 
+        currentPage={safePage} 
+        totalPages={totalPages} 
+        onPrev={handlePrev} 
+        onNext={handleNext} 
+        language={language} 
+      />
+
     </div>
   );
 };

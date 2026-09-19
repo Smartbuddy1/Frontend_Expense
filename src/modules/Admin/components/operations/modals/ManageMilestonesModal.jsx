@@ -29,7 +29,7 @@ const ManageMilestonesModal = ({ isOpen, onClose, project, onAddMilestone, onDel
       padding: '1rem'
     }}>
       <div style={{
-        backgroundColor: '#ffffff',
+        backgroundColor: 'var(--card-bg, #ffffff)',
         borderRadius: '20px',
         maxWidth: '560px',
         width: '100%',
@@ -38,7 +38,7 @@ const ManageMilestonesModal = ({ isOpen, onClose, project, onAddMilestone, onDel
         flexDirection: 'column',
         overflow: 'hidden',
         boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.35)',
-        border: '1px solid #e2e8f0',
+        border: '1px solid var(--border-color, #e2e8f0)',
         animation: 'fadeInUp 0.25s ease'
       }}>
         {/* Header */}
@@ -61,7 +61,7 @@ const ManageMilestonesModal = ({ isOpen, onClose, project, onAddMilestone, onDel
               background: 'rgba(255,255,255,0.1)',
               border: 'none',
               borderRadius: '8px',
-              color: '#94a3b8',
+              color: 'var(--text-muted, #94a3b8)',
               cursor: 'pointer',
               padding: '0.45rem',
               display: 'flex',
@@ -75,8 +75,8 @@ const ManageMilestonesModal = ({ isOpen, onClose, project, onAddMilestone, onDel
         </div>
 
         <div style={{ padding: '1.5rem', overflowY: 'auto' }}>
-          <form onSubmit={handleSubmit} style={{ marginBottom: '1.5rem', padding: '1rem', backgroundColor: '#f8fafc', borderRadius: '12px', border: '1px solid #e2e8f0' }}>
-            <h4 style={{ margin: '0 0 1rem 0', fontSize: '0.9rem', color: '#0f172a', fontWeight: '700' }}>Add New Milestone</h4>
+          <form onSubmit={handleSubmit} style={{ marginBottom: '1.5rem', padding: '1rem', backgroundColor: 'var(--bg-color, #f8fafc)', borderRadius: '12px', border: '1px solid var(--border-color, #e2e8f0)' }}>
+            <h4 style={{ margin: '0 0 1rem 0', fontSize: '0.9rem', color: 'var(--text-primary, #0f172a)', fontWeight: '700' }}>Add New Milestone</h4>
             <div style={{ display: 'flex', gap: '1rem', flexDirection: 'column' }}>
               <div>
                  <input 
@@ -87,7 +87,7 @@ const ManageMilestonesModal = ({ isOpen, onClose, project, onAddMilestone, onDel
                    required
                    style={{
                      width: '100%', padding: '0.75rem 1rem', borderRadius: '10px', 
-                     border: '1px solid #cbd5e1', fontSize: '0.95rem', boxSizing: 'border-box'
+                     border: '1px solid var(--border-color, #cbd5e1)', fontSize: '0.95rem', boxSizing: 'border-box'
                    }}
                  />
               </div>
@@ -100,7 +100,7 @@ const ManageMilestonesModal = ({ isOpen, onClose, project, onAddMilestone, onDel
                      onChange={(e) => setTargetDate(e.target.value)}
                      style={{
                        width: '100%', padding: '0.75rem 1rem 0.75rem 2.5rem', borderRadius: '10px', 
-                       border: '1px solid #cbd5e1', fontSize: '0.95rem', boxSizing: 'border-box'
+                       border: '1px solid var(--border-color, #cbd5e1)', fontSize: '0.95rem', boxSizing: 'border-box'
                      }}
                    />
                  </div>
@@ -119,17 +119,17 @@ const ManageMilestonesModal = ({ isOpen, onClose, project, onAddMilestone, onDel
           </form>
 
           <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-            <h4 style={{ margin: '0 0 0.5rem 0', fontSize: '0.9rem', color: '#64748b', fontWeight: '700', textTransform: 'uppercase' }}>Existing Milestones</h4>
+            <h4 style={{ margin: '0 0 0.5rem 0', fontSize: '0.9rem', color: 'var(--text-secondary, #64748b)', fontWeight: '700', textTransform: 'uppercase' }}>Existing Milestones</h4>
             {(!project.milestones || project.milestones.length === 0) ? (
-               <div style={{ textAlign: 'center', padding: '2rem 1rem', color: '#94a3b8', fontSize: '0.9rem' }}>
+               <div style={{ textAlign: 'center', padding: '2rem 1rem', color: 'var(--text-muted, #94a3b8)', fontSize: '0.9rem' }}>
                  No milestones added yet.
                </div>
             ) : (
               project.milestones.map((m) => (
-                <div key={m.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '0.75rem 1rem', border: '1px solid #e2e8f0', borderRadius: '10px', backgroundColor: '#ffffff' }}>
+                <div key={m.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '0.75rem 1rem', border: '1px solid var(--border-color, #e2e8f0)', borderRadius: '10px', backgroundColor: 'var(--card-bg, #ffffff)' }}>
                   <div>
-                    <div style={{ fontWeight: '700', color: '#0f172a', fontSize: '0.95rem' }}>{m.title}</div>
-                    <div style={{ fontSize: '0.75rem', color: '#64748b', marginTop: '0.2rem' }}>
+                    <div style={{ fontWeight: '700', color: 'var(--text-primary, #0f172a)', fontSize: '0.95rem' }}>{m.title}</div>
+                    <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary, #64748b)', marginTop: '0.2rem' }}>
                       Target: {m.targetDate ? new Date(m.targetDate).toLocaleDateString() : 'Not Set'} &nbsp;•&nbsp; Status: {m.status}
                     </div>
                   </div>

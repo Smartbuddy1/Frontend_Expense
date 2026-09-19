@@ -113,22 +113,25 @@ const ReceiptViewerModal = ({ expense, onClose, onApprove, onReject }) => {
             border: '1px solid var(--border-color)',
             flexDirection: 'column'
           }}>
-            <p style={{ color: 'white', fontSize: '0.8rem', wordBreak: 'break-all' }}>
-              DEBUG billUrl: {expense.billUrl || 'null'}<br />
-              DEBUG SRC: {expense.billUrl ? (expense.billUrl.startsWith('http') ? expense.billUrl : `${import.meta.env.VITE_API_BASE_URL || ''}${expense.billUrl.startsWith('/') ? '' : '/'}${expense.billUrl}`) : 'fallback'}
-            </p>
-            <img
-              src={expense.billUrl 
-                ? (expense.billUrl.startsWith('http') ? expense.billUrl : `${import.meta.env.VITE_API_BASE_URL || ''}${expense.billUrl.startsWith('/') ? '' : '/'}${expense.billUrl}`)
-                : 'https://images.unsplash.com/photo-1554224155-8d04cb21cd6c?auto=format&fit=crop&w=800&q=80'}
-              alt="Bill Receipt"
-              style={{
-                maxWidth: '100%',
-                maxHeight: '500px',
-                objectFit: 'contain',
-                boxShadow: '0 10px 25px rgba(0,0,0,0.5)'
-              }}
-            />
+            {expense.billUrl ? (
+              <img
+                src={expense.billUrl.startsWith('http') ? expense.billUrl : `${import.meta.env.VITE_API_BASE_URL || ''}${expense.billUrl.startsWith('/') ? '' : '/'}${expense.billUrl}`}
+                alt="Bill Receipt"
+                style={{
+                  maxWidth: '100%',
+                  maxHeight: '500px',
+                  objectFit: 'contain',
+                  boxShadow: '0 10px 25px rgba(0,0,0,0.5)'
+                }}
+              />
+            ) : (
+              <div style={{ padding: '3rem 1rem', textAlign: 'center' }}>
+                <FileText size={40} color="#64748b" style={{ margin: '0 auto 0.75rem' }} />
+                <p style={{ color: '#94a3b8', fontSize: '0.9rem', fontWeight: '600', margin: 0 }}>
+                  No receipt uploaded for this claim
+                </p>
+              </div>
+            )}
           </div>
         </div>
 

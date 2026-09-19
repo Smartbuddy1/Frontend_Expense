@@ -135,12 +135,14 @@ const Dashboard = () => {
     ? walletBalance 
     : (localTotalAdvance - localApprovedSpent);
 
-  const siteTodaySpend = filteredExpensesList.reduce((acc, curr) => acc + (curr.amount || 0), 0);
+  const siteTodaySpend = filteredExpensesList
+    .filter((e) => e.status === 'Approved')
+    .reduce((acc, curr) => acc + (curr.amount || 0), 0);
   const totalSpent = expensesList.reduce((acc, curr) => acc + (curr.amount || 0), 0);
 
-  const handleAddExpense = (e) => {
+  const handleAddExpense = async (e) => {
     e.preventDefault();
-    
+
     if (!expenseForm.projectId) {
       toast.error(language === 'mr' ? 'कृपया साइट लोकेशन निवडा!' : language === 'hi' ? 'कृपया साइट लोकेशन चुनें!' : 'Please select a Site Location!');
       return;
@@ -162,31 +164,35 @@ const Dashboard = () => {
       return;
     }
 
-    recordExpense({
-      category: expenseForm.category,
-      projectId: expenseForm.projectId,
-      amount: parseFloat(expenseForm.amount),
-      paidTo: expenseForm.paidTo.trim(),
-      receiptName: expenseForm.receiptName,
-      receiptUrl: expenseForm.previewUrl || null,
-      file: expenseForm.receiptFile,
-      receipt: true
-    });
+    try {
+      await recordExpense({
+        category: expenseForm.category,
+        projectId: expenseForm.projectId,
+        amount: parseFloat(expenseForm.amount),
+        paidTo: expenseForm.paidTo.trim(),
+        receiptName: expenseForm.receiptName,
+        receiptUrl: expenseForm.previewUrl || null,
+        file: expenseForm.receiptFile,
+        receipt: true
+      });
 
-    setExpenseForm({
-      category: categories && categories.length > 0 ? categories[0].name : '',
-      projectId: defaultTargetProject ? defaultTargetProject.id : '',
-      amount: '',
-      paidTo: '',
-      receiptName: '',
-      previewUrl: null,
-      receiptFile: null
-    });
-    setActiveModal(null);
-    toast.success(language === 'mr' ? 'खर्च आणि बिलाचा पुरावा यशस्वीरीत्या नोंदवला गेला!' : language === 'hi' ? 'खर्च और बिल का प्रमाण सफलतापूर्वक दर्ज हो गया!' : 'Expense and bill proof recorded successfully!');
+      setExpenseForm({
+        category: categories && categories.length > 0 ? categories[0].name : '',
+        projectId: defaultTargetProject ? defaultTargetProject.id : '',
+        amount: '',
+        paidTo: '',
+        receiptName: '',
+        previewUrl: null,
+        receiptFile: null
+      });
+      setActiveModal(null);
+      toast.success(language === 'mr' ? 'खर्च आणि बिलाचा पुरावा यशस्वीरीत्या नोंदवला गेला!' : language === 'hi' ? 'खर्च और बिल का प्रमाण सफलतापूर्वक दर्ज हो गया!' : 'Expense and bill proof recorded successfully!');
+    } catch (err) {
+      toast.error(err.response?.data?.error || (language === 'mr' ? 'खर्च नोंदवता आला नाही, पुन्हा प्रयत्न करा.' : language === 'hi' ? 'खर्च दर्ज नहीं हो सका, कृपया पुनः प्रयास करें।' : 'Could not save the expense, please try again.'));
+    }
   };
 
-  const handleRequestAdvance = (e) => {
+  const handleRequestAdvance = async (e) => {
     e.preventDefault();
     if (!advanceForm.projectId) {
       toast.error(language === 'mr' ? 'कृपया साइट लोकेशन निवडा!' : language === 'hi' ? 'कृपया साइट लोकेशन चुनें!' : 'Please select a Site Location!');
@@ -205,19 +211,23 @@ const Dashboard = () => {
       return;
     }
 
-    requestAdvance({
-      amount: parseFloat(advanceForm.amount),
-      reason: advanceForm.reason.trim(),
-      urgency: advanceForm.urgency,
-      projectId: advanceForm.projectId
-    });
-    toast.success(language === 'mr'
-      ? `₹${parseFloat(advanceForm.amount).toLocaleString()} ची अ‍ॅडव्हान्स मागणी मंजुरीसाठी पाठवली गेली आहे!`
-      : language === 'hi'
-      ? `₹${parseFloat(advanceForm.amount).toLocaleString()} का एडवांस अनुरोध स्वीकृति के लिए भेज दिया गया है!`
-      : `Advance request of ₹${parseFloat(advanceForm.amount).toLocaleString()} submitted successfully!`);
-    setAdvanceForm({ projectId: defaultTargetProject ? defaultTargetProject.id : '', amount: '', reason: '', urgency: 'Immediate (Same Day)' });
-    setActiveModal(null);
+    try {
+      await requestAdvance({
+        amount: parseFloat(advanceForm.amount),
+        reason: advanceForm.reason.trim(),
+        urgency: advanceForm.urgency,
+        projectId: advanceForm.projectId
+      });
+      toast.success(language === 'mr'
+        ? `₹${parseFloat(advanceForm.amount).toLocaleString()} ची अ‍ॅडव्हान्स मागणी मंजुरीसाठी पाठवली गेली आहे!`
+        : language === 'hi'
+        ? `₹${parseFloat(advanceForm.amount).toLocaleString()} का एडवांस अनुरोध स्वीकृति के लिए भेज दिया गया है!`
+        : `Advance request of ₹${parseFloat(advanceForm.amount).toLocaleString()} submitted successfully!`);
+      setAdvanceForm({ projectId: defaultTargetProject ? defaultTargetProject.id : '', amount: '', reason: '', urgency: 'Immediate (Same Day)' });
+      setActiveModal(null);
+    } catch (err) {
+      toast.error(err.response?.data?.error || err.message || (language === 'mr' ? 'अ‍ॅडव्हान्स मागणी पाठवता आली नाही, पुन्हा प्रयत्न करा.' : language === 'hi' ? 'एडवांस अनुरोध नहीं भेजा जा सका, कृपया पुनः प्रयास करें।' : 'Could not submit the advance request, please try again.'));
+    }
   };
 
   // 4 Core Supervisor Quick Actions (Daily Expenses first, Assigned Projects second)

@@ -16,7 +16,8 @@ const ProjectDetailModal = ({ isOpen, onClose, project, supervisors = [], teamMe
   const fetchPhotos = async () => {
     setLoadingPhotos(true);
     try {
-      const response = await axios.get(`/api/projects/${project.id}/photos`);
+      const baseURL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000';
+      const response = await axios.get(`${baseURL}/projects/${project.id}/photos`);
       setPhotos(response.data);
     } catch (err) {
       console.error("Error fetching photos:", err);

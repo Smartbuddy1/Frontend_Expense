@@ -98,7 +98,7 @@ const UpdateProgressModal = ({ isOpen, onClose, project, onUpdateProgress, super
       case 'Completed':
         return { backgroundColor: '#eff6ff', color: '#2563eb', border: '1px solid #bfdbfe' };
       default:
-        return { backgroundColor: '#f1f5f9', color: '#475569', border: '1px solid #e2e8f0' };
+        return { backgroundColor: 'var(--bg-color, #f1f5f9)', color: 'var(--text-secondary, #475569)', border: '1px solid var(--border-color, #e2e8f0)' };
     }
   };
 
@@ -115,7 +115,7 @@ const UpdateProgressModal = ({ isOpen, onClose, project, onUpdateProgress, super
       padding: '1rem'
     }}>
       <div style={{
-        backgroundColor: '#ffffff',
+        backgroundColor: 'var(--card-bg, #ffffff)',
         borderRadius: '20px',
         maxWidth: '680px',
         width: '100%',
@@ -124,7 +124,7 @@ const UpdateProgressModal = ({ isOpen, onClose, project, onUpdateProgress, super
         flexDirection: 'column',
         overflow: 'hidden',
         boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.35)',
-        border: '1px solid #e2e8f0',
+        border: '1px solid var(--border-color, #e2e8f0)',
         animation: 'fadeInUp 0.25s ease'
       }}>
         {/* Header */}
@@ -138,7 +138,7 @@ const UpdateProgressModal = ({ isOpen, onClose, project, onUpdateProgress, super
         }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.85rem' }}>
             <div style={{
-              backgroundColor: '#ffffff',
+              backgroundColor: 'var(--card-bg, #ffffff)',
               padding: '0.25rem 0.5rem',
               borderRadius: '10px',
               display: 'flex',
@@ -157,7 +157,7 @@ const UpdateProgressModal = ({ isOpen, onClose, project, onUpdateProgress, super
               <h3 style={{ margin: 0, fontSize: '1.15rem', fontWeight: '800', color: '#ffffff' }}>
                 Update Site Progress & Milestones
               </h3>
-              <p style={{ margin: '0.2rem 0 0 0', fontSize: '0.82rem', color: '#94a3b8' }}>
+              <p style={{ margin: '0.2rem 0 0 0', fontSize: '0.82rem', color: 'var(--text-muted, #94a3b8)' }}>
                 Aarya Innovtech • <strong style={{ color: '#60a5fa' }}>{project.name}</strong>
               </p>
             </div>
@@ -169,7 +169,7 @@ const UpdateProgressModal = ({ isOpen, onClose, project, onUpdateProgress, super
               background: 'rgba(255,255,255,0.1)',
               border: 'none',
               borderRadius: '8px',
-              color: '#94a3b8',
+              color: 'var(--text-muted, #94a3b8)',
               cursor: 'pointer',
               padding: '0.45rem',
               display: 'flex',
@@ -189,7 +189,7 @@ const UpdateProgressModal = ({ isOpen, onClose, project, onUpdateProgress, super
           
           {/* Project Status Selection */}
           <div>
-            <label style={{ display: 'block', fontSize: '0.78rem', fontWeight: '800', color: '#475569', textTransform: 'uppercase', letterSpacing: '0.04em', marginBottom: '0.5rem' }}>
+            <label style={{ display: 'block', fontSize: '0.78rem', fontWeight: '800', color: 'var(--text-secondary, #475569)', textTransform: 'uppercase', letterSpacing: '0.04em', marginBottom: '0.5rem' }}>
               Project Status
             </label>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '0.5rem' }}>
@@ -228,7 +228,7 @@ const UpdateProgressModal = ({ isOpen, onClose, project, onUpdateProgress, super
           {/* Execution Milestones */}
           <div>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
-              <label style={{ fontSize: '0.78rem', fontWeight: '800', color: '#475569', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+              <label style={{ fontSize: '0.78rem', fontWeight: '800', color: 'var(--text-secondary, #475569)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
                 Execution Milestones (Click to advance status)
               </label>
               <span style={{ fontSize: '0.72rem', color: '#2563eb', fontWeight: '700' }}>Tap to toggle</span>
@@ -241,8 +241,8 @@ const UpdateProgressModal = ({ isOpen, onClose, project, onUpdateProgress, super
                   style={{
                     padding: '0.7rem 0.9rem',
                     borderRadius: '12px',
-                    border: '1px solid #e2e8f0',
-                    backgroundColor: '#ffffff',
+                    border: '1px solid var(--border-color, #e2e8f0)',
+                    backgroundColor: 'var(--card-bg, #ffffff)',
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'space-between',
@@ -269,7 +269,7 @@ const UpdateProgressModal = ({ isOpen, onClose, project, onUpdateProgress, super
                        <Clock size={16} />}
                     </div>
                     <div>
-                      <div style={{ fontSize: '0.86rem', fontWeight: '800', color: '#0f172a' }}>{m.title}</div>
+                      <div style={{ fontSize: '0.86rem', fontWeight: '800', color: 'var(--text-primary, #0f172a)' }}>{m.title}</div>
                     </div>
                   </div>
                   <span style={{
@@ -289,9 +289,9 @@ const UpdateProgressModal = ({ isOpen, onClose, project, onUpdateProgress, super
           </div>
 
           {/* Daily Site Activity Notes */}
-          <div style={{ borderTop: '1px solid #e2e8f0', paddingTop: '1rem', display: 'flex', flexDirection: 'column', gap: '0.85rem' }}>
+          <div style={{ borderTop: '1px solid var(--border-color, #e2e8f0)', paddingTop: '1rem', display: 'flex', flexDirection: 'column', gap: '0.85rem' }}>
             <div>
-              <label style={{ display: 'flex', alignItems: 'center', gap: '0.3rem', fontSize: '0.75rem', fontWeight: '700', color: '#64748b', marginBottom: '0.3rem' }}>
+              <label style={{ display: 'flex', alignItems: 'center', gap: '0.3rem', fontSize: '0.75rem', fontWeight: '700', color: 'var(--text-secondary, #64748b)', marginBottom: '0.3rem' }}>
                 <Users size={12} /> Active Workforce / Labor Count
               </label>
               <input
@@ -302,9 +302,9 @@ const UpdateProgressModal = ({ isOpen, onClose, project, onUpdateProgress, super
                   width: '100%',
                   padding: '0.55rem 0.75rem',
                   borderRadius: '10px',
-                  border: '1px solid #cbd5e1',
-                  backgroundColor: '#ffffff',
-                  color: '#0f172a',
+                  border: '1px solid var(--border-color, #cbd5e1)',
+                  backgroundColor: 'var(--card-bg, #ffffff)',
+                  color: 'var(--text-primary, #0f172a)',
                   fontSize: '0.85rem',
                   boxSizing: 'border-box'
                 }}
@@ -312,7 +312,7 @@ const UpdateProgressModal = ({ isOpen, onClose, project, onUpdateProgress, super
             </div>
 
             <div>
-              <label style={{ display: 'flex', alignItems: 'center', gap: '0.3rem', fontSize: '0.75rem', fontWeight: '700', color: '#64748b', marginBottom: '0.3rem' }}>
+              <label style={{ display: 'flex', alignItems: 'center', gap: '0.3rem', fontSize: '0.75rem', fontWeight: '700', color: 'var(--text-secondary, #64748b)', marginBottom: '0.3rem' }}>
                 <AlertCircle size={12} color="#f59e0b" /> Site Issues / Blockers (if any)
               </label>
               <input
@@ -324,9 +324,9 @@ const UpdateProgressModal = ({ isOpen, onClose, project, onUpdateProgress, super
                   width: '100%',
                   padding: '0.55rem 0.75rem',
                   borderRadius: '10px',
-                  border: '1px solid #cbd5e1',
-                  backgroundColor: '#ffffff',
-                  color: '#0f172a',
+                  border: '1px solid var(--border-color, #cbd5e1)',
+                  backgroundColor: 'var(--card-bg, #ffffff)',
+                  color: 'var(--text-primary, #0f172a)',
                   fontSize: '0.85rem',
                   boxSizing: 'border-box'
                 }}
@@ -337,7 +337,7 @@ const UpdateProgressModal = ({ isOpen, onClose, project, onUpdateProgress, super
           {/* Modal Footer Actions */}
           <div style={{
             paddingTop: '1rem',
-            borderTop: '1px solid #e2e8f0',
+            borderTop: '1px solid var(--border-color, #e2e8f0)',
             display: 'flex',
             justifyContent: 'flex-end',
             gap: '0.75rem'
@@ -348,9 +348,9 @@ const UpdateProgressModal = ({ isOpen, onClose, project, onUpdateProgress, super
               style={{
                 padding: '0.65rem 1.25rem',
                 borderRadius: '10px',
-                border: '1px solid #cbd5e1',
-                backgroundColor: '#ffffff',
-                color: '#475569',
+                border: '1px solid var(--border-color, #cbd5e1)',
+                backgroundColor: 'var(--card-bg, #ffffff)',
+                color: 'var(--text-secondary, #475569)',
                 fontSize: '0.85rem',
                 fontWeight: '700',
                 cursor: 'pointer'

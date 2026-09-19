@@ -37,7 +37,7 @@ const BalanceSettlement = () => {
     return {
       id: `TXN-${exp.id.replace('EXP-', '').slice(0, 4).toUpperCase()}`,
       type: 'Debit',
-      site: exp.site || 'Metro Line 3 - Station #4B',
+      site: exp.site || 'Unknown Site',
       desc: `${exp.category} - ${exp.paidTo || 'Vendor'}`,
       category: exp.category,
       amount: exp.amount,
@@ -45,6 +45,8 @@ const BalanceSettlement = () => {
       balanceAfter: currentBalance
     };
   });
+
+  const totalSpent = totalAdvance - walletBalance;
 
   const ledgerEntries = [
     {
@@ -54,8 +56,8 @@ const BalanceSettlement = () => {
       desc: 'Advance received from Head Office',
       category: 'Advance',
       amount: totalAdvance,
-      date: 'August 2026',
-      balanceAfter: currentBalance // Represents balance before any expenses
+      date: chronologicalExpenses[0]?.date || '',
+      balanceAfter: totalAdvance // Represents balance before any expenses
     },
     ...expenseEntries
   ];

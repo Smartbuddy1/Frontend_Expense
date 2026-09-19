@@ -154,28 +154,6 @@ const ProgressMonitoringTab = ({
               </option>
             ))}
           </select>
-
-          {/* Export PDF */}
-          <button
-            onClick={handleExportPDF}
-            style={{
-              padding: '0.48rem 0.95rem',
-              borderRadius: '10px',
-              backgroundColor: '#2563eb',
-              color: '#ffffff',
-              fontSize: '0.84rem',
-              fontWeight: '800',
-              border: 'none',
-              cursor: 'pointer',
-              display: 'inline-flex',
-              alignItems: 'center',
-              gap: '0.4rem',
-              boxShadow: '0 2px 6px rgba(37, 99, 235, 0.25)'
-            }}
-          >
-            <Download size={15} />
-            <span>Export PDF</span>
-          </button>
         </div>
       </div>
 

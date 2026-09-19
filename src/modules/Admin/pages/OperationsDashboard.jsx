@@ -570,19 +570,24 @@ const OperationsDashboard = () => {
   };
 
   const handleAssignTeam = async (assignmentData) => {
-    const { projectId, supervisorId, assignedTeam, teamCount } = assignmentData;
+    const { projectId, projectIds, supervisorId, assignedTeam, teamCount } = assignmentData;
     try {
-      await axios.patch(`${API}/projects/${projectId}`, { supervisorId: supervisorId || undefined });
+      const pIds = (projectIds && projectIds.length > 0) ? projectIds : [projectId];
 
-      const currentProject = projects.find(p => p.id === projectId);
-      const currentTeam = currentProject?.assignedTeam || [];
-      const toAdd = (assignedTeam || []).filter(id => !currentTeam.includes(id));
-      const toRemove = currentTeam.filter(id => !(assignedTeam || []).includes(id));
+      await Promise.all(pIds.map(async (pid) => {
+        await axios.patch(`${API}/projects/${pid}`, { supervisorId: supervisorId || undefined });
 
-      await Promise.all([
-        ...toAdd.map(teamMemberId => axios.post(`${API}/projects/${projectId}/team`, { teamMemberId })),
-        ...toRemove.map(teamMemberId => axios.delete(`${API}/projects/${projectId}/team/${teamMemberId}`)),
-      ]);
+        const currentProject = projects.find(p => p.id === pid);
+        const currentTeam = currentProject?.assignedTeam || [];
+        const toAdd = (assignedTeam || []).filter(id => !currentTeam.includes(id));
+        const toRemove = currentTeam.filter(id => !(assignedTeam || []).includes(id));
+
+        await Promise.all([
+          ...toAdd.map(teamMemberId => axios.post(`${API}/projects/${pid}/team`, { teamMemberId })),
+          ...toRemove.map(teamMemberId => axios.delete(`${API}/projects/${pid}/team/${teamMemberId}`)),
+        ]);
+      }));
+
 
       toast.success(`Supervisor & Field Crew (${teamCount || (assignedTeam || []).length} Members) assigned successfully!`);
       await fetchCore();

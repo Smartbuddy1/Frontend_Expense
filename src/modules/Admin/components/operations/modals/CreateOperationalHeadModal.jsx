@@ -82,9 +82,9 @@ const CreateOperationalHeadModal = ({
       padding: '1rem'
     }}>
       <div style={{
-        backgroundColor: '#ffffff',
+        backgroundColor: 'var(--card-bg, #ffffff)',
         borderRadius: '20px',
-        border: '1px solid #e2e8f0',
+        border: '1px solid var(--border-color, #e2e8f0)',
         boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)',
         width: '100%',
         maxWidth: '500px',
@@ -97,7 +97,7 @@ const CreateOperationalHeadModal = ({
         {/* Modal Header */}
         <div style={{
           padding: '1.25rem 1.5rem',
-          borderBottom: '1px solid #e2e8f0',
+          borderBottom: '1px solid var(--border-color, #e2e8f0)',
           background: isEdit 
             ? 'linear-gradient(135deg, #1e3a8a 0%, #2563eb 100%)' 
             : 'linear-gradient(135deg, #0f172a 0%, #1e3a8a 100%)',
@@ -152,11 +152,11 @@ const CreateOperationalHeadModal = ({
           
           {/* 1. Full Name */}
           <div>
-            <label style={{ display: 'block', fontSize: '0.86rem', fontWeight: '700', color: '#334155', marginBottom: '0.35rem' }}>
+            <label style={{ display: 'block', fontSize: '0.86rem', fontWeight: '700', color: 'var(--text-primary, #334155)', marginBottom: '0.35rem' }}>
               Full Name <span style={{ color: '#ef4444' }}>*</span>
             </label>
             <div style={{ position: 'relative' }}>
-              <User size={16} style={{ position: 'absolute', left: '0.85rem', top: '50%', transform: 'translateY(-50%)', color: '#94a3b8' }} />
+              <User size={16} style={{ position: 'absolute', left: '0.85rem', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted, #94a3b8)' }} />
               <input
                 type="text"
                 required
@@ -167,8 +167,10 @@ const CreateOperationalHeadModal = ({
                   width: '100%',
                   padding: '0.7rem 0.85rem 0.7rem 2.4rem',
                   borderRadius: '10px',
-                  border: '1.5px solid #cbd5e1',
+                  border: '1.5px solid var(--border-color, #cbd5e1)',
                   fontSize: '0.92rem',
+                  backgroundColor: 'var(--input-bg, #ffffff)',
+                  backgroundColor: 'var(--input-bg, #ffffff)',
                   outline: 'none',
                   boxSizing: 'border-box'
                 }}
@@ -178,11 +180,11 @@ const CreateOperationalHeadModal = ({
 
           {/* 2. Official Phone */}
           <div>
-            <label style={{ display: 'block', fontSize: '0.86rem', fontWeight: '700', color: '#334155', marginBottom: '0.35rem' }}>
+            <label style={{ display: 'block', fontSize: '0.86rem', fontWeight: '700', color: 'var(--text-primary, #334155)', marginBottom: '0.35rem' }}>
               Phone Number <span style={{ color: '#ef4444' }}>*</span>
             </label>
             <div style={{ position: 'relative' }}>
-              <Phone size={16} style={{ position: 'absolute', left: '0.85rem', top: '50%', transform: 'translateY(-50%)', color: '#94a3b8' }} />
+              <Phone size={16} style={{ position: 'absolute', left: '0.85rem', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted, #94a3b8)' }} />
               <input
                 type="text"
                 required
@@ -193,8 +195,10 @@ const CreateOperationalHeadModal = ({
                   width: '100%',
                   padding: '0.7rem 0.85rem 0.7rem 2.4rem',
                   borderRadius: '10px',
-                  border: '1.5px solid #cbd5e1',
+                  border: '1.5px solid var(--border-color, #cbd5e1)',
                   fontSize: '0.92rem',
+                  backgroundColor: 'var(--input-bg, #ffffff)',
+                  backgroundColor: 'var(--input-bg, #ffffff)',
                   outline: 'none',
                   boxSizing: 'border-box'
                 }}
@@ -204,11 +208,11 @@ const CreateOperationalHeadModal = ({
 
           {/* 3. Official Email */}
           <div>
-            <label style={{ display: 'block', fontSize: '0.86rem', fontWeight: '700', color: '#334155', marginBottom: '0.35rem' }}>
+            <label style={{ display: 'block', fontSize: '0.86rem', fontWeight: '700', color: 'var(--text-primary, #334155)', marginBottom: '0.35rem' }}>
               Email Address <span style={{ color: '#ef4444' }}>*</span>
             </label>
             <div style={{ position: 'relative' }}>
-              <Mail size={16} style={{ position: 'absolute', left: '0.85rem', top: '50%', transform: 'translateY(-50%)', color: '#94a3b8' }} />
+              <Mail size={16} style={{ position: 'absolute', left: '0.85rem', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted, #94a3b8)' }} />
               <input
                 type="email"
                 required
@@ -219,8 +223,10 @@ const CreateOperationalHeadModal = ({
                   width: '100%',
                   padding: '0.7rem 0.85rem 0.7rem 2.4rem',
                   borderRadius: '10px',
-                  border: '1.5px solid #cbd5e1',
+                  border: '1.5px solid var(--border-color, #cbd5e1)',
                   fontSize: '0.92rem',
+                  backgroundColor: 'var(--input-bg, #ffffff)',
+                  backgroundColor: 'var(--input-bg, #ffffff)',
                   outline: 'none',
                   boxSizing: 'border-box'
                 }}
@@ -230,11 +236,11 @@ const CreateOperationalHeadModal = ({
 
           {/* 4. Password */}
           <div>
-            <label style={{ display: 'block', fontSize: '0.86rem', fontWeight: '700', color: '#334155', marginBottom: '0.35rem' }}>
+            <label style={{ display: 'block', fontSize: '0.86rem', fontWeight: '700', color: 'var(--text-primary, #334155)', marginBottom: '0.35rem' }}>
               Password <span style={{ color: '#ef4444' }}>*</span>
             </label>
             <div style={{ position: 'relative' }}>
-              <Lock size={16} style={{ position: 'absolute', left: '0.85rem', top: '50%', transform: 'translateY(-50%)', color: '#94a3b8' }} />
+              <Lock size={16} style={{ position: 'absolute', left: '0.85rem', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted, #94a3b8)' }} />
               <input
                 type="password"
                 required={!isEdit}
@@ -245,8 +251,10 @@ const CreateOperationalHeadModal = ({
                   width: '100%',
                   padding: '0.7rem 0.85rem 0.7rem 2.4rem',
                   borderRadius: '10px',
-                  border: '1.5px solid #cbd5e1',
+                  border: '1.5px solid var(--border-color, #cbd5e1)',
                   fontSize: '0.92rem',
+                  backgroundColor: 'var(--input-bg, #ffffff)',
+                  backgroundColor: 'var(--input-bg, #ffffff)',
                   outline: 'none',
                   boxSizing: 'border-box'
                 }}
@@ -254,31 +262,6 @@ const CreateOperationalHeadModal = ({
             </div>
           </div>
 
-          {/* 5. Role / Designation */}
-          <div>
-            <label style={{ display: 'block', fontSize: '0.86rem', fontWeight: '700', color: '#334155', marginBottom: '0.35rem' }}>
-              Role / Designation <span style={{ color: '#ef4444' }}>*</span>
-            </label>
-            <div style={{ position: 'relative' }}>
-              <Briefcase size={16} style={{ position: 'absolute', left: '0.85rem', top: '50%', transform: 'translateY(-50%)', color: '#94a3b8' }} />
-              <input
-                type="text"
-                required
-                placeholder="e.g. Vice President & Operational Head"
-                value={formData.role}
-                onChange={(e) => setFormData({ ...formData, role: e.target.value })}
-                style={{
-                  width: '100%',
-                  padding: '0.7rem 0.85rem 0.7rem 2.4rem',
-                  borderRadius: '10px',
-                  border: '1.5px solid #cbd5e1',
-                  fontSize: '0.92rem',
-                  outline: 'none',
-                  boxSizing: 'border-box'
-                }}
-              />
-            </div>
-          </div>
 
           {/* Footer Action Buttons */}
           <div style={{
@@ -288,7 +271,7 @@ const CreateOperationalHeadModal = ({
             gap: '0.75rem',
             marginTop: '0.5rem',
             paddingTop: '1rem',
-            borderTop: '1px solid #e2e8f0'
+            borderTop: '1px solid var(--border-color, #e2e8f0)'
           }}>
             <button
               type="button"
@@ -296,9 +279,9 @@ const CreateOperationalHeadModal = ({
               style={{
                 padding: '0.65rem 1.25rem',
                 borderRadius: '10px',
-                border: '1.5px solid #cbd5e1',
-                backgroundColor: '#ffffff',
-                color: '#475569',
+                border: '1.5px solid var(--border-color, #cbd5e1)',
+                backgroundColor: 'var(--card-bg, #ffffff)',
+                color: 'var(--text-secondary, #475569)',
                 fontSize: '0.92rem',
                 fontWeight: '700',
                 cursor: 'pointer'

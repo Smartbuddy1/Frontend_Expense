@@ -56,7 +56,7 @@ const ProjectDetailModal = ({ isOpen, onClose, project, supervisors = [], teamMe
       padding: '1rem'
     }}>
       <div style={{
-        backgroundColor: '#ffffff',
+        backgroundColor: 'var(--card-bg, #ffffff)',
         borderRadius: '20px',
         maxWidth: '720px',
         width: '100%',
@@ -65,7 +65,7 @@ const ProjectDetailModal = ({ isOpen, onClose, project, supervisors = [], teamMe
         flexDirection: 'column',
         overflow: 'hidden',
         boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.35)',
-        border: '1px solid #e2e8f0',
+        border: '1px solid var(--border-color, #e2e8f0)',
         animation: 'fadeInUp 0.25s ease'
       }}>
         {/* Header */}
@@ -79,7 +79,7 @@ const ProjectDetailModal = ({ isOpen, onClose, project, supervisors = [], teamMe
         }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.85rem' }}>
             <div style={{
-              backgroundColor: '#ffffff',
+              backgroundColor: 'var(--card-bg, #ffffff)',
               padding: '0.25rem 0.5rem',
               borderRadius: '10px',
               display: 'flex',
@@ -112,7 +112,7 @@ const ProjectDetailModal = ({ isOpen, onClose, project, supervisors = [], teamMe
                   {project.code || project.id}
                 </span>
               </div>
-              <p style={{ margin: '0.2rem 0 0 0', fontSize: '0.8rem', color: '#94a3b8', display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
+              <p style={{ margin: '0.2rem 0 0 0', fontSize: '0.8rem', color: 'var(--text-muted, #94a3b8)', display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
                 <MapPin size={12} color="#f87171" />
                 <span>{project.location} • {project.client}</span>
               </p>
@@ -125,7 +125,7 @@ const ProjectDetailModal = ({ isOpen, onClose, project, supervisors = [], teamMe
               background: 'rgba(255,255,255,0.1)',
               border: 'none',
               borderRadius: '8px',
-              color: '#94a3b8',
+              color: 'var(--text-muted, #94a3b8)',
               cursor: 'pointer',
               padding: '0.45rem',
               display: 'flex',
@@ -141,7 +141,7 @@ const ProjectDetailModal = ({ isOpen, onClose, project, supervisors = [], teamMe
         </div>
 
         {/* Tabs */}
-        <div style={{ display: 'flex', borderBottom: '1px solid #e2e8f0', backgroundColor: '#f8fafc' }}>
+        <div style={{ display: 'flex', borderBottom: '1px solid var(--border-color, #e2e8f0)', backgroundColor: 'var(--bg-color, #f8fafc)' }}>
           <button
             onClick={() => setActiveTab('overview')}
             style={{
@@ -192,15 +192,15 @@ const ProjectDetailModal = ({ isOpen, onClose, project, supervisors = [], teamMe
             <>
               {/* Top Metrics Row */}
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '0.75rem' }}>
-            <div style={{ padding: '0.85rem 1rem', borderRadius: '14px', backgroundColor: '#f8fafc', border: '1px solid #e2e8f0' }}>
-              <div style={{ fontSize: '0.72rem', fontWeight: '800', color: '#64748b', textTransform: 'uppercase' }}>Live Progress</div>
+            <div style={{ padding: '0.85rem 1rem', borderRadius: '14px', backgroundColor: 'var(--bg-color, #f8fafc)', border: '1px solid var(--border-color, #e2e8f0)' }}>
+              <div style={{ fontSize: '0.72rem', fontWeight: '800', color: 'var(--text-secondary, #64748b)', textTransform: 'uppercase' }}>Live Progress</div>
               <div style={{ fontSize: '1.35rem', fontWeight: '900', color: '#2563eb', marginTop: '0.15rem' }}>
                 {project.progress}%
               </div>
             </div>
 
-            <div style={{ padding: '0.85rem 1rem', borderRadius: '14px', backgroundColor: '#f8fafc', border: '1px solid #e2e8f0' }}>
-              <div style={{ fontSize: '0.72rem', fontWeight: '800', color: '#64748b', textTransform: 'uppercase' }}>Current Status</div>
+            <div style={{ padding: '0.85rem 1rem', borderRadius: '14px', backgroundColor: 'var(--bg-color, #f8fafc)', border: '1px solid var(--border-color, #e2e8f0)' }}>
+              <div style={{ fontSize: '0.72rem', fontWeight: '800', color: 'var(--text-secondary, #64748b)', textTransform: 'uppercase' }}>Current Status</div>
               <div style={{ marginTop: '0.35rem' }}>
                 <span style={{
                   fontSize: '0.78rem',
@@ -216,9 +216,9 @@ const ProjectDetailModal = ({ isOpen, onClose, project, supervisors = [], teamMe
               </div>
             </div>
 
-            <div style={{ padding: '0.85rem 1rem', borderRadius: '14px', backgroundColor: '#f8fafc', border: '1px solid #e2e8f0' }}>
-              <div style={{ fontSize: '0.72rem', fontWeight: '800', color: '#64748b', textTransform: 'uppercase' }}>Assigned Crew</div>
-              <div style={{ fontSize: '1.35rem', fontWeight: '900', color: '#0f172a', marginTop: '0.15rem' }}>
+            <div style={{ padding: '0.85rem 1rem', borderRadius: '14px', backgroundColor: 'var(--bg-color, #f8fafc)', border: '1px solid var(--border-color, #e2e8f0)' }}>
+              <div style={{ fontSize: '0.72rem', fontWeight: '800', color: 'var(--text-secondary, #64748b)', textTransform: 'uppercase' }}>Assigned Crew</div>
+              <div style={{ fontSize: '1.35rem', fontWeight: '900', color: 'var(--text-primary, #0f172a)', marginTop: '0.15rem' }}>
                 {assignedMembers.length || project.teamCount || 8} Members
               </div>
             </div>
@@ -233,9 +233,9 @@ const ProjectDetailModal = ({ isOpen, onClose, project, supervisors = [], teamMe
           )}
 
           {/* Supervisor Card */}
-          <div style={{ padding: '1rem', borderRadius: '14px', border: '1px solid #e2e8f0', backgroundColor: '#ffffff' }}>
+          <div style={{ padding: '1rem', borderRadius: '14px', border: '1px solid var(--border-color, #e2e8f0)', backgroundColor: 'var(--card-bg, #ffffff)' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.65rem' }}>
-              <span style={{ fontSize: '0.75rem', fontWeight: '800', color: '#64748b', textTransform: 'uppercase', display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
+              <span style={{ fontSize: '0.75rem', fontWeight: '800', color: 'var(--text-secondary, #64748b)', textTransform: 'uppercase', display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
                 <ShieldCheck size={14} color="#16a34a" /> Site Supervisor
               </span>
               {onOpenAssign && (
@@ -248,13 +248,13 @@ const ProjectDetailModal = ({ isOpen, onClose, project, supervisors = [], teamMe
                 </button>
               )}
             </div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', padding: '0.65rem 0.85rem', borderRadius: '10px', backgroundColor: '#f8fafc' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', padding: '0.65rem 0.85rem', borderRadius: '10px', backgroundColor: 'var(--bg-color, #f8fafc)' }}>
               <div style={{ width: '36px', height: '36px', borderRadius: '10px', backgroundColor: '#2563eb', color: '#ffffff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: '800', fontSize: '0.9rem' }}>
                 {project.supervisorName?.charAt(0) || 'S'}
               </div>
               <div>
-                <div style={{ fontSize: '0.88rem', fontWeight: '800', color: '#0f172a' }}>{project.supervisorName || 'Unassigned'}</div>
-                <div style={{ fontSize: '0.76rem', color: '#64748b', display: 'flex', alignItems: 'center', gap: '0.3rem', marginTop: '0.1rem' }}>
+                <div style={{ fontSize: '0.88rem', fontWeight: '800', color: 'var(--text-primary, #0f172a)' }}>{project.supervisorName || 'Unassigned'}</div>
+                <div style={{ fontSize: '0.76rem', color: 'var(--text-secondary, #64748b)', display: 'flex', alignItems: 'center', gap: '0.3rem', marginTop: '0.1rem' }}>
                   <Phone size={11} /> <span>{project.supervisorPhone || '+91 98220 00000'}</span>
                 </div>
               </div>
@@ -264,7 +264,7 @@ const ProjectDetailModal = ({ isOpen, onClose, project, supervisors = [], teamMe
           {/* Milestones Stepper */}
           <div style={{ display: 'flex', flexDirection: 'column', gap: '0.6rem' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <span style={{ fontSize: '0.75rem', fontWeight: '800', color: '#64748b', textTransform: 'uppercase', display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
+              <span style={{ fontSize: '0.75rem', fontWeight: '800', color: 'var(--text-secondary, #64748b)', textTransform: 'uppercase', display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
                 <Activity size={14} color="#6366f1" /> Milestones & Execution Stages
               </span>
               <div style={{ display: 'flex', gap: '0.8rem' }}>
@@ -281,7 +281,7 @@ const ProjectDetailModal = ({ isOpen, onClose, project, supervisors = [], teamMe
             </div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '0.45rem' }}>
               {project.milestones?.map((m, idx) => (
-                <div key={m.id || idx} style={{ padding: '0.65rem 0.85rem', borderRadius: '10px', border: '1px solid #e2e8f0', backgroundColor: '#f8fafc', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '0.5rem' }}>
+                <div key={m.id || idx} style={{ padding: '0.65rem 0.85rem', borderRadius: '10px', border: '1px solid var(--border-color, #e2e8f0)', backgroundColor: 'var(--bg-color, #f8fafc)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '0.5rem' }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
                     <div style={{
                       width: '26px',
@@ -297,7 +297,7 @@ const ProjectDetailModal = ({ isOpen, onClose, project, supervisors = [], teamMe
                        m.status === 'In Progress' ? <Activity size={15} /> :
                        <Clock size={15} />}
                     </div>
-                    <span style={{ fontSize: '0.84rem', fontWeight: '800', color: '#0f172a' }}>{m.title}</span>
+                    <span style={{ fontSize: '0.84rem', fontWeight: '800', color: 'var(--text-primary, #0f172a)' }}>{m.title}</span>
                   </div>
                   <span style={{
                     fontSize: '0.74rem',
@@ -318,10 +318,10 @@ const ProjectDetailModal = ({ isOpen, onClose, project, supervisors = [], teamMe
           ) : (
             <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', minHeight: '300px' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <span style={{ fontSize: '0.75rem', fontWeight: '800', color: '#64748b', textTransform: 'uppercase', display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
+                <span style={{ fontSize: '0.75rem', fontWeight: '800', color: 'var(--text-secondary, #64748b)', textTransform: 'uppercase', display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
                   <ImageIcon size={14} color="#3b82f6" /> Gallery
                 </span>
-                <span style={{ fontSize: '0.75rem', fontWeight: '800', color: '#64748b' }}>
+                <span style={{ fontSize: '0.75rem', fontWeight: '800', color: 'var(--text-secondary, #64748b)' }}>
                   {photos.length} Photos
                 </span>
               </div>
@@ -331,22 +331,22 @@ const ProjectDetailModal = ({ isOpen, onClose, project, supervisors = [], teamMe
                   <Loader2 className="animate-spin text-blue-500" size={24} />
                 </div>
               ) : photos.length === 0 ? (
-                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', flex: 1, backgroundColor: '#f8fafc', borderRadius: '12px', border: '1px dashed #cbd5e1' }}>
+                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', flex: 1, backgroundColor: 'var(--bg-color, #f8fafc)', borderRadius: '12px', border: '1px dashed var(--border-color, #cbd5e1)' }}>
                   <Camera size={32} color="#94a3b8" style={{ marginBottom: '0.5rem' }} />
-                  <span style={{ fontSize: '0.85rem', color: '#64748b', fontWeight: '600' }}>No site photos uploaded yet.</span>
+                  <span style={{ fontSize: '0.85rem', color: 'var(--text-secondary, #64748b)', fontWeight: '600' }}>No site photos uploaded yet.</span>
                 </div>
               ) : (
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))', gap: '1rem' }}>
                   {photos.map(photo => (
-                    <div key={photo.id} style={{ borderRadius: '10px', overflow: 'hidden', border: '1px solid #e2e8f0', backgroundColor: '#ffffff', display: 'flex', flexDirection: 'column' }}>
+                    <div key={photo.id} style={{ borderRadius: '10px', overflow: 'hidden', border: '1px solid var(--border-color, #e2e8f0)', backgroundColor: 'var(--card-bg, #ffffff)', display: 'flex', flexDirection: 'column' }}>
                       <img src={photo.imageUrl} alt="Site" style={{ width: '100%', height: '140px', objectFit: 'cover' }} />
                       <div style={{ padding: '0.65rem', display: 'flex', flexDirection: 'column', gap: '0.2rem' }}>
-                        <span style={{ fontSize: '0.75rem', color: '#0f172a', fontWeight: '600', lineHeight: 1.2, display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
+                        <span style={{ fontSize: '0.75rem', color: 'var(--text-primary, #0f172a)', fontWeight: '600', lineHeight: 1.2, display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
                           {photo.description || 'No description'}
                         </span>
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 'auto', paddingTop: '0.4rem' }}>
-                          <span style={{ fontSize: '0.65rem', color: '#64748b' }}>{photo.supervisor?.name || 'Supervisor'}</span>
-                          <span style={{ fontSize: '0.65rem', color: '#94a3b8' }}>{new Date(photo.createdAt).toLocaleDateString()}</span>
+                          <span style={{ fontSize: '0.65rem', color: 'var(--text-secondary, #64748b)' }}>{photo.supervisor?.name || 'Supervisor'}</span>
+                          <span style={{ fontSize: '0.65rem', color: 'var(--text-muted, #94a3b8)' }}>{new Date(photo.createdAt).toLocaleDateString()}</span>
                         </div>
                       </div>
                     </div>
@@ -360,13 +360,13 @@ const ProjectDetailModal = ({ isOpen, onClose, project, supervisors = [], teamMe
         {/* Footer */}
         <div style={{
           padding: '1rem 1.5rem',
-          borderTop: '1px solid #e2e8f0',
-          backgroundColor: '#f8fafc',
+          borderTop: '1px solid var(--border-color, #e2e8f0)',
+          backgroundColor: 'var(--bg-color, #f8fafc)',
           display: 'flex',
           justifyContent: 'space-between',
           alignItems: 'center'
         }}>
-          <span style={{ fontSize: '0.78rem', color: '#64748b', fontWeight: '600' }}>
+          <span style={{ fontSize: '0.78rem', color: 'var(--text-secondary, #64748b)', fontWeight: '600' }}>
             Timeline: {project.startDate} to {project.endDate}
           </span>
           <button

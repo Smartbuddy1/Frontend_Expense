@@ -12,6 +12,7 @@ import autoTable from 'jspdf-autotable';
 import { useLanguage } from '../../context/LanguageContext';
 import { useSearchParams } from 'react-router-dom';
 import { addPdfHeaderWithLogo, addPdfFooterWithLogo, getCompanyLogoBase64, escapeHtml } from '../../utils/pdfHeaderHelper';
+import Pagination from '../../../../components/ui/Pagination';
 import toast from 'react-hot-toast';
 
 const API = import.meta.env.VITE_API_BASE_URL;
@@ -34,6 +35,7 @@ const ReconciliationTab = ({
     id: a.id,
     displayId: a.displayId || `REQ-${a.id.slice(0, 4).toUpperCase()}`,
     supervisor: a.supervisor,
+    supervisorId: a.supervisorId,
     site: a.site || a.projectName,
     purpose: a.purpose || 'General site advance',
     urgency: a.urgency || 'Regular',
@@ -126,7 +128,7 @@ const ReconciliationTab = ({
           .filter(a => a.projectId === p.id && a.rawStatus === 'disbursed')
           .reduce((sum, a) => sum + a.amount, 0);
         const totalSpent = expenses
-          .filter(e => e.projectId === p.id && e.status === 'Approved')
+          .filter(e => e.projectId === p.id && (e.status === 'Approved' || e.status === 'Paid'))
           .reduce((sum, e) => sum + e.amount, 0);
         const inHand = totalAdvance - totalSpent;
         const lastLedgerEntry = ledgerRecords
@@ -150,6 +152,8 @@ const ReconciliationTab = ({
 
   const [searchQuery, setSearchQuery] = useState('');
   const [filterType, setFilterType] = useState('All');
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 10;
 
   const [isIssueFloatOpen, setIsIssueFloatOpen] = useState(false);
   const [isSettleModalOpen, setIsSettleModalOpen] = useState(false);
@@ -316,6 +320,25 @@ const ReconciliationTab = ({
       item.amount.toString().includes(q) ||
       item.urgency.toLowerCase().includes(q);
   });
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchQuery, filterType]);
+
+  const totalPages = Math.ceil(filteredRequisitions.length / itemsPerPage) || 1;
+  const safePage = Math.min(currentPage, totalPages);
+  const paginatedRequisitions = filteredRequisitions.slice(
+    (safePage - 1) * itemsPerPage,
+    safePage * itemsPerPage
+  );
+
+  const handlePrev = () => {
+    if (currentPage > 1) setCurrentPage(prev => prev - 1);
+  };
+
+  const handleNext = () => {
+    if (currentPage < totalPages) setCurrentPage(prev => prev + 1);
+  };
 
   const filteredLedger = ledgerRecords.filter(rec => {
     const matchesSearch =
@@ -782,7 +805,7 @@ const ReconciliationTab = ({
               padding: '0.5rem 1.15rem',
               borderRadius: '10px',
               border: '1.5px solid var(--border-color, #cbd5e1)',
-              backgroundColor: '#f8fafc',
+              backgroundColor: 'var(--bg-color, #f8fafc)',
               color: '#2563eb',
               fontSize: '0.9rem',
               fontWeight: '800',
@@ -832,7 +855,7 @@ const ReconciliationTab = ({
             />
           </div>
           <div style={{ paddingLeft: '0.4rem', color: '#64748b', fontSize: '0.88rem', fontWeight: '600' }}>
-            Total Requests: <strong style={{ color: '#0f172a' }}>{filteredRequisitions.length}</strong>
+            Total Requests: <strong style={{ color: 'var(--text-primary, #0f172a)' }}>{filteredRequisitions.length}</strong>
           </div>
         </div>
 
@@ -884,20 +907,41 @@ const ReconciliationTab = ({
                     textTransform: 'uppercase',
                     letterSpacing: '0.06em'
                   }}>
-                    <th style={{ padding: '1rem 1.25rem', whiteSpace: 'nowrap' }}>REQUISITION ID</th>
-                    <th style={{ padding: '1rem 1.25rem', whiteSpace: 'nowrap' }}>SUPERVISOR</th>
-                    <th style={{ padding: '1rem 1.25rem', whiteSpace: 'nowrap' }}>SITE LOCATION</th>
-                    <th style={{ padding: '1rem 1.25rem', whiteSpace: 'nowrap' }}>PURPOSE / REASON</th>
-                    <th style={{ padding: '1rem 1.25rem', whiteSpace: 'nowrap' }}>URGENCY</th>
-                    <th style={{ padding: '1rem 1.25rem', whiteSpace: 'nowrap' }}>DATE</th>
-                    <th style={{ padding: '1rem 1.25rem', whiteSpace: 'nowrap' }}>AMOUNT (₹)</th>
-                    <th style={{ padding: '1rem 1.25rem', whiteSpace: 'nowrap', textAlign: 'center' }}>ACTIONS</th>
+                    <th style={{ padding: '0.85rem 0.65rem', whiteSpace: 'nowrap' }}>REQUISITION ID</th>
+                    <th style={{ padding: '0.85rem 0.65rem', whiteSpace: 'nowrap' }}>SUPERVISOR</th>
+                    <th style={{ padding: '0.85rem 0.65rem', whiteSpace: 'nowrap' }}>SITE LOCATION</th>
+                    <th style={{ padding: '0.85rem 0.65rem', whiteSpace: 'nowrap' }}>PURPOSE / REASON</th>
+                    <th style={{ padding: '0.85rem 0.65rem', whiteSpace: 'nowrap' }}>URGENCY</th>
+                    <th style={{ padding: '0.85rem 0.65rem', whiteSpace: 'nowrap' }}>DATE</th>
+                    <th style={{ padding: '0.85rem 0.65rem', whiteSpace: 'nowrap' }}>WALLET (₹)</th>
+                    <th style={{ padding: '0.85rem 0.65rem', whiteSpace: 'nowrap' }}>AMOUNT (₹)</th>
+                    <th style={{ padding: '0.85rem 0.65rem', whiteSpace: 'nowrap', textAlign: 'center' }}>ACTIONS</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {filteredRequisitions.map((req, idx, arr) => {
-                    const isHighUrgency = req.urgencyType === 'high';
-                    const isMediumUrgency = req.urgencyType === 'medium';
+                  {paginatedRequisitions.length === 0 ? (
+                    <tr>
+                      <td colSpan={9} style={{ padding: '3.5rem 1rem', textAlign: 'center', color: 'var(--text-secondary, #94a3b8)' }}>
+                        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.6rem' }}>
+                          <FileText size={36} style={{ color: 'var(--text-secondary, #cbd5e1)' }} />
+                          <span style={{ fontSize: '1.05rem', fontWeight: '700', color: 'var(--text-primary, #334155)' }}>
+                            No active advance requests found
+                          </span>
+                        </div>
+                      </td>
+                    </tr>
+                  ) : (paginatedRequisitions.map((req, idx, arr) => {
+                    const urgencyText = (req.urgency || 'Regular').toLowerCase().trim();
+                    const isHighUrgency = urgencyText.includes('immediate');
+                    const isMediumUrgency = urgencyText.includes('within 24 hours') || urgencyText.includes('24');
+                    // Default to Regular (blue) if not high or medium
+
+                    let displayUrgency = 'Regular';
+                    if (isHighUrgency) displayUrgency = 'Immediate';
+                    else if (isMediumUrgency) displayUrgency = 'Within 24 Hours';
+
+                    const supFloat = supervisors.find(s => s.id === req.supervisorId || s.name === req.supervisor);
+                    const walletBalance = supFloat ? supFloat.walletBalance : 0;
 
                     return (
                       <tr
@@ -906,18 +950,18 @@ const ReconciliationTab = ({
                           borderBottom: idx === arr.length - 1 ? 'none' : '1px solid var(--border-color, #f1f5f9)',
                           transition: 'background-color 0.15s ease'
                         }}
-                        onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'var(--table-hover, rgba(241, 245, 249, 0.6))'}
+                        onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'var(--table-hover, rgba(241, 245, 249, 0.5))'}
                         onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
                       >
                         {/* REQUISITION ID */}
-                        <td style={{ padding: '1.2rem 1.25rem', verticalAlign: 'middle', whiteSpace: 'nowrap' }}>
+                        <td style={{ padding: '0.75rem 0.65rem', verticalAlign: 'middle', whiteSpace: 'nowrap' }}>
                           <strong style={{ color: '#059669', fontSize: '0.94rem', fontWeight: '800' }}>
                             {req.displayId}
                           </strong>
                         </td>
 
                         {/* SUPERVISOR */}
-                        <td style={{ padding: '1.2rem 1.25rem', verticalAlign: 'middle', whiteSpace: 'nowrap' }}>
+                        <td style={{ padding: '0.75rem 0.65rem', verticalAlign: 'middle', whiteSpace: 'nowrap' }}>
                           <div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem' }}>
                             <div style={{
                               width: '32px',
@@ -942,7 +986,7 @@ const ReconciliationTab = ({
                         </td>
 
                         {/* SITE LOCATION */}
-                        <td style={{ padding: '1.2rem 1.25rem', verticalAlign: 'middle', whiteSpace: 'nowrap' }}>
+                        <td style={{ padding: '0.75rem 0.65rem', verticalAlign: 'middle', whiteSpace: 'nowrap' }}>
                           <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                             <MapPin size={15} style={{ color: '#2563eb', flexShrink: 0 }} />
                             <strong style={{ color: 'var(--text-primary, #0f172a)', fontSize: '0.94rem' }}>
@@ -952,33 +996,34 @@ const ReconciliationTab = ({
                         </td>
 
                         {/* PURPOSE / REASON */}
-                        <td style={{ padding: '1.2rem 1.25rem', verticalAlign: 'middle' }}>
+                        <td style={{ padding: '0.75rem 0.65rem', verticalAlign: 'middle' }}>
                           <span style={{ color: 'var(--text-secondary, #334155)', fontSize: '0.92rem', fontWeight: '500' }}>
                             {req.purpose}
                           </span>
                         </td>
 
                         {/* URGENCY */}
-                        <td style={{ padding: '1.2rem 1.25rem', verticalAlign: 'middle', whiteSpace: 'nowrap' }}>
+                        <td style={{ padding: '0.75rem 0.65rem', verticalAlign: 'middle', whiteSpace: 'nowrap' }}>
                           <div style={{
                             display: 'inline-flex',
                             alignItems: 'center',
-                            gap: '0.35rem',
-                            backgroundColor: isHighUrgency ? '#fee2e2' : isMediumUrgency ? '#dbeafe' : '#f1f5f9',
-                            padding: '0.2rem 0.5rem',
-                            borderRadius: '8px',
+                            gap: '0.4rem',
+                            backgroundColor: isHighUrgency ? 'rgba(239, 68, 68, 0.15)' : isMediumUrgency ? 'rgba(245, 158, 11, 0.15)' : 'rgba(59, 130, 246, 0.15)',
+                            padding: '0.35rem 0.65rem',
+                            borderRadius: '12px',
+                            border: `1px solid ${isHighUrgency ? 'rgba(239, 68, 68, 0.3)' : isMediumUrgency ? 'rgba(245, 158, 11, 0.3)' : 'rgba(59, 130, 246, 0.3)'}`
                           }}>
-                            <Clock size={12} style={{ color: isHighUrgency ? '#dc2626' : isMediumUrgency ? '#2563eb' : '#64748b' }} />
+                            <Clock size={13} style={{ color: isHighUrgency ? '#ef4444' : isMediumUrgency ? '#f59e0b' : '#3b82f6' }} />
                             <select
-                              value={req.urgency}
+                              value={displayUrgency}
                               onChange={(e) => handleUpdateUrgency(req.id, e.target.value)}
                               disabled={req.status !== 'Pending'}
                               style={{
-                                fontSize: '0.78rem',
-                                fontWeight: '700',
+                                fontSize: '0.8rem',
+                                fontWeight: '800',
                                 border: 'none',
                                 backgroundColor: 'transparent',
-                                color: isHighUrgency ? '#dc2626' : isMediumUrgency ? '#2563eb' : '#64748b',
+                                color: isHighUrgency ? '#ef4444' : isMediumUrgency ? '#f59e0b' : '#3b82f6',
                                 cursor: req.status === 'Pending' ? 'pointer' : 'not-allowed',
                                 outline: 'none',
                                 padding: '0',
@@ -993,21 +1038,28 @@ const ReconciliationTab = ({
                         </td>
 
                         {/* DATE */}
-                        <td style={{ padding: '1.2rem 1.25rem', verticalAlign: 'middle', whiteSpace: 'nowrap' }}>
+                        <td style={{ padding: '0.75rem 0.65rem', verticalAlign: 'middle', whiteSpace: 'nowrap' }}>
                           <span style={{ color: 'var(--text-secondary, #475569)', fontSize: '0.9rem', fontWeight: '600' }}>
                             {req.date}
                           </span>
                         </td>
 
+                        {/* WALLET */}
+                        <td style={{ padding: '0.75rem 0.65rem', verticalAlign: 'middle', whiteSpace: 'nowrap' }}>
+                          <span style={{ fontSize: '0.95rem', fontWeight: '700', color: walletBalance < 0 ? '#ef4444' : '#0ea5e9' }}>
+                            ₹{(Number(walletBalance) || 0).toLocaleString('en-IN')}
+                          </span>
+                        </td>
+
                         {/* AMOUNT */}
-                        <td style={{ padding: '1.2rem 1.25rem', verticalAlign: 'middle', whiteSpace: 'nowrap' }}>
+                        <td style={{ padding: '0.75rem 0.65rem', verticalAlign: 'middle', whiteSpace: 'nowrap' }}>
                           <span style={{ fontSize: '1.05rem', fontWeight: '800', color: 'var(--text-primary, #0f172a)' }}>
-                            ₹{req.amount.toLocaleString('en-IN')}
+                            ₹{(Number(req.amount) || 0).toLocaleString('en-IN')}
                           </span>
                         </td>
 
                         {/* ACTIONS */}
-                        <td style={{ padding: '1.2rem 1.25rem', verticalAlign: 'middle', textAlign: 'center', whiteSpace: 'nowrap' }}>
+                        <td style={{ padding: '0.75rem 0.65rem', verticalAlign: 'middle', textAlign: 'center', whiteSpace: 'nowrap' }}>
                           <div style={{ display: 'inline-flex', alignItems: 'center', gap: '0.65rem', justifyContent: 'center' }}>
                             {req.status === 'Pending' ? (
                               <>
@@ -1015,88 +1067,80 @@ const ReconciliationTab = ({
                                 <button
                                   onClick={() => handleApproveRequisition(req.id)}
                                   style={{
-                                    padding: '0.45rem 0.95rem',
-                                    borderRadius: '10px',
+                                    padding: '0.45rem',
+                                    borderRadius: '8px',
                                     border: 'none',
                                     backgroundColor: '#4f46e5',
                                     color: '#ffffff',
-                                    fontSize: '0.86rem',
-                                    fontWeight: '800',
                                     cursor: 'pointer',
                                     display: 'inline-flex',
                                     alignItems: 'center',
-                                    gap: '0.45rem',
+                                    justifyContent: 'center',
                                     boxShadow: '0 2px 6px rgba(79, 70, 229, 0.3)',
                                     transition: 'all 0.15s ease'
                                   }}
                                   onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#4338ca'}
                                   onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#4f46e5'}
-                                  title="Approve and forward requisition"
+                                  title="Approve & Forward"
                                 >
-                                  <CheckCircle2 size={15} />
-                                  <span>+ Approve & Forward</span>
+                                  <CheckCircle2 size={16} />
                                 </button>
 
                                 {/* Reject Button */}
                                 <button
                                   onClick={() => handleRejectRequisition(req.id)}
                                   style={{
-                                    padding: '0.45rem 0.9rem',
-                                    borderRadius: '10px',
-                                    border: '1.5px solid #fecdd3',
+                                    padding: '0.45rem',
+                                    borderRadius: '8px',
+                                    border: '1px solid #fecdd3',
                                     backgroundColor: '#fff1f2',
                                     color: '#e11d48',
-                                    fontSize: '0.86rem',
-                                    fontWeight: '800',
                                     cursor: 'pointer',
                                     display: 'inline-flex',
                                     alignItems: 'center',
-                                    gap: '0.35rem',
+                                    justifyContent: 'center',
                                     transition: 'all 0.15s ease'
                                   }}
                                   onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#ffe4e6'}
                                   onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#fff1f2'}
-                                  title="Reject this requisition"
+                                  title="Reject"
                                 >
-                                  <X size={14} />
-                                  <span>Reject</span>
+                                  <X size={16} />
                                 </button>
                               </>
                             ) : req.status === 'Rejected' ? (
-                              <span style={{
-                                padding: '0.42rem 0.85rem',
-                                borderRadius: '9px',
-                                border: '1.5px solid #fecdd3',
-                                backgroundColor: '#fff1f2',
-                                color: '#e11d48',
-                                fontSize: '0.84rem',
-                                fontWeight: '800',
-                                display: 'inline-flex',
-                                alignItems: 'center',
-                                gap: '0.35rem'
-                              }}>
-                                <X size={14} />
-                                <span>Rejected</span>
+                              <span
+                                title="Rejected"
+                                style={{
+                                  padding: '0.45rem',
+                                  borderRadius: '8px',
+                                  border: '1px solid #fecdd3',
+                                  backgroundColor: '#fff1f2',
+                                  color: '#e11d48',
+                                  display: 'inline-flex',
+                                  alignItems: 'center',
+                                  justifyContent: 'center'
+                                }}
+                              >
+                                <X size={16} />
                               </span>
                             ) : (
                               <>
-
-
                                 {/* Approved Badge Button */}
-                                <span style={{
-                                  padding: '0.42rem 0.95rem',
-                                  borderRadius: '9px',
-                                  border: '1.5px solid #a7f3d0',
-                                  backgroundColor: '#dcfce7',
-                                  color: '#059669',
-                                  fontSize: '0.86rem',
-                                  fontWeight: '800',
-                                  display: 'inline-flex',
-                                  alignItems: 'center',
-                                  gap: '0.4rem'
-                                }}>
-                                  <CheckCircle2 size={15} style={{ color: '#059669' }} />
-                                  <span>Approved</span>
+                                <span
+                                  title="Approved"
+                                  style={{
+                                    padding: '0.45rem',
+                                    borderRadius: '8px',
+                                    border: '1px solid #a7f3d0',
+                                    backgroundColor: '#dcfce7',
+                                    color: '#059669',
+                                    display: 'inline-flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center'
+                                  }}
+                                >
+                                  <CheckCircle2 size={16} style={{ color: '#059669' }} />
                                 </span>
                               </>
                             )}
@@ -1104,11 +1148,20 @@ const ReconciliationTab = ({
                         </td>
                       </tr>
                     );
-                  })}
+                  }))}
                 </tbody>
               </table>
             </div>
           </div>
+          
+          <Pagination 
+            currentPage={safePage} 
+            totalPages={totalPages} 
+            onPrev={handlePrev} 
+            onNext={handleNext} 
+            language={language} 
+          />
+
       {/* MODAL 1: Issue Advance Float */}
       {isIssueFloatOpen && (
         <div style={{

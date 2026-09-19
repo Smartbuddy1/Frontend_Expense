@@ -6,6 +6,7 @@ import {
   Check, HardHat, FileText, ChevronRight
 } from 'lucide-react';
 import { useLanguage } from '../../context/LanguageContext';
+import Pagination from '../../../../components/ui/Pagination';
 
 const ProgressMonitoringTab = ({ 
   projects = [], 
@@ -34,6 +35,47 @@ const ProgressMonitoringTab = ({
     return matchesProject && matchesSearch;
   });
 
+  const [currentProjectPage, setCurrentProjectPage] = useState(1);
+  const [currentLogPage, setCurrentLogPage] = useState(1);
+  const projectItemsPerPage = 5;
+  const logItemsPerPage = 10;
+
+  React.useEffect(() => {
+    setCurrentProjectPage(1);
+    setCurrentLogPage(1);
+  }, [selectedProjectId, searchQuery]);
+
+  const totalProjectPages = Math.ceil(filteredProjects.length / projectItemsPerPage) || 1;
+  const safeProjectPage = Math.min(currentProjectPage, totalProjectPages);
+  const paginatedProjects = filteredProjects.slice(
+    (safeProjectPage - 1) * projectItemsPerPage,
+    safeProjectPage * projectItemsPerPage
+  );
+
+  const handleProjectPrev = () => {
+    if (currentProjectPage > 1) setCurrentProjectPage(prev => prev - 1);
+  };
+
+  const handleProjectNext = () => {
+    if (currentProjectPage < totalProjectPages) setCurrentProjectPage(prev => prev + 1);
+  };
+
+  const totalLogPages = Math.ceil(filteredLogs.length / logItemsPerPage) || 1;
+  const safeLogPage = Math.min(currentLogPage, totalLogPages);
+  const paginatedLogs = filteredLogs.slice(
+    (safeLogPage - 1) * logItemsPerPage,
+    safeLogPage * logItemsPerPage
+  );
+
+  const handleLogPrev = () => {
+    if (currentLogPage > 1) setCurrentLogPage(prev => prev - 1);
+  };
+
+  const handleLogNext = () => {
+    if (currentLogPage < totalLogPages) setCurrentLogPage(prev => prev + 1);
+  };
+
+
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem', width: '100%', boxSizing: 'border-box' }}>
       {/* 1. Top Header */}
@@ -48,7 +90,7 @@ const ProgressMonitoringTab = ({
           <h2 style={{
             fontSize: '1.45rem',
             fontWeight: '800',
-            color: '#0f172a',
+            color: 'var(--text-primary, #0f172a)',
             margin: 0,
             display: 'flex',
             alignItems: 'center',
@@ -70,9 +112,9 @@ const ProgressMonitoringTab = ({
             style={{
               padding: '0.5rem 0.85rem',
               borderRadius: '12px',
-              backgroundColor: '#ffffff',
-              border: '1px solid #e2e8f0',
-              color: '#0f172a',
+              backgroundColor: 'var(--card-bg, #ffffff)',
+              border: '1px solid var(--border-color, #e2e8f0)',
+              color: 'var(--text-primary, #0f172a)',
               fontSize: '0.82rem',
               fontWeight: '700',
               outline: 'none',
@@ -91,7 +133,7 @@ const ProgressMonitoringTab = ({
 
       {/* 2. Horizontal Project Progress Milestones */}
       <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
-        {filteredProjects.map((project) => {
+        {paginatedProjects.map((project) => {
           const milestones = project.milestones || [
             { id: 'M1', title: 'Survey & Excavation', status: 'Completed', targetDate: '2026-05-15' },
             { id: 'M2', title: 'Plumbing & Drainage', status: 'Completed', targetDate: '2026-06-10' },
@@ -104,8 +146,8 @@ const ProgressMonitoringTab = ({
             <div
               key={project.id}
               style={{
-                background: '#ffffff',
-                border: '1px solid #e2e8f0',
+                background: 'var(--card-bg, #ffffff)',
+                border: '1px solid var(--border-color, #e2e8f0)',
                 borderRadius: '16px',
                 padding: '1.35rem',
                 boxShadow: '0 2px 8px rgba(0,0,0,0.04)',
@@ -136,8 +178,8 @@ const ProgressMonitoringTab = ({
                       fontWeight: '700',
                       padding: '0.15rem 0.5rem',
                       borderRadius: '9999px',
-                      backgroundColor: '#f1f5f9',
-                      color: '#475569'
+                      backgroundColor: 'var(--table-header-bg, #f1f5f9)',
+                      color: 'var(--text-secondary, #475569)'
                     }}>
                       {project.category}
                     </span>
@@ -159,7 +201,7 @@ const ProgressMonitoringTab = ({
                     style={{
                       fontSize: '1.05rem',
                       fontWeight: '800',
-                      color: '#0f172a',
+                      color: 'var(--text-primary, #0f172a)',
                       margin: '0.35rem 0 0.15rem 0',
                       cursor: 'pointer'
                     }}
@@ -170,7 +212,7 @@ const ProgressMonitoringTab = ({
                   <p style={{ fontSize: '0.76rem', color: '#64748b', margin: 0, display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
                     <MapPin size={13} style={{ color: '#ef4444' }} />
                     <span>{project.location}</span>
-                    <span>• Supervisor: <strong style={{ color: '#0f172a' }}>{project.supervisorName}</strong></span>
+                    <span>• Supervisor: <strong style={{ color: 'var(--text-primary, #0f172a)' }}>{project.supervisorName}</strong></span>
                   </p>
                 </div>
 
@@ -201,7 +243,7 @@ const ProgressMonitoringTab = ({
               </div>
 
               {/* Progress Bar Track */}
-              <div style={{ width: '100%', height: '8px', borderRadius: '9999px', backgroundColor: '#f1f5f9', overflow: 'hidden' }}>
+              <div style={{ width: '100%', height: '8px', borderRadius: '9999px', backgroundColor: 'var(--table-header-bg, #f1f5f9)', overflow: 'hidden' }}>
                 <div style={{
                   width: `${project.progress}%`,
                   height: '100%',
@@ -251,7 +293,7 @@ const ProgressMonitoringTab = ({
                       <p style={{
                         fontSize: '0.72rem',
                         fontWeight: '700',
-                        color: '#0f172a',
+                        color: 'var(--text-primary, #0f172a)',
                         margin: 0,
                         overflow: 'hidden',
                         textOverflow: 'ellipsis',
@@ -274,13 +316,13 @@ const ProgressMonitoringTab = ({
                 gap: '0.75rem',
                 padding: '0.75rem 1rem',
                 borderRadius: '10px',
-                backgroundColor: '#f8fafc',
+                backgroundColor: 'var(--bg-color, #f8fafc)',
                 border: '1px solid #f1f5f9',
                 fontSize: '0.78rem'
               }}>
                 <div>
                   <span style={{ color: '#64748b' }}>Site Budget: </span>
-                  <strong style={{ color: '#0f172a' }}>₹{(project.budget || 0).toLocaleString()}</strong>
+                  <strong style={{ color: 'var(--text-primary, #0f172a)' }}>₹{(project.budget || 0).toLocaleString()}</strong>
                 </div>
                 <div>
                   <span style={{ color: '#64748b' }}>Expense Logged: </span>
@@ -297,11 +339,19 @@ const ProgressMonitoringTab = ({
         })}
       </div>
 
+      <Pagination 
+        currentPage={safeProjectPage} 
+        totalPages={totalProjectPages} 
+        onPrev={handleProjectPrev} 
+        onNext={handleProjectNext} 
+        language={language} 
+      />
+
       {/* 3. Live Site Logs Feed */}
       <div style={{
-        background: '#ffffff',
+        background: 'var(--card-bg, #ffffff)',
         borderRadius: '16px',
-        border: '1px solid #e2e8f0',
+        border: '1px solid var(--border-color, #e2e8f0)',
         padding: '1.25rem',
         boxShadow: '0 2px 8px rgba(0,0,0,0.04)',
         display: 'flex',
@@ -310,7 +360,7 @@ const ProgressMonitoringTab = ({
       }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <div>
-            <h3 style={{ fontSize: '1.05rem', fontWeight: '800', color: '#0f172a', margin: 0 }}>
+            <h3 style={{ fontSize: '1.05rem', fontWeight: '800', color: 'var(--text-primary, #0f172a)', margin: 0 }}>
               Live Supervisor Daily Work Logs
             </h3>
             <p style={{ fontSize: '0.75rem', color: '#64748b', margin: '0.15rem 0 0 0' }}>
@@ -320,13 +370,13 @@ const ProgressMonitoringTab = ({
         </div>
 
         <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-          {filteredLogs.map((log) => (
+          {paginatedLogs.map((log) => (
             <div
               key={log.id}
               style={{
                 padding: '0.85rem 1rem',
                 borderRadius: '12px',
-                backgroundColor: '#f8fafc',
+                backgroundColor: 'var(--bg-color, #f8fafc)',
                 border: '1px solid #f1f5f9',
                 display: 'flex',
                 flexWrap: 'wrap',
@@ -340,16 +390,16 @@ const ProgressMonitoringTab = ({
                   <span style={{ fontFamily: 'monospace', fontWeight: '700', fontSize: '0.72rem', color: '#2563eb' }}>
                     {log.projectName || 'Site'}
                   </span>
-                  <strong style={{ fontSize: '0.85rem', color: '#0f172a' }}>{log.title}</strong>
+                  <strong style={{ fontSize: '0.85rem', color: 'var(--text-primary, #0f172a)' }}>{log.title}</strong>
                 </div>
-                <p style={{ fontSize: '0.78rem', color: '#475569', margin: '0.2rem 0 0 0' }}>
+                <p style={{ fontSize: '0.78rem', color: 'var(--text-secondary, #475569)', margin: '0.2rem 0 0 0' }}>
                   {log.workSummary}
                 </p>
               </div>
 
               <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', flexShrink: 0 }}>
                 <div style={{ textAlign: 'right' }}>
-                  <span style={{ fontSize: '0.75rem', fontWeight: '700', color: '#0f172a', display: 'block' }}>{log.supervisorName}</span>
+                  <span style={{ fontSize: '0.75rem', fontWeight: '700', color: 'var(--text-primary, #0f172a)', display: 'block' }}>{log.supervisorName}</span>
                   <span style={{ fontSize: '0.68rem', color: '#94a3b8' }}>{log.date} {log.time ? `• ${log.time}` : ''}</span>
                 </div>
 
@@ -368,6 +418,14 @@ const ProgressMonitoringTab = ({
             </div>
           ))}
         </div>
+        
+        <Pagination 
+          currentPage={safeLogPage} 
+          totalPages={totalLogPages} 
+          onPrev={handleLogPrev} 
+          onNext={handleLogNext} 
+          language={language} 
+        />
       </div>
     </div>
   );

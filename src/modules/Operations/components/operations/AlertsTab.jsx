@@ -94,9 +94,9 @@ export const AlertsTab = ({ alerts: rawAlerts = [], onSelectProject }) => {
 
       {/* Filter and Search Bar */}
       <div style={{
-        background: '#ffffff',
+        background: 'var(--card-bg, #ffffff)',
         borderRadius: '14px',
-        border: '1px solid #e2e8f0',
+        border: '1px solid var(--border-color, #e2e8f0)',
         padding: '0.85rem 1.25rem',
         display: 'flex',
         flexWrap: 'wrap',
@@ -117,7 +117,7 @@ export const AlertsTab = ({ alerts: rawAlerts = [], onSelectProject }) => {
               width: '100%',
               padding: '0.55rem 0.85rem 0.55rem 2.4rem',
               borderRadius: '10px',
-              border: '1px solid #cbd5e1',
+              border: '1px solid var(--border-color, #cbd5e1)',
               fontSize: '0.85rem',
               outline: 'none',
               boxSizing: 'border-box'
@@ -159,15 +159,15 @@ export const AlertsTab = ({ alerts: rawAlerts = [], onSelectProject }) => {
       <div style={{ display: 'flex', flexDirection: 'column', gap: '0.9rem' }}>
         {filteredAlerts.length === 0 ? (
           <div style={{
-            background: '#ffffff',
+            background: 'var(--card-bg, #ffffff)',
             borderRadius: '14px',
-            border: '1px solid #e2e8f0',
+            border: '1px solid var(--border-color, #e2e8f0)',
             padding: '3rem 1.5rem',
             textAlign: 'center',
             color: '#64748b'
           }}>
             <CheckCircle2 size={42} style={{ color: '#10b981', margin: '0 auto 0.75rem auto' }} />
-            <h3 style={{ fontSize: '1.1rem', fontWeight: '800', color: '#0f172a', margin: '0 0 0.35rem 0' }}>All Clear!</h3>
+            <h3 style={{ fontSize: '1.1rem', fontWeight: '800', color: 'var(--text-primary, #0f172a)', margin: '0 0 0.35rem 0' }}>All Clear!</h3>
             <p style={{ fontSize: '0.85rem', margin: 0 }}>No alerts matching your selected criteria.</p>
           </div>
         ) : (
@@ -175,7 +175,7 @@ export const AlertsTab = ({ alerts: rawAlerts = [], onSelectProject }) => {
             <div 
               key={alert.id}
               style={{
-                background: '#ffffff',
+                background: 'var(--card-bg, #ffffff)',
                 borderRadius: '14px',
                 border: `1px solid ${alert.status === 'Resolved' ? '#e2e8f0' : alert.priority === 'High' ? '#fecaca' : '#fed7aa'}`,
                 padding: '1.15rem 1.35rem',
@@ -235,10 +235,10 @@ export const AlertsTab = ({ alerts: rawAlerts = [], onSelectProject }) => {
 
               {/* Alert Title & Description */}
               <div>
-                <h3 style={{ fontSize: '1rem', fontWeight: '800', color: '#0f172a', margin: '0 0 0.35rem 0' }}>
+                <h3 style={{ fontSize: '1rem', fontWeight: '800', color: 'var(--text-primary, #0f172a)', margin: '0 0 0.35rem 0' }}>
                   {alert.title}
                 </h3>
-                <p style={{ fontSize: '0.84rem', color: '#475569', margin: 0, lineHeight: 1.45 }}>
+                <p style={{ fontSize: '0.84rem', color: 'var(--text-secondary, #475569)', margin: 0, lineHeight: 1.45 }}>
                   {alert.description}
                 </p>
               </div>
@@ -256,7 +256,7 @@ export const AlertsTab = ({ alerts: rawAlerts = [], onSelectProject }) => {
                 <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', fontSize: '0.78rem', color: '#64748b', flexWrap: 'wrap' }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
                     <User size={14} style={{ color: '#2563eb' }} />
-                    <span style={{ fontWeight: '700', color: '#0f172a' }}>{alert.supervisor}</span>
+                    <span style={{ fontWeight: '700', color: 'var(--text-primary, #0f172a)' }}>{alert.supervisor}</span>
                   </div>
 
                   <a href={`tel:${alert.phone.replace(/[^0-9]/g, '')}`} style={{ color: '#ea580c', fontWeight: '700', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
@@ -276,7 +276,7 @@ export const AlertsTab = ({ alerts: rawAlerts = [], onSelectProject }) => {
                     style={{
                       padding: '0.35rem 0.75rem',
                       borderRadius: '8px',
-                      border: '1px solid #cbd5e1',
+                      border: '1px solid var(--border-color, #cbd5e1)',
                       backgroundColor: alert.status === 'Resolved' ? '#ffffff' : '#f8fafc',
                       color: alert.status === 'Resolved' ? '#2563eb' : '#0f172a',
                       fontSize: '0.78rem',

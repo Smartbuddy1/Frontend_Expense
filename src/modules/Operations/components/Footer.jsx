@@ -193,7 +193,7 @@ const Footer = () => {
       <div style={{
         height: '1px',
         width: '100%',
-        backgroundColor: '#f1f5f9'
+        backgroundColor: 'var(--table-header-bg, #f1f5f9)'
       }} />
 
       {/* Bottom Row: Copyright + Links + Architected By */}
@@ -208,7 +208,7 @@ const Footer = () => {
       }}>
         {/* Copyright (Left) */}
         <div style={{ fontWeight: '500' }}>
-          © {currentYear} <strong style={{ color: '#0f172a', fontWeight: '700' }}>ASEMS (Aarya Site Expense Management System)</strong>. All rights reserved.
+          © {currentYear} <strong style={{ color: 'var(--text-primary, #0f172a)', fontWeight: '700' }}>ASEMS (Aarya Site Expense Management System)</strong>. All rights reserved.
         </div>
 
         {/* Legal Links (Center) */}

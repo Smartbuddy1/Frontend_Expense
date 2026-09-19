@@ -65,20 +65,6 @@ export const DashboardHeader = ({
     </div>
 
     <div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem', flexWrap: 'wrap' }}>
-
-      {onExportPDF && (
-        <button
-          onClick={onExportPDF}
-          style={{
-            padding: '0.5rem 1.1rem', borderRadius: '10px', border: '1.5px solid #cbd5e1',
-            backgroundColor: '#ffffff', color: '#0f172a', fontSize: '0.88rem', fontWeight: '800',
-            cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: '0.4rem'
-          }}
-        >
-          <Download size={16} />
-          <span>Export PDF</span>
-        </button>
-      )}
     </div>
   </div>
 );

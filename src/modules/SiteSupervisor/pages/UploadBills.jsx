@@ -52,6 +52,10 @@ const UploadBills = () => {
   const handleUpload = async (e) => {
     e.preventDefault();
     if (!uploadTitle || !amount) return;
+    if (!receiptFile) {
+      toast.error('Please attach a bill photo or document.');
+      return;
+    }
     setSubmitting(true);
     try {
       await recordExpense({
@@ -184,7 +188,7 @@ const UploadBills = () => {
                 {receiptFile ? receiptFile.name : 'Tap to Camera Snap or Browse'}
               </p>
               <p style={{ fontSize: '0.8rem', color: receiptFile ? '#10b981' : 'var(--text-secondary)' }}>
-                {receiptFile ? '✓ File attached' : 'Supports JPG, PNG, PDF up to 15MB'}
+                {receiptFile ? '✓ File attached' : 'Supports JPG, PNG, PDF up to 10MB'}
               </p>
               <input
                 type="file"

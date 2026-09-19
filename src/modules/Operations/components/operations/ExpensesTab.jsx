@@ -11,6 +11,7 @@ import autoTable from 'jspdf-autotable';
 import toast from 'react-hot-toast';
 import { useLanguage } from '../../context/LanguageContext';
 import { addPdfHeaderWithLogo, addPdfFooterWithLogo, escapeHtml } from '../../utils/pdfHeaderHelper';
+import Pagination from '../../../../components/ui/Pagination';
 import './operations-dashboard.css';
 
 const ExpensesTab = ({
@@ -31,6 +32,8 @@ const ExpensesTab = ({
   const [searchQuery, setSearchQuery] = useState('');
   const [inspectModalClaim, setInspectModalClaim] = useState(null);
   const [showBudgetBreakdown, setShowBudgetBreakdown] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 10;
 
   // Forward Modal State
   const [forwardModalClaim, setForwardModalClaim] = useState(null);
@@ -113,6 +116,25 @@ const ExpensesTab = ({
 
     return matchesSearch && matchesStatus && matchesCategory && matchesSupervisor;
   });
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchQuery, statusFilter, categoryFilter, supervisorFilter]);
+
+  const totalPages = Math.ceil(filteredExpenses.length / itemsPerPage) || 1;
+  const safePage = Math.min(currentPage, totalPages);
+  const paginatedExpenses = filteredExpenses.slice(
+    (safePage - 1) * itemsPerPage,
+    safePage * itemsPerPage
+  );
+
+  const handlePrev = () => {
+    if (currentPage > 1) setCurrentPage(prev => prev - 1);
+  };
+
+  const handleNext = () => {
+    if (currentPage < totalPages) setCurrentPage(prev => prev + 1);
+  };
 
   // 1-Click Excel CSV Exporter
   const handleExportCSV = () => {
@@ -849,9 +871,9 @@ const ExpensesTab = ({
                 <th style={{ padding: '1rem 1.25rem', textAlign: 'center', whiteSpace: 'nowrap', minWidth: '140px' }}>ACTIONS</th>
               </tr>
             </thead>
-            <tbody>
-              {filteredExpenses.length === 0 ? (
-                <tr>
+                <tbody>
+                  {paginatedExpenses.length === 0 ? (
+                    <tr>
                   <td colSpan={7} style={{ padding: '3.5rem 1rem', textAlign: 'center', color: 'var(--text-secondary, #94a3b8)' }}>
                     <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.6rem' }}>
                       <FileText size={36} style={{ color: 'var(--text-secondary, #cbd5e1)' }} />
@@ -863,11 +885,10 @@ const ExpensesTab = ({
                       </span>
                     </div>
                   </td>
-                </tr>
-              ) : (
-                filteredExpenses.map((exp, idx) => {
-                  const isPending = exp.status === 'Pending';
-                  const isApproved = exp.status === 'Approved';
+                    </tr>
+                  ) : (paginatedExpenses.map((exp, idx) => {
+                    const isPending = exp.status === 'Pending';
+                    const isApproved = exp.status === 'Approved';
                   const isPaid = exp.status === 'Paid';
                   const isRejected = exp.status === 'Rejected';
 
@@ -920,62 +941,9 @@ const ExpensesTab = ({
 
                     {/* CATEGORY */}
                     <td style={{ padding: '1.15rem 1.25rem', verticalAlign: 'middle' }}>
-                      {(() => {
-                        const cat = exp.category || 'Material';
-                        const isTransport = cat.toLowerCase().includes('conveyance') || cat.toLowerCase().includes('transport') || cat.toLowerCase().includes('travel') || cat.toLowerCase().includes('local');
-                        const isLabor = cat.toLowerCase().includes('labor') || cat.toLowerCase().includes('wages') || cat.toLowerCase().includes('contractor');
-                        const isFood = cat.toLowerCase().includes('food') || cat.toLowerCase().includes('tea') || cat.toLowerCase().includes('allowance');
-                        const isEquip = cat.toLowerCase().includes('equipment') || cat.toLowerCase().includes('rental');
-                        const isLodging = cat.toLowerCase().includes('lodging') || cat.toLowerCase().includes('hotel');
-                        const isMisc = cat.toLowerCase().includes('miscellaneous') || cat.toLowerCase().includes('emergency') || cat.toLowerCase().includes('other');
-
-                        let label = cat.toUpperCase();
-                        let bg = 'rgba(239, 68, 68, 0.12)';
-                        let color = '#f87171'; // Default: Red (Material)
-                        let border = 'rgba(239, 68, 68, 0.3)';
-
-                        if (isTransport) {
-                          bg = 'rgba(34, 197, 94, 0.12)';
-                          color = '#4ade80'; // Green
-                          border = 'rgba(34, 197, 94, 0.3)';
-                        } else if (isLabor) {
-                          bg = 'rgba(59, 130, 246, 0.12)';
-                          color = '#60a5fa'; // Blue
-                          border = 'rgba(59, 130, 246, 0.3)';
-                        } else if (isFood) {
-                          bg = 'rgba(245, 158, 11, 0.12)';
-                          color = '#fbbf24'; // Yellow
-                          border = 'rgba(245, 158, 11, 0.3)';
-                        } else if (isEquip) {
-                          bg = 'rgba(168, 85, 247, 0.12)';
-                          color = '#c084fc'; // Purple
-                          border = 'rgba(168, 85, 247, 0.3)';
-                        } else if (isLodging) {
-                          bg = 'rgba(236, 72, 153, 0.12)';
-                          color = '#f472b6'; // Pink
-                          border = 'rgba(236, 72, 153, 0.3)';
-                        } else if (isMisc) {
-                          bg = 'rgba(100, 116, 139, 0.12)';
-                          color = '#94a3b8'; // Slate
-                          border = 'rgba(100, 116, 139, 0.3)';
-                        }
-
-                        return (
-                          <span style={{
-                            fontSize: '0.75rem',
-                            fontWeight: '800',
-                            padding: '0.25rem 0.65rem',
-                            borderRadius: '9999px',
-                            backgroundColor: bg,
-                            color: color,
-                            border: `1px solid ${border}`,
-                            display: 'inline-block',
-                            letterSpacing: '0.04em'
-                          }}>
-                            {label}
-                          </span>
-                        );
-                      })()}
+                      <span style={{ color: 'var(--text-secondary, #475569)', fontWeight: '700', fontSize: '0.85rem', textTransform: 'uppercase' }}>
+                        {exp.category || 'Material'}
+                      </span>
                     </td>
 
                     {/* SUPERVISOR */}
@@ -997,18 +965,19 @@ const ExpensesTab = ({
                       <div style={{ display: 'inline-flex', alignItems: 'center', gap: '0.45rem', justifyContent: 'center' }}>
                         {/* View Bill Button */}
                         <button
+                          title="View Bill"
                           onClick={() => setInspectModalClaim(exp)}
                           style={{
-                            padding: '0.45rem 0.8rem',
+                            padding: '0.45rem',
                             borderRadius: '8px',
                             backgroundColor: 'var(--input-bg, #f1f5f9)',
                             border: '1px solid var(--border-color, #cbd5e1)',
                             color: 'var(--text-primary, #0f172a)',
-                            fontSize: '0.82rem',
-                            fontWeight: '700',
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
                             cursor: 'pointer',
-                            transition: 'all 0.15s ease',
-                            whiteSpace: 'nowrap'
+                            transition: 'all 0.15s ease'
                           }}
                           onMouseEnter={(e) => {
                             e.currentTarget.style.backgroundColor = 'var(--table-hover, #e2e8f0)';
@@ -1017,7 +986,7 @@ const ExpensesTab = ({
                             e.currentTarget.style.backgroundColor = 'var(--input-bg, #f1f5f9)';
                           }}
                         >
-                          View Bill
+                          <Eye size={16} />
                         </button>
 
                         {/* Pending State: Single Approve & Forward Button + Separate Reject Button */}
@@ -1025,27 +994,24 @@ const ExpensesTab = ({
                           <>
                             {/* Single Approve & Forward Button */}
                             <button
+                              title="Approve and Forward to Accounts"
                               onClick={() => {
                                 if (onApproveExpense) {
                                   onApproveExpense(exp.id, 'Approved and forwarded to Accounts');
                                 }
                               }}
-                              title="Approve and Forward to Accounts"
                               style={{
-                                padding: '0.45rem 0.85rem',
+                                padding: '0.45rem',
                                 borderRadius: '8px',
                                 border: 'none',
                                 background: 'linear-gradient(135deg, #6366f1 0%, #4f46e5 100%)',
                                 color: '#ffffff',
-                                fontSize: '0.82rem',
-                                fontWeight: '800',
-                                cursor: 'pointer',
                                 display: 'inline-flex',
                                 alignItems: 'center',
-                                gap: '0.35rem',
-                                boxShadow: '0 2px 8px rgba(99, 102, 241, 0.3)',
+                                justifyContent: 'center',
+                                cursor: 'pointer',
                                 transition: 'all 0.15s ease',
-                                whiteSpace: 'nowrap'
+                                boxShadow: '0 2px 8px rgba(99, 102, 241, 0.3)'
                               }}
                               onMouseEnter={(e) => {
                                 e.currentTarget.style.transform = 'translateY(-1px)';
@@ -1056,32 +1022,28 @@ const ExpensesTab = ({
                                 e.currentTarget.style.boxShadow = '0 2px 8px rgba(99, 102, 241, 0.3)';
                               }}
                             >
-                              <CheckCircle2 size={13} />
-                              <span>+ Approve & Forward</span>
+                              <CheckCircle2 size={16} />
                             </button>
 
                             {/* Separate Reject Button */}
                             <button
+                              title="Reject Claim"
                               onClick={() => {
                                 if (onRejectExpense) {
                                   onRejectExpense(exp.id, 'Claim rejected by operations');
                                 }
                               }}
-                              title="Reject Claim"
                               style={{
-                                padding: '0.45rem 0.75rem',
+                                padding: '0.45rem',
                                 borderRadius: '8px',
                                 backgroundColor: 'rgba(239, 68, 68, 0.08)',
                                 border: '1px solid rgba(239, 68, 68, 0.3)',
                                 color: '#ef4444',
-                                fontSize: '0.82rem',
-                                fontWeight: '800',
-                                cursor: 'pointer',
                                 display: 'inline-flex',
                                 alignItems: 'center',
-                                gap: '0.25rem',
-                                transition: 'all 0.15s ease',
-                                whiteSpace: 'nowrap'
+                                justifyContent: 'center',
+                                cursor: 'pointer',
+                                transition: 'all 0.15s ease'
                               }}
                               onMouseEnter={(e) => {
                                 e.currentTarget.style.backgroundColor = 'rgba(239, 68, 68, 0.18)';
@@ -1092,53 +1054,42 @@ const ExpensesTab = ({
                                 e.currentTarget.style.transform = 'translateY(0)';
                               }}
                             >
-                              <X size={13} />
-                              <span>Reject</span>
+                              <X size={16} />
                             </button>
                           </>
                         ) : isApproved || isPaid ? (
                           <button
+                            title={isPaid ? 'Paid' : 'Approved'}
                             style={{
-                              padding: '0.45rem 0.85rem',
+                              padding: '0.45rem',
                               borderRadius: '8px',
                               backgroundColor: 'rgba(16, 185, 129, 0.12)',
                               border: '1px solid rgba(16, 185, 129, 0.3)',
                               color: '#10b981',
-                              fontSize: '0.82rem',
-                              fontWeight: '800',
                               display: 'inline-flex',
                               alignItems: 'center',
                               justifyContent: 'center',
-                              gap: '0.35rem',
-                              whiteSpace: 'nowrap',
-                              minWidth: '120px',
-                              cursor: 'default',
+                              cursor: 'default'
                             }}
                           >
-                            <CheckCircle2 size={14} />
-                            <span>{isPaid ? 'Paid' : 'Approved'}</span>
+                            <CheckCircle2 size={16} />
                           </button>
                         ) : (
                           <button
+                            title="Rejected"
                             style={{
-                              padding: '0.45rem 0.85rem',
+                              padding: '0.45rem',
                               borderRadius: '8px',
                               backgroundColor: 'rgba(239, 68, 68, 0.12)',
                               border: '1px solid rgba(239, 68, 68, 0.3)',
                               color: '#f87171',
-                              fontSize: '0.82rem',
-                              fontWeight: '800',
                               display: 'inline-flex',
                               alignItems: 'center',
                               justifyContent: 'center',
-                              gap: '0.35rem',
-                              whiteSpace: 'nowrap',
-                              minWidth: '120px',
-                              cursor: 'default',
+                              cursor: 'default'
                             }}
                           >
-                            <X size={14} />
-                            <span>Rejected</span>
+                            <X size={16} />
                           </button>
                         )}
                       </div>
@@ -1150,6 +1101,14 @@ const ExpensesTab = ({
           </table>
         </div>
       </div>
+
+      <Pagination 
+        currentPage={safePage} 
+        totalPages={totalPages} 
+        onPrev={handlePrev} 
+        onNext={handleNext} 
+        language={language} 
+      />
 
       {/* 🚀 Forward Expense Claim Modal */}
       {forwardModalClaim && (

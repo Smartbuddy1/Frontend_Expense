@@ -1201,12 +1201,35 @@ const DailyExpenses = () => {
             <div style={{
               background: 'var(--card-bg)',
               borderRadius: '0.75rem',
-              padding: '1.5rem',
+              padding: '1.25rem',
               border: '1px solid var(--border-color)',
               marginBottom: '1.25rem'
             }}>
-              <FileText size={48} color="#3b82f6" style={{ margin: '0 auto 0.75rem' }} />
-              <p style={{ fontWeight: '700', color: 'var(--text-primary)', fontSize: '0.95rem' }}>
+              {viewReceiptModal.receiptUrl ? (
+                /\.pdf($|\?)/i.test(viewReceiptModal.receiptUrl) ? (
+                  <a
+                    href={viewReceiptModal.receiptUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.4rem', color: 'inherit', textDecoration: 'none' }}
+                  >
+                    <FileText size={48} color="#3b82f6" />
+                    <span style={{ fontSize: '0.8rem', color: '#3b82f6', fontWeight: '700' }}>Open PDF in new tab</span>
+                  </a>
+                ) : (
+                  <img
+                    src={viewReceiptModal.receiptUrl}
+                    alt="Receipt"
+                    style={{ maxWidth: '100%', maxHeight: '260px', borderRadius: '0.5rem', margin: '0 auto', display: 'block' }}
+                  />
+                )
+              ) : (
+                <>
+                  <FileText size={48} color="#3b82f6" style={{ margin: '0 auto 0.75rem' }} />
+                  <p style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', margin: 0 }}>No receipt file on record</p>
+                </>
+              )}
+              <p style={{ fontWeight: '700', color: 'var(--text-primary)', fontSize: '0.95rem', marginTop: '0.75rem' }}>
                 {viewReceiptModal.receiptName || `${viewReceiptModal.id}_Invoice_Proof.pdf`}
               </p>
               <p style={{ color: 'var(--text-secondary)', fontSize: '0.8rem', marginTop: '0.25rem' }}>
@@ -1214,12 +1237,18 @@ const DailyExpenses = () => {
               </p>
             </div>
 
-            <button
-              onClick={() => {
-                toast.info(`Downloading ${viewReceiptModal.receiptName || 'receipt'}...`);
-                setViewReceiptModal(null);
+            <a
+              href={viewReceiptModal.receiptUrl || undefined}
+              target="_blank"
+              rel="noopener noreferrer"
+              onClick={(e) => {
+                if (!viewReceiptModal.receiptUrl) {
+                  e.preventDefault();
+                  toast.error('No receipt file available to download.');
+                }
               }}
               style={{
+                display: 'block',
                 width: '100%',
                 padding: '0.75rem',
                 borderRadius: '0.65rem',
@@ -1228,11 +1257,14 @@ const DailyExpenses = () => {
                 border: 'none',
                 fontWeight: '700',
                 fontSize: '0.875rem',
-                cursor: 'pointer'
+                cursor: 'pointer',
+                textDecoration: 'none',
+                textAlign: 'center',
+                boxSizing: 'border-box'
               }}
             >
-              Download Verified Receipt File
-            </button>
+              {viewReceiptModal.receiptUrl ? 'Open / Download Receipt File' : 'Download Verified Receipt File'}
+            </a>
           </div>
         </div>
       )}
@@ -1304,7 +1336,7 @@ const DailyExpenses = () => {
               </div>
 
               <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-                <label style={{ fontSize: '0.85rem', fontWeight: '600', color: 'var(--text-secondary)' }}>{t('amountRs')}</label>
+                <label style={{ fontSize: '0.85rem', fontWeight: '600', color: 'var(--text-secondary)' }}>{t('amountPaidLabel')}</label>
                 <input
                   type="number"
                   placeholder="0.00"

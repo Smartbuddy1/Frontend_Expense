@@ -83,9 +83,9 @@ const CreateAccountantModal = ({
       boxSizing: 'border-box'
     }}>
       <div style={{
-        backgroundColor: '#ffffff',
+        backgroundColor: 'var(--card-bg, #ffffff)',
         borderRadius: '18px',
-        border: '1px solid #e2e8f0',
+        border: '1px solid var(--border-color, #e2e8f0)',
         boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)',
         width: '100%',
         maxWidth: '640px',
@@ -98,17 +98,17 @@ const CreateAccountantModal = ({
         {/* Modal Header */}
         <div style={{
           padding: '1.4rem 1.85rem',
-          borderBottom: '1.5px solid #e2e8f0',
+          borderBottom: '1.5px solid var(--border-color, #e2e8f0)',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'space-between',
-          backgroundColor: '#ffffff'
+          backgroundColor: 'var(--card-bg, #ffffff)'
         }}>
           <div>
-            <h2 style={{ fontSize: '1.45rem', fontWeight: '800', color: '#0f172a', margin: 0 }}>
+            <h2 style={{ fontSize: '1.45rem', fontWeight: '800', color: 'var(--text-primary, #0f172a)', margin: 0 }}>
               {editingAccountant ? 'Edit Accountant Profile' : 'Add New Accountant'}
             </h2>
-            <p style={{ fontSize: '0.86rem', color: '#64748b', margin: '0.25rem 0 0 0' }}>
+            <p style={{ fontSize: '0.86rem', color: 'var(--text-secondary, #64748b)', margin: '0.25rem 0 0 0' }}>
               Register accounts executive for site bills auditing, vouchers & disbursements
             </p>
           </div>
@@ -118,7 +118,7 @@ const CreateAccountantModal = ({
             style={{
               background: 'transparent',
               border: 'none',
-              color: '#64748b',
+              color: 'var(--text-secondary, #64748b)',
               cursor: 'pointer',
               padding: '0.4rem',
               borderRadius: '8px',
@@ -135,7 +135,7 @@ const CreateAccountantModal = ({
           {/* Row 1: Full Name * & Phone * */}
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '1.1rem' }}>
             <div>
-              <label style={{ display: 'block', fontSize: '0.94rem', fontWeight: '700', color: '#1e293b', marginBottom: '0.45rem' }}>
+              <label style={{ display: 'block', fontSize: '0.94rem', fontWeight: '700', color: 'var(--text-primary, #1e293b)', marginBottom: '0.45rem' }}>
                 Accountant Full Name *
               </label>
               <input
@@ -148,9 +148,11 @@ const CreateAccountantModal = ({
                   width: '100%',
                   padding: '0.78rem 1.05rem',
                   borderRadius: '11px',
-                  border: '1.5px solid #cbd5e1',
+                  border: '1.5px solid var(--border-color, #cbd5e1)',
                   fontSize: '0.96rem',
-                  color: '#0f172a',
+                  color: 'var(--text-primary, #0f172a)',
+                  backgroundColor: 'var(--input-bg, #ffffff)',
+                  backgroundColor: 'var(--input-bg, #ffffff)',
                   outline: 'none',
                   boxSizing: 'border-box'
                 }}
@@ -158,7 +160,7 @@ const CreateAccountantModal = ({
             </div>
 
             <div>
-              <label style={{ display: 'block', fontSize: '0.94rem', fontWeight: '700', color: '#1e293b', marginBottom: '0.45rem' }}>
+              <label style={{ display: 'block', fontSize: '0.94rem', fontWeight: '700', color: 'var(--text-primary, #1e293b)', marginBottom: '0.45rem' }}>
                 Contact Phone *
               </label>
               <input
@@ -171,9 +173,11 @@ const CreateAccountantModal = ({
                   width: '100%',
                   padding: '0.78rem 1.05rem',
                   borderRadius: '11px',
-                  border: '1.5px solid #cbd5e1',
+                  border: '1.5px solid var(--border-color, #cbd5e1)',
                   fontSize: '0.96rem',
-                  color: '#0f172a',
+                  color: 'var(--text-primary, #0f172a)',
+                  backgroundColor: 'var(--input-bg, #ffffff)',
+                  backgroundColor: 'var(--input-bg, #ffffff)',
                   outline: 'none',
                   boxSizing: 'border-box'
                 }}
@@ -184,7 +188,7 @@ const CreateAccountantModal = ({
           {/* Row 2: Email Address * & Password * */}
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '1.1rem' }}>
             <div>
-              <label style={{ display: 'block', fontSize: '0.94rem', fontWeight: '700', color: '#1e293b', marginBottom: '0.45rem' }}>
+              <label style={{ display: 'block', fontSize: '0.94rem', fontWeight: '700', color: 'var(--text-primary, #1e293b)', marginBottom: '0.45rem' }}>
                 Email Address *
               </label>
               <input
@@ -197,9 +201,11 @@ const CreateAccountantModal = ({
                   width: '100%',
                   padding: '0.78rem 1.05rem',
                   borderRadius: '11px',
-                  border: '1.5px solid #cbd5e1',
+                  border: '1.5px solid var(--border-color, #cbd5e1)',
                   fontSize: '0.96rem',
-                  color: '#0f172a',
+                  color: 'var(--text-primary, #0f172a)',
+                  backgroundColor: 'var(--input-bg, #ffffff)',
+                  backgroundColor: 'var(--input-bg, #ffffff)',
                   outline: 'none',
                   boxSizing: 'border-box'
                 }}
@@ -207,7 +213,7 @@ const CreateAccountantModal = ({
             </div>
 
             <div>
-              <label style={{ display: 'block', fontSize: '0.94rem', fontWeight: '700', color: '#1e293b', marginBottom: '0.45rem' }}>
+              <label style={{ display: 'block', fontSize: '0.94rem', fontWeight: '700', color: 'var(--text-primary, #1e293b)', marginBottom: '0.45rem' }}>
                 Password *
               </label>
               <input
@@ -220,9 +226,11 @@ const CreateAccountantModal = ({
                   width: '100%',
                   padding: '0.78rem 1.05rem',
                   borderRadius: '11px',
-                  border: '1.5px solid #cbd5e1',
+                  border: '1.5px solid var(--border-color, #cbd5e1)',
                   fontSize: '0.96rem',
-                  color: '#0f172a',
+                  color: 'var(--text-primary, #0f172a)',
+                  backgroundColor: 'var(--input-bg, #ffffff)',
+                  backgroundColor: 'var(--input-bg, #ffffff)',
                   outline: 'none',
                   boxSizing: 'border-box'
                 }}
@@ -230,60 +238,7 @@ const CreateAccountantModal = ({
             </div>
           </div>
 
-          {/* Row 3: Role Designation & Office Branch */}
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '1.1rem' }}>
-            <div>
-              <label style={{ display: 'block', fontSize: '0.94rem', fontWeight: '700', color: '#1e293b', marginBottom: '0.45rem' }}>
-                Designation / Role *
-              </label>
-              <select
-                value={formData.role}
-                onChange={(e) => setFormData({ ...formData, role: e.target.value })}
-                style={{
-                  width: '100%',
-                  padding: '0.78rem 1.05rem',
-                  borderRadius: '11px',
-                  border: '1.5px solid #cbd5e1',
-                  fontSize: '0.96rem',
-                  color: '#0f172a',
-                  outline: 'none',
-                  backgroundColor: '#ffffff',
-                  boxSizing: 'border-box'
-                }}
-              >
-                <option value="Senior Accountant & Auditor">Senior Accountant & Auditor</option>
-                <option value="Field Expenses Accountant">Field Expenses Accountant</option>
-                <option value="Finance & Tax Auditor">Finance & Tax Auditor</option>
-                <option value="Disbursement Officer">Disbursement Officer</option>
-              </select>
-            </div>
 
-            <div>
-              <label style={{ display: 'block', fontSize: '0.94rem', fontWeight: '700', color: '#1e293b', marginBottom: '0.45rem' }}>
-                Office Branch / Division
-              </label>
-              <select
-                value={formData.branch}
-                onChange={(e) => setFormData({ ...formData, branch: e.target.value })}
-                style={{
-                  width: '100%',
-                  padding: '0.78rem 1.05rem',
-                  borderRadius: '11px',
-                  border: '1.5px solid #cbd5e1',
-                  fontSize: '0.96rem',
-                  color: '#0f172a',
-                  outline: 'none',
-                  backgroundColor: '#ffffff',
-                  boxSizing: 'border-box'
-                }}
-              >
-                <option value="Head Office - Pune">Head Office - Pune</option>
-                <option value="Field Operations - Sangamner">Field Operations - Sangamner</option>
-                <option value="Field Operations - Nashik">Field Operations - Nashik</option>
-                <option value="Regional Division - Sambhajinagar">Regional Division - Sambhajinagar</option>
-              </select>
-            </div>
-          </div>
 
           {/* Form Actions Footer */}
           <div style={{
@@ -292,7 +247,7 @@ const CreateAccountantModal = ({
             justifyContent: 'flex-end',
             gap: '1rem',
             paddingTop: '1.4rem',
-            borderTop: '1.5px solid #f1f5f9',
+            borderTop: '1.5px solid var(--border-color, #f1f5f9)',
             marginTop: '0.4rem'
           }}>
             <button
@@ -301,9 +256,9 @@ const CreateAccountantModal = ({
               style={{
                 padding: '0.78rem 1.6rem',
                 borderRadius: '10px',
-                border: '1.5px solid #cbd5e1',
-                backgroundColor: '#ffffff',
-                color: '#475569',
+                border: '1.5px solid var(--border-color, #cbd5e1)',
+                backgroundColor: 'var(--card-bg, #ffffff)',
+                color: 'var(--text-secondary, #475569)',
                 fontSize: '0.96rem',
                 fontWeight: '700',
                 cursor: 'pointer'

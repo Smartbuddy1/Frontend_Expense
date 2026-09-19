@@ -66,9 +66,9 @@ const SubmitExpenseModal = ({ isOpen, onClose, onSubmit, projects = [], supervis
       boxSizing: 'border-box'
     }}>
       <div style={{
-        backgroundColor: '#ffffff',
+        backgroundColor: 'var(--card-bg, #ffffff)',
         borderRadius: '20px',
-        border: '1px solid #e2e8f0',
+        border: '1px solid var(--border-color, #e2e8f0)',
         boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.35)',
         width: '100%',
         maxWidth: '620px',
@@ -81,7 +81,7 @@ const SubmitExpenseModal = ({ isOpen, onClose, onSubmit, projects = [], supervis
         {/* Modal Header */}
         <div style={{
           padding: '1.25rem 1.5rem',
-          borderBottom: '1px solid #e2e8f0',
+          borderBottom: '1px solid var(--border-color, #e2e8f0)',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'space-between',
@@ -102,10 +102,10 @@ const SubmitExpenseModal = ({ isOpen, onClose, onSubmit, projects = [], supervis
               <IndianRupee size={22} />
             </div>
             <div>
-              <h2 style={{ fontSize: '1.25rem', fontWeight: '800', color: '#0f172a', margin: 0, lineHeight: 1.2 }}>
+              <h2 style={{ fontSize: '1.25rem', fontWeight: '800', color: 'var(--text-primary, #0f172a)', margin: 0, lineHeight: 1.2 }}>
                 {language === 'mr' ? 'नवीन साईट खर्च नोंदवा' : 'Submit Site Operational Expense'}
               </h2>
-              <p style={{ fontSize: '0.8rem', color: '#64748b', margin: '0.2rem 0 0 0' }}>
+              <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary, #64748b)', margin: '0.2rem 0 0 0' }}>
                 {language === 'mr' ? 'मंजुरीसाठी नवीन व्हाऊचर व खरेदीचे बिल जोडा' : 'Log procurement bill for operations authorization'}
               </p>
             </div>
@@ -115,7 +115,7 @@ const SubmitExpenseModal = ({ isOpen, onClose, onSubmit, projects = [], supervis
             style={{
               background: 'transparent',
               border: 'none',
-              color: '#94a3b8',
+              color: 'var(--text-muted, #94a3b8)',
               cursor: 'pointer',
               padding: '0.5rem',
               borderRadius: '8px',
@@ -142,7 +142,7 @@ const SubmitExpenseModal = ({ isOpen, onClose, onSubmit, projects = [], supervis
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
             {/* Project Selection */}
             <div>
-              <label style={{ display: 'block', fontSize: '0.78rem', fontWeight: '800', color: '#475569', textTransform: 'uppercase', marginBottom: '0.35rem' }}>
+              <label style={{ display: 'block', fontSize: '0.78rem', fontWeight: '800', color: 'var(--text-secondary, #475569)', textTransform: 'uppercase', marginBottom: '0.35rem' }}>
                 {language === 'mr' ? 'प्रोजेक्ट / साईट *' : 'Project / Site *'}
               </label>
               <select
@@ -152,10 +152,12 @@ const SubmitExpenseModal = ({ isOpen, onClose, onSubmit, projects = [], supervis
                   width: '100%',
                   padding: '0.65rem 0.85rem',
                   borderRadius: '10px',
-                  border: '1px solid #cbd5e1',
-                  backgroundColor: '#ffffff',
+                  border: '1px solid var(--border-color, #cbd5e1)',
+                  backgroundColor: 'var(--card-bg, #ffffff)',
                   fontSize: '0.88rem',
-                  color: '#0f172a',
+                  color: 'var(--text-primary, #0f172a)',
+                  backgroundColor: 'var(--input-bg, #ffffff)',
+                  backgroundColor: 'var(--input-bg, #ffffff)',
                   outline: 'none',
                   boxSizing: 'border-box'
                 }}
@@ -170,7 +172,7 @@ const SubmitExpenseModal = ({ isOpen, onClose, onSubmit, projects = [], supervis
 
             {/* Expense Category */}
             <div>
-              <label style={{ display: 'block', fontSize: '0.78rem', fontWeight: '800', color: '#475569', textTransform: 'uppercase', marginBottom: '0.35rem' }}>
+              <label style={{ display: 'block', fontSize: '0.78rem', fontWeight: '800', color: 'var(--text-secondary, #475569)', textTransform: 'uppercase', marginBottom: '0.35rem' }}>
                 {language === 'mr' ? 'खर्चाचा प्रकार *' : 'Expense Category *'}
               </label>
               <select
@@ -180,10 +182,12 @@ const SubmitExpenseModal = ({ isOpen, onClose, onSubmit, projects = [], supervis
                   width: '100%',
                   padding: '0.65rem 0.85rem',
                   borderRadius: '10px',
-                  border: '1px solid #cbd5e1',
-                  backgroundColor: '#ffffff',
+                  border: '1px solid var(--border-color, #cbd5e1)',
+                  backgroundColor: 'var(--card-bg, #ffffff)',
                   fontSize: '0.88rem',
-                  color: '#0f172a',
+                  color: 'var(--text-primary, #0f172a)',
+                  backgroundColor: 'var(--input-bg, #ffffff)',
+                  backgroundColor: 'var(--input-bg, #ffffff)',
                   outline: 'none',
                   boxSizing: 'border-box'
                 }}
@@ -199,7 +203,7 @@ const SubmitExpenseModal = ({ isOpen, onClose, onSubmit, projects = [], supervis
 
           {/* Expense Title / Description */}
           <div>
-            <label style={{ display: 'block', fontSize: '0.78rem', fontWeight: '800', color: '#475569', textTransform: 'uppercase', marginBottom: '0.35rem' }}>
+            <label style={{ display: 'block', fontSize: '0.78rem', fontWeight: '800', color: 'var(--text-secondary, #475569)', textTransform: 'uppercase', marginBottom: '0.35rem' }}>
               {language === 'mr' ? 'खर्चाचा तपशील *' : 'Expense Title / Description *'}
             </label>
             <input
@@ -212,9 +216,11 @@ const SubmitExpenseModal = ({ isOpen, onClose, onSubmit, projects = [], supervis
                 width: '100%',
                 padding: '0.65rem 0.85rem',
                 borderRadius: '10px',
-                border: '1px solid #cbd5e1',
+                border: '1px solid var(--border-color, #cbd5e1)',
                 fontSize: '0.88rem',
-                color: '#0f172a',
+                color: 'var(--text-primary, #0f172a)',
+                backgroundColor: 'var(--input-bg, #ffffff)',
+                backgroundColor: 'var(--input-bg, #ffffff)',
                 outline: 'none',
                 boxSizing: 'border-box'
               }}
@@ -224,7 +230,7 @@ const SubmitExpenseModal = ({ isOpen, onClose, onSubmit, projects = [], supervis
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
             {/* Amount */}
             <div>
-              <label style={{ display: 'block', fontSize: '0.78rem', fontWeight: '800', color: '#475569', textTransform: 'uppercase', marginBottom: '0.35rem' }}>
+              <label style={{ display: 'block', fontSize: '0.78rem', fontWeight: '800', color: 'var(--text-secondary, #475569)', textTransform: 'uppercase', marginBottom: '0.35rem' }}>
                 {language === 'mr' ? 'रक्कम (INR ₹) *' : 'Amount (INR ₹) *'}
               </label>
               <input
@@ -237,9 +243,11 @@ const SubmitExpenseModal = ({ isOpen, onClose, onSubmit, projects = [], supervis
                   width: '100%',
                   padding: '0.65rem 0.85rem',
                   borderRadius: '10px',
-                  border: '1px solid #cbd5e1',
+                  border: '1px solid var(--border-color, #cbd5e1)',
                   fontSize: '0.88rem',
-                  color: '#0f172a',
+                  color: 'var(--text-primary, #0f172a)',
+                  backgroundColor: 'var(--input-bg, #ffffff)',
+                  backgroundColor: 'var(--input-bg, #ffffff)',
                   outline: 'none',
                   boxSizing: 'border-box'
                 }}
@@ -248,7 +256,7 @@ const SubmitExpenseModal = ({ isOpen, onClose, onSubmit, projects = [], supervis
 
             {/* Date */}
             <div>
-              <label style={{ display: 'block', fontSize: '0.78rem', fontWeight: '800', color: '#475569', textTransform: 'uppercase', marginBottom: '0.35rem' }}>
+              <label style={{ display: 'block', fontSize: '0.78rem', fontWeight: '800', color: 'var(--text-secondary, #475569)', textTransform: 'uppercase', marginBottom: '0.35rem' }}>
                 {language === 'mr' ? 'तारीख *' : 'Expense Date *'}
               </label>
               <input
@@ -260,9 +268,11 @@ const SubmitExpenseModal = ({ isOpen, onClose, onSubmit, projects = [], supervis
                   width: '100%',
                   padding: '0.65rem 0.85rem',
                   borderRadius: '10px',
-                  border: '1px solid #cbd5e1',
+                  border: '1px solid var(--border-color, #cbd5e1)',
                   fontSize: '0.88rem',
-                  color: '#0f172a',
+                  color: 'var(--text-primary, #0f172a)',
+                  backgroundColor: 'var(--input-bg, #ffffff)',
+                  backgroundColor: 'var(--input-bg, #ffffff)',
                   outline: 'none',
                   boxSizing: 'border-box'
                 }}
@@ -273,7 +283,7 @@ const SubmitExpenseModal = ({ isOpen, onClose, onSubmit, projects = [], supervis
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
             {/* Vendor Name */}
             <div>
-              <label style={{ display: 'block', fontSize: '0.78rem', fontWeight: '800', color: '#475569', textTransform: 'uppercase', marginBottom: '0.35rem' }}>
+              <label style={{ display: 'block', fontSize: '0.78rem', fontWeight: '800', color: 'var(--text-secondary, #475569)', textTransform: 'uppercase', marginBottom: '0.35rem' }}>
                 {language === 'mr' ? 'दुकानदार / वेंडर नाव *' : 'Vendor / Supplier Name *'}
               </label>
               <input
@@ -286,9 +296,11 @@ const SubmitExpenseModal = ({ isOpen, onClose, onSubmit, projects = [], supervis
                   width: '100%',
                   padding: '0.65rem 0.85rem',
                   borderRadius: '10px',
-                  border: '1px solid #cbd5e1',
+                  border: '1px solid var(--border-color, #cbd5e1)',
                   fontSize: '0.88rem',
-                  color: '#0f172a',
+                  color: 'var(--text-primary, #0f172a)',
+                  backgroundColor: 'var(--input-bg, #ffffff)',
+                  backgroundColor: 'var(--input-bg, #ffffff)',
                   outline: 'none',
                   boxSizing: 'border-box'
                 }}
@@ -297,7 +309,7 @@ const SubmitExpenseModal = ({ isOpen, onClose, onSubmit, projects = [], supervis
 
             {/* Voucher Number */}
             <div>
-              <label style={{ display: 'block', fontSize: '0.78rem', fontWeight: '800', color: '#475569', textTransform: 'uppercase', marginBottom: '0.35rem' }}>
+              <label style={{ display: 'block', fontSize: '0.78rem', fontWeight: '800', color: 'var(--text-secondary, #475569)', textTransform: 'uppercase', marginBottom: '0.35rem' }}>
                 {language === 'mr' ? 'व्हाऊचर / बिल नंबर' : 'Voucher / Bill No.'}
               </label>
               <input
@@ -308,9 +320,11 @@ const SubmitExpenseModal = ({ isOpen, onClose, onSubmit, projects = [], supervis
                   width: '100%',
                   padding: '0.65rem 0.85rem',
                   borderRadius: '10px',
-                  border: '1px solid #cbd5e1',
+                  border: '1px solid var(--border-color, #cbd5e1)',
                   fontSize: '0.88rem',
-                  color: '#0f172a',
+                  color: 'var(--text-primary, #0f172a)',
+                  backgroundColor: 'var(--input-bg, #ffffff)',
+                  backgroundColor: 'var(--input-bg, #ffffff)',
                   outline: 'none',
                   boxSizing: 'border-box'
                 }}
@@ -320,7 +334,7 @@ const SubmitExpenseModal = ({ isOpen, onClose, onSubmit, projects = [], supervis
 
           {/* Additional Notes */}
           <div>
-            <label style={{ display: 'block', fontSize: '0.78rem', fontWeight: '800', color: '#475569', textTransform: 'uppercase', marginBottom: '0.35rem' }}>
+            <label style={{ display: 'block', fontSize: '0.78rem', fontWeight: '800', color: 'var(--text-secondary, #475569)', textTransform: 'uppercase', marginBottom: '0.35rem' }}>
               {language === 'mr' ? 'टिप्पणी / शेरा' : 'Audit Remarks / Notes'}
             </label>
             <textarea
@@ -332,9 +346,11 @@ const SubmitExpenseModal = ({ isOpen, onClose, onSubmit, projects = [], supervis
                 width: '100%',
                 padding: '0.65rem 0.85rem',
                 borderRadius: '10px',
-                border: '1px solid #cbd5e1',
+                border: '1px solid var(--border-color, #cbd5e1)',
                 fontSize: '0.88rem',
-                color: '#0f172a',
+                color: 'var(--text-primary, #0f172a)',
+                backgroundColor: 'var(--input-bg, #ffffff)',
+                backgroundColor: 'var(--input-bg, #ffffff)',
                 outline: 'none',
                 resize: 'none',
                 fontFamily: 'inherit',
@@ -350,7 +366,7 @@ const SubmitExpenseModal = ({ isOpen, onClose, onSubmit, projects = [], supervis
             justifyContent: 'flex-end',
             gap: '0.85rem',
             paddingTop: '1rem',
-            borderTop: '1px solid #f1f5f9',
+            borderTop: '1px solid var(--border-color, #f1f5f9)',
             marginTop: '0.5rem'
           }}>
             <button
@@ -359,9 +375,9 @@ const SubmitExpenseModal = ({ isOpen, onClose, onSubmit, projects = [], supervis
               style={{
                 padding: '0.65rem 1.25rem',
                 borderRadius: '10px',
-                border: '1px solid #cbd5e1',
-                backgroundColor: '#ffffff',
-                color: '#475569',
+                border: '1px solid var(--border-color, #cbd5e1)',
+                backgroundColor: 'var(--card-bg, #ffffff)',
+                color: 'var(--text-secondary, #475569)',
                 fontSize: '0.88rem',
                 fontWeight: '700',
                 cursor: 'pointer',

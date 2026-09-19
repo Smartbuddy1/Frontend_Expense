@@ -76,7 +76,7 @@ const KPIHeaderCards = ({ projects, expenses, advances, settlements, onNavigateT
       iconBg: '#2563eb', // Royal Blue
       pillText: `${projects.length} Sites Funded`,
       pillType: 'success',
-      targetTab: 'advances'
+      targetTab: 'wallets'
     },
     {
       id: 'expenses',

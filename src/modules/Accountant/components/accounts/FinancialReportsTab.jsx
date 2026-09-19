@@ -92,7 +92,7 @@ const FinancialReportsTab = ({
   });
 
   const filteredExpenses = expenses.filter(e => {
-    if (e.status === 'Pending Operations Approval') return false;
+    if (e.status === 'Pending Operations Approval' || e.status === 'Rejected') return false;
     const q = searchQuery.toLowerCase();
     
     // Project Match

@@ -70,12 +70,12 @@ export const TransferAdvanceModal = ({
       padding: '1rem'
     }}>
       <div style={{
-        backgroundColor: '#ffffff',
+        backgroundColor: 'var(--card-bg, #ffffff)',
         borderRadius: '24px',
         maxWidth: '520px',
         width: '100%',
         boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)',
-        border: '1px solid #e2e8f0',
+        border: '1px solid var(--border-color, #e2e8f0)',
         overflow: 'hidden',
         animation: 'fadeInUp 0.3s ease'
       }}>
@@ -102,7 +102,7 @@ export const TransferAdvanceModal = ({
             </div>
             <div>
               <h3 style={{ margin: 0, fontSize: '1.15rem', fontWeight: '800', color: '#ffffff' }}>Direct Advance Transfer</h3>
-              <p style={{ margin: '0.15rem 0 0 0', fontSize: '0.82rem', color: '#94a3b8' }}>
+              <p style={{ margin: '0.15rem 0 0 0', fontSize: '0.82rem', color: 'var(--text-muted, #94a3b8)' }}>
                 Log advance float transferred to site supervisor
               </p>
             </div>
@@ -112,7 +112,7 @@ export const TransferAdvanceModal = ({
             style={{
               background: 'transparent',
               border: 'none',
-              color: '#94a3b8',
+              color: 'var(--text-muted, #94a3b8)',
               cursor: 'pointer',
               padding: '0.4rem',
               display: 'flex',
@@ -143,7 +143,7 @@ export const TransferAdvanceModal = ({
             <h3 style={{ fontSize: '1.3rem', fontWeight: '800', color: '#065f46', margin: 0 }}>
               Advance Transferred Successfully!
             </h3>
-            <p style={{ fontSize: '0.9rem', color: '#64748b', marginTop: '0.5rem' }}>
+            <p style={{ fontSize: '0.9rem', color: 'var(--text-secondary, #64748b)', marginTop: '0.5rem' }}>
               ₹{Number(amount).toLocaleString('en-IN')} has been added to supervisor's live float balance.
             </p>
           </div>
@@ -151,7 +151,7 @@ export const TransferAdvanceModal = ({
           <form onSubmit={handleSubmit} style={{ padding: '1.5rem', display: 'flex', flexDirection: 'column', gap: '1.1rem' }}>
             {/* Select Supervisor */}
             <div>
-              <label style={{ display: 'block', fontSize: '0.86rem', fontWeight: '700', color: '#334155', marginBottom: '0.4rem' }}>
+              <label style={{ display: 'block', fontSize: '0.86rem', fontWeight: '700', color: 'var(--text-primary, #334155)', marginBottom: '0.4rem' }}>
                 Select Supervisor *
               </label>
               <div style={{ position: 'relative' }}>
@@ -163,10 +163,10 @@ export const TransferAdvanceModal = ({
                     width: '100%',
                     padding: '0.75rem 1rem',
                     borderRadius: '12px',
-                    border: '1px solid #cbd5e1',
+                    border: '1px solid var(--border-color, #cbd5e1)',
                     fontSize: '0.95rem',
-                    backgroundColor: '#f8fafc',
-                    color: '#0f172a',
+                    backgroundColor: 'var(--bg-color, #f8fafc)',
+                    color: 'var(--text-primary, #0f172a)',
                     fontWeight: '600'
                   }}
                 >
@@ -181,7 +181,7 @@ export const TransferAdvanceModal = ({
 
             {/* Select Project / Site */}
             <div>
-              <label style={{ display: 'block', fontSize: '0.86rem', fontWeight: '700', color: '#334155', marginBottom: '0.4rem' }}>
+              <label style={{ display: 'block', fontSize: '0.86rem', fontWeight: '700', color: 'var(--text-primary, #334155)', marginBottom: '0.4rem' }}>
                 Assigned Project Site *
               </label>
               <select
@@ -192,10 +192,10 @@ export const TransferAdvanceModal = ({
                   width: '100%',
                   padding: '0.75rem 1rem',
                   borderRadius: '12px',
-                  border: '1px solid #cbd5e1',
+                  border: '1px solid var(--border-color, #cbd5e1)',
                   fontSize: '0.95rem',
-                  backgroundColor: '#f8fafc',
-                  color: '#0f172a',
+                  backgroundColor: 'var(--bg-color, #f8fafc)',
+                  color: 'var(--text-primary, #0f172a)',
                   fontWeight: '600'
                 }}
               >
@@ -210,11 +210,11 @@ export const TransferAdvanceModal = ({
             {/* Amount & Mode */}
             <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 1fr', gap: '1rem' }}>
               <div>
-                <label style={{ display: 'block', fontSize: '0.86rem', fontWeight: '700', color: '#334155', marginBottom: '0.4rem' }}>
+                <label style={{ display: 'block', fontSize: '0.86rem', fontWeight: '700', color: 'var(--text-primary, #334155)', marginBottom: '0.4rem' }}>
                   Advance Amount (₹) *
                 </label>
                 <div style={{ position: 'relative' }}>
-                  <span style={{ position: 'absolute', left: '0.85rem', top: '50%', transform: 'translateY(-50%)', fontWeight: '800', color: '#64748b' }}>₹</span>
+                  <span style={{ position: 'absolute', left: '0.85rem', top: '50%', transform: 'translateY(-50%)', fontWeight: '800', color: 'var(--text-secondary, #64748b)' }}>₹</span>
                   <input
                     type="number"
                     value={amount}
@@ -226,7 +226,7 @@ export const TransferAdvanceModal = ({
                       width: '100%',
                       padding: '0.75rem 1rem 0.75rem 2rem',
                       borderRadius: '12px',
-                      border: '1px solid #cbd5e1',
+                      border: '1px solid var(--border-color, #cbd5e1)',
                       fontSize: '1.05rem',
                       fontWeight: '800',
                       boxSizing: 'border-box'
@@ -236,7 +236,7 @@ export const TransferAdvanceModal = ({
               </div>
 
               <div>
-                <label style={{ display: 'block', fontSize: '0.86rem', fontWeight: '700', color: '#334155', marginBottom: '0.4rem' }}>
+                <label style={{ display: 'block', fontSize: '0.86rem', fontWeight: '700', color: 'var(--text-primary, #334155)', marginBottom: '0.4rem' }}>
                   Payment Mode *
                 </label>
                 <select
@@ -246,10 +246,10 @@ export const TransferAdvanceModal = ({
                     width: '100%',
                     padding: '0.75rem 1rem',
                     borderRadius: '12px',
-                    border: '1px solid #cbd5e1',
+                    border: '1px solid var(--border-color, #cbd5e1)',
                     fontSize: '0.95rem',
                     fontWeight: '700',
-                    backgroundColor: '#f8fafc'
+                    backgroundColor: 'var(--bg-color, #f8fafc)'
                   }}
                 >
                   <option value="UPI">Google Pay / PhonePe (UPI)</option>
@@ -264,7 +264,7 @@ export const TransferAdvanceModal = ({
             {/* UTR / Ref No & Date */}
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
               <div>
-                <label style={{ display: 'block', fontSize: '0.86rem', fontWeight: '700', color: '#334155', marginBottom: '0.4rem' }}>
+                <label style={{ display: 'block', fontSize: '0.86rem', fontWeight: '700', color: 'var(--text-primary, #334155)', marginBottom: '0.4rem' }}>
                   UPI / Bank Ref (UTR No.)
                 </label>
                 <input
@@ -276,7 +276,7 @@ export const TransferAdvanceModal = ({
                     width: '100%',
                     padding: '0.75rem 1rem',
                     borderRadius: '12px',
-                    border: '1px solid #cbd5e1',
+                    border: '1px solid var(--border-color, #cbd5e1)',
                     fontSize: '0.9rem',
                     boxSizing: 'border-box'
                   }}
@@ -284,7 +284,7 @@ export const TransferAdvanceModal = ({
               </div>
 
               <div>
-                <label style={{ display: 'block', fontSize: '0.86rem', fontWeight: '700', color: '#334155', marginBottom: '0.4rem' }}>
+                <label style={{ display: 'block', fontSize: '0.86rem', fontWeight: '700', color: 'var(--text-primary, #334155)', marginBottom: '0.4rem' }}>
                   Transfer Date
                 </label>
                 <input
@@ -295,7 +295,7 @@ export const TransferAdvanceModal = ({
                     width: '100%',
                     padding: '0.75rem 1rem',
                     borderRadius: '12px',
-                    border: '1px solid #cbd5e1',
+                    border: '1px solid var(--border-color, #cbd5e1)',
                     fontSize: '0.9rem',
                     boxSizing: 'border-box'
                   }}
@@ -305,7 +305,7 @@ export const TransferAdvanceModal = ({
 
             {/* Notes */}
             <div>
-              <label style={{ display: 'block', fontSize: '0.86rem', fontWeight: '700', color: '#334155', marginBottom: '0.4rem' }}>
+              <label style={{ display: 'block', fontSize: '0.86rem', fontWeight: '700', color: 'var(--text-primary, #334155)', marginBottom: '0.4rem' }}>
                 Notes / Purpose
               </label>
               <input
@@ -317,7 +317,7 @@ export const TransferAdvanceModal = ({
                   width: '100%',
                   padding: '0.75rem 1rem',
                   borderRadius: '12px',
-                  border: '1px solid #cbd5e1',
+                  border: '1px solid var(--border-color, #cbd5e1)',
                   fontSize: '0.9rem',
                   boxSizing: 'border-box'
                 }}
@@ -333,9 +333,9 @@ export const TransferAdvanceModal = ({
                   flex: 1,
                   padding: '0.8rem',
                   borderRadius: '12px',
-                  border: '1px solid #cbd5e1',
-                  backgroundColor: '#f8fafc',
-                  color: '#475569',
+                  border: '1px solid var(--border-color, #cbd5e1)',
+                  backgroundColor: 'var(--bg-color, #f8fafc)',
+                  color: 'var(--text-secondary, #475569)',
                   fontWeight: '700',
                   cursor: 'pointer'
                 }}

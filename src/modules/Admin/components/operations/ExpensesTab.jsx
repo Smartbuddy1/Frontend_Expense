@@ -503,74 +503,7 @@ const ExpensesTab = ({
           </p>
         </div>
 
-        {/* Top Header Buttons: Print, Excel & PDF */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', flexWrap: 'wrap' }}>
-          {/* 🖨️ Print Button */}
-          <button
-            onClick={activeSubView === 'accountants' ? handlePrintAccountants : handlePrintExpenses}
-            style={{
-              padding: '0.55rem 1.05rem',
-              borderRadius: '10px',
-              border: '1.5px solid #0284c7',
-              backgroundColor: '#ffffff',
-              color: '#0284c7',
-              fontSize: '0.92rem',
-              fontWeight: '700',
-              cursor: 'pointer',
-              display: 'inline-flex',
-              alignItems: 'center',
-              gap: '0.45rem',
-              boxShadow: '0 1px 2px rgba(0, 0, 0, 0.05)'
-            }}
-          >
-            <Printer size={16} />
-            <span>{language === 'mr' ? 'प्रिंट' : 'Print'}</span>
-          </button>
 
-          {/* 📄 Excel Button (Green Outline) */}
-          <button
-            onClick={activeSubView === 'accountants' ? handleExportAccountantsCSV : handleExportCSV}
-            style={{
-              padding: '0.55rem 1.05rem',
-              borderRadius: '10px',
-              border: '1.5px solid #16a34a',
-              backgroundColor: '#ffffff',
-              color: '#16a34a',
-              fontSize: '0.92rem',
-              fontWeight: '700',
-              cursor: 'pointer',
-              display: 'inline-flex',
-              alignItems: 'center',
-              gap: '0.45rem',
-              boxShadow: '0 1px 2px rgba(0, 0, 0, 0.05)'
-            }}
-          >
-            <FileSpreadsheet size={16} />
-            <span>{language === 'mr' ? 'एक्सेल' : 'Excel'}</span>
-          </button>
-
-          {/* 📥 PDF Button (Red Outline) */}
-          <button
-            onClick={activeSubView === 'accountants' ? handleExportAccountantsPDF : handleExportPDF}
-            style={{
-              padding: '0.55rem 1.05rem',
-              borderRadius: '10px',
-              border: '1.5px solid #dc2626',
-              backgroundColor: '#ffffff',
-              color: '#dc2626',
-              fontSize: '0.92rem',
-              fontWeight: '700',
-              cursor: 'pointer',
-              display: 'inline-flex',
-              alignItems: 'center',
-              gap: '0.45rem',
-              boxShadow: '0 1px 2px rgba(0, 0, 0, 0.05)'
-            }}
-          >
-            <Download size={16} />
-            <span>{language === 'mr' ? 'पीडीएफ' : 'PDF'}</span>
-          </button>
-        </div>
       </div>
 
       {/* View Switcher (Only shown in Expenses mode) */}
@@ -1514,7 +1447,7 @@ const ExpensesTab = ({
 
                         {/* Phone */}
                         <td style={{ padding: '1rem', whiteSpace: 'nowrap' }}>
-                          <span style={{ color: '#0f172a', fontSize: '0.9rem', fontWeight: '700' }}>
+                          <span style={{ color: 'var(--text-primary, #0f172a)', fontSize: '0.9rem', fontWeight: '700' }}>
                             {acc.phone || '+91 98220 77881'}
                           </span>
                         </td>

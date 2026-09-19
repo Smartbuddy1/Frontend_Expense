@@ -1,73 +1,100 @@
 import React, { useState, useEffect } from 'react';
-import { X } from 'lucide-react';
+import { X, Building2, UserCheck, Calendar, DollarSign, MapPin, Tag, FileText, CheckCircle2, Phone, Mail } from 'lucide-react';
+import { useLanguage } from '../../../context/LanguageContext';
 
-const CreateProjectModal = ({ 
-  isOpen, 
-  onClose, 
-  onSave, 
-  editingProject, 
-  supervisors = [], 
-  organizations = [] 
-}) => {
-  const [formData, setFormData] = useState({
-    client: '',
+const CreateProjectModal = ({ isOpen, onClose, onSave, editingProject, supervisors = [] }) => {
+  const { language } = useLanguage();
+  const [formData, setFormData] = useState(editingProject || {
     name: '',
-    workOrderNo: '',
-    saleOrderNo: '',
+    code: '',
+    location: '',
+    phone: '',
+    email: '',
+    password: '',
+    category: 'Commercial',
+    budget: '',
+    startDate: '',
+    endDate: '',
+    supervisorId: '',
+    teamCount: 8,
+    description: '',
     status: 'In Progress',
-    remarks: '',
-    supervisorId: ''
+    health: 'On Track',
   });
 
   useEffect(() => {
     if (editingProject) {
       setFormData({
-        client: editingProject.client || '',
         name: editingProject.name || '',
-        workOrderNo: editingProject.workOrderNo || '',
-        saleOrderNo: editingProject.saleOrderNo || editingProject.id || '',
+        code: editingProject.id || '',
+        location: editingProject.location || '',
+        phone: editingProject.phone || editingProject.clientPhone || '',
+        email: editingProject.email || editingProject.clientEmail || '',
+        password: editingProject.password || '',
+        category: editingProject.category || 'Infrastructure & Civil',
+        budget: editingProject.budget || '',
+        startDate: editingProject.startDate || '',
+        endDate: editingProject.endDate || '',
+        teamCount: editingProject.teamCount || 8,
+        description: editingProject.description || '',
         status: editingProject.status || 'In Progress',
-        remarks: editingProject.description || editingProject.remarks || '',
-        supervisorId: editingProject.supervisorId || supervisors[0]?.id || ''
+        health: editingProject.health || 'On Track',
       });
     } else {
       setFormData({
-        client: organizations[0]?.name || '',
         name: '',
-        workOrderNo: '',
-        saleOrderNo: `SO-${new Date().getFullYear()}-${Math.floor(Math.random() * 900) + 100}`,
+        code: `PRJ-SGM-${Math.floor(Math.random() * 90) + 10}`,
+        location: '',
+        phone: '',
+        email: '',
+        password: '',
+        category: 'Infrastructure & Civil',
+        budget: '',
+        startDate: new Date().toISOString().split('T')[0],
+        endDate: '',
+        teamCount: 8,
+        description: '',
         status: 'In Progress',
-        remarks: '',
-        supervisorId: supervisors[0]?.id || ''
+        health: 'On Track',
       });
     }
-  }, [editingProject, isOpen, organizations, supervisors]);
+  }, [editingProject, isOpen, supervisors]);
 
   if (!isOpen) return null;
-
   const handleSubmit = (e) => {
     e.preventDefault();
-    if (!formData.name.trim() || !formData.supervisorId) {
-      alert('Please fill in required fields: Project Name and Site Supervisor.');
+    if (!formData.name?.trim() || !formData.description?.trim()) {
+      alert('Please fill in all mandatory fields (*)');
       return;
     }
 
-    const matchedSup = supervisors.find(s => s.id === formData.supervisorId) || supervisors[0];
-
     const projectPayload = {
-      id: editingProject ? editingProject.id : (formData.saleOrderNo || `PRJ-${Date.now().toString().slice(-4)}`),
-      name: formData.name.trim(),
-      client: formData.client || 'Default Client',
-      workOrderNo: formData.workOrderNo.trim(),
-      saleOrderNo: formData.saleOrderNo.trim(),
-      location: editingProject?.location || 'Maharashtra, India',
-      status: formData.status || 'In Progress',
-      description: formData.remarks.trim(),
-      remarks: formData.remarks.trim(),
-      supervisorId: matchedSup ? matchedSup.id : undefined,
-      supervisorName: matchedSup ? matchedSup.name : 'Unassigned',
-      supervisorPhone: matchedSup ? matchedSup.phone : '',
-      teamCount: editingProject?.teamCount || 8
+      id: editingProject ? editingProject.id : formData.code,
+      name: formData.name,
+      location: formData.location || 'Maharashtra, India',
+      phone: editingProject?.phone || '',
+      email: editingProject?.email || '',
+      password: formData.password || '',
+      category: editingProject?.category || 'E-Toilet Installation',
+      budget: editingProject?.budget || 200000,
+      spent: editingProject ? editingProject.spent : 0,
+      startDate: editingProject?.startDate || new Date().toISOString().split('T')[0],
+      endDate: editingProject?.endDate || new Date().toISOString().split('T')[0],
+      status: formData.status,
+      health: formData.health || 'On Track',
+      progress: editingProject ? editingProject.progress : 0,
+      supervisorId: editingProject?.supervisorId || null,
+      supervisorIds: editingProject?.supervisorIds || [],
+      supervisorName: editingProject?.supervisorName || 'Unassigned',
+      supervisorPhone: editingProject?.supervisorPhone || '',
+      teamCount: formData.teamCount,
+      description: formData.description,
+      milestones: editingProject?.milestones || [
+        { id: 'M1', title: 'Site Mobilization & Survey', status: 'Completed', targetDate: '' },
+        { id: 'M2', title: 'Civil & Foundation Works', status: 'In Progress', targetDate: '' },
+        { id: 'M3', title: 'Structural Setup', status: 'Pending', targetDate: '' },
+      ],
+      assignedTeam: editingProject?.assignedTeam || ['TECH-01', 'TECH-02'],
     };
 
     onSave(projectPayload);
@@ -77,54 +104,80 @@ const CreateProjectModal = ({
   return (
     <div style={{
       position: 'fixed',
-      inset: 0,
-      backgroundColor: 'rgba(15, 23, 42, 0.65)',
-      backdropFilter: 'blur(5px)',
+      top: 0,
+      left: 0,
+      right: 0,
+      bottom: 0,
+      backgroundColor: 'rgba(15, 23, 42, 0.75)',
+      backdropFilter: 'blur(6px)',
       zIndex: 99999,
       display: 'flex',
       alignItems: 'center',
       justifyContent: 'center',
-      padding: '1.25rem',
+      padding: '1rem',
       boxSizing: 'border-box'
     }}>
       <div style={{
         backgroundColor: '#ffffff',
-        borderRadius: '18px',
+        borderRadius: '20px',
         border: '1px solid #e2e8f0',
-        boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)',
+        boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.35)',
         width: '100%',
-        maxWidth: '820px',
-        maxHeight: '94vh',
+        maxWidth: '680px',
+        maxHeight: '90vh',
         display: 'flex',
         flexDirection: 'column',
         overflow: 'hidden',
         boxSizing: 'border-box'
       }}>
-        {/* Modal Header: Exact Project Details + Close Button */}
+        {/* Modal Header */}
         <div style={{
-          padding: '1.5rem 2rem',
-          borderBottom: '1.5px solid #e2e8f0',
+          padding: '1.25rem 1.5rem',
+          borderBottom: '1px solid #e2e8f0',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'space-between',
-          backgroundColor: '#ffffff'
+          background: 'linear-gradient(135deg, #f8fafc 0%, #eff6ff 100%)'
         }}>
-          <h2 style={{ fontSize: '1.65rem', fontWeight: '800', color: '#0f172a', margin: 0, fontFamily: 'serif' }}>
-            {editingProject ? 'Edit Project' : 'Create Project'}
-          </h2>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.85rem' }}>
+            <div style={{
+              width: '42px',
+              height: '42px',
+              borderRadius: '12px',
+              backgroundColor: '#2563eb',
+              color: '#ffffff',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              boxShadow: '0 4px 12px rgba(37, 99, 235, 0.3)'
+            }}>
+              <Building2 size={22} />
+            </div>
+            <div>
+              <h2 style={{ fontSize: '1.25rem', fontWeight: '800', color: '#0f172a', margin: 0, lineHeight: 1.2 }}>
+                {editingProject 
+                  ? (language === 'mr' ? 'प्रोजेक्ट माहिती बदला (Edit Project)' : 'Edit Project Details') 
+                  : (language === 'mr' ? 'नवीन प्रोजेक्ट तयार करा (Create Project)' : 'Create New Project')}
+              </h2>
+              <p style={{ fontSize: '0.8rem', color: '#64748b', margin: '0.2rem 0 0 0' }}>
+                {editingProject 
+                  ? (language === 'mr' ? 'प्रोजेक्टचे नाव, क्लायंट आणि सुपरवायझर अपडेट करा' : 'Update project parameters & supervisor') 
+                  : (language === 'mr' ? 'नवीन ई-टॉयलेट किंवा सिव्हिल साईट नोंदवा' : 'Define new project scope & supervisor')}
+              </p>
+            </div>
+          </div>
           <button 
-            type="button"
             onClick={onClose}
             style={{
               background: 'transparent',
               border: 'none',
-              color: '#64748b',
+              color: '#94a3b8',
               cursor: 'pointer',
-              padding: '0.45rem',
+              padding: '0.5rem',
+              borderRadius: '8px',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              borderRadius: '8px',
               transition: 'all 0.15s ease'
             }}
             onMouseEnter={(e) => {
@@ -133,187 +186,141 @@ const CreateProjectModal = ({
             }}
             onMouseLeave={(e) => {
               e.currentTarget.style.backgroundColor = 'transparent';
-              e.currentTarget.style.color = '#64748b';
+              e.currentTarget.style.color = '#94a3b8';
             }}
           >
-            <X size={24} />
+            <X size={20} />
           </button>
         </div>
 
-        {/* Modal Form Body */}
-        <form onSubmit={handleSubmit} style={{ padding: '2rem', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '1.4rem' }}>
-          
-          {/* Row 1: Client Name * & Project Name * */}
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '1.4rem' }}>
-            <div>
-              <label style={{ display: 'block', fontSize: '1.05rem', fontWeight: '700', color: '#1e293b', marginBottom: '0.5rem' }}>
-                Site Supervisor Name *
-              </label>
-              <select
-                required
-                value={formData.supervisorId}
-                onChange={(e) => setFormData({ ...formData, supervisorId: e.target.value })}
-                style={{
-                  width: '100%',
-                  padding: '0.85rem 1.15rem',
-                  borderRadius: '12px',
-                  border: '1.5px solid #cbd5e1',
-                  fontSize: '1.05rem',
-                  color: '#0f172a',
-                  outline: 'none',
-                  backgroundColor: '#ffffff',
-                  boxSizing: 'border-box'
-                }}
-              >
-                <option value="">-- Select Site Supervisor --</option>
-                {supervisors.map((sup) => (
-                  <option key={sup.id} value={sup.id}>
-                    {sup.name}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            <div>
-              <label style={{ display: 'block', fontSize: '1.05rem', fontWeight: '700', color: '#1e293b', marginBottom: '0.5rem' }}>
-                Project Name *
-              </label>
-              <input
-                type="text"
-                required
-                placeholder="e.g. Sangamner Eco Toilet Installation - Site P1"
-                value={formData.name}
-                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                style={{
-                  width: '100%',
-                  padding: '0.85rem 1.15rem',
-                  borderRadius: '12px',
-                  border: '1.5px solid #cbd5e1',
-                  fontSize: '1.05rem',
-                  color: '#0f172a',
-                  outline: 'none',
-                  boxSizing: 'border-box'
-                }}
-              />
-            </div>
-          </div>
-
-          {/* Row 2: Work Order No & Sale Order No * */}
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '1.4rem' }}>
-            <div>
-              <label style={{ display: 'block', fontSize: '1.05rem', fontWeight: '700', color: '#1e293b', marginBottom: '0.5rem' }}>
-                Work Order No
-              </label>
-              <input
-                type="text"
-                placeholder="e.g. WO-SMC-2026-08"
-                value={formData.workOrderNo}
-                onChange={(e) => setFormData({ ...formData, workOrderNo: e.target.value })}
-                style={{
-                  width: '100%',
-                  padding: '0.85rem 1.15rem',
-                  borderRadius: '12px',
-                  border: '1.5px solid #cbd5e1',
-                  fontSize: '1.05rem',
-                  color: '#0f172a',
-                  outline: 'none',
-                  boxSizing: 'border-box'
-                }}
-              />
-            </div>
-
-            <div>
-              <label style={{ display: 'block', fontSize: '1.05rem', fontWeight: '700', color: '#1e293b', marginBottom: '0.5rem' }}>
-                Sale Order No *
-              </label>
-              <input
-                type="text"
-                required
-                placeholder="e.g. SO-2026-842"
-                value={formData.saleOrderNo}
-                onChange={(e) => setFormData({ ...formData, saleOrderNo: e.target.value })}
-                style={{
-                  width: '100%',
-                  padding: '0.85rem 1.15rem',
-                  borderRadius: '12px',
-                  border: '1.5px solid #cbd5e1',
-                  fontSize: '1.05rem',
-                  color: '#0f172a',
-                  outline: 'none',
-                  boxSizing: 'border-box'
-                }}
-              />
-            </div>
-          </div>
-
-
-
-          {/* Row 6: Remarks (Full Width) */}
+        {/* Modal Form Content */}
+        <form onSubmit={handleSubmit} style={{ padding: '1.5rem', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '1.15rem' }}>
+          {/* Project Code */}
           <div>
-            <label style={{ display: 'block', fontSize: '1.05rem', fontWeight: '700', color: '#1e293b', marginBottom: '0.5rem' }}>
-              Remarks
+            <label style={{ display: 'block', fontSize: '0.78rem', fontWeight: '800', color: '#475569', textTransform: 'uppercase', marginBottom: '0.35rem' }}>
+              {language === 'mr' ? 'प्रोजेक्ट कोड' : 'Project Code'}
             </label>
-            <textarea
-              rows={3}
-              placeholder=""
-              value={formData.remarks}
-              onChange={(e) => setFormData({ ...formData, remarks: e.target.value })}
+            <input
+              type="text"
+              disabled={!!editingProject}
+              value={formData.code}
+              onChange={(e) => setFormData({ ...formData, code: e.target.value })}
               style={{
                 width: '100%',
-                padding: '0.85rem 1.15rem',
-                borderRadius: '12px',
-                border: '1.5px solid #cbd5e1',
-                fontSize: '1.05rem',
+                padding: '0.65rem 0.85rem',
+                borderRadius: '10px',
+                border: '1px solid #cbd5e1',
+                backgroundColor: editingProject ? '#f8fafc' : '#ffffff',
+                fontSize: '0.88rem',
                 color: '#0f172a',
+                backgroundColor: 'var(--input-bg, #ffffff)',
                 outline: 'none',
-                resize: 'vertical',
+                boxSizing: 'border-box'
+              }}
+            />
+          </div>
+
+          {/* Project Name */}
+          <div>
+            <label style={{ display: 'block', fontSize: '0.78rem', fontWeight: '800', color: '#475569', textTransform: 'uppercase', marginBottom: '0.35rem' }}>
+              {language === 'mr' ? 'प्रोजेक्ट / साईटचे नाव *' : 'Project / Site Name *'}
+            </label>
+            <input
+              type="text"
+              required
+              placeholder="e.g. Sangamner Eco Toilet Installation - Site P1"
+              value={formData.name}
+              onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+              style={{
+                width: '100%',
+                padding: '0.65rem 0.85rem',
+                borderRadius: '10px',
+                border: '1px solid #cbd5e1',
+                fontSize: '0.88rem',
+                color: '#0f172a',
+                backgroundColor: 'var(--input-bg, #ffffff)',
+                outline: 'none',
+                boxSizing: 'border-box'
+              }}
+            />
+          </div>
+
+          {/* Description */}
+          <div>
+            <label style={{ display: 'block', fontSize: '0.78rem', fontWeight: '800', color: '#475569', textTransform: 'uppercase', marginBottom: '0.35rem' }}>
+              Remark / Description *
+            </label>
+            <textarea
+              rows={2}
+              required
+              placeholder="e.g. Initial notes, site requirements, special instructions..."
+              value={formData.description}
+              onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+              style={{
+                width: '100%',
+                padding: '0.65rem 0.85rem',
+                borderRadius: '10px',
+                border: '1px solid #cbd5e1',
+                fontSize: '0.88rem',
+                color: '#0f172a',
+                backgroundColor: 'var(--input-bg, #ffffff)',
+                outline: 'none',
+                resize: 'none',
                 fontFamily: 'inherit',
                 boxSizing: 'border-box'
               }}
             />
           </div>
 
-          {/* Form Footer */}
+          {/* Footer Buttons */}
           <div style={{
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'flex-end',
-            gap: '1rem',
-            paddingTop: '1.4rem',
-            borderTop: '1.5px solid #f1f5f9',
-            marginTop: '0.6rem'
+            gap: '0.85rem',
+            paddingTop: '1rem',
+            borderTop: '1px solid #f1f5f9',
+            marginTop: '0.5rem'
           }}>
             <button
               type="button"
               onClick={onClose}
               style={{
-                padding: '0.8rem 1.6rem',
-                borderRadius: '11px',
-                border: '1.5px solid #cbd5e1',
+                padding: '0.65rem 1.25rem',
+                borderRadius: '10px',
+                border: '1px solid #cbd5e1',
                 backgroundColor: '#ffffff',
                 color: '#475569',
-                fontSize: '1.02rem',
+                fontSize: '0.88rem',
                 fontWeight: '700',
-                cursor: 'pointer'
+                cursor: 'pointer',
+                transition: 'all 0.15s ease'
               }}
             >
-              Cancel
+              {language === 'mr' ? 'रद्द करा (Cancel)' : 'Cancel'}
             </button>
             <button
               type="submit"
               style={{
-                padding: '0.8rem 2rem',
-                borderRadius: '11px',
+                padding: '0.65rem 1.65rem',
+                borderRadius: '10px',
                 border: 'none',
-                backgroundColor: '#2563eb',
+                background: 'linear-gradient(135deg, #2563eb 0%, #7c3aed 100%)',
                 color: '#ffffff',
-                fontSize: '1.02rem',
+                fontSize: '0.88rem',
                 fontWeight: '800',
                 cursor: 'pointer',
-                boxShadow: '0 4px 14px rgba(37, 99, 235, 0.35)'
+                boxShadow: '0 4px 14px rgba(37, 99, 235, 0.35)',
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '0.45rem',
+                transition: 'all 0.2s ease'
               }}
             >
-              {editingProject ? 'Update Project' : 'Save Project'}
+              <CheckCircle2 size={16} />
+              {editingProject 
+                ? (language === 'mr' ? 'बदल सेव्ह करा (Save Changes)' : 'Save Project Changes') 
+                : (language === 'mr' ? 'प्रोजेक्ट तयार करा (Create Project)' : 'Create Project')}
             </button>
           </div>
         </form>

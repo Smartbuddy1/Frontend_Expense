@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { X, UserPlus, Phone, Mail, Briefcase, IndianRupee, Building2, User, Edit3, Lock } from 'lucide-react';
+import { X, UserPlus, Phone, Mail, Briefcase, IndianRupee, User, Edit3, Lock, Eye, EyeOff } from 'lucide-react';
 
 const CreateSupervisorModal = ({ isOpen, onClose, onCreateSupervisor, editingSupervisor = null, projects = [] }) => {
+  const [showPassword, setShowPassword] = useState(false);
   const [formData, setFormData] = useState({
     firstName: '',
     surname: '',
@@ -9,8 +10,6 @@ const CreateSupervisorModal = ({ isOpen, onClose, onCreateSupervisor, editingSup
     email: '',
     password: '',
     specialization: 'Site Operations & Field Lead',
-    assignedProjectId: '',
-    advanceAmount: '50000',
     experience: '5+ Years'
   });
 
@@ -26,10 +25,8 @@ const CreateSupervisorModal = ({ isOpen, onClose, onCreateSupervisor, editingSup
         surname,
         phone: editingSupervisor.phone || '',
         email: editingSupervisor.email || '',
-        password: editingSupervisor.password || '••••••••',
+        password: editingSupervisor.password || '',
         specialization: editingSupervisor.specialization || 'Site Operations & Field Lead',
-        assignedProjectId: editingSupervisor.activeProjects?.[0] || '',
-        advanceAmount: String(editingSupervisor.advanceAmount || '50000'),
         experience: editingSupervisor.experience || '5+ Years'
       });
     } else {
@@ -40,8 +37,6 @@ const CreateSupervisorModal = ({ isOpen, onClose, onCreateSupervisor, editingSup
         email: '',
         password: '',
         specialization: 'Site Operations & Field Lead',
-        assignedProjectId: '',
-        advanceAmount: '50000',
         experience: '5+ Years'
       });
     }
@@ -59,8 +54,7 @@ const CreateSupervisorModal = ({ isOpen, onClose, onCreateSupervisor, editingSup
 
     onCreateSupervisor({
       ...formData,
-      name: fullName,
-      advanceAmount: Number(formData.advanceAmount) || 50000
+      name: fullName
     });
 
     onClose();
@@ -123,7 +117,7 @@ const CreateSupervisorModal = ({ isOpen, onClose, onCreateSupervisor, editingSup
                 {isEdit ? 'Edit Site Supervisor' : 'Add New Site Supervisor'}
               </h2>
               <p style={{ fontSize: '0.8rem', color: '#64748b', margin: '0.2rem 0 0 0', fontWeight: '500' }}>
-                {isEdit ? 'Update supervisor contact and site allocation' : 'Register new field supervisor & assign site project'}
+                {isEdit ? 'Update supervisor contact and login details' : 'Register new field supervisor & credentials'}
               </p>
             </div>
           </div>
@@ -172,6 +166,7 @@ const CreateSupervisorModal = ({ isOpen, onClose, onCreateSupervisor, editingSup
                   border: '1.5px solid #cbd5e1',
                   fontSize: '0.9rem',
                   color: '#0f172a',
+                  backgroundColor: 'var(--input-bg, #ffffff)',
                   outline: 'none',
                   boxSizing: 'border-box'
                 }}
@@ -195,6 +190,7 @@ const CreateSupervisorModal = ({ isOpen, onClose, onCreateSupervisor, editingSup
                   border: '1.5px solid #cbd5e1',
                   fontSize: '0.9rem',
                   color: '#0f172a',
+                  backgroundColor: 'var(--input-bg, #ffffff)',
                   outline: 'none',
                   boxSizing: 'border-box'
                 }}
@@ -222,6 +218,7 @@ const CreateSupervisorModal = ({ isOpen, onClose, onCreateSupervisor, editingSup
                   border: '1.5px solid #cbd5e1',
                   fontSize: '0.9rem',
                   color: '#0f172a',
+                  backgroundColor: 'var(--input-bg, #ffffff)',
                   outline: 'none',
                   boxSizing: 'border-box'
                 }}
@@ -245,6 +242,7 @@ const CreateSupervisorModal = ({ isOpen, onClose, onCreateSupervisor, editingSup
                   border: '1.5px solid #cbd5e1',
                   fontSize: '0.9rem',
                   color: '#0f172a',
+                  backgroundColor: 'var(--input-bg, #ffffff)',
                   outline: 'none',
                   boxSizing: 'border-box'
                 }}
@@ -252,118 +250,55 @@ const CreateSupervisorModal = ({ isOpen, onClose, onCreateSupervisor, editingSup
             </div>
           </div>
 
-          {/* Password & Role / Specialization (2 Cols) */}
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '1rem' }}>
-            <div>
-              <label style={{ display: 'block', fontSize: '0.82rem', fontWeight: '800', color: '#334155', marginBottom: '0.4rem' }}>
-                <Lock size={13} style={{ display: 'inline', marginRight: '4px', color: '#2563eb' }} />
-                Password *
-              </label>
+          {/* Password / Access Key */}
+          <div>
+            <label style={{ display: 'block', fontSize: '0.82rem', fontWeight: '800', color: '#334155', marginBottom: '0.4rem' }}>
+              <Lock size={13} style={{ display: 'inline', marginRight: '4px', color: '#2563eb' }} />
+              Password
+            </label>
+            <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
               <input
-                type="password"
-                required={!isEdit}
-                placeholder="••••••••"
+                type={showPassword ? 'text' : 'password'}
+                placeholder="Enter supervisor login password..."
                 value={formData.password}
                 onChange={(e) => setFormData({ ...formData, password: e.target.value })}
                 style={{
                   width: '100%',
-                  padding: '0.65rem 0.9rem',
+                  padding: '0.65rem 2.5rem 0.65rem 0.9rem',
                   borderRadius: '10px',
                   border: '1.5px solid #cbd5e1',
                   fontSize: '0.9rem',
                   color: '#0f172a',
+                  backgroundColor: 'var(--input-bg, #ffffff)',
                   outline: 'none',
                   boxSizing: 'border-box'
                 }}
               />
-              <span style={{ fontSize: '0.72rem', color: '#94a3b8', marginTop: '0.2rem', display: 'block' }}>
-                8-10 characters login password
-              </span>
-            </div>
-
-            <div>
-              <label style={{ display: 'block', fontSize: '0.82rem', fontWeight: '800', color: '#334155', marginBottom: '0.4rem' }}>
-                <Briefcase size={13} style={{ display: 'inline', marginRight: '4px', color: '#2563eb' }} />
-                Specialization & Skill Role
-              </label>
-              <select
-                value={formData.specialization}
-                onChange={(e) => setFormData({ ...formData, specialization: e.target.value })}
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
                 style={{
-                  width: '100%',
-                  padding: '0.65rem 0.9rem',
-                  borderRadius: '10px',
-                  border: '1.5px solid #cbd5e1',
-                  fontSize: '0.88rem',
-                  color: '#0f172a',
-                  outline: 'none',
-                  backgroundColor: '#ffffff',
-                  boxSizing: 'border-box'
+                  position: 'absolute',
+                  right: '0.65rem',
+                  background: 'none',
+                  border: 'none',
+                  color: '#64748b',
+                  cursor: 'pointer',
+                  padding: '0.2rem',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center'
                 }}
+                title={showPassword ? 'Hide password' : 'Show password'}
               >
-                <option value="Site Operations & Field Lead">Site Operations & Field Lead</option>
-                <option value="Civil Construction & Plumbing Lead">Civil Construction & Plumbing Lead</option>
-                <option value="SCADA, Electrical & IoT Specialist">SCADA, Electrical & IoT Specialist</option>
-                <option value="Prefab Shell & Mechanical Lead">Prefab Shell & Mechanical Lead</option>
-              </select>
+                {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+              </button>
             </div>
           </div>
 
-          {/* Assign Project Site & Initial Advance (2 Cols) */}
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '1rem' }}>
-            <div>
-              <label style={{ display: 'block', fontSize: '0.82rem', fontWeight: '800', color: '#334155', marginBottom: '0.4rem' }}>
-                <Building2 size={13} style={{ display: 'inline', marginRight: '4px', color: '#2563eb' }} />
-                Assign Project Site (Optional)
-              </label>
-              <select
-                value={formData.assignedProjectId}
-                onChange={(e) => setFormData({ ...formData, assignedProjectId: e.target.value })}
-                style={{
-                  width: '100%',
-                  padding: '0.65rem 0.9rem',
-                  borderRadius: '10px',
-                  border: '1.5px solid #bfdbfe',
-                  backgroundColor: '#eff6ff',
-                  fontSize: '0.88rem',
-                  fontWeight: '700',
-                  color: '#1d4ed8',
-                  outline: 'none',
-                  boxSizing: 'border-box'
-                }}
-              >
-                <option value="">-- Assign Later (Available Pool) --</option>
-                {projects.map((p) => (
-                  <option key={p.id} value={p.id}>
-                    {p.name} ({p.location})
-                  </option>
-                ))}
-              </select>
-            </div>
 
-            <div>
-              <label style={{ display: 'block', fontSize: '0.82rem', fontWeight: '800', color: '#334155', marginBottom: '0.4rem' }}>
-                <IndianRupee size={13} style={{ display: 'inline', marginRight: '4px', color: '#10b981' }} />
-                Initial Advance Float (₹)
-              </label>
-              <input
-                type="number"
-                placeholder="50000"
-                value={formData.advanceAmount}
-                onChange={(e) => setFormData({ ...formData, advanceAmount: e.target.value })}
-                style={{
-                  width: '100%',
-                  padding: '0.65rem 0.9rem',
-                  borderRadius: '10px',
-                  border: '1.5px solid #cbd5e1',
-                  fontSize: '0.9rem',
-                  color: '#0f172a',
-                  outline: 'none',
-                  boxSizing: 'border-box'
-                }}
-              />
-            </div>
-          </div>
+
+
 
           {/* Modal Actions Footer */}
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: '0.75rem', marginTop: '1rem', paddingTop: '1rem', borderTop: '1px solid #f1f5f9' }}>

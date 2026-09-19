@@ -330,7 +330,7 @@ const ProjectsTab = ({
                     {project.description || (language === 'mr' ? 'काही टिप्पणी नाही.' : 'No remark provided.')}
                   </p>
                   <p style={{ margin: '0.45rem 0 0 0', fontSize: '0.82rem', color: '#2563eb', fontWeight: '700' }}>
-                    {language === 'mr' ? 'सुपरवायझर:' : 'Supervisor:'} <span style={{ color: '#0f172a' }}>{project.supervisorName || 'Rohit Sharma'}</span>
+                    {language === 'mr' ? 'सुपरवायझर:' : 'Supervisor:'} <span style={{ color: 'var(--text-primary, #0f172a)' }}>{project.supervisorName || 'Rohit Sharma'}</span>
                   </p>
                 </div>
               </div>

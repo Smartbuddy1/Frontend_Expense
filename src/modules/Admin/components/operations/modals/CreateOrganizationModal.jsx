@@ -120,28 +120,28 @@ const CreateOrganizationModal = ({
       padding: '1.25rem'
     }}>
       <div style={{
-        backgroundColor: '#ffffff',
+        backgroundColor: 'var(--card-bg, #ffffff)',
         borderRadius: '16px',
         width: '100%',
         maxWidth: '780px',
         maxHeight: '92vh',
         overflowY: 'auto',
         boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.35)',
-        border: '1px solid #cbd5e1',
+        border: '1px solid var(--border-color, #cbd5e1)',
         fontFamily: "'Cambria', Georgia, serif"
       }}>
         {/* Header: Organization Details title with close X */}
         <div style={{
           padding: '1.25rem 1.75rem',
-          borderBottom: '1px solid #e2e8f0',
+          borderBottom: '1px solid var(--border-color, #e2e8f0)',
           display: 'flex',
           justifyContent: 'space-between',
           alignItems: 'center',
-          backgroundColor: '#ffffff',
+          backgroundColor: 'var(--card-bg, #ffffff)',
           borderTopLeftRadius: '16px',
           borderTopRightRadius: '16px'
         }}>
-          <h2 style={{ fontSize: '1.45rem', fontWeight: '800', color: '#0f172a', margin: 0 }}>
+          <h2 style={{ fontSize: '1.45rem', fontWeight: '800', color: 'var(--text-primary, #0f172a)', margin: 0 }}>
             Organization Details
           </h2>
           <button
@@ -150,7 +150,7 @@ const CreateOrganizationModal = ({
               border: 'none',
               backgroundColor: 'transparent',
               cursor: 'pointer',
-              color: '#64748b',
+              color: 'var(--text-secondary, #64748b)',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
@@ -171,7 +171,7 @@ const CreateOrganizationModal = ({
               {/* Organization Name & Organization Phone */}
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '1rem' }}>
                 <div>
-                  <label style={{ display: 'block', fontSize: '0.92rem', fontWeight: '700', color: '#334155', marginBottom: '0.4rem' }}>
+                  <label style={{ display: 'block', fontSize: '0.92rem', fontWeight: '700', color: 'var(--text-primary, #334155)', marginBottom: '0.4rem' }}>
                     Organization Name *
                   </label>
                   <input
@@ -184,8 +184,10 @@ const CreateOrganizationModal = ({
                       width: '100%',
                       padding: '0.75rem 1rem',
                       borderRadius: '10px',
-                      border: '1.5px solid #cbd5e1',
+                      border: '1.5px solid var(--border-color, #cbd5e1)',
                       fontSize: '0.96rem',
+                      backgroundColor: 'var(--input-bg, #ffffff)',
+                      backgroundColor: 'var(--input-bg, #ffffff)',
                       outline: 'none',
                       boxSizing: 'border-box'
                     }}
@@ -193,7 +195,7 @@ const CreateOrganizationModal = ({
                 </div>
 
                 <div>
-                  <label style={{ display: 'block', fontSize: '0.92rem', fontWeight: '700', color: '#334155', marginBottom: '0.4rem' }}>
+                  <label style={{ display: 'block', fontSize: '0.92rem', fontWeight: '700', color: 'var(--text-primary, #334155)', marginBottom: '0.4rem' }}>
                     Organization Phone *
                   </label>
                   <input
@@ -206,8 +208,10 @@ const CreateOrganizationModal = ({
                       width: '100%',
                       padding: '0.75rem 1rem',
                       borderRadius: '10px',
-                      border: '1.5px solid #cbd5e1',
+                      border: '1.5px solid var(--border-color, #cbd5e1)',
                       fontSize: '0.96rem',
+                      backgroundColor: 'var(--input-bg, #ffffff)',
+                      backgroundColor: 'var(--input-bg, #ffffff)',
                       outline: 'none',
                       boxSizing: 'border-box'
                     }}
@@ -217,7 +221,7 @@ const CreateOrganizationModal = ({
 
               {/* Organization Address */}
               <div>
-                <label style={{ display: 'block', fontSize: '0.92rem', fontWeight: '700', color: '#334155', marginBottom: '0.4rem' }}>
+                <label style={{ display: 'block', fontSize: '0.92rem', fontWeight: '700', color: 'var(--text-primary, #334155)', marginBottom: '0.4rem' }}>
                   Organization Address *
                 </label>
                 <textarea
@@ -230,8 +234,10 @@ const CreateOrganizationModal = ({
                     width: '100%',
                     padding: '0.75rem 1rem',
                     borderRadius: '10px',
-                    border: '1.5px solid #cbd5e1',
+                    border: '1.5px solid var(--border-color, #cbd5e1)',
                     fontSize: '0.96rem',
+                    backgroundColor: 'var(--input-bg, #ffffff)',
+                    backgroundColor: 'var(--input-bg, #ffffff)',
                     outline: 'none',
                     resize: 'vertical',
                     boxSizing: 'border-box'
@@ -241,7 +247,7 @@ const CreateOrganizationModal = ({
 
               {/* Organization Type */}
               <div>
-                <label style={{ display: 'block', fontSize: '0.92rem', fontWeight: '700', color: '#334155', marginBottom: '0.4rem' }}>
+                <label style={{ display: 'block', fontSize: '0.92rem', fontWeight: '700', color: 'var(--text-primary, #334155)', marginBottom: '0.4rem' }}>
                   Organization Type *
                 </label>
                 <select
@@ -252,10 +258,12 @@ const CreateOrganizationModal = ({
                     width: '100%',
                     padding: '0.75rem 1rem',
                     borderRadius: '10px',
-                    border: '1.5px solid #cbd5e1',
+                    border: '1.5px solid var(--border-color, #cbd5e1)',
                     fontSize: '0.96rem',
+                    backgroundColor: 'var(--input-bg, #ffffff)',
+                    backgroundColor: 'var(--input-bg, #ffffff)',
                     outline: 'none',
-                    backgroundColor: '#ffffff',
+                    backgroundColor: 'var(--card-bg, #ffffff)',
                     boxSizing: 'border-box'
                   }}
                 >
@@ -277,10 +285,10 @@ const CreateOrganizationModal = ({
             <h3 style={{
               fontSize: '1.15rem',
               fontWeight: '800',
-              color: '#0f172a',
+              color: 'var(--text-primary, #0f172a)',
               margin: '0 0 1rem 0',
               paddingBottom: '0.45rem',
-              borderBottom: '1px solid #e2e8f0'
+              borderBottom: '1px solid var(--border-color, #e2e8f0)'
             }}>
               Location Details
             </h3>
@@ -289,7 +297,7 @@ const CreateOrganizationModal = ({
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '1rem' }}>
                 {/* State */}
                 <div>
-                  <label style={{ display: 'block', fontSize: '0.92rem', fontWeight: '700', color: '#334155', marginBottom: '0.4rem' }}>
+                  <label style={{ display: 'block', fontSize: '0.92rem', fontWeight: '700', color: 'var(--text-primary, #334155)', marginBottom: '0.4rem' }}>
                     State *
                   </label>
                   <select
@@ -300,10 +308,12 @@ const CreateOrganizationModal = ({
                       width: '100%',
                       padding: '0.75rem 1rem',
                       borderRadius: '10px',
-                      border: '1.5px solid #cbd5e1',
+                      border: '1.5px solid var(--border-color, #cbd5e1)',
                       fontSize: '0.96rem',
+                      backgroundColor: 'var(--input-bg, #ffffff)',
+                      backgroundColor: 'var(--input-bg, #ffffff)',
                       outline: 'none',
-                      backgroundColor: '#ffffff',
+                      backgroundColor: 'var(--card-bg, #ffffff)',
                       boxSizing: 'border-box'
                     }}
                   >
@@ -318,7 +328,7 @@ const CreateOrganizationModal = ({
 
                 {/* District */}
                 <div>
-                  <label style={{ display: 'block', fontSize: '0.92rem', fontWeight: '700', color: '#334155', marginBottom: '0.4rem' }}>
+                  <label style={{ display: 'block', fontSize: '0.92rem', fontWeight: '700', color: 'var(--text-primary, #334155)', marginBottom: '0.4rem' }}>
                     District *
                   </label>
                   <select
@@ -329,10 +339,12 @@ const CreateOrganizationModal = ({
                       width: '100%',
                       padding: '0.75rem 1rem',
                       borderRadius: '10px',
-                      border: '1.5px solid #cbd5e1',
+                      border: '1.5px solid var(--border-color, #cbd5e1)',
                       fontSize: '0.96rem',
+                      backgroundColor: 'var(--input-bg, #ffffff)',
+                      backgroundColor: 'var(--input-bg, #ffffff)',
                       outline: 'none',
-                      backgroundColor: '#ffffff',
+                      backgroundColor: 'var(--card-bg, #ffffff)',
                       boxSizing: 'border-box'
                     }}
                   >
@@ -346,7 +358,7 @@ const CreateOrganizationModal = ({
 
               {/* City */}
               <div>
-                <label style={{ display: 'block', fontSize: '0.92rem', fontWeight: '700', color: '#334155', marginBottom: '0.4rem' }}>
+                <label style={{ display: 'block', fontSize: '0.92rem', fontWeight: '700', color: 'var(--text-primary, #334155)', marginBottom: '0.4rem' }}>
                   City *
                 </label>
                 <select
@@ -357,10 +369,12 @@ const CreateOrganizationModal = ({
                     width: '100%',
                     padding: '0.75rem 1rem',
                     borderRadius: '10px',
-                    border: '1.5px solid #cbd5e1',
+                    border: '1.5px solid var(--border-color, #cbd5e1)',
                     fontSize: '0.96rem',
+                    backgroundColor: 'var(--input-bg, #ffffff)',
+                    backgroundColor: 'var(--input-bg, #ffffff)',
                     outline: 'none',
-                    backgroundColor: '#ffffff',
+                    backgroundColor: 'var(--card-bg, #ffffff)',
                     boxSizing: 'border-box'
                   }}
                 >
@@ -384,10 +398,10 @@ const CreateOrganizationModal = ({
             <h3 style={{
               fontSize: '1.15rem',
               fontWeight: '800',
-              color: '#0f172a',
+              color: 'var(--text-primary, #0f172a)',
               margin: '0 0 1rem 0',
               paddingBottom: '0.45rem',
-              borderBottom: '1px solid #e2e8f0'
+              borderBottom: '1px solid var(--border-color, #e2e8f0)'
             }}>
               Contact Person Details
             </h3>
@@ -396,7 +410,7 @@ const CreateOrganizationModal = ({
               {/* Contact Name & Contact Mobile */}
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '1rem' }}>
                 <div>
-                  <label style={{ display: 'block', fontSize: '0.92rem', fontWeight: '700', color: '#334155', marginBottom: '0.4rem' }}>
+                  <label style={{ display: 'block', fontSize: '0.92rem', fontWeight: '700', color: 'var(--text-primary, #334155)', marginBottom: '0.4rem' }}>
                     Contact Name
                   </label>
                   <input
@@ -407,8 +421,10 @@ const CreateOrganizationModal = ({
                       width: '100%',
                       padding: '0.75rem 1rem',
                       borderRadius: '10px',
-                      border: '1.5px solid #cbd5e1',
+                      border: '1.5px solid var(--border-color, #cbd5e1)',
                       fontSize: '0.96rem',
+                      backgroundColor: 'var(--input-bg, #ffffff)',
+                      backgroundColor: 'var(--input-bg, #ffffff)',
                       outline: 'none',
                       boxSizing: 'border-box'
                     }}
@@ -416,7 +432,7 @@ const CreateOrganizationModal = ({
                 </div>
 
                 <div>
-                  <label style={{ display: 'block', fontSize: '0.92rem', fontWeight: '700', color: '#334155', marginBottom: '0.4rem' }}>
+                  <label style={{ display: 'block', fontSize: '0.92rem', fontWeight: '700', color: 'var(--text-primary, #334155)', marginBottom: '0.4rem' }}>
                     Contact Mobile
                   </label>
                   <input
@@ -428,8 +444,10 @@ const CreateOrganizationModal = ({
                       width: '100%',
                       padding: '0.75rem 1rem',
                       borderRadius: '10px',
-                      border: '1.5px solid #cbd5e1',
+                      border: '1.5px solid var(--border-color, #cbd5e1)',
                       fontSize: '0.96rem',
+                      backgroundColor: 'var(--input-bg, #ffffff)',
+                      backgroundColor: 'var(--input-bg, #ffffff)',
                       outline: 'none',
                       boxSizing: 'border-box'
                     }}
@@ -440,7 +458,7 @@ const CreateOrganizationModal = ({
               {/* Contact Email & Password */}
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '1rem' }}>
                 <div>
-                  <label style={{ display: 'block', fontSize: '0.92rem', fontWeight: '700', color: '#334155', marginBottom: '0.4rem' }}>
+                  <label style={{ display: 'block', fontSize: '0.92rem', fontWeight: '700', color: 'var(--text-primary, #334155)', marginBottom: '0.4rem' }}>
                     Contact Email
                   </label>
                   <input
@@ -452,8 +470,10 @@ const CreateOrganizationModal = ({
                       width: '100%',
                       padding: '0.75rem 1rem',
                       borderRadius: '10px',
-                      border: '1.5px solid #cbd5e1',
+                      border: '1.5px solid var(--border-color, #cbd5e1)',
                       fontSize: '0.96rem',
+                      backgroundColor: 'var(--input-bg, #ffffff)',
+                      backgroundColor: 'var(--input-bg, #ffffff)',
                       outline: 'none',
                       boxSizing: 'border-box'
                     }}
@@ -461,7 +481,7 @@ const CreateOrganizationModal = ({
                 </div>
 
                 <div>
-                  <label style={{ display: 'block', fontSize: '0.92rem', fontWeight: '700', color: '#334155', marginBottom: '0.4rem' }}>
+                  <label style={{ display: 'block', fontSize: '0.92rem', fontWeight: '700', color: 'var(--text-primary, #334155)', marginBottom: '0.4rem' }}>
                     Password *
                   </label>
                   <input
@@ -474,13 +494,15 @@ const CreateOrganizationModal = ({
                       width: '100%',
                       padding: '0.75rem 1rem',
                       borderRadius: '10px',
-                      border: '1.5px solid #cbd5e1',
+                      border: '1.5px solid var(--border-color, #cbd5e1)',
                       fontSize: '0.96rem',
+                      backgroundColor: 'var(--input-bg, #ffffff)',
+                      backgroundColor: 'var(--input-bg, #ffffff)',
                       outline: 'none',
                       boxSizing: 'border-box'
                     }}
                   />
-                  <span style={{ fontSize: '0.8rem', color: '#64748b', marginTop: '0.25rem', display: 'block' }}>
+                  <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary, #64748b)', marginTop: '0.25rem', display: 'block' }}>
                     8-10 characters
                   </span>
                 </div>
@@ -494,7 +516,7 @@ const CreateOrganizationModal = ({
             justifyContent: 'flex-end',
             gap: '0.85rem',
             paddingTop: '1.25rem',
-            borderTop: '1px solid #e2e8f0'
+            borderTop: '1px solid var(--border-color, #e2e8f0)'
           }}>
             <button
               type="button"
@@ -502,9 +524,9 @@ const CreateOrganizationModal = ({
               style={{
                 padding: '0.65rem 1.4rem',
                 borderRadius: '10px',
-                border: '1.5px solid #cbd5e1',
-                backgroundColor: '#ffffff',
-                color: '#475569',
+                border: '1.5px solid var(--border-color, #cbd5e1)',
+                backgroundColor: 'var(--card-bg, #ffffff)',
+                color: 'var(--text-secondary, #475569)',
                 fontSize: '0.95rem',
                 fontWeight: '700',
                 cursor: 'pointer'

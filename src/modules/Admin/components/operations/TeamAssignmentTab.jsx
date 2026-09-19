@@ -23,39 +23,19 @@ const TeamAssignmentTab = ({
 }) => {
   const { language } = useLanguage();
   const [searchQuery, setSearchQuery] = useState('');
-  const [siteFilter, setSiteFilter] = useState('All'); // 'All', 'Sangamner', 'Pune', 'Nashik'
-  const [isSiteDropdownOpen, setIsSiteDropdownOpen] = useState(false);
-
-  const siteOptions = [
-    { value: 'All', label: language === 'mr' ? 'सर्व साईट्स' : 'All Sites (All Locations)' },
-    { value: 'Sangamner', label: language === 'mr' ? 'संगमनेर साईट (Sangamner)' : 'Sangamner Site' },
-    { value: 'Pune', label: language === 'mr' ? 'पुणे साईट (Pune)' : 'Pune Site' },
-    { value: 'Nashik', label: language === 'mr' ? 'नाशिक साईट (Nashik)' : 'Nashik Site' },
-  ];
 
   // Filtered Supervisors matching search query and site filter
   const filteredSupervisors = supervisors.filter((sup) => {
     if (searchQuery) {
       const q = searchQuery.toLowerCase();
       const match = (
-        sup.name?.toLowerCase().includes(q) ||
-        sup.phone?.includes(q) ||
-        sup.specialization?.toLowerCase().includes(q) ||
-        sup.email?.toLowerCase().includes(q)
+        (sup.name && String(sup.name).toLowerCase().includes(q)) ||
+        (sup.phone && String(sup.phone).toLowerCase().includes(q)) ||
+        (sup.specialization && String(sup.specialization).toLowerCase().includes(q)) ||
+        (sup.email && String(sup.email).toLowerCase().includes(q)) ||
+        (sup.location && String(sup.location).toLowerCase().includes(q))
       );
       if (!match) return false;
-    }
-
-    if (siteFilter !== 'All') {
-      const assignedProject = projects.find(p => 
-        (p.supervisorId && sup.id && p.supervisorId === sup.id) ||
-        (p.supervisorName && sup.name && p.supervisorName.trim().toLowerCase() === sup.name.trim().toLowerCase()) ||
-        (sup.activeProjects && sup.activeProjects.some(ap => ap === p.id || ap === p.code || ap === p.name))
-      );
-      if (!assignedProject) return false;
-      const matchesSite = assignedProject.name.toLowerCase().includes(siteFilter.toLowerCase()) ||
-        assignedProject.location?.toLowerCase().includes(siteFilter.toLowerCase());
-      if (!matchesSite) return false;
     }
 
     return true;
@@ -338,74 +318,7 @@ const TeamAssignmentTab = ({
           </p>
         </div>
 
-        {/* Top Right Action Buttons: Print, Excel, PDF */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', flexWrap: 'wrap' }}>
-          {/* 🖨️ Print Button */}
-          <button
-            onClick={handlePrint}
-            style={{
-              padding: '0.55rem 1.05rem',
-              borderRadius: '10px',
-              border: '1.5px solid #0284c7',
-              backgroundColor: '#ffffff',
-              color: '#0284c7',
-              fontSize: '0.92rem',
-              fontWeight: '700',
-              cursor: 'pointer',
-              display: 'inline-flex',
-              alignItems: 'center',
-              gap: '0.45rem',
-              boxShadow: '0 1px 2px rgba(0, 0, 0, 0.05)'
-            }}
-          >
-            <Printer size={16} />
-            <span>{language === 'mr' ? 'प्रिंट' : 'Print'}</span>
-          </button>
 
-          {/* 📄 Excel Button */}
-          <button
-            onClick={handleExportCSV}
-            style={{
-              padding: '0.55rem 1.05rem',
-              borderRadius: '10px',
-              border: '1.5px solid #16a34a',
-              backgroundColor: '#ffffff',
-              color: '#16a34a',
-              fontSize: '0.92rem',
-              fontWeight: '700',
-              cursor: 'pointer',
-              display: 'inline-flex',
-              alignItems: 'center',
-              gap: '0.45rem',
-              boxShadow: '0 1px 2px rgba(0, 0, 0, 0.05)'
-            }}
-          >
-            <FileSpreadsheet size={16} />
-            <span>{language === 'mr' ? 'एक्सेल' : 'Excel'}</span>
-          </button>
-
-          {/* 📥 PDF Button */}
-          <button
-            onClick={handleExportPDF}
-            style={{
-              padding: '0.55rem 1.05rem',
-              borderRadius: '10px',
-              border: '1.5px solid #dc2626',
-              backgroundColor: '#ffffff',
-              color: '#dc2626',
-              fontSize: '0.92rem',
-              fontWeight: '700',
-              cursor: 'pointer',
-              display: 'inline-flex',
-              alignItems: 'center',
-              gap: '0.45rem',
-              boxShadow: '0 1px 2px rgba(0, 0, 0, 0.05)'
-            }}
-          >
-            <Download size={16} />
-            <span>{language === 'mr' ? 'पीडीएफ' : 'PDF'}</span>
-          </button>
-        </div>
       </div>
 
       {/* 2. Controls Row: Search Input (Left) + Site Filter + Add Supervisor Button (Right) */}
@@ -442,101 +355,6 @@ const TeamAssignmentTab = ({
             />
           </div>
 
-          {/* Location Filter Dropdown */}
-          <div style={{ position: 'relative' }}>
-            <button
-              type="button"
-              onClick={() => setIsSiteDropdownOpen(!isSiteDropdownOpen)}
-              style={{
-                padding: '0.8rem 1.15rem 0.8rem 2.3rem',
-                borderRadius: '12px',
-                backgroundColor: isSiteDropdownOpen ? '#dbeafe' : '#ffffff',
-                border: `1.5px solid ${isSiteDropdownOpen ? '#2563eb' : '#cbd5e1'}`,
-                color: '#2563eb',
-                fontSize: '0.9rem',
-                fontWeight: '700',
-                cursor: 'pointer',
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: '0.45rem',
-                boxShadow: '0 1px 3px rgba(0, 0, 0, 0.04)',
-                transition: 'all 0.15s ease',
-                position: 'relative'
-              }}
-            >
-              <MapPin size={15} style={{ position: 'absolute', left: '0.75rem', color: '#2563eb' }} />
-              <span>{siteOptions.find(o => o.value === siteFilter)?.label || 'All Sites'}</span>
-              <ChevronDown size={15} style={{ color: '#2563eb', transform: isSiteDropdownOpen ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s' }} />
-            </button>
-
-            {/* Floating Dropdown Menu */}
-            {isSiteDropdownOpen && (
-              <>
-                <div 
-                  style={{ position: 'fixed', inset: 0, zIndex: 9998 }} 
-                  onClick={() => setIsSiteDropdownOpen(false)} 
-                />
-                <div style={{
-                  position: 'absolute',
-                  top: 'calc(100% + 6px)',
-                  right: 0,
-                  minWidth: '240px',
-                  backgroundColor: '#ffffff',
-                  borderRadius: '12px',
-                  border: '1.5px solid #cbd5e1',
-                  boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.2), 0 10px 10px -5px rgba(0, 0, 0, 0.1)',
-                  zIndex: 9999,
-                  padding: '0.45rem',
-                  overflow: 'hidden'
-                }}>
-                  {siteOptions.map((opt) => {
-                    const isSelected = siteFilter === opt.value;
-                    return (
-                      <button
-                        key={opt.value}
-                        type="button"
-                        onClick={() => {
-                          setSiteFilter(opt.value);
-                          setIsSiteDropdownOpen(false);
-                        }}
-                        style={{
-                          width: '100%',
-                          padding: '0.65rem 0.95rem',
-                          borderRadius: '8px',
-                          border: 'none',
-                          backgroundColor: isSelected ? '#2563eb' : '#ffffff',
-                          color: isSelected ? '#ffffff' : '#0f172a',
-                          fontSize: '0.9rem',
-                          fontWeight: isSelected ? '800' : '600',
-                          cursor: 'pointer',
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'space-between',
-                          textAlign: 'left',
-                          transition: 'all 0.12s ease'
-                        }}
-                        onMouseEnter={(e) => {
-                          if (!isSelected) {
-                            e.currentTarget.style.backgroundColor = '#eff6ff';
-                            e.currentTarget.style.color = '#2563eb';
-                          }
-                        }}
-                        onMouseLeave={(e) => {
-                          if (!isSelected) {
-                            e.currentTarget.style.backgroundColor = '#ffffff';
-                            e.currentTarget.style.color = '#0f172a';
-                          }
-                        }}
-                      >
-                        <span>{opt.label}</span>
-                        {isSelected && <CheckCircle2 size={16} style={{ color: '#ffffff' }} />}
-                      </button>
-                    );
-                  })}
-                </div>
-              </>
-            )}
-          </div>
         </div>
 
         {/* ➕ Add Supervisor Button (Gradient Pill Button on Right) */}
@@ -618,12 +436,14 @@ const TeamAssignmentTab = ({
                 </tr>
               ) : (
                 filteredSupervisors.map((sup, idx) => {
-                  const assignedProject = projects.find(p => 
+                  const assignedProjects = projects.filter(p => 
                     (p.supervisorId && sup.id && p.supervisorId === sup.id) ||
+                    (p.supervisor_id && sup.id && p.supervisor_id === sup.id) ||
                     (p.supervisorName && sup.name && p.supervisorName.trim().toLowerCase() === sup.name.trim().toLowerCase()) ||
-                    (sup.activeProjects && sup.activeProjects.some(ap => ap === p.id || ap === p.code || ap === p.name))
+                    (sup.activeProjects && sup.activeProjects.some(ap => ap === p.id || ap === p.code || ap === p.name)) ||
+                    (p.assignees && Array.isArray(p.assignees) && p.assignees.some(a => a.id === sup.id))
                   );
-                  const isOnSite = Boolean(assignedProject || sup.status === 'On-Site' || sup.status === 'Active');
+                  const isOnSite = Boolean(assignedProjects.length > 0 || sup.status === 'On-Site' || sup.status === 'Active');
 
                   return (
                     <tr
@@ -674,21 +494,25 @@ const TeamAssignmentTab = ({
 
                       {/* Phone */}
                       <td style={{ padding: '1rem', whiteSpace: 'nowrap' }}>
-                        <span style={{ color: '#0f172a', fontSize: '0.9rem', fontWeight: '700' }}>
+                        <span style={{ color: 'var(--text-primary, #0f172a)', fontSize: '0.9rem', fontWeight: '700' }}>
                           {(sup.phone && sup.phone.length > 7) ? sup.phone : (sup.name?.toLowerCase().includes('sagar') ? '9422088990' : '9822011223')}
                         </span>
                       </td>
 
                       {/* Location / Assigned Site */}
                       <td style={{ padding: '1rem' }}>
-                        {assignedProject ? (
-                          <div>
-                            <span style={{ color: 'var(--text-primary, #0f172a)', fontSize: '0.92rem', fontWeight: '700', display: 'block' }}>
-                              {assignedProject.name}
-                            </span>
-                            <span style={{ fontSize: '0.8rem', color: '#64748b', display: 'block', marginTop: '1px' }}>
-                              {assignedProject.location || 'Maharashtra, India'}
-                            </span>
+                        {assignedProjects && assignedProjects.length > 0 ? (
+                          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                            {assignedProjects.map((ap) => (
+                              <div key={ap.id || ap.code || ap.name}>
+                                <strong style={{ color: 'var(--text-primary, #0f172a)', fontSize: '0.92rem', fontWeight: '700', display: 'block' }}>
+                                  {ap.name}
+                                </strong>
+                                <span style={{ fontSize: '0.8rem', color: '#64748b', display: 'block', marginTop: '1px' }}>
+                                  {ap.location || 'Maharashtra, India'}
+                                </span>
+                              </div>
+                            ))}
                           </div>
                         ) : (
                           <span style={{ fontSize: '0.88rem', color: '#64748b' }}>
@@ -719,7 +543,7 @@ const TeamAssignmentTab = ({
                         <div style={{ display: 'inline-flex', alignItems: 'center', gap: '0.45rem' }}>
                           {/* Assign / Change Site Button */}
                           <button
-                            onClick={() => onOpenAssignTeam && onOpenAssignTeam(assignedProject ? { ...assignedProject } : { supervisorId: sup.id, supervisorName: sup.name, supervisorPhone: sup.phone, supervisorOnly: true })}
+                            onClick={() => onOpenAssignTeam && onOpenAssignTeam({ supervisorId: sup.id, supervisorName: sup.name, supervisorPhone: sup.phone, supervisorOnly: true })}
                             title={language === 'mr' ? 'प्रोजेक्ट साईट नेमा / बदला' : 'Assign / Change Project'}
                             style={{
                               padding: '0.45rem 0.75rem',

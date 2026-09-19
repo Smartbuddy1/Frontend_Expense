@@ -329,74 +329,7 @@ export const OrganizationsTab = ({
           </p>
         </div>
 
-        {/* Action Tools: Print, Excel, PDF (On Top Right) */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem', flexWrap: 'wrap' }}>
-          {/* 🖨️ Print */}
-          <button
-            onClick={handlePrint}
-            style={{
-              padding: '0.55rem 1.05rem',
-              borderRadius: '10px',
-              border: '1.5px solid #0284c7',
-              backgroundColor: '#ffffff',
-              color: '#0284c7',
-              fontSize: '0.92rem',
-              fontWeight: '700',
-              cursor: 'pointer',
-              display: 'inline-flex',
-              alignItems: 'center',
-              gap: '0.45rem',
-              boxShadow: '0 1px 2px rgba(0, 0, 0, 0.05)'
-            }}
-          >
-            <Printer size={16} />
-            <span>Print</span>
-          </button>
 
-          {/* 📄 Excel */}
-          <button
-            onClick={handleExportExcel}
-            style={{
-              padding: '0.55rem 1.05rem',
-              borderRadius: '10px',
-              border: '1.5px solid #16a34a',
-              backgroundColor: '#ffffff',
-              color: '#16a34a',
-              fontSize: '0.92rem',
-              fontWeight: '700',
-              cursor: 'pointer',
-              display: 'inline-flex',
-              alignItems: 'center',
-              gap: '0.45rem',
-              boxShadow: '0 1px 2px rgba(0, 0, 0, 0.05)'
-            }}
-          >
-            <FileSpreadsheet size={16} />
-            <span>Excel</span>
-          </button>
-
-          {/* 📥 PDF */}
-          <button
-            onClick={handleExportPDF}
-            style={{
-              padding: '0.55rem 1.05rem',
-              borderRadius: '10px',
-              border: '1.5px solid #dc2626',
-              backgroundColor: '#ffffff',
-              color: '#dc2626',
-              fontSize: '0.92rem',
-              fontWeight: '700',
-              cursor: 'pointer',
-              display: 'inline-flex',
-              alignItems: 'center',
-              gap: '0.45rem',
-              boxShadow: '0 1px 2px rgba(0, 0, 0, 0.05)'
-            }}
-          >
-            <Download size={16} />
-            <span>PDF</span>
-          </button>
-        </div>
       </div>
 
       {/* 2. Controls Row: Search Bar (Left) + Add Operational Head Button (Right) */}
@@ -527,7 +460,7 @@ export const OrganizationsTab = ({
                       onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
                     >
                       {/* ID */}
-                      <td style={{ padding: '1rem', textAlign: 'center', fontWeight: '700', color: '#64748b', fontSize: '0.92rem', whiteSpace: 'nowrap' }}>
+                      <td style={{ padding: '1rem', textAlign: 'center', fontWeight: '700', color: 'var(--text-secondary, #64748b)', fontSize: '0.92rem', whiteSpace: 'nowrap' }}>
                         {index + 1}
                       </td>
 
@@ -538,14 +471,14 @@ export const OrganizationsTab = ({
                             width: '38px',
                             height: '38px',
                             borderRadius: '10px',
-                            backgroundColor: '#eff6ff',
-                            color: '#2563eb',
+                            backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                            color: '#3b82f6',
                             display: 'flex',
                             alignItems: 'center',
                             justifyContent: 'center',
                             fontWeight: '800',
                             fontSize: '0.95rem',
-                            border: '1.5px solid #bfdbfe',
+                            border: '1.5px solid rgba(59, 130, 246, 0.2)',
                             flexShrink: 0
                           }}>
                             {head.name?.charAt(0).toUpperCase() || 'D'}
@@ -555,7 +488,7 @@ export const OrganizationsTab = ({
                               {head.name}
                             </strong>
                             {head.email && (
-                              <span style={{ fontSize: '0.78rem', color: '#64748b', display: 'block', marginTop: '1px' }}>
+                              <span style={{ fontSize: '0.78rem', color: 'var(--text-secondary, #64748b)', display: 'block', marginTop: '1px' }}>
                                 {head.email}
                               </span>
                             )}
@@ -565,15 +498,15 @@ export const OrganizationsTab = ({
 
                       {/* Phone Number */}
                       <td style={{ padding: '1rem', whiteSpace: 'nowrap' }}>
-                        <span style={{ color: '#0f172a', fontSize: '0.9rem', fontWeight: '700' }}>
+                        <span style={{ color: 'var(--text-primary, #0f172a)', fontSize: '0.9rem', fontWeight: '700' }}>
                           {head.phone || '+91 93596 04384'}
                         </span>
                       </td>
 
                       {/* Location */}
-                      <td style={{ padding: '1rem', whiteSpace: 'nowrap', color: '#334155', fontWeight: '600' }}>
+                      <td style={{ padding: '1rem', whiteSpace: 'nowrap', color: 'var(--text-secondary, #334155)', fontWeight: '600' }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
-                          <MapPin size={14} style={{ color: '#64748b', flexShrink: 0 }} />
+                          <MapPin size={14} style={{ color: 'var(--text-secondary, #64748b)', flexShrink: 0 }} />
                           <span>{head.location || 'Head Office - Pune, Maharashtra'}</span>
                         </div>
                       </td>

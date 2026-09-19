@@ -85,9 +85,9 @@ const CreateTeamMemberModal = ({
       boxSizing: 'border-box'
     }}>
       <div style={{
-        backgroundColor: '#ffffff',
+        backgroundColor: 'var(--card-bg, #ffffff)',
         borderRadius: '18px',
-        border: '1px solid #e2e8f0',
+        border: '1px solid var(--border-color, #e2e8f0)',
         boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)',
         width: '100%',
         maxWidth: '620px',
@@ -100,17 +100,17 @@ const CreateTeamMemberModal = ({
         {/* Header */}
         <div style={{
           padding: '1.35rem 1.75rem',
-          borderBottom: '1.5px solid #e2e8f0',
+          borderBottom: '1.5px solid var(--border-color, #e2e8f0)',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'space-between',
-          backgroundColor: '#ffffff'
+          backgroundColor: 'var(--card-bg, #ffffff)'
         }}>
           <div>
-            <h2 style={{ fontSize: '1.4rem', fontWeight: '800', color: '#0f172a', margin: 0 }}>
+            <h2 style={{ fontSize: '1.4rem', fontWeight: '800', color: 'var(--text-primary, #0f172a)', margin: 0 }}>
               {editingMember ? 'Edit Team Member' : 'Add New Team Member'}
             </h2>
-            <p style={{ fontSize: '0.86rem', color: '#64748b', margin: '0.2rem 0 0 0' }}>
+            <p style={{ fontSize: '0.86rem', color: 'var(--text-secondary, #64748b)', margin: '0.2rem 0 0 0' }}>
               Register on-site technician, fitter, electrician or helper
             </p>
           </div>
@@ -120,7 +120,7 @@ const CreateTeamMemberModal = ({
             style={{
               background: 'transparent',
               border: 'none',
-              color: '#64748b',
+              color: 'var(--text-secondary, #64748b)',
               cursor: 'pointer',
               padding: '0.4rem',
               borderRadius: '8px',
@@ -137,7 +137,7 @@ const CreateTeamMemberModal = ({
           {/* Row 1: Full Name * & Phone * */}
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '1rem' }}>
             <div>
-              <label style={{ display: 'block', fontSize: '0.92rem', fontWeight: '700', color: '#1e293b', marginBottom: '0.4rem' }}>
+              <label style={{ display: 'block', fontSize: '0.92rem', fontWeight: '700', color: 'var(--text-primary, #1e293b)', marginBottom: '0.4rem' }}>
                 Full Name *
               </label>
               <input
@@ -150,9 +150,11 @@ const CreateTeamMemberModal = ({
                   width: '100%',
                   padding: '0.75rem 1rem',
                   borderRadius: '10px',
-                  border: '1.5px solid #cbd5e1',
+                  border: '1.5px solid var(--border-color, #cbd5e1)',
                   fontSize: '0.95rem',
-                  color: '#0f172a',
+                  color: 'var(--text-primary, #0f172a)',
+                  backgroundColor: 'var(--input-bg, #ffffff)',
+                  backgroundColor: 'var(--input-bg, #ffffff)',
                   outline: 'none',
                   boxSizing: 'border-box'
                 }}
@@ -160,7 +162,7 @@ const CreateTeamMemberModal = ({
             </div>
 
             <div>
-              <label style={{ display: 'block', fontSize: '0.92rem', fontWeight: '700', color: '#1e293b', marginBottom: '0.4rem' }}>
+              <label style={{ display: 'block', fontSize: '0.92rem', fontWeight: '700', color: 'var(--text-primary, #1e293b)', marginBottom: '0.4rem' }}>
                 Contact Phone *
               </label>
               <input
@@ -173,9 +175,11 @@ const CreateTeamMemberModal = ({
                   width: '100%',
                   padding: '0.75rem 1rem',
                   borderRadius: '10px',
-                  border: '1.5px solid #cbd5e1',
+                  border: '1.5px solid var(--border-color, #cbd5e1)',
                   fontSize: '0.95rem',
-                  color: '#0f172a',
+                  color: 'var(--text-primary, #0f172a)',
+                  backgroundColor: 'var(--input-bg, #ffffff)',
+                  backgroundColor: 'var(--input-bg, #ffffff)',
                   outline: 'none',
                   boxSizing: 'border-box'
                 }}
@@ -186,7 +190,7 @@ const CreateTeamMemberModal = ({
           {/* Row 2: Email Address * & Password * */}
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '1rem' }}>
             <div>
-              <label style={{ display: 'block', fontSize: '0.92rem', fontWeight: '700', color: '#1e293b', marginBottom: '0.4rem' }}>
+              <label style={{ display: 'block', fontSize: '0.92rem', fontWeight: '700', color: 'var(--text-primary, #1e293b)', marginBottom: '0.4rem' }}>
                 Email Address *
               </label>
               <input
@@ -199,9 +203,11 @@ const CreateTeamMemberModal = ({
                   width: '100%',
                   padding: '0.75rem 1rem',
                   borderRadius: '10px',
-                  border: '1.5px solid #cbd5e1',
+                  border: '1.5px solid var(--border-color, #cbd5e1)',
                   fontSize: '0.95rem',
-                  color: '#0f172a',
+                  color: 'var(--text-primary, #0f172a)',
+                  backgroundColor: 'var(--input-bg, #ffffff)',
+                  backgroundColor: 'var(--input-bg, #ffffff)',
                   outline: 'none',
                   boxSizing: 'border-box'
                 }}
@@ -209,7 +215,7 @@ const CreateTeamMemberModal = ({
             </div>
 
             <div>
-              <label style={{ display: 'block', fontSize: '0.92rem', fontWeight: '700', color: '#1e293b', marginBottom: '0.4rem' }}>
+              <label style={{ display: 'block', fontSize: '0.92rem', fontWeight: '700', color: 'var(--text-primary, #1e293b)', marginBottom: '0.4rem' }}>
                 Password *
               </label>
               <input
@@ -222,9 +228,11 @@ const CreateTeamMemberModal = ({
                   width: '100%',
                   padding: '0.75rem 1rem',
                   borderRadius: '10px',
-                  border: '1.5px solid #cbd5e1',
+                  border: '1.5px solid var(--border-color, #cbd5e1)',
                   fontSize: '0.95rem',
-                  color: '#0f172a',
+                  color: 'var(--text-primary, #0f172a)',
+                  backgroundColor: 'var(--input-bg, #ffffff)',
+                  backgroundColor: 'var(--input-bg, #ffffff)',
                   outline: 'none',
                   boxSizing: 'border-box'
                 }}
@@ -235,7 +243,7 @@ const CreateTeamMemberModal = ({
           {/* Row 3: Trade / Skill Role * & Assign Project Site */}
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '1rem' }}>
             <div>
-              <label style={{ display: 'block', fontSize: '0.92rem', fontWeight: '700', color: '#1e293b', marginBottom: '0.4rem' }}>
+              <label style={{ display: 'block', fontSize: '0.92rem', fontWeight: '700', color: 'var(--text-primary, #1e293b)', marginBottom: '0.4rem' }}>
                 Trade / Skill Role *
               </label>
               <select
@@ -245,11 +253,13 @@ const CreateTeamMemberModal = ({
                   width: '100%',
                   padding: '0.75rem 1rem',
                   borderRadius: '10px',
-                  border: '1.5px solid #cbd5e1',
+                  border: '1.5px solid var(--border-color, #cbd5e1)',
                   fontSize: '0.95rem',
-                  color: '#0f172a',
+                  color: 'var(--text-primary, #0f172a)',
+                  backgroundColor: 'var(--input-bg, #ffffff)',
+                  backgroundColor: 'var(--input-bg, #ffffff)',
                   outline: 'none',
-                  backgroundColor: '#ffffff',
+                  backgroundColor: 'var(--card-bg, #ffffff)',
                   boxSizing: 'border-box'
                 }}
               >
@@ -264,7 +274,7 @@ const CreateTeamMemberModal = ({
             </div>
 
             <div>
-              <label style={{ display: 'block', fontSize: '0.92rem', fontWeight: '700', color: '#1e293b', marginBottom: '0.4rem' }}>
+              <label style={{ display: 'block', fontSize: '0.92rem', fontWeight: '700', color: 'var(--text-primary, #1e293b)', marginBottom: '0.4rem' }}>
                 Assign Project Site
               </label>
               <select
@@ -274,11 +284,13 @@ const CreateTeamMemberModal = ({
                   width: '100%',
                   padding: '0.75rem 1rem',
                   borderRadius: '10px',
-                  border: '1.5px solid #cbd5e1',
+                  border: '1.5px solid var(--border-color, #cbd5e1)',
                   fontSize: '0.95rem',
-                  color: '#0f172a',
+                  color: 'var(--text-primary, #0f172a)',
+                  backgroundColor: 'var(--input-bg, #ffffff)',
+                  backgroundColor: 'var(--input-bg, #ffffff)',
                   outline: 'none',
-                  backgroundColor: '#ffffff',
+                  backgroundColor: 'var(--card-bg, #ffffff)',
                   boxSizing: 'border-box'
                 }}
               >
@@ -292,7 +304,7 @@ const CreateTeamMemberModal = ({
 
           {/* Row 4: Operational Status */}
           <div>
-            <label style={{ display: 'block', fontSize: '0.92rem', fontWeight: '700', color: '#1e293b', marginBottom: '0.4rem' }}>
+            <label style={{ display: 'block', fontSize: '0.92rem', fontWeight: '700', color: 'var(--text-primary, #1e293b)', marginBottom: '0.4rem' }}>
               Operational Status
             </label>
             <select
@@ -302,11 +314,13 @@ const CreateTeamMemberModal = ({
                 width: '100%',
                 padding: '0.75rem 1rem',
                 borderRadius: '10px',
-                border: '1.5px solid #cbd5e1',
+                border: '1.5px solid var(--border-color, #cbd5e1)',
                 fontSize: '0.95rem',
-                color: '#0f172a',
+                color: 'var(--text-primary, #0f172a)',
+                backgroundColor: 'var(--input-bg, #ffffff)',
+                backgroundColor: 'var(--input-bg, #ffffff)',
                 outline: 'none',
-                backgroundColor: '#ffffff',
+                backgroundColor: 'var(--card-bg, #ffffff)',
                 boxSizing: 'border-box'
               }}
             >
@@ -323,7 +337,7 @@ const CreateTeamMemberModal = ({
             justifyContent: 'flex-end',
             gap: '0.85rem',
             paddingTop: '1.25rem',
-            borderTop: '1.5px solid #f1f5f9',
+            borderTop: '1.5px solid var(--border-color, #f1f5f9)',
             marginTop: '0.4rem'
           }}>
             <button
@@ -332,9 +346,9 @@ const CreateTeamMemberModal = ({
               style={{
                 padding: '0.75rem 1.5rem',
                 borderRadius: '10px',
-                border: '1.5px solid #cbd5e1',
-                backgroundColor: '#ffffff',
-                color: '#475569',
+                border: '1.5px solid var(--border-color, #cbd5e1)',
+                backgroundColor: 'var(--card-bg, #ffffff)',
+                color: 'var(--text-secondary, #475569)',
                 fontSize: '0.95rem',
                 fontWeight: '700',
                 cursor: 'pointer'
