@@ -98,10 +98,8 @@ const CreateOperationalHeadModal = ({
         <div style={{
           padding: '1.25rem 1.5rem',
           borderBottom: '1px solid var(--border-color, #e2e8f0)',
-          background: isEdit 
-            ? 'linear-gradient(135deg, #1e3a8a 0%, #2563eb 100%)' 
-            : 'linear-gradient(135deg, #0f172a 0%, #1e3a8a 100%)',
-          color: '#ffffff',
+          background: 'var(--bg-panel)',
+          color: 'var(--text-primary)',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'space-between'
@@ -111,7 +109,7 @@ const CreateOperationalHeadModal = ({
               width: '40px',
               height: '40px',
               borderRadius: '12px',
-              backgroundColor: 'rgba(255, 255, 255, 0.15)',
+              backgroundColor: 'rgba(59, 130, 246, 0.15)',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
@@ -120,10 +118,10 @@ const CreateOperationalHeadModal = ({
               <ShieldCheck size={22} style={{ color: '#60a5fa' }} />
             </div>
             <div>
-              <h2 style={{ fontSize: '1.2rem', fontWeight: '800', margin: 0, color: '#ffffff' }}>
+              <h2 style={{ fontSize: '1.2rem', fontWeight: '800', margin: 0, color: 'var(--text-primary)' }}>
                 {isEdit ? 'Edit Operational Head' : 'Add New Operational Head'}
               </h2>
-              <p style={{ fontSize: '0.8rem', margin: '0.15rem 0 0 0', color: '#bfdbfe' }}>
+              <p style={{ fontSize: '0.8rem', margin: '0.15rem 0 0 0', color: 'var(--text-secondary)' }}>
                 Operational Head Credentials & Role
               </p>
             </div>
@@ -131,7 +129,7 @@ const CreateOperationalHeadModal = ({
           <button
             onClick={onClose}
             style={{
-              background: 'rgba(255, 255, 255, 0.15)',
+              background: 'transparent',
               border: 'none',
               borderRadius: '8px',
               width: '32px',
@@ -139,7 +137,7 @@ const CreateOperationalHeadModal = ({
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              color: '#ffffff',
+              color: 'var(--text-secondary)',
               cursor: 'pointer'
             }}
           >

@@ -90,10 +90,8 @@ const CreateSupervisorModal = ({ isOpen, onClose, onCreateSupervisor, editingSup
         {/* Modal Header */}
         <div style={{
           padding: '1.25rem 1.5rem',
-          borderBottom: '1px solid #e2e8f0',
-          background: isEdit 
-            ? 'linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%)'
-            : 'linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%)',
+          borderBottom: '1px solid var(--border-color, #e2e8f0)',
+          background: 'var(--bg-panel)',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'space-between'

@@ -133,11 +133,11 @@ const CreateProjectModal = ({ isOpen, onClose, onSave, editingProject, superviso
         {/* Modal Header */}
         <div style={{
           padding: '1.25rem 1.5rem',
-          borderBottom: '1px solid #e2e8f0',
+          borderBottom: '1px solid var(--border-color, #e2e8f0)',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'space-between',
-          background: 'linear-gradient(135deg, #f8fafc 0%, #eff6ff 100%)'
+          background: 'var(--bg-panel)'
         }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.85rem' }}>
             <div style={{
@@ -171,7 +171,7 @@ const CreateProjectModal = ({ isOpen, onClose, onSave, editingProject, superviso
             style={{
               background: 'transparent',
               border: 'none',
-              color: '#94a3b8',
+              color: 'var(--text-secondary, #94a3b8)',
               cursor: 'pointer',
               padding: '0.5rem',
               borderRadius: '8px',
@@ -181,12 +181,12 @@ const CreateProjectModal = ({ isOpen, onClose, onSave, editingProject, superviso
               transition: 'all 0.15s ease'
             }}
             onMouseEnter={(e) => {
-              e.currentTarget.style.backgroundColor = '#f1f5f9';
-              e.currentTarget.style.color = '#0f172a';
+              e.currentTarget.style.backgroundColor = 'var(--hover-bg, #f1f5f9)';
+              e.currentTarget.style.color = 'var(--text-primary, #0f172a)';
             }}
             onMouseLeave={(e) => {
               e.currentTarget.style.backgroundColor = 'transparent';
-              e.currentTarget.style.color = '#94a3b8';
+              e.currentTarget.style.color = 'var(--text-secondary, #94a3b8)';
             }}
           >
             <X size={20} />

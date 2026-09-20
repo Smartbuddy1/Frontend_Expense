@@ -1046,12 +1046,13 @@ const ReconciliationTab = ({
                                 fontSize: '0.8rem',
                                 fontWeight: '800',
                                 border: 'none',
-                                backgroundColor: 'transparent',
+                                background: 'transparent',
+                                appearance: 'none',
+                                WebkitAppearance: 'none',
                                 color: isHighUrgency ? '#ef4444' : isMediumUrgency ? '#f59e0b' : '#3b82f6',
                                 cursor: req.status === 'Pending' ? 'pointer' : 'not-allowed',
                                 outline: 'none',
-                                padding: '0',
-                                appearance: 'none',
+                                padding: '0'
                               }}
                             >
                               <option value="Immediate">Immediate</option>

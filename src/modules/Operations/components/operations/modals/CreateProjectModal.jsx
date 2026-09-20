@@ -137,7 +137,7 @@ const CreateProjectModal = ({ isOpen, onClose, onSave, editingProject, superviso
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'space-between',
-          background: 'linear-gradient(135deg, #f8fafc 0%, #eff6ff 100%)'
+          background: 'var(--bg-panel)'
         }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.85rem' }}>
             <div style={{
@@ -171,7 +171,7 @@ const CreateProjectModal = ({ isOpen, onClose, onSave, editingProject, superviso
             style={{
               background: 'transparent',
               border: 'none',
-              color: '#94a3b8',
+              color: 'var(--text-secondary, #94a3b8)',
               cursor: 'pointer',
               padding: '0.5rem',
               borderRadius: '8px',
@@ -181,12 +181,12 @@ const CreateProjectModal = ({ isOpen, onClose, onSave, editingProject, superviso
               transition: 'all 0.15s ease'
             }}
             onMouseEnter={(e) => {
-              e.currentTarget.style.backgroundColor = '#f1f5f9';
-              e.currentTarget.style.color = '#0f172a';
+              e.currentTarget.style.backgroundColor = 'var(--hover-bg, #f1f5f9)';
+              e.currentTarget.style.color = 'var(--text-primary, #0f172a)';
             }}
             onMouseLeave={(e) => {
               e.currentTarget.style.backgroundColor = 'transparent';
-              e.currentTarget.style.color = '#94a3b8';
+              e.currentTarget.style.color = 'var(--text-secondary, #94a3b8)';
             }}
           >
             <X size={20} />
