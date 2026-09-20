@@ -1038,27 +1038,37 @@ const ReconciliationTab = ({
                             border: `1px solid ${isHighUrgency ? 'rgba(239, 68, 68, 0.3)' : isMediumUrgency ? 'rgba(245, 158, 11, 0.3)' : 'rgba(59, 130, 246, 0.3)'}`
                           }}>
                             <Clock size={13} style={{ color: isHighUrgency ? '#ef4444' : isMediumUrgency ? '#f59e0b' : '#3b82f6' }} />
-                            <select
-                              value={displayUrgency}
-                              onChange={(e) => handleUpdateUrgency(req.id, e.target.value)}
-                              disabled={req.status !== 'Pending'}
-                              style={{
+                            {req.status === 'Pending' ? (
+                              <select
+                                value={displayUrgency}
+                                onChange={(e) => handleUpdateUrgency(req.id, e.target.value)}
+                                style={{
+                                  fontSize: '0.8rem',
+                                  fontWeight: '800',
+                                  border: 'none',
+                                  background: 'transparent',
+                                  backgroundColor: 'transparent',
+                                  appearance: 'none',
+                                  WebkitAppearance: 'none',
+                                  color: isHighUrgency ? '#ef4444' : isMediumUrgency ? '#f59e0b' : '#3b82f6',
+                                  cursor: 'pointer',
+                                  outline: 'none',
+                                  padding: '0'
+                                }}
+                              >
+                                <option value="Immediate">Immediate</option>
+                                <option value="Within 24 Hours">Within 24 Hours</option>
+                                <option value="Regular">Regular</option>
+                              </select>
+                            ) : (
+                              <span style={{
                                 fontSize: '0.8rem',
                                 fontWeight: '800',
-                                border: 'none',
-                                background: 'transparent',
-                                appearance: 'none',
-                                WebkitAppearance: 'none',
-                                color: isHighUrgency ? '#ef4444' : isMediumUrgency ? '#f59e0b' : '#3b82f6',
-                                cursor: req.status === 'Pending' ? 'pointer' : 'not-allowed',
-                                outline: 'none',
-                                padding: '0'
-                              }}
-                            >
-                              <option value="Immediate">Immediate</option>
-                              <option value="Within 24 Hours">Within 24 Hours</option>
-                              <option value="Regular">Regular</option>
-                            </select>
+                                color: isHighUrgency ? '#ef4444' : isMediumUrgency ? '#f59e0b' : '#3b82f6'
+                              }}>
+                                {displayUrgency}
+                              </span>
+                            )}
                           </div>
                         </td>
 
