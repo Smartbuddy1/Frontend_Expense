@@ -120,6 +120,29 @@ const ReconciliationTab = ({
   // Float state for supervisors — derived live from real projects/expenses/advances:
   // total advance = disbursed advances for their project, total spent = ops-approved
   // or accounts-paid expenses for that project (matches GET /projects/:id/wallet).
+  const supervisorWallets = useMemo(() => {
+    const wallets = {};
+    advances.forEach(a => {
+      if (a.rawStatus === 'disbursed') {
+        const sId = a.supervisorId || a.requestedById || a.supervisor;
+        if (sId) {
+          if (!wallets[sId]) wallets[sId] = { advance: 0, spent: 0 };
+          wallets[sId].advance += (a.amount || 0);
+        }
+      }
+    });
+    expenses.forEach(e => {
+      if (e.status === 'Approved' || e.status === 'Paid') {
+        const sId = e.supervisorId || e.submittedById || e.supervisorName || e.submittedBy;
+        if (sId) {
+          if (!wallets[sId]) wallets[sId] = { advance: 0, spent: 0 };
+          wallets[sId].spent += (e.amount || 0);
+        }
+      }
+    });
+    return wallets;
+  }, [advances, expenses]);
+
   const supervisorFloats = useMemo(() => {
     return projects
       .filter(p => p.supervisorId)
@@ -940,8 +963,9 @@ const ReconciliationTab = ({
                     if (isHighUrgency) displayUrgency = 'Immediate';
                     else if (isMediumUrgency) displayUrgency = 'Within 24 Hours';
 
-                    const supFloat = supervisors.find(s => s.id === req.supervisorId || s.name === req.supervisor);
-                    const walletBalance = supFloat ? supFloat.walletBalance : 0;
+                    const sId = req.supervisorId || req.supervisor;
+                    const wallet = sId ? supervisorWallets[sId] : null;
+                    const walletBalance = wallet ? wallet.advance - wallet.spent : 0;
 
                     return (
                       <tr
