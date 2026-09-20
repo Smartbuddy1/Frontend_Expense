@@ -85,19 +85,18 @@ const SubmitExpenseModal = ({ isOpen, onClose, onSubmit, projects = [], supervis
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'space-between',
-          background: 'linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%)'
+          background: 'var(--bg-panel)'
         }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.85rem' }}>
             <div style={{
               width: '42px',
               height: '42px',
               borderRadius: '12px',
-              backgroundColor: '#10b981',
-              color: '#ffffff',
+              backgroundColor: 'rgba(16, 185, 129, 0.15)',
+              color: '#10b981',
               display: 'flex',
               alignItems: 'center',
-              justifyContent: 'center',
-              boxShadow: '0 4px 12px rgba(16, 185, 129, 0.3)'
+              justifyContent: 'center'
             }}>
               <IndianRupee size={22} />
             </div>
@@ -125,8 +124,8 @@ const SubmitExpenseModal = ({ isOpen, onClose, onSubmit, projects = [], supervis
               transition: 'all 0.15s ease'
             }}
             onMouseEnter={(e) => {
-              e.currentTarget.style.backgroundColor = '#f1f5f9';
-              e.currentTarget.style.color = '#0f172a';
+              e.currentTarget.style.backgroundColor = 'var(--hover-bg, rgba(255,255,255,0.1))';
+              e.currentTarget.style.color = 'var(--text-primary, #0f172a)';
             }}
             onMouseLeave={(e) => {
               e.currentTarget.style.backgroundColor = 'transparent';

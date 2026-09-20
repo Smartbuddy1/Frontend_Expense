@@ -118,9 +118,9 @@ const CreateProjectModal = ({ isOpen, onClose, onSave, editingProject, superviso
       boxSizing: 'border-box'
     }}>
       <div style={{
-        backgroundColor: '#ffffff',
+        backgroundColor: 'var(--card-bg, #ffffff)',
         borderRadius: '20px',
-        border: '1px solid #e2e8f0',
+        border: '1px solid var(--border-color, #e2e8f0)',
         boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.35)',
         width: '100%',
         maxWidth: '680px',
@@ -154,12 +154,12 @@ const CreateProjectModal = ({ isOpen, onClose, onSave, editingProject, superviso
               <Building2 size={22} />
             </div>
             <div>
-              <h2 style={{ fontSize: '1.25rem', fontWeight: '800', color: '#0f172a', margin: 0, lineHeight: 1.2 }}>
+              <h2 style={{ fontSize: '1.25rem', fontWeight: '800', color: 'var(--text-primary, #0f172a)', margin: 0, lineHeight: 1.2 }}>
                 {editingProject 
                   ? (language === 'mr' ? 'प्रोजेक्ट माहिती बदला (Edit Project)' : 'Edit Project Details') 
                   : (language === 'mr' ? 'नवीन प्रोजेक्ट तयार करा (Create Project)' : 'Create New Project')}
               </h2>
-              <p style={{ fontSize: '0.8rem', color: '#64748b', margin: '0.2rem 0 0 0' }}>
+              <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary, #64748b)', margin: '0.2rem 0 0 0' }}>
                 {editingProject 
                   ? (language === 'mr' ? 'प्रोजेक्टचे नाव, क्लायंट आणि सुपरवायझर अपडेट करा' : 'Update project parameters & supervisor') 
                   : (language === 'mr' ? 'नवीन ई-टॉयलेट किंवा सिव्हिल साईट नोंदवा' : 'Define new project scope & supervisor')}
@@ -210,9 +210,9 @@ const CreateProjectModal = ({ isOpen, onClose, onSave, editingProject, superviso
                 padding: '0.65rem 0.85rem',
                 borderRadius: '10px',
                 border: '1px solid #cbd5e1',
-                backgroundColor: editingProject ? '#f8fafc' : '#ffffff',
+                backgroundColor: editingProject ? 'var(--hover-bg, #f8fafc)' : 'var(--card-bg, #ffffff)',
                 fontSize: '0.88rem',
-                color: '#0f172a',
+                color: 'var(--text-primary, #0f172a)',
                 backgroundColor: 'var(--input-bg, #ffffff)',
                 outline: 'none',
                 boxSizing: 'border-box'
@@ -237,7 +237,7 @@ const CreateProjectModal = ({ isOpen, onClose, onSave, editingProject, superviso
                 borderRadius: '10px',
                 border: '1px solid #cbd5e1',
                 fontSize: '0.88rem',
-                color: '#0f172a',
+                color: 'var(--text-primary, #0f172a)',
                 backgroundColor: 'var(--input-bg, #ffffff)',
                 outline: 'none',
                 boxSizing: 'border-box'
@@ -262,7 +262,7 @@ const CreateProjectModal = ({ isOpen, onClose, onSave, editingProject, superviso
                 borderRadius: '10px',
                 border: '1px solid #cbd5e1',
                 fontSize: '0.88rem',
-                color: '#0f172a',
+                color: 'var(--text-primary, #0f172a)',
                 backgroundColor: 'var(--input-bg, #ffffff)',
                 outline: 'none',
                 resize: 'none',
@@ -279,7 +279,7 @@ const CreateProjectModal = ({ isOpen, onClose, onSave, editingProject, superviso
             justifyContent: 'flex-end',
             gap: '0.85rem',
             paddingTop: '1rem',
-            borderTop: '1px solid #f1f5f9',
+            borderTop: '1px solid var(--border-color, #e2e8f0)',
             marginTop: '0.5rem'
           }}>
             <button
@@ -289,7 +289,7 @@ const CreateProjectModal = ({ isOpen, onClose, onSave, editingProject, superviso
                 padding: '0.65rem 1.25rem',
                 borderRadius: '10px',
                 border: '1px solid #cbd5e1',
-                backgroundColor: '#ffffff',
+                backgroundColor: 'var(--card-bg, #ffffff)',
                 color: '#475569',
                 fontSize: '0.88rem',
                 fontWeight: '700',

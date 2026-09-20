@@ -159,7 +159,7 @@ const CreateProjectModal = ({ isOpen, onClose, onSave, editingProject, superviso
                   ? (language === 'mr' ? 'प्रोजेक्ट माहिती बदला (Edit Project)' : 'Edit Project Details') 
                   : (language === 'mr' ? 'नवीन प्रोजेक्ट तयार करा (Create Project)' : 'Create New Project')}
               </h2>
-              <p style={{ fontSize: '0.8rem', color: '#64748b', margin: '0.2rem 0 0 0' }}>
+              <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary, #64748b)', margin: '0.2rem 0 0 0' }}>
                 {editingProject 
                   ? (language === 'mr' ? 'प्रोजेक्टचे नाव, क्लायंट आणि सुपरवायझर अपडेट करा' : 'Update project parameters & supervisor') 
                   : (language === 'mr' ? 'नवीन ई-टॉयलेट किंवा सिव्हिल साईट नोंदवा' : 'Define new project scope & supervisor')}
@@ -210,7 +210,7 @@ const CreateProjectModal = ({ isOpen, onClose, onSave, editingProject, superviso
                 padding: '0.65rem 0.85rem',
                 borderRadius: '10px',
                 border: '1px solid var(--border-color, #cbd5e1)',
-                backgroundColor: editingProject ? '#f8fafc' : '#ffffff',
+                backgroundColor: editingProject ? 'var(--hover-bg, #f8fafc)' : 'var(--card-bg, #ffffff)',
                 fontSize: '0.88rem',
                 color: 'var(--text-primary, #0f172a)',
                 outline: 'none',
@@ -276,7 +276,7 @@ const CreateProjectModal = ({ isOpen, onClose, onSave, editingProject, superviso
             justifyContent: 'flex-end',
             gap: '0.85rem',
             paddingTop: '1rem',
-            borderTop: '1px solid #f1f5f9',
+            borderTop: '1px solid var(--border-color, #e2e8f0)',
             marginTop: '0.5rem'
           }}>
             <button

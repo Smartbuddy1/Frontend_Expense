@@ -70,7 +70,7 @@ const ProjectDetailModal = ({ isOpen, onClose, project, supervisors = [], teamMe
       }}>
         {/* Header */}
         <div style={{
-          backgroundColor: '#0f172a',
+          backgroundcolor: 'var(--text-primary, #0f172a)',
           padding: '1.25rem 1.5rem',
           display: 'flex',
           justifyContent: 'space-between',
@@ -86,7 +86,7 @@ const ProjectDetailModal = ({ isOpen, onClose, project, supervisors = [], teamMe
               alignItems: 'center',
               justifyContent: 'center',
               boxShadow: '0 2px 8px rgba(0,0,0,0.15)',
-              border: '1px solid #334155'
+              border: '1px solid var(--border-color, #334155)'
             }}>
               <img 
                 src={logoImg || '/logo_new.png'} 
@@ -107,7 +107,7 @@ const ProjectDetailModal = ({ isOpen, onClose, project, supervisors = [], teamMe
                   borderRadius: '6px',
                   backgroundColor: '#1e293b',
                   color: '#93c5fd',
-                  border: '1px solid #334155'
+                  border: '1px solid var(--border-color, #334155)'
                 }}>
                   {project.code || project.id}
                 </span>
@@ -375,7 +375,7 @@ const ProjectDetailModal = ({ isOpen, onClose, project, supervisors = [], teamMe
             style={{
               padding: '0.55rem 1.25rem',
               borderRadius: '10px',
-              backgroundColor: '#0f172a',
+              backgroundcolor: 'var(--text-primary, #0f172a)',
               color: '#ffffff',
               fontSize: '0.82rem',
               fontWeight: '800',

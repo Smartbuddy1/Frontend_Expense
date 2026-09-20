@@ -129,7 +129,7 @@ const UpdateProgressModal = ({ isOpen, onClose, project, onUpdateProgress, super
       }}>
         {/* Header */}
         <div style={{
-          backgroundColor: '#0f172a',
+          backgroundcolor: 'var(--text-primary, #0f172a)',
           padding: '1.25rem 1.5rem',
           display: 'flex',
           justifyContent: 'space-between',
@@ -145,7 +145,7 @@ const UpdateProgressModal = ({ isOpen, onClose, project, onUpdateProgress, super
               alignItems: 'center',
               justifyContent: 'center',
               boxShadow: '0 2px 8px rgba(0,0,0,0.15)',
-              border: '1px solid #334155'
+              border: '1px solid var(--border-color, #334155)'
             }}>
               <img 
                 src={logoImg || '/logo_new.png'} 

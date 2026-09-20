@@ -114,7 +114,7 @@ const CreateSupervisorModal = ({ isOpen, onClose, onCreateSupervisor, editingSup
               <h2 style={{ fontSize: '1.25rem', fontWeight: '800', color: 'var(--text-primary, #0f172a)', margin: 0 }}>
                 {isEdit ? 'Edit Site Supervisor' : 'Add New Site Supervisor'}
               </h2>
-              <p style={{ fontSize: '0.8rem', color: '#64748b', margin: '0.2rem 0 0 0', fontWeight: '500' }}>
+              <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary, #64748b)', margin: '0.2rem 0 0 0', fontWeight: '500' }}>
                 {isEdit ? 'Update supervisor contact and login details' : 'Register new field supervisor & credentials'}
               </p>
             </div>
@@ -131,11 +131,11 @@ const CreateSupervisorModal = ({ isOpen, onClose, onCreateSupervisor, editingSup
               alignItems: 'center',
               justifyContent: 'center',
               cursor: 'pointer',
-              color: '#64748b',
+              color: 'var(--text-secondary, #64748b)',
               transition: 'all 0.15s'
             }}
-            onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#f1f5f9'}
-            onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#ffffff'}
+            onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'var(--hover-bg, rgba(255,255,255,0.1))'}
+            onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
           >
             <X size={18} />
           </button>
@@ -275,7 +275,7 @@ const CreateSupervisorModal = ({ isOpen, onClose, onCreateSupervisor, editingSup
                   right: '0.65rem',
                   background: 'none',
                   border: 'none',
-                  color: '#64748b',
+                  color: 'var(--text-secondary, #64748b)',
                   cursor: 'pointer',
                   padding: '0.2rem',
                   display: 'flex',
@@ -294,7 +294,7 @@ const CreateSupervisorModal = ({ isOpen, onClose, onCreateSupervisor, editingSup
 
 
           {/* Modal Actions Footer */}
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: '0.75rem', marginTop: '1rem', paddingTop: '1rem', borderTop: '1px solid #f1f5f9' }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: '0.75rem', marginTop: '1rem', paddingTop: '1rem', borderTop: '1px solid var(--border-color, #e2e8f0)' }}>
             <button
               type="button"
               onClick={onClose}

@@ -75,9 +75,9 @@ const CreateSupervisorModal = ({ isOpen, onClose, onCreateSupervisor, editingSup
       padding: '1rem'
     }}>
       <div style={{
-        backgroundColor: '#ffffff',
+        backgroundColor: 'var(--card-bg, #ffffff)',
         borderRadius: '20px',
-        border: '1px solid #e2e8f0',
+        border: '1px solid var(--border-color, #e2e8f0)',
         boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)',
         width: '100%',
         maxWidth: '560px',
@@ -111,10 +111,10 @@ const CreateSupervisorModal = ({ isOpen, onClose, onCreateSupervisor, editingSup
               {isEdit ? <Edit3 size={20} /> : <UserPlus size={22} />}
             </div>
             <div>
-              <h2 style={{ fontSize: '1.25rem', fontWeight: '800', color: '#0f172a', margin: 0 }}>
+              <h2 style={{ fontSize: '1.25rem', fontWeight: '800', color: 'var(--text-primary, #0f172a)', margin: 0 }}>
                 {isEdit ? 'Edit Site Supervisor' : 'Add New Site Supervisor'}
               </h2>
-              <p style={{ fontSize: '0.8rem', color: '#64748b', margin: '0.2rem 0 0 0', fontWeight: '500' }}>
+              <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary, #64748b)', margin: '0.2rem 0 0 0', fontWeight: '500' }}>
                 {isEdit ? 'Update supervisor contact and login details' : 'Register new field supervisor & credentials'}
               </p>
             </div>
@@ -122,7 +122,7 @@ const CreateSupervisorModal = ({ isOpen, onClose, onCreateSupervisor, editingSup
           <button
             onClick={onClose}
             style={{
-              background: '#ffffff',
+              background: 'var(--card-bg, #ffffff)',
               border: '1px solid #cbd5e1',
               borderRadius: '10px',
               width: '34px',
@@ -131,11 +131,11 @@ const CreateSupervisorModal = ({ isOpen, onClose, onCreateSupervisor, editingSup
               alignItems: 'center',
               justifyContent: 'center',
               cursor: 'pointer',
-              color: '#64748b',
+              color: 'var(--text-secondary, #64748b)',
               transition: 'all 0.15s'
             }}
-            onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#f1f5f9'}
-            onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#ffffff'}
+            onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'var(--hover-bg, rgba(255,255,255,0.1))'}
+            onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
           >
             <X size={18} />
           </button>
@@ -147,7 +147,7 @@ const CreateSupervisorModal = ({ isOpen, onClose, onCreateSupervisor, editingSup
           {/* Name & Surname (2 Columns) */}
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '1rem' }}>
             <div>
-              <label style={{ display: 'block', fontSize: '0.82rem', fontWeight: '800', color: '#334155', marginBottom: '0.4rem' }}>
+              <label style={{ display: 'block', fontSize: '0.82rem', fontWeight: '800', color: 'var(--text-primary, #334155)', marginBottom: '0.4rem' }}>
                 <User size={13} style={{ display: 'inline', marginRight: '4px', color: '#2563eb' }} />
                 First Name *
               </label>
@@ -163,7 +163,7 @@ const CreateSupervisorModal = ({ isOpen, onClose, onCreateSupervisor, editingSup
                   borderRadius: '10px',
                   border: '1.5px solid #cbd5e1',
                   fontSize: '0.9rem',
-                  color: '#0f172a',
+                  color: 'var(--text-primary, #0f172a)',
                   backgroundColor: 'var(--input-bg, #ffffff)',
                   outline: 'none',
                   boxSizing: 'border-box'
@@ -172,7 +172,7 @@ const CreateSupervisorModal = ({ isOpen, onClose, onCreateSupervisor, editingSup
             </div>
 
             <div>
-              <label style={{ display: 'block', fontSize: '0.82rem', fontWeight: '800', color: '#334155', marginBottom: '0.4rem' }}>
+              <label style={{ display: 'block', fontSize: '0.82rem', fontWeight: '800', color: 'var(--text-primary, #334155)', marginBottom: '0.4rem' }}>
                 <User size={13} style={{ display: 'inline', marginRight: '4px', color: '#2563eb' }} />
                 Surname
               </label>
@@ -187,7 +187,7 @@ const CreateSupervisorModal = ({ isOpen, onClose, onCreateSupervisor, editingSup
                   borderRadius: '10px',
                   border: '1.5px solid #cbd5e1',
                   fontSize: '0.9rem',
-                  color: '#0f172a',
+                  color: 'var(--text-primary, #0f172a)',
                   backgroundColor: 'var(--input-bg, #ffffff)',
                   outline: 'none',
                   boxSizing: 'border-box'
@@ -199,7 +199,7 @@ const CreateSupervisorModal = ({ isOpen, onClose, onCreateSupervisor, editingSup
           {/* Contact Phone & Email (2 Cols) */}
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '1rem' }}>
             <div>
-              <label style={{ display: 'block', fontSize: '0.82rem', fontWeight: '800', color: '#334155', marginBottom: '0.4rem' }}>
+              <label style={{ display: 'block', fontSize: '0.82rem', fontWeight: '800', color: 'var(--text-primary, #334155)', marginBottom: '0.4rem' }}>
                 <Phone size={13} style={{ display: 'inline', marginRight: '4px', color: '#2563eb' }} />
                 Phone Number *
               </label>
@@ -215,7 +215,7 @@ const CreateSupervisorModal = ({ isOpen, onClose, onCreateSupervisor, editingSup
                   borderRadius: '10px',
                   border: '1.5px solid #cbd5e1',
                   fontSize: '0.9rem',
-                  color: '#0f172a',
+                  color: 'var(--text-primary, #0f172a)',
                   backgroundColor: 'var(--input-bg, #ffffff)',
                   outline: 'none',
                   boxSizing: 'border-box'
@@ -224,7 +224,7 @@ const CreateSupervisorModal = ({ isOpen, onClose, onCreateSupervisor, editingSup
             </div>
 
             <div>
-              <label style={{ display: 'block', fontSize: '0.82rem', fontWeight: '800', color: '#334155', marginBottom: '0.4rem' }}>
+              <label style={{ display: 'block', fontSize: '0.82rem', fontWeight: '800', color: 'var(--text-primary, #334155)', marginBottom: '0.4rem' }}>
                 <Mail size={13} style={{ display: 'inline', marginRight: '4px', color: '#2563eb' }} />
                 Email Address
               </label>
@@ -239,7 +239,7 @@ const CreateSupervisorModal = ({ isOpen, onClose, onCreateSupervisor, editingSup
                   borderRadius: '10px',
                   border: '1.5px solid #cbd5e1',
                   fontSize: '0.9rem',
-                  color: '#0f172a',
+                  color: 'var(--text-primary, #0f172a)',
                   backgroundColor: 'var(--input-bg, #ffffff)',
                   outline: 'none',
                   boxSizing: 'border-box'
@@ -250,7 +250,7 @@ const CreateSupervisorModal = ({ isOpen, onClose, onCreateSupervisor, editingSup
 
           {/* Password / Access Key */}
           <div>
-            <label style={{ display: 'block', fontSize: '0.82rem', fontWeight: '800', color: '#334155', marginBottom: '0.4rem' }}>
+            <label style={{ display: 'block', fontSize: '0.82rem', fontWeight: '800', color: 'var(--text-primary, #334155)', marginBottom: '0.4rem' }}>
               <Lock size={13} style={{ display: 'inline', marginRight: '4px', color: '#2563eb' }} />
               Password
             </label>
@@ -266,7 +266,7 @@ const CreateSupervisorModal = ({ isOpen, onClose, onCreateSupervisor, editingSup
                   borderRadius: '10px',
                   border: '1.5px solid #cbd5e1',
                   fontSize: '0.9rem',
-                  color: '#0f172a',
+                  color: 'var(--text-primary, #0f172a)',
                   backgroundColor: 'var(--input-bg, #ffffff)',
                   outline: 'none',
                   boxSizing: 'border-box'
@@ -280,7 +280,7 @@ const CreateSupervisorModal = ({ isOpen, onClose, onCreateSupervisor, editingSup
                   right: '0.65rem',
                   background: 'none',
                   border: 'none',
-                  color: '#64748b',
+                  color: 'var(--text-secondary, #64748b)',
                   cursor: 'pointer',
                   padding: '0.2rem',
                   display: 'flex',
@@ -299,7 +299,7 @@ const CreateSupervisorModal = ({ isOpen, onClose, onCreateSupervisor, editingSup
 
 
           {/* Modal Actions Footer */}
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: '0.75rem', marginTop: '1rem', paddingTop: '1rem', borderTop: '1px solid #f1f5f9' }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: '0.75rem', marginTop: '1rem', paddingTop: '1rem', borderTop: '1px solid var(--border-color, #e2e8f0)' }}>
             <button
               type="button"
               onClick={onClose}
@@ -307,7 +307,7 @@ const CreateSupervisorModal = ({ isOpen, onClose, onCreateSupervisor, editingSup
                 padding: '0.65rem 1.25rem',
                 borderRadius: '10px',
                 border: '1px solid #cbd5e1',
-                backgroundColor: '#ffffff',
+                backgroundColor: 'var(--card-bg, #ffffff)',
                 color: '#475569',
                 fontSize: '0.85rem',
                 fontWeight: '700',

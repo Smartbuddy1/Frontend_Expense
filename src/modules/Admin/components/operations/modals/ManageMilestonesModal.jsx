@@ -43,7 +43,7 @@ const ManageMilestonesModal = ({ isOpen, onClose, project, onAddMilestone, onDel
       }}>
         {/* Header */}
         <div style={{
-          backgroundColor: '#0f172a',
+          backgroundcolor: 'var(--text-primary, #0f172a)',
           padding: '1.25rem 1.5rem',
           display: 'flex',
           justifyContent: 'space-between',
