@@ -329,7 +329,7 @@ const ReconciliationTab = ({
 
       // Summary Box
       autoTable(doc, {
-        startY: startY + 2,
+        startY: 26,
         head: [['TOTAL ADVANCE', 'TOTAL SPENT', 'BALANCE FLOAT', 'CLEAR STATUS']],
         body: [[
           `Rs. ${totalAdvance.toLocaleString('en-IN')}`,

@@ -118,7 +118,7 @@ const TeamAssignmentTab = ({
       });
 
       autoTable(doc, {
-        startY: startY + 2,
+        startY: 26,
         head: [['SR NO', 'SUPERVISOR & CONTACT', 'ASSIGNED PROJECT', 'TEAM MEMBERS', 'STATUS']],
         body: tableData,
         theme: 'grid',

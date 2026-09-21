@@ -423,7 +423,7 @@ const ReconciliationTab = ({
       // Summary Box
       const totalReqAmount = filteredRequisitions.reduce((sum, r) => sum + (Number(r.amount) || 0), 0);
       autoTable(doc, {
-        startY: startY + 2,
+        startY: 26,
         head: [['TOTAL REQUISITIONS', 'TOTAL REQUISITIONED', 'APPROVED REQUESTS', 'PENDING REVIEW']],
         body: [[
           `${filteredRequisitions.length} Requisitions`,

@@ -16,7 +16,7 @@ export const exportToPDF = async (title, columns, rows) => {
     const tableOptions = {
       head: [columns],
       body: safeRows,
-      startY: startY + 2,
+      startY: 26,
       theme: 'grid',
       styles: { 
         fontSize: 8.5,

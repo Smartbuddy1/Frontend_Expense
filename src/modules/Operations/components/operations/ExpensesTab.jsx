@@ -174,7 +174,7 @@ const ExpensesTab = ({
 
       // Summary Box
       autoTable(doc, {
-        startY: startY + 2,
+        startY: 26,
         head: [['TOTAL EXPENSES', 'APPROVED AMOUNT', 'PENDING REVIEW']],
         body: [[
           `Rs. ${totalAmount.toLocaleString('en-IN')}`,

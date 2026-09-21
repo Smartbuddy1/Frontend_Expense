@@ -99,7 +99,7 @@ const PaymentLedgerTab = ({ payments, onRecordNewPayment }) => {
     ]);
 
     autoTable(doc, {
-      startY: startY + 2,
+      startY: 26,
       margin: { bottom: 30 },
       head: headers,
       body: data,
