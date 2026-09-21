@@ -11,7 +11,7 @@ import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import { useLanguage } from '../../context/LanguageContext';
 import { useSearchParams } from 'react-router-dom';
-import { addPdfHeaderWithLogo, addPdfFooterWithLogo, getCompanyLogoBase64, escapeHtml } from '../../utils/pdfHeaderHelper';
+import { addPdfHeaderWithLogo, addPdfFooterWithLogo, addPdfSignatures, getCompanyLogoBase64, escapeHtml } from '../../utils/pdfHeaderHelper';
 import Pagination from '../../../../components/ui/Pagination';
 import toast from 'react-hot-toast';
 
@@ -432,13 +432,23 @@ const ReconciliationTab = ({
           `${filteredRequisitions.filter(r => r.status === 'Pending').length}`
         ]],
         theme: 'grid',
-        styles: { fontSize: 9, fontStyle: 'bold', halign: 'center' },
-        headStyles: { fillColor: [5, 150, 105], textColor: [255, 255, 255] }
+        styles: { 
+          fontSize: 9, 
+          fontStyle: 'bold', 
+          halign: 'center',
+          lineColor: [37, 99, 235],
+          lineWidth: 0.1,
+        },
+        headStyles: { 
+          fillColor: [16, 185, 129], 
+          textColor: [255, 255, 255] 
+        },
+        alternateRowStyles: { fillColor: [248, 250, 252] }
       });
 
       // Requisition Table Data
       const reqData = filteredRequisitions.map(r => [
-        r.id,
+        r.id?.slice(0, 8)?.toUpperCase(),
         r.supervisor || 'Rohit Sharma',
         r.site,
         r.purpose,
@@ -453,12 +463,23 @@ const ReconciliationTab = ({
         head: [['REQ ID', 'SUPERVISOR', 'SITE LOCATION', 'PURPOSE / REASON', 'URGENCY', 'DATE', 'AMOUNT', 'STATUS']],
         body: reqData,
         theme: 'grid',
-        styles: { fontSize: 8 },
-        headStyles: { fillColor: [15, 23, 42], textColor: [255, 255, 255] }
+        styles: { 
+          fontSize: 8,
+          lineColor: [37, 99, 235],
+          lineWidth: 0.1,
+        },
+        headStyles: { 
+          fillColor: [16, 185, 129], 
+          textColor: [255, 255, 255] 
+        },
+        alternateRowStyles: { fillColor: [248, 250, 252] }
       });
 
       // Add official company footer with Logo across all pages
       await addPdfFooterWithLogo(doc);
+
+      // Add Signatures
+      addPdfSignatures(doc);
 
       const filename = `ASEMS_Advance_Requisitions_${new Date().toISOString().split('T')[0]}.pdf`;
       doc.save(filename);
@@ -475,7 +496,7 @@ const ReconciliationTab = ({
     const totalReqAmount = filteredRequisitions.reduce((sum, r) => sum + (Number(r.amount) || 0), 0);
       const reqRows = filteredRequisitions.map((r, idx) => `
         <tr>
-          <td style="text-align:center; font-weight:800; color:#059669;">${escapeHtml(r.id)}</td>
+          <td style="text-align:center; font-weight:800; color:#059669;">${escapeHtml(r.id?.slice(0, 8)?.toUpperCase())}</td>
           <td><strong>${escapeHtml(r.supervisor || 'Rohit Sharma')}</strong></td>
           <td><strong>${escapeHtml(r.site)}</strong></td>
           <td>${escapeHtml(r.purpose)}</td>
@@ -730,6 +751,11 @@ const ReconciliationTab = ({
     }
   };
 
+  // Stats for KPI cards
+  const pendingOpsCount = advanceRequisitions.filter(r => r.rawStatus === 'requested').length;
+  const pendingOpsTotal = advanceRequisitions.filter(r => r.rawStatus === 'requested').reduce((acc, r) => acc + (r.amount || 0), 0);
+  const forwardedCount = advanceRequisitions.filter(r => r.rawStatus === 'approved' || r.rawStatus === 'disbursed').length;
+
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem', width: '100%', boxSizing: 'border-box' }}>
 
@@ -791,60 +817,83 @@ const ReconciliationTab = ({
           </button>
 
           {/* 📄 Excel Button (Green Outline) */}
-          <button
-            onClick={handleExportExcel}
-            style={{
-              padding: '0.5rem 1.15rem',
-              borderRadius: '10px',
-              border: '1.5px solid #86efac',
-              backgroundColor: '#f0fdf4',
-              color: '#16a34a',
-              fontSize: '0.9rem',
-              fontWeight: '800',
-              cursor: 'pointer',
-              display: 'inline-flex',
-              alignItems: 'center',
-              gap: '0.45rem',
-              transition: 'all 0.2s ease',
-              boxShadow: '0 1px 3px rgba(0,0,0,0.04)'
-            }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.backgroundColor = '#dcfce7';
-              e.currentTarget.style.borderColor = '#15803d';
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.backgroundColor = '#f0fdf4';
-              e.currentTarget.style.borderColor = '#86efac';
-            }}
-          >
-            <FileSpreadsheet size={16} style={{ color: '#16a34a' }} />
-            <span>Excel</span>
-          </button>
+          
 
           {/* 📄 Print Button */}
-          <button
-            onClick={handlePrintStatement}
-            style={{
-              padding: '0.5rem 1.15rem',
-              borderRadius: '10px',
-              border: '1.5px solid var(--border-color, #cbd5e1)',
-              backgroundColor: 'var(--bg-color, #f8fafc)',
-              color: '#2563eb',
-              fontSize: '0.9rem',
-              fontWeight: '800',
-              cursor: 'pointer',
-              display: 'inline-flex',
-              alignItems: 'center',
-              gap: '0.45rem',
-              transition: 'all 0.2s ease',
-              boxShadow: '0 1px 3px rgba(0,0,0,0.04)'
-            }}
-            onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#f1f5f9'}
-            onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#f8fafc'}
-          >
-            <Printer size={16} />
-            <span>Print</span>
-          </button>
+          
+        </div>
+      </div>
+
+      {/* KPI Stats Cards */}
+      <div style={{ display: 'flex', gap: '1.25rem', flexWrap: 'wrap' }}>
+        {/* Pending Ops Card */}
+        <div style={{
+          flex: '1 1 240px', display: 'flex', alignItems: 'center', gap: '1.25rem',
+          padding: '1.25rem 1.5rem', borderRadius: '16px',
+          backgroundColor: 'var(--card-bg, #ffffff)',
+          border: '1px solid var(--border-color, #e2e8f0)',
+          boxShadow: '0 4px 15px rgba(0,0,0,0.03)',
+          position: 'relative', overflow: 'hidden'
+        }}>
+          <div style={{
+            position: 'absolute', top: 0, left: 0, width: '4px', height: '100%',
+            backgroundColor: '#f59e0b'
+          }} />
+          <div style={{
+            width: '48px', height: '48px', borderRadius: '14px',
+            backgroundColor: '#fef3c7', display: 'flex', alignItems: 'center', justifyContent: 'center',
+            boxShadow: '0 2px 5px rgba(245,158,11,0.2)'
+          }}>
+            <Clock size={24} color="#d97706" />
+          </div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.2rem' }}>
+            <div style={{ fontSize: '0.9rem', color: 'var(--text-secondary, #64748b)', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+              Pending Your Approval
+            </div>
+            <div style={{ display: 'flex', alignItems: 'baseline', gap: '0.5rem' }}>
+              <span style={{ fontSize: '1.75rem', fontWeight: '900', color: 'var(--text-primary, #0f172a)', lineHeight: '1' }}>
+                {pendingOpsCount}
+              </span>
+              <span style={{ fontSize: '1rem', color: '#d97706', fontWeight: '800' }}>
+                (₹{pendingOpsTotal.toLocaleString('en-IN')})
+              </span>
+            </div>
+          </div>
+        </div>
+
+        {/* Forwarded to Accounts Card */}
+        <div style={{
+          flex: '1 1 240px', display: 'flex', alignItems: 'center', gap: '1.25rem',
+          padding: '1.25rem 1.5rem', borderRadius: '16px',
+          backgroundColor: 'var(--card-bg, #ffffff)',
+          border: '1px solid var(--border-color, #e2e8f0)',
+          boxShadow: '0 4px 15px rgba(0,0,0,0.03)',
+          position: 'relative', overflow: 'hidden'
+        }}>
+          <div style={{
+            position: 'absolute', top: 0, left: 0, width: '4px', height: '100%',
+            backgroundColor: '#3b82f6'
+          }} />
+          <div style={{
+            width: '48px', height: '48px', borderRadius: '14px',
+            backgroundColor: '#eff6ff', display: 'flex', alignItems: 'center', justifyContent: 'center',
+            boxShadow: '0 2px 5px rgba(59,130,246,0.2)'
+          }}>
+            <CheckCircle2 size={24} color="#2563eb" />
+          </div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.2rem' }}>
+            <div style={{ fontSize: '0.9rem', color: 'var(--text-secondary, #64748b)', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+              Approved / Disbursed
+            </div>
+            <div style={{ display: 'flex', alignItems: 'baseline', gap: '0.5rem' }}>
+              <span style={{ fontSize: '1.75rem', fontWeight: '900', color: 'var(--text-primary, #0f172a)', lineHeight: '1' }}>
+                {forwardedCount}
+              </span>
+              <span style={{ fontSize: '0.9rem', color: '#2563eb', fontWeight: '700' }}>
+                records
+              </span>
+            </div>
+          </div>
         </div>
       </div>
 
@@ -852,7 +901,7 @@ const ReconciliationTab = ({
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', width: '100%', gap: '1rem', flexWrap: 'wrap' }}>
         <div style={{ position: 'relative', width: '100%', maxWidth: '480px', display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
           <div style={{ position: 'relative' }}>
-            <div style={{ position: 'absolute', left: '1rem', top: '50%', transform: 'translateY(-50%)', color: '#94a3b8', display: 'flex', alignItems: 'center' }}>
+            <div style={{ position: 'absolute', left: '1rem', top: '50%', transform: 'translateY(-50%)', color: 'var(--badge-pending-text)', display: 'flex', alignItems: 'center' }}>
               <Search size={18} />
             </div>
             <input
@@ -1032,12 +1081,12 @@ const ReconciliationTab = ({
                             display: 'inline-flex',
                             alignItems: 'center',
                             gap: '0.4rem',
-                            backgroundColor: isHighUrgency ? 'rgba(239, 68, 68, 0.15)' : isMediumUrgency ? 'rgba(245, 158, 11, 0.15)' : 'rgba(59, 130, 246, 0.15)',
+                            backgroundColor: isHighUrgency ? 'var(--badge-danger-bg)' : isMediumUrgency ? 'var(--badge-warning-bg)' : 'var(--badge-info-bg)',
                             padding: '0.35rem 0.65rem',
                             borderRadius: '12px',
-                            border: `1px solid ${isHighUrgency ? 'rgba(239, 68, 68, 0.3)' : isMediumUrgency ? 'rgba(245, 158, 11, 0.3)' : 'rgba(59, 130, 246, 0.3)'}`
+                            border: `1px solid ${isHighUrgency ? 'var(--badge-danger-border)' : isMediumUrgency ? 'var(--badge-warning-border)' : 'var(--badge-info-border)'}`
                           }}>
-                            <Clock size={13} style={{ color: isHighUrgency ? '#ef4444' : isMediumUrgency ? '#f59e0b' : '#3b82f6' }} />
+                            <Clock size={13} style={{ color: isHighUrgency ? 'var(--badge-danger-text)' : isMediumUrgency ? 'var(--badge-warning-text)' : 'var(--badge-info-text)' }} />
                             {req.status === 'Pending' ? (
                               <select
                                 value={displayUrgency}
@@ -1050,7 +1099,7 @@ const ReconciliationTab = ({
                                   backgroundColor: 'transparent',
                                   appearance: 'none',
                                   WebkitAppearance: 'none',
-                                  color: isHighUrgency ? '#ef4444' : isMediumUrgency ? '#f59e0b' : '#3b82f6',
+                                  color: isHighUrgency ? 'var(--badge-danger-text)' : isMediumUrgency ? 'var(--badge-warning-text)' : 'var(--badge-info-text)',
                                   cursor: 'pointer',
                                   outline: 'none',
                                   padding: '0'
@@ -1064,7 +1113,7 @@ const ReconciliationTab = ({
                               <span style={{
                                 fontSize: '0.8rem',
                                 fontWeight: '800',
-                                color: isHighUrgency ? '#ef4444' : isMediumUrgency ? '#f59e0b' : '#3b82f6'
+                                color: isHighUrgency ? 'var(--badge-danger-text)' : isMediumUrgency ? 'var(--badge-warning-text)' : 'var(--badge-info-text)'
                               }}>
                                 {displayUrgency}
                               </span>
@@ -1081,7 +1130,7 @@ const ReconciliationTab = ({
 
                         {/* WALLET */}
                         <td style={{ padding: '0.75rem 0.65rem', verticalAlign: 'middle', whiteSpace: 'nowrap' }}>
-                          <span style={{ fontSize: '0.95rem', fontWeight: '700', color: walletBalance < 0 ? '#ef4444' : '#0ea5e9' }}>
+                          <span style={{ fontSize: '0.95rem', fontWeight: '700', color: walletBalance < 0 ? 'var(--badge-danger-text)' : '#0ea5e9' }}>
                             ₹{(Number(walletBalance) || 0).toLocaleString('en-IN')}
                           </span>
                         </td>
@@ -1430,7 +1479,7 @@ const ReconciliationTab = ({
               <div style={{ height: '1px', backgroundColor: 'var(--border-color, #e2e8f0)', margin: '0.2rem 0' }} />
               <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.95rem' }}>
                 <span style={{ fontWeight: '800', color: 'var(--text-primary, #0f172a)' }}>Remaining to Return:</span>
-                <strong style={{ color: '#10b981', fontWeight: '900' }}>₹{(selectedSupervisor.advance - selectedSupervisor.settled).toLocaleString('en-IN')}</strong>
+                <strong style={{ color: 'var(--badge-success-text)', fontWeight: '900' }}>₹{(selectedSupervisor.advance - selectedSupervisor.settled).toLocaleString('en-IN')}</strong>
               </div>
             </div>
 
@@ -1460,7 +1509,7 @@ const ReconciliationTab = ({
                   padding: '0.65rem',
                   borderRadius: '9px',
                   border: 'none',
-                  backgroundColor: '#10b981',
+                  backgroundColor: 'var(--badge-success-text)',
                   color: '#ffffff',
                   fontSize: '0.88rem',
                   fontWeight: '800',
@@ -1517,7 +1566,7 @@ const ReconciliationTab = ({
                 fontWeight: '800',
                 padding: '0.25rem 0.65rem',
                 borderRadius: '9999px',
-                backgroundColor: inspectLedgerRecord.status === 'Verified' ? 'rgba(16, 185, 129, 0.15)' : 'rgba(245, 158, 11, 0.15)',
+                backgroundColor: inspectLedgerRecord.status === 'Verified' ? 'var(--badge-success-bg)' : 'var(--badge-warning-bg)',
                 color: inspectLedgerRecord.status === 'Verified' ? '#34d399' : '#fbbf24',
                 border: `1px solid ${inspectLedgerRecord.status === 'Verified' ? 'rgba(16, 185, 129, 0.3)' : 'rgba(245, 158, 11, 0.3)'}`
               }}>

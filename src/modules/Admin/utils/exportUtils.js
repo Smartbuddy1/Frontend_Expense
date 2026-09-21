@@ -1,6 +1,6 @@
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
-import { addPdfHeaderWithLogo, addPdfFooterWithPageNumbers } from './pdfHeaderHelper';
+import { addPdfHeaderWithLogo, addPdfFooterWithPageNumbers, addPdfSignatures } from './pdfHeaderHelper';
 
 /**
  * Ultra-Clear Executive PDF Exporter with Official Aarya Innovtech Logo & Header Banner
@@ -33,19 +33,19 @@ export const exportToPDF = async (title, columns, rows, subtitle = '', customOri
     const tableOptions = {
       head: [safeColumns],
       body: safeRows,
-      startY: startY || 30,
+      startY: startY + 2 || 30,
       theme: 'grid',
       styles: { 
         fontSize: isLandscape ? 9.5 : 8.5,
         cellPadding: isLandscape ? { top: 3.5, right: 3, bottom: 3.5, left: 3 } : 3,
         textColor: [15, 23, 42],
-        lineColor: [203, 213, 225],
-        lineWidth: 0.2,
+        lineColor: [37, 99, 235],
+        lineWidth: 0.1,
         font: 'helvetica',
         valign: 'middle'
       },
       headStyles: { 
-        fillColor: [15, 23, 42],
+        fillColor: [16, 185, 129], 
         textColor: [255, 255, 255],
         fontStyle: 'bold',
         fontSize: isLandscape ? 9.5 : 8.5,
@@ -54,16 +54,7 @@ export const exportToPDF = async (title, columns, rows, subtitle = '', customOri
       alternateRowStyles: {
         fillColor: [248, 250, 252]
       },
-      margin: { left: 14, right: 14 },
-      didDrawPage: (data) => {
-        // Footer: Page Number & Confidentiality Note
-        const pageWidth = doc.internal.pageSize.getWidth();
-        const pageHeight = doc.internal.pageSize.getHeight();
-        doc.setFontSize(7.5);
-        doc.setTextColor(148, 163, 184);
-        doc.text('Confidential • AI AARYA INNOVTECH PVT. LTD. • Site Expense Management System', 14, pageHeight - 8);
-        doc.text(`Page ${data.pageNumber}`, pageWidth - 25, pageHeight - 8);
-      }
+      margin: { left: 14, right: 14 }
     };
 
     if (typeof autoTable === 'function') {
@@ -76,7 +67,8 @@ export const exportToPDF = async (title, columns, rows, subtitle = '', customOri
     }
     
     // Add corporate footer with page numbers to all pages
-    addPdfFooterWithPageNumbers(doc);
+    await addPdfFooterWithPageNumbers(doc);
+    addPdfSignatures(doc);
 
     const cleanFilename = `${title.replace(/[^a-zA-Z0-9]/g, '_')}_${new Date().toISOString().split('T')[0]}.pdf`;
     doc.save(cleanFilename);

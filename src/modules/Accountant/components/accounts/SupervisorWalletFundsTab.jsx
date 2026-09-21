@@ -1,644 +1,522 @@
-import React, { useState } from 'react';
-import { 
-  Wallet, 
-  Send, 
-  CheckCircle2, 
-  XCircle, 
-  Clock, 
-  Search, 
-  Phone, 
-  ShieldCheck,
-  Printer, 
-  FileSpreadsheet, 
-  Download, 
-  User,
-  AlertCircle,
-  Building2,
-  Receipt,
-  ArrowUpRight,
-  TrendingUp,
-  X,
-  CreditCard,
-  Eye,
-  FileText,
-  Calendar,
-  Layers,
-  Check
+import React, { useState, useMemo } from 'react';
+import {
+  Search, Clock, CheckCircle2, X, MapPin,
+  Download, FileSpreadsheet, Printer, ShieldCheck, IndianRupee
 } from 'lucide-react';
+import toast, { Toaster } from 'react-hot-toast';
 import jsPDF from 'jspdf';
-import 'jspdf-autotable';
-import { applyPDFHeader, applyPDFFooter, getLogoDataUrl } from '../../utils/exportUtils';
-import PrintFooter from '../PrintFooter';
+import autoTable from 'jspdf-autotable';
+import { addPdfHeaderWithLogo, addPdfFooterWithLogo, addPdfSignatures, getCompanyLogoBase64, escapeHtml } from '../../../Operations/utils/pdfHeaderHelper';
 
 const SupervisorWalletFundsTab = ({
   projects = [],
   expenses = [],
   advances = [],
   onNavigateTab,
-  onQuickApprove,
-  onRejectExpense,
   onDisburseAdvance,
-  onTopUpWallet
+  onRejectAdvance,
 }) => {
   const [searchQuery, setSearchQuery] = useState('');
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 15;
 
-  const formatINR = (val) => {
-    return new Intl.NumberFormat('en-IN', {
-      style: 'currency',
-      currency: 'INR',
-      maximumFractionDigits: 0
-    }).format(val || 0);
-  };
+  // ── Map all relevant advances into rows ───────────────────────────────────
+  const allRows = useMemo(() => {
+    const pending = advances
+      .filter(a => a.status === 'Pending Accounts Payment')
+      .map(a => ({
+        id: a.id,
+        displayId: a.id ? `REQ-${a.id.slice(0, 6).toUpperCase()}` : '—',
+        supervisor: a.supervisor || '—',
+        supervisorId: a.supervisorId,
+        site: a.siteName || a.projectName || '—',
+        purpose: a.purpose || '—',
+        urgency: a.urgency || 'Regular',
+        date: a.date
+          ? new Date(a.date).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })
+          : '—',
+        disbursedAt: null,
+        amount: a.requestedAmount || a.approvedAmount || a.amount || 0,
+        rowType: 'pending',
+        sortKey: new Date(a.date || 0).getTime(),
+      }));
 
-  const formatPDFINR = (val) => {
-    if (val === undefined || val === null) return 'Rs. 0';
-    return `Rs. ${Number(val).toLocaleString('en-IN')}`;
-  };
+    const disbursed = advances
+      .filter(a => a.status === 'Disbursed')
+      .map(a => ({
+        id: a.id,
+        displayId: a.id ? `REQ-${a.id.slice(0, 6).toUpperCase()}` : '—',
+        supervisor: a.supervisor || '—',
+        supervisorId: a.supervisorId,
+        site: a.siteName || a.projectName || '—',
+        purpose: a.purpose || '—',
+        urgency: a.urgency || 'Regular',
+        date: a.date
+          ? new Date(a.date).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })
+          : '—',
+        disbursedAt: a.disbursedAt
+          ? new Date(a.disbursedAt).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })
+          : (a.updatedAt ? new Date(a.updatedAt).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }) : '—'),
+        amount: a.requestedAmount || a.approvedAmount || a.amount || 0,
+        rowType: 'disbursed',
+        sortKey: new Date(a.disbursedAt || a.updatedAt || 0).getTime(),
+      }))
+      .sort((a, b) => b.sortKey - a.sortKey);
 
-  // Group and map supervisor wallet data
-  const supervisorMap = {};
-  projects.forEach(p => {
-    const sName = p.supervisor || 'Unassigned';
-    if (!supervisorMap[sName]) {
-      supervisorMap[sName] = {
-        supervisor: sName,
-        mobile: p.supervisorMobile || '+91 98221 00000',
-        projectName: '',
-        siteName: '',
-        toilets: 0,
-        totalLoaded: 0,
-        totalSpent: 0,
-        currentBalance: 0,
-      };
-    }
-    const w = supervisorMap[sName];
-    w.projectName += (w.projectName ? ', ' : '') + p.name;
-    w.siteName += (w.siteName ? ', ' : '') + (p.site || '');
-    w.toilets += (p.toilets || 0);
-    w.totalLoaded += (p.fundsReleased || 0);
-    w.totalSpent += (p.expenses || 0);
-    w.currentBalance += (p.balance !== undefined ? p.balance : ((p.fundsReleased || 0) - (p.expenses || 0)));
+    return [...pending, ...disbursed];
+  }, [advances]);
+
+  // ── Wallet balance per supervisor ─────────────────────────────────────────
+  const supervisorWallets = useMemo(() => {
+    const wallets = {};
+    advances.forEach(a => {
+      if (a.status === 'Disbursed') {
+        const sId = a.supervisorId || a.supervisor;
+        if (sId) {
+          if (!wallets[sId]) wallets[sId] = { advance: 0, spent: 0 };
+          wallets[sId].advance += (a.requestedAmount || a.approvedAmount || a.amount || 0);
+        }
+      }
+    });
+    expenses.forEach(e => {
+      if (e.status === 'Accounts Verified & Paid') {
+        const sId = e.supervisorId || e.supervisor;
+        if (sId) {
+          if (!wallets[sId]) wallets[sId] = { advance: 0, spent: 0 };
+          wallets[sId].spent += (e.amount || 0);
+        }
+      }
+    });
+    return wallets;
+  }, [advances, expenses]);
+
+  // ── Search + pagination ───────────────────────────────────────────────────
+  const filtered = allRows.filter(req => {
+    const q = (searchQuery || '').toLowerCase();
+    return !q ||
+      req.id.toLowerCase().includes(q) ||
+      (req.supervisor && req.supervisor.toLowerCase().includes(q)) ||
+      req.site.toLowerCase().includes(q) ||
+      req.purpose.toLowerCase().includes(q) ||
+      req.amount.toString().includes(q) ||
+      req.urgency.toLowerCase().includes(q);
   });
 
-  const supervisorWallets = Object.values(supervisorMap).map(w => {
-    const supervisorExpenses = expenses.filter(e => e.supervisor === w.supervisor);
-    const supervisorAdvances = advances.filter(a => a.supervisor === w.supervisor && a.status !== 'Pending Operations Approval');
-    
-    const pendingExpense = supervisorExpenses.find(e => e.status === 'Pending Operations Approval' || e.status === 'Pending Accounts Verification');
-    const pendingAdvance = supervisorAdvances.find(a => a.status === 'Pending Accounts Payment');
-    const pendingRequest = pendingAdvance || pendingExpense;
-    const rejectedExpense = supervisorExpenses.find(e => e.status === 'Sent for Correction' || e.status === 'Rejected');
-    const verifiedExpense = supervisorExpenses.find(e => e.status === 'Accounts Verified & Paid');
+  const totalPages = Math.ceil(filtered.length / itemsPerPage) || 1;
+  const safePage = Math.min(currentPage, totalPages);
+  const paginated = filtered.slice((safePage - 1) * itemsPerPage, safePage * itemsPerPage);
 
-    let status = 'HEALTHY';
-    if (pendingExpense) {
-      status = 'REQUEST_PENDING';
-    } else if (rejectedExpense) {
-      status = 'REJECTED';
-    } else if (w.currentBalance < 40000) {
-      status = 'LOW_FLOAT';
-    } else {
-      status = 'HEALTHY';
-    }
+  const pendingCount = allRows.filter(r => r.rowType === 'pending').length;
+  const disbursedCount = allRows.filter(r => r.rowType === 'disbursed').length;
+  const pendingTotal = allRows.filter(r => r.rowType === 'pending').reduce((s, r) => s + r.amount, 0);
 
-    return {
-      ...w,
-      status,
-      pendingRequest: pendingRequest,
-      rejectedRequest: rejectedExpense,
-      verifiedRequest: verifiedExpense,
-      siteExpenses: supervisorExpenses,
-      siteAdvances: supervisorAdvances
-    };
-  });
-
-  const filteredWallets = supervisorWallets.filter(w => {
-    if (!searchQuery) return true;
-    const q = searchQuery.toLowerCase();
-    return (
-      (w.supervisor || '').toLowerCase().includes(q) ||
-      (w.mobile || '').toLowerCase().includes(q) ||
-      (w.projectName || '').toLowerCase().includes(q) ||
-      (w.siteName || '').toLowerCase().includes(q)
-    );
-  });
-
-  // KPI Calculations
-  const totalWalletFloat = supervisorWallets.reduce((acc, w) => acc + w.currentBalance, 0);
-  const totalFundsLoaded = supervisorWallets.reduce((acc, w) => acc + w.totalLoaded, 0);
-  const totalSpentAcrossSites = supervisorWallets.reduce((acc, w) => acc + w.totalSpent, 0);
-  const totalPendingRequestsCount = supervisorWallets.filter(w => w.pendingRequest).length;
-  const totalPendingRequestsAmount = supervisorWallets
-    .filter(w => w.pendingRequest)
-    .reduce((acc, w) => acc + (w.pendingRequest.amount || 0), 0);
-
-  const handlePrint = () => {
-    window.print();
-  };
-
+  // ── Export CSV ─────────────────────────────────────────────────────────────
   const handleExportCSV = () => {
-    const headers = ['Supervisor Name', 'Contact Mobile', 'Assigned Site / Project', 'Total Funds Released (INR)', 'Total Spent (INR)', 'Current Live Wallet Balance (INR)', 'Pending Bill Claim (INR)', 'Status'];
-    const rows = filteredWallets.map(w => [
-      w.supervisor,
-      w.mobile,
-      `${w.projectName} (${w.siteName})`,
-      w.totalLoaded,
-      w.totalSpent,
-      w.currentBalance,
-      w.pendingRequest ? w.pendingRequest.amount : 0,
-      w.status === 'REQUEST_PENDING' ? 'Bill Claim Pending' : (w.status === 'LOW_FLOAT' ? 'Low Wallet Float' : 'Send to Vendor')
-    ]);
-
-    const csvContent = "data:text/csv;charset=utf-8," + [headers, ...rows].map(e => e.join(",")).join("\n");
-    const encodedUri = encodeURI(csvContent);
-    const link = document.createElement("a");
-    link.setAttribute("href", encodedUri);
-    link.setAttribute("download", `ASEMS_Supervisor_Wallets_${new Date().toISOString().split('T')[0]}.csv`);
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+    try {
+      const rows = [
+        ['SR', 'REQ ID', 'SUPERVISOR', 'SITE', 'PURPOSE', 'URGENCY', 'REQUESTED ON', 'DISBURSED ON', 'AMOUNT (INR)', 'STATUS'],
+        ...filtered.map((req, idx) => [
+          idx + 1,
+          `"${req.displayId}"`,
+          `"${req.supervisor}"`,
+          `"${req.site}"`,
+          `"${req.purpose}"`,
+          `"${req.urgency}"`,
+          `"${req.date}"`,
+          `"${req.disbursedAt || '—'}"`,
+          req.amount,
+          `"${req.rowType === 'pending' ? 'Ops Approved - Pending Disbursal' : 'Disbursed'}"`,
+        ])
+      ];
+      const csv = 'data:text/csv;charset=utf-8,\uFEFF' + rows.map(r => r.join(',')).join('\n');
+      const link = document.createElement('a');
+      link.setAttribute('href', encodeURI(csv));
+      link.setAttribute('download', `ASEMS_Fund_Requests_${new Date().toISOString().split('T')[0]}.csv`);
+      document.body.appendChild(link); link.click(); document.body.removeChild(link);
+      toast.success('Excel downloaded!');
+    } catch (err) { toast.error('Export failed'); }
   };
 
-  const handleExportPDF = async () => {
-    const doc = new jsPDF();
-    const logoDataUrl = await getLogoDataUrl();
-
-    applyPDFHeader(doc, {
-      title: 'Site Supervisor Wallet Funds & Float Ledger',
-      subtitle: 'Live Site Balance, Disbursal Records & Top-Up Approvals Statement',
-      category: 'AUDIT & DISBURSAL REPORT',
-      docRef: `WALLET-AUDIT-${new Date().toISOString().slice(0, 10).replace(/-/g, '')}`,
-      logoDataUrl
-    });
-
-    const tableColumns = ['Supervisor', 'Site / Project', 'Total Released', 'Total Spent', 'Wallet Balance', 'Req. Pending'];
-    const tableRows = filteredWallets.map(w => [
-      `${w.supervisor}\n${w.mobile}`,
-      `${w.projectName}\n${w.siteName}`,
-      formatPDFINR(w.totalLoaded),
-      formatPDFINR(w.totalSpent),
-      formatPDFINR(w.currentBalance),
-      w.pendingRequest ? formatPDFINR(w.pendingRequest.approvedAmount || w.pendingRequest.requestedAmount) : 'Nil'
-    ]);
-
-    doc.autoTable({
-      head: [tableColumns],
-      body: tableRows,
-      startY: 56,
-      theme: 'grid',
-      headStyles: {
-        fillColor: [37, 99, 235],
-        textColor: [255, 255, 255],
-        fontStyle: 'bold',
-        fontSize: 9
-      },
-      bodyStyles: {
-        fontSize: 8.5,
-        textColor: [30, 41, 59]
-      },
-      alternateRowStyles: {
-        fillColor: [248, 250, 252]
-      },
-      margin: { left: 14, right: 14 }
-    });
-
-    applyPDFFooter(doc, {
-      preparedBy: 'Accounts Department',
-      verifiedBy: 'Dinesh Sir (Operations Head)'
-    });
-
-    doc.save(`ASEMS_Supervisor_Wallets_${new Date().toISOString().split('T')[0]}.pdf`);
+  // ── Export PDF ─────────────────────────────────────────────────────────────
+  const handleDownloadPDF = async () => {
+    try {
+      const doc = new jsPDF();
+      const startY = await addPdfHeaderWithLogo(doc, 'Advance Fund Requests', `Generated: ${new Date().toLocaleString()}`);
+      autoTable(doc, {
+        startY: startY + 2,
+        head: [['REQ ID', 'SUPERVISOR', 'SITE', 'PURPOSE', 'URGENCY', 'DATE', 'DISBURSED ON', 'AMOUNT', 'STATUS']],
+        body: filtered.map(r => [
+          r.displayId, r.supervisor, r.site, r.purpose, r.urgency, r.date,
+          r.disbursedAt || '—',
+          `Rs. ${(r.amount || 0).toLocaleString('en-IN')}`,
+          r.rowType === 'pending' ? 'Pending Disbursal' : 'Disbursed'
+        ]),
+        theme: 'grid',
+        styles: { 
+          fontSize: 8,
+          lineColor: [37, 99, 235],
+          lineWidth: 0.1,
+        },
+        headStyles: { 
+          fillColor: [16, 185, 129], 
+          textColor: [255, 255, 255] 
+        },
+        alternateRowStyles: { fillColor: [248, 250, 252] },
+        bodyStyles: (row) => row.rowType === 'disbursed' ? { fillColor: [240, 253, 244] } : {},
+      });
+      await addPdfFooterWithLogo(doc);
+      addPdfSignatures(doc);
+      doc.save(`ASEMS_Fund_Requests_${new Date().toISOString().split('T')[0]}.pdf`);
+      toast.success('PDF downloaded!');
+    } catch (err) { toast.error('PDF failed: ' + err.message); }
   };
 
-  const handleExportSingleSupervisorPDF = async (w) => {
-    const doc = new jsPDF();
-    const logoDataUrl = await getLogoDataUrl();
-
-    applyPDFHeader(doc, {
-      title: `Site Wallet Statement - ${w.supervisor}`,
-      subtitle: `${w.projectName} (${w.siteName}) | Live Balance: ${formatPDFINR(w.currentBalance)}`,
-      category: 'SITE FINANCIAL STATEMENT',
-      docRef: `SITE-STMT-${w.project.id}-${new Date().toISOString().slice(0, 10).replace(/-/g, '')}`,
-      logoDataUrl
-    });
-
-    doc.autoTable({
-      head: [['Expense ID', 'Date', 'Category', 'Vendor / Payee', 'Amount', 'Status']],
-      body: (w.siteExpenses || []).map(e => [
-        e.id,
-        e.date || '-',
-        e.category,
-        e.vendor || e.payee || '-',
-        formatPDFINR(e.amount),
-        e.status
-      ]),
-      startY: 56,
-      theme: 'grid',
-      headStyles: { fillColor: [37, 99, 235], textColor: [255, 255, 255], fontSize: 9 },
-      bodyStyles: { fontSize: 8.5 }
-    });
-
-    applyPDFFooter(doc, {
-      preparedBy: 'Accounts Dept',
-      verifiedBy: 'Dinesh Sir'
-    });
-
-    doc.save(`Site_Statement_${w.supervisor.replace(/\s+/g, '_')}_${new Date().toISOString().split('T')[0]}.pdf`);
+  // ── Print ──────────────────────────────────────────────────────────────────
+  const handlePrint = async () => {
+    try {
+      const logoBase64 = await getCompanyLogoBase64();
+      const logoSrc = logoBase64 || `${window.location.origin}/logo_new.png`;
+      const rows = filtered.map(r => {
+        const isPending = r.rowType === 'pending';
+        return `<tr style="background:${isPending ? '#fff' : '#f0fdf4'}">
+          <td style="font-weight:800;color:#059669;">${escapeHtml(r.displayId)}</td>
+          <td><strong>${escapeHtml(r.supervisor)}</strong></td>
+          <td>${escapeHtml(r.site)}</td>
+          <td>${escapeHtml(r.purpose)}</td>
+          <td>${escapeHtml(r.urgency)}</td>
+          <td>${r.date}</td>
+          <td>${r.date}</td>
+          <td style="text-align:right;font-weight:800;">&#8377;${(r.amount || 0).toLocaleString('en-IN')}</td>
+          <td style="text-align:center;">
+            <span style="padding:2px 8px;border-radius:9999px;font-weight:800;font-size:9px;
+              background:${isPending ? '#fef9c3' : '#dcfce7'};color:${isPending ? '#a16207' : '#15803d'};">
+              ${isPending ? 'Pending Disbursal' : 'Disbursed'}
+            </span>
+          </td>
+        </tr>`;
+      }).join('');
+      const html = `<!DOCTYPE html><html><head><title>Fund Requests</title>
+        <style>@page{size:A4 landscape;margin:12mm}body{font-family:sans-serif;font-size:10px;color:#0f172a}
+        table{width:100%;border-collapse:collapse}th{background:#f1f5f9;padding:6px 8px;border:1px solid #cbd5e1;font-size:9px;text-transform:uppercase}
+        td{padding:6px 8px;border:1px solid #e2e8f0;vertical-align:middle}
+        .hdr{display:flex;justify-content:space-between;border-bottom:2px solid #059669;padding-bottom:10px;margin-bottom:14px;align-items:center}</style>
+        </head><body>
+        <div class="hdr">
+          <div style="display:flex;align-items:center;gap:12px;">
+            <img src="${logoSrc}" style="height:40px;max-width:160px;object-fit:contain;"/>
+            <div><div style="font-size:15px;font-weight:800;">Advance Fund Requests</div>
+            <div style="font-size:9px;color:#64748b;">Generated: ${new Date().toLocaleString()}</div></div>
+          </div>
+          <div style="font-size:10px;text-align:right;">
+            <strong>Pending:</strong> ${pendingCount} (&#8377;${pendingTotal.toLocaleString('en-IN')})<br/>
+            <strong>Disbursed:</strong> ${disbursedCount}
+          </div>
+        </div>
+        <table><thead><tr><th>REQ ID</th><th>SUPERVISOR</th><th>SITE</th><th>PURPOSE</th><th>URGENCY</th><th>REQUESTED ON</th><th style="text-align:right;">AMOUNT</th><th>STATUS</th></tr></thead>
+        <tbody>${rows}</tbody></table></body></html>`;
+      const w = window.open('', '_blank', 'width=1100,height=750');
+      if (!w) { toast.error('Popup blocked!'); return; }
+      w.document.open(); w.document.write(html); w.document.close();
+      const doPrint = () => { try { w.focus(); w.print(); } catch (e) { console.error(e); } };
+      w.onload = doPrint; setTimeout(doPrint, 400);
+    } catch (err) { toast.error('Print failed: ' + err.message); }
   };
 
+  const urgencyColors = (urgency) => {
+    const t = (urgency || '').toLowerCase();
+    const isHigh = t.includes('immediate');
+    const isMed = t.includes('24');
+    return { isHigh, isMed };
+  };
+
+  // ─────────────────────────────────────────────────────────────────────────
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem', paddingBottom: '3rem' }}>
-      
-      {/* Top Right Actions Row (Print, Excel, PDF) */}
-      <div className="no-print" style={{
-        display: 'flex',
-        justifyContent: 'flex-end',
-        alignItems: 'center',
-        gap: '0.75rem',
-        marginTop: '-0.5rem'
-      }}>
-        {/* Print Button */}
-        <button
-          onClick={handlePrint}
-          style={{
-            padding: '0.55rem 1.15rem',
-            borderRadius: '12px',
-            backgroundColor: 'var(--surface-bg)',
-            color: 'var(--text-primary)',
-            border: '1.5px solid #cbd5e1',
-            fontWeight: '600',
-            fontSize: '0.86rem',
-            display: 'inline-flex',
-            alignItems: 'center',
-            gap: '0.45rem',
-            cursor: 'pointer',
-            boxShadow: '0 1px 4px rgba(0,0,0,0.03)',
-            transition: 'all 0.15s ease'
-          }}
-        >
-          <Printer size={17} style={{ color: 'var(--text-primary)' }} />
-          Print
-        </button>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem', width: '100%', boxSizing: 'border-box' }}>
+      <Toaster position="top-right" toastOptions={{ duration: 3000 }} />
 
-        {/* Excel Button */}
-        <button
-          onClick={handleExportCSV}
-          style={{
-            padding: '0.55rem 1.15rem',
-            borderRadius: '12px',
-            backgroundColor: 'var(--surface-bg)',
-            color: '#16a34a',
-            border: '1.5px solid #16a34a',
-            fontWeight: '600',
-            fontSize: '0.86rem',
-            display: 'inline-flex',
-            alignItems: 'center',
-            gap: '0.45rem',
-            cursor: 'pointer',
-            boxShadow: '0 1px 4px rgba(0,0,0,0.03)',
-            transition: 'all 0.15s ease'
-          }}
-        >
-          <FileSpreadsheet size={17} color="#16a34a" />
-          Excel
-        </button>
-
-        {/* PDF Statement Button */}
-        <button
-          onClick={handleExportPDF}
-          style={{
-            padding: '0.55rem 1.15rem',
-            borderRadius: '12px',
-            backgroundColor: 'var(--surface-bg)',
-            color: '#dc2626',
-            border: '1.5px solid #dc2626',
-            fontWeight: '600',
-            fontSize: '0.86rem',
-            display: 'inline-flex',
-            alignItems: 'center',
-            gap: '0.45rem',
-            cursor: 'pointer',
-            boxShadow: '0 1px 4px rgba(0,0,0,0.03)',
-            transition: 'all 0.15s ease'
-          }}
-        >
-          <Download size={17} color="#dc2626" />
-          PDF
-        </button>
-      </div>
-
-      {/* Standalone Search Bar on top of table (No extra wrapper card, no filter pills) */}
-      <div className="no-print" style={{
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        marginBottom: '-0.35rem'
-      }}>
+      {/* Top bar: Stats Cards */}
+      <div style={{ display: 'flex', gap: '1.25rem', flexWrap: 'wrap' }}>
+        {/* Pending Card */}
         <div style={{
-          display: 'flex',
-          alignItems: 'center',
-          gap: '0.65rem',
-          backgroundColor: 'var(--surface-bg)',
-          padding: '0.6rem 0.95rem',
-          borderRadius: '12px',
-          border: '1.5px solid var(--border-color)',
-          width: '100%',
-          maxWidth: '380px',
-          boxSizing: 'border-box',
-          boxShadow: '0 1px 3px rgba(0,0,0,0.02)'
+          flex: '1 1 240px', display: 'flex', alignItems: 'center', gap: '1.25rem',
+          padding: '1.25rem 1.5rem', borderRadius: '16px',
+          backgroundColor: 'var(--card-bg, #ffffff)',
+          border: '1px solid var(--border-color, #e2e8f0)',
+          boxShadow: '0 4px 15px rgba(0,0,0,0.03)',
+          position: 'relative', overflow: 'hidden'
         }}>
-          <Search size={16} strokeWidth={1.8} style={{ color: 'var(--text-secondary)', flexShrink: 0 }} />
-          <input 
-            type="text"
-            placeholder="Search supervisor name, site location, mobile..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            style={{
-              width: '100%',
-              background: 'transparent',
-              border: 'none',
-              outline: 'none',
-              color: 'var(--text-primary)',
-              fontSize: '0.86rem',
-              padding: 0
-            }}
-          />
-          {searchQuery && (
-            <button 
-              onClick={() => setSearchQuery('')} 
-              style={{ background: 'transparent', border: 'none', cursor: 'pointer', color: 'var(--text-secondary)', padding: 0, display: 'flex', alignItems: 'center' }}
-            >
-              <X size={15} />
-            </button>
-          )}
+          <div style={{
+            position: 'absolute', top: 0, left: 0, width: '4px', height: '100%',
+            backgroundColor: '#eab308'
+          }} />
+          <div style={{
+            width: '48px', height: '48px', borderRadius: '14px',
+            backgroundColor: '#fef9c3', display: 'flex', alignItems: 'center', justifyContent: 'center',
+            boxShadow: '0 2px 5px rgba(234,179,8,0.2)'
+          }}>
+            <Clock size={24} color="#a16207" />
+          </div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.2rem' }}>
+            <div style={{ fontSize: '0.9rem', color: 'var(--text-secondary, #64748b)', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+              Pending Disbursal
+            </div>
+            <div style={{ display: 'flex', alignItems: 'baseline', gap: '0.5rem' }}>
+              <span style={{ fontSize: '1.75rem', fontWeight: '900', color: 'var(--text-primary, #0f172a)', lineHeight: '1' }}>
+                {pendingCount}
+              </span>
+              <span style={{ fontSize: '1rem', color: '#a16207', fontWeight: '800' }}>
+                (₹{pendingTotal.toLocaleString('en-IN')})
+              </span>
+            </div>
+          </div>
+        </div>
+
+        {/* Disbursed Card */}
+        <div style={{
+          flex: '1 1 240px', display: 'flex', alignItems: 'center', gap: '1.25rem',
+          padding: '1.25rem 1.5rem', borderRadius: '16px',
+          backgroundColor: 'var(--card-bg, #ffffff)',
+          border: '1px solid var(--border-color, #e2e8f0)',
+          boxShadow: '0 4px 15px rgba(0,0,0,0.03)',
+          position: 'relative', overflow: 'hidden'
+        }}>
+          <div style={{
+            position: 'absolute', top: 0, left: 0, width: '4px', height: '100%',
+            backgroundColor: '#10b981'
+          }} />
+          <div style={{
+            width: '48px', height: '48px', borderRadius: '14px',
+            backgroundColor: '#dcfce7', display: 'flex', alignItems: 'center', justifyContent: 'center',
+            boxShadow: '0 2px 5px rgba(16,185,129,0.2)'
+          }}>
+            <CheckCircle2 size={24} color="#15803d" />
+          </div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.2rem' }}>
+            <div style={{ fontSize: '0.9rem', color: 'var(--text-secondary, #64748b)', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+              Total Disbursed
+            </div>
+            <div style={{ display: 'flex', alignItems: 'baseline', gap: '0.5rem' }}>
+              <span style={{ fontSize: '1.75rem', fontWeight: '900', color: 'var(--text-primary, #0f172a)', lineHeight: '1' }}>
+                {disbursedCount}
+              </span>
+              <span style={{ fontSize: '0.9rem', color: '#15803d', fontWeight: '700' }}>
+                records
+              </span>
+            </div>
+          </div>
         </div>
       </div>
 
-      {/* 3. SUPERVISORS WALLET FUNDS MAIN DATA TABLE */}
+      {/* Action bar: Search + export buttons */}
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem' }}>
+        {/* Search */}
+        <div style={{ position: 'relative', width: '100%', maxWidth: '400px' }}>
+          <div style={{ position: 'absolute', left: '1rem', top: '50%', transform: 'translateY(-50%)', color: '#64748b', display: 'flex', alignItems: 'center' }}>
+            <Search size={17} />
+          </div>
+          <input
+            type="text"
+            placeholder="Search supervisor, site, purpose, amount..."
+            value={searchQuery}
+            onChange={e => { setSearchQuery(e.target.value); setCurrentPage(1); }}
+            style={{
+              width: '100%', paddingLeft: '2.75rem', paddingRight: '1rem',
+              paddingTop: '0.65rem', paddingBottom: '0.65rem',
+              borderRadius: '12px', backgroundColor: 'var(--input-bg,#ffffff)',
+              border: '1.5px solid var(--border-color,#cbd5e1)',
+              color: 'var(--text-primary,#0f172a)', fontSize: '0.9rem',
+              outline: 'none', boxSizing: 'border-box'
+            }}
+          />
+        </div>
+
+        {/* Export */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem' }}>
+          <button onClick={handleDownloadPDF} style={btnStyle('#4f46e5', '#eef2ff', '#c7d2fe')}>
+            <Download size={15} style={{ color: '#4f46e5' }} /> PDF
+          </button>
+          
+          
+        </div>
+      </div>
+
+
+      {/* Combined Table */}
       <div style={{
-        backgroundColor: 'var(--surface-bg)',
-        borderRadius: '16px',
-        border: '1px solid var(--border-color)',
-        boxShadow: '0 4px 20px rgba(0,0,0,0.03)',
-        overflow: 'hidden'
+        backgroundColor: 'var(--card-bg,#ffffff)', borderRadius: '16px',
+        border: '1px solid var(--border-color,#e8ecf2)',
+        boxShadow: '0 2px 10px rgba(0,0,0,0.03)', overflow: 'hidden', width: '100%'
       }}>
         <div style={{ overflowX: 'auto' }}>
-          <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
+          <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '0.9rem' }}>
             <thead>
               <tr style={{
-                backgroundColor: 'var(--table-header-bg, rgba(241,245,249,0.7))',
-                borderBottom: '1px solid var(--border-color)',
-                fontSize: '0.78rem',
-                fontWeight: '800',
-                color: 'var(--text-secondary)',
-                textTransform: 'uppercase',
-                letterSpacing: '0.04em'
+                backgroundColor: 'var(--table-header-bg,#fafbfc)',
+                borderBottom: '2px solid var(--border-color,#e8ecf2)',
+                color: 'var(--text-secondary,#475569)',
+                fontSize: '0.74rem', fontWeight: '800',
+                textTransform: 'uppercase', letterSpacing: '0.06em'
               }}>
-                 <th style={{ padding: '1rem 1.25rem' }}>ID</th>
-                 <th style={{ padding: '1rem 1.25rem' }}>Site Supervisor</th>
-                 <th style={{ padding: '1rem 1.25rem' }}>Assigned Project & Site</th>
-                 <th style={{ padding: '1rem 1.25rem' }}>Total Advanced</th>
-                 <th style={{ padding: '1rem 1.25rem' }}>Total Spent</th>
-                 <th style={{ padding: '1rem 1.25rem', color: '#059669' }}>Live Wallet Balance</th>
-                 <th style={{ padding: '1rem 1.25rem' }}>Ops Verification</th>
-                 <th style={{ padding: '1rem 1.25rem' }}>Urgency</th>
-                 <th style={{ padding: '1rem 1.25rem' }}>Pending Fund Request</th>
-                 <th className="no-print" style={{ padding: '1rem 1.25rem', textAlign: 'right' }}>Action</th>
+                <th style={{ padding: '0.85rem 0.75rem', whiteSpace: 'nowrap' }}>REQUISITION ID</th>
+                <th style={{ padding: '0.85rem 0.75rem', whiteSpace: 'nowrap' }}>SUPERVISOR</th>
+                <th style={{ padding: '0.85rem 0.75rem', whiteSpace: 'nowrap' }}>SITE LOCATION</th>
+                <th style={{ padding: '0.85rem 0.75rem', whiteSpace: 'nowrap' }}>PURPOSE / REASON</th>
+                <th style={{ padding: '0.85rem 0.75rem', whiteSpace: 'nowrap' }}>URGENCY</th>
+                <th style={{ padding: '0.85rem 0.75rem', whiteSpace: 'nowrap' }}>REQUESTED ON</th>
+
+                <th style={{ padding: '0.85rem 0.75rem', whiteSpace: 'nowrap' }}>WALLET (&#8377;)</th>
+                <th style={{ padding: '0.85rem 0.75rem', whiteSpace: 'nowrap', textAlign: 'right' }}>AMOUNT (&#8377;)</th>
+                <th style={{ padding: '0.85rem 0.75rem', whiteSpace: 'nowrap', textAlign: 'center' }}>STATUS / ACTION</th>
               </tr>
             </thead>
             <tbody>
-              {filteredWallets.length === 0 ? (
+              {paginated.length === 0 ? (
                 <tr>
-                  <td colSpan={9} style={{ padding: '3.5rem 1rem', textAlign: 'center', color: 'var(--text-secondary)' }}>
-                    <Wallet size={40} style={{ opacity: 0.4, marginBottom: '0.5rem' }} />
-                    <div style={{ fontSize: '1rem', fontWeight: '700', color: 'var(--text-primary)' }}>No supervisor wallets found</div>
-                    <div style={{ fontSize: '0.82rem', marginTop: '0.2rem' }}>No records match your current search query "{searchQuery}".</div>
+                  <td colSpan={9} style={{ padding: '3.5rem 1rem', textAlign: 'center' }}>
+                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.6rem' }}>
+                      <CheckCircle2 size={40} style={{ color: '#10b981', opacity: 0.5 }} />
+                      <span style={{ fontSize: '1rem', fontWeight: '700', color: 'var(--text-primary,#334155)' }}>
+                        No records found
+                      </span>
+                      <span style={{ fontSize: '0.84rem', color: '#94a3b8' }}>
+                        {searchQuery ? `No results for "${searchQuery}"` : 'Advance requests will appear here once Operations approves them.'}
+                      </span>
+                    </div>
                   </td>
                 </tr>
               ) : (
-                filteredWallets.map((w, idx) => {
-                  const hasPending = Boolean(w.pendingRequest);
-                  const isRejected = Boolean(w.rejectedRequest) && !hasPending;
-                  const req = w.pendingRequest;
-                  const spentPercent = w.totalLoaded > 0 ? Math.min(100, Math.round((w.totalSpent / w.totalLoaded) * 100)) : 0;
-                  const isLow = w.currentBalance < 40000;
+                paginated.map((req, idx, arr) => {
+                  const isPending = req.rowType === 'pending';
+                  const { isHigh, isMed } = urgencyColors(req.urgency);
+                  const lookupKey = req.supervisorId || req.supervisor;
+                  const wallet = lookupKey ? supervisorWallets[lookupKey] : null;
+                  const walletBalance = wallet ? wallet.advance - wallet.spent : 0;
+
+                  // separator line between pending and disbursed sections
+                  const prevRow = idx > 0 ? paginated[idx - 1] : null;
+                  const showSeparator = prevRow && prevRow.rowType === 'pending' && req.rowType === 'disbursed';
 
                   return (
-                    <tr 
-                      key={w.supervisor}
-                      style={{
-                        borderBottom: '1px solid var(--border-color)',
-                        backgroundColor: hasPending ? 'rgba(234, 88, 12, 0.025)' : (idx % 2 === 1 ? 'rgba(0,0,0,0.015)' : 'transparent'),
-                        transition: 'background-color 0.15s ease'
-                      }}
-                    >
-                      {/* 0. ID Column */}
-                      <td style={{ padding: '1.15rem 1.25rem' }}>
-                        <div style={{ fontSize: '0.75rem', fontFamily: 'monospace', color: 'var(--text-secondary)', fontWeight: '700', maxWidth: '100px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                          {req ? req.id.slice(0, 8).toUpperCase() : '—'}
-                        </div>
-                      </td>
-
-                      {/* 1. Supervisor Profile */}
-                      <td style={{ padding: '1.15rem 1.25rem' }}>
-                        <div>
-                          <div style={{ fontSize: '0.94rem', color: 'var(--text-primary)', fontWeight: '800' }}>
-                            {w.supervisor}
-                          </div>
-
-                          <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', fontSize: '0.78rem', color: 'var(--text-secondary)', marginTop: '0.25rem' }}>
-                            <Phone size={12} /> {w.mobile}
-                          </div>
-                        </div>
-                      </td>
-
-                       {/* 2. Assigned Project & Site */}
-                       <td style={{ padding: '1.15rem 1.25rem' }}>
-                         <div style={{ fontWeight: '700', fontSize: '0.88rem', color: 'var(--text-primary)' }}>
-                           {w.projectName}
-                         </div>
-                         <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', marginTop: '0.2rem' }}>
-                           {w.siteName}
-                         </div>
-                       </td>
-
-                       {/* NEW: Total Advanced Column */}
-                       <td style={{ padding: '1.15rem 1.25rem' }}>
-                         <div style={{ fontWeight: '700', fontSize: '0.88rem', color: 'var(--text-primary)' }}>
-                           {formatINR(w.totalLoaded)}
-                         </div>
-                       </td>
-
-                       {/* NEW: Total Spent Column */}
-                       <td style={{ padding: '1.15rem 1.25rem' }}>
-                         <div style={{ fontWeight: '700', fontSize: '0.88rem', color: '#ef4444' }}>
-                           {formatINR(w.totalSpent)}
-                         </div>
-                       </td>
-
-                       {/* NEW: Live Wallet Balance Column */}
-                       <td style={{ padding: '1.15rem 1.25rem' }}>
-                         <div style={{ fontWeight: '800', fontSize: '0.92rem', color: w.currentBalance < 40000 ? '#ef4444' : '#059669' }}>
-                           {formatINR(w.currentBalance)}
-                         </div>
-                         {w.currentBalance < 40000 && (
-                           <div style={{ fontSize: '0.7rem', color: '#ef4444', fontWeight: '600', marginTop: '0.15rem' }}>Low Float</div>
-                         )}
-                       </td>
-
-                       {/* 5. Ops Verification Column */}
-                       <td style={{ padding: '1.15rem 1.25rem' }}>
-                         {req ? (
-                           <span style={{
-                             display: 'inline-flex',
-                             alignItems: 'center',
-                             gap: '0.35rem',
-                             fontSize: '0.78rem',
-                             fontWeight: '800',
-                             padding: '0.35rem 0.75rem',
-                             borderRadius: '20px',
-                             backgroundColor: req.opsVerificationStatus === 'Verified' ? 'rgba(16, 185, 129, 0.12)' : (req.opsVerificationStatus === 'Rejected' ? 'rgba(239, 68, 68, 0.12)' : 'rgba(245, 158, 11, 0.12)'),
-                             color: req.opsVerificationStatus === 'Verified' ? '#10b981' : (req.opsVerificationStatus === 'Rejected' ? '#dc2626' : '#d97706')
-                           }}>
-                             {req.opsVerificationStatus === 'Verified' ? <CheckCircle2 size={13} strokeWidth={2.5} /> : (req.opsVerificationStatus === 'Rejected' ? <XCircle size={13} strokeWidth={2.5} /> : <Clock size={13} strokeWidth={2.5} />)}
-                             {req.opsVerificationStatus === 'Verified' ? 'Verified' : (req.opsVerificationStatus === 'Rejected' ? 'Rejected' : 'Pending')}
-                            </span>
-                          ) : (
-                            <span style={{ color: 'var(--text-secondary)' }}>—</span>
-                          )}
-                        </td>
-
-                       {/* 5b. Urgency Column */}
-                       <td style={{ padding: '1.15rem 1.25rem', whiteSpace: 'nowrap' }}>
-                         {req && req.urgency ? (
-                           <div style={{
-                             display: 'inline-flex', alignItems: 'center', gap: '0.35rem',
-                             backgroundColor: req.urgency === 'Immediate' ? '#fee2e2' : req.urgency === 'Within 24 Hours' ? '#dbeafe' : '#f1f5f9',
-                             padding: '0.35rem 0.65rem', borderRadius: '8px',
-                             color: req.urgency === 'Immediate' ? '#dc2626' : req.urgency === 'Within 24 Hours' ? '#2563eb' : '#64748b'
-                           }}>
-                             <Clock size={12} />
-                             <span style={{ fontSize: '0.78rem', fontWeight: '700' }}>{req.urgency}</span>
-                           </div>
-                         ) : (
-                           <span style={{ color: 'var(--text-secondary)' }}>—</span>
-                         )}
-                       </td>
-
-                       {/* 6. Pending Fund Request Column */}
-                       <td style={{ padding: '1.15rem 1.25rem' }}>
-                         {hasPending ? (
-                           <div style={{ fontSize: '0.95rem', fontWeight: '800', color: '#ea580c' }}>
-                             {formatINR(req.amount || req.approvedAmount || req.requestedAmount)}
-                           </div>
-                         ) : (
-                           <span style={{ fontSize: '0.82rem', color: 'var(--text-secondary)' }}>
-                             —
-                           </span>
-                         )}
-                       </td>
-
-                      {/* 7. Action Column (Approve/Reject when pending and ops verified) */}
-                      <td className="no-print" style={{ padding: '1.15rem 1.25rem', textAlign: 'right', whiteSpace: 'nowrap' }}>
-                        {hasPending ? (
-                          req.opsVerificationStatus === 'Verified' ? (
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.45rem', justifyContent: 'flex-end' }}>
-                              <button
-                                onClick={() => req.purpose ? (onDisburseAdvance && onDisburseAdvance(req)) : (onQuickApprove && onQuickApprove(req))}
-                                style={{
-                                  padding: '0.45rem 0.85rem',
-                                  borderRadius: '8px',
-                                  backgroundColor: '#10b981',
-                                  color: '#ffffff',
-                                  border: 'none',
-                                  fontSize: '0.78rem',
-                                  fontWeight: '700',
-                                  display: 'inline-flex',
-                                  alignItems: 'center',
-                                  gap: '0.35rem',
-                                  cursor: 'pointer',
-                                  boxShadow: '0 2px 6px rgba(16, 185, 129, 0.25)',
-                                  transition: 'transform 0.1s ease'
-                                }}
-                                title={`Approve Claim ₹${((req.amount || req.approvedAmount) || 0).toLocaleString()} for ${w.supervisor}`}
-                              >
-                                <Check size={14} strokeWidth={2.5} />
-                                Approve
-                              </button>
-
-                              <button
-                                onClick={() => req.purpose ? (onRejectAdvance && onRejectAdvance(req)) : (onRejectExpense && onRejectExpense(req))}
-                                style={{
-                                  padding: '0.45rem 0.85rem',
-                                  borderRadius: '10px',
-                                  border: '1.5px solid #fecdd3',
-                                  backgroundColor: '#fff1f2',
-                                  color: '#e11d48',
-                                  fontSize: '0.84rem',
-                                  fontWeight: '800',
-                                  cursor: 'pointer',
-                                  display: 'inline-flex',
-                                  alignItems: 'center',
-                                  gap: '0.45rem',
-                                  boxShadow: '0 1px 3px rgba(0,0,0,0.03)',
-                                  transition: 'all 0.15s ease'
-                                }}
-                                onMouseEnter={(e) => {
-                                  e.currentTarget.style.backgroundColor = '#fbe1e5';
-                                  e.currentTarget.style.borderColor = '#fda4af';
-                                }}
-                                onMouseLeave={(e) => {
-                                  e.currentTarget.style.backgroundColor = '#fff1f2';
-                                  e.currentTarget.style.borderColor = '#fecdd3';
-                                }}
-                                title={`Reject request for ${w.supervisor}`}
-                              >
-                                <X size={14} strokeWidth={2.5} />
-                                Reject
-                              </button>
-                            </div>
-                          ) : (
-                            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end' }}>
-                              <span style={{ fontSize: '0.78rem', color: 'var(--text-secondary)', fontStyle: 'italic' }}>
-                                Awaiting Ops Verification
+                    <React.Fragment key={req.id}>
+                      {showSeparator && (
+                        <tr>
+                          <td colSpan={9} style={{ padding: '0', height: '0' }}>
+                            <div style={{
+                              display: 'flex', alignItems: 'center', gap: '0.6rem',
+                              padding: '0.6rem 0.75rem',
+                              backgroundColor: '#f0fdf4',
+                              borderTop: '2px solid #86efac',
+                              borderBottom: '1px solid #bbf7d0'
+                            }}>
+                              <CheckCircle2 size={14} color="#15803d" />
+                              <span style={{ fontSize: '0.78rem', fontWeight: '800', color: '#15803d', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                                Disbursed History
                               </span>
                             </div>
-                          )
-                        ) : isRejected ? (
-                          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end' }}>
-                            <span style={{
-                              display: 'inline-flex',
-                              alignItems: 'center',
-                              gap: '0.35rem',
-                              fontSize: '0.78rem',
-                              fontWeight: '800',
-                              padding: '0.35rem 0.75rem',
-                              borderRadius: '20px',
-                              backgroundColor: 'rgba(239, 68, 68, 0.12)',
-                              color: '#dc2626'
-                            }}>
-                              <XCircle size={13} strokeWidth={2.5} /> Rejected
-                            </span>
+                          </td>
+                        </tr>
+                      )}
+                      <tr
+                        style={{
+                          borderBottom: idx === arr.length - 1 ? 'none' : `1px solid ${isPending ? 'var(--border-color,#f1f5f9)' : '#f0fdf4'}`,
+                          backgroundColor: isPending ? 'transparent' : 'rgba(240,253,244,0.35)',
+                          transition: 'background-color 0.15s ease'
+                        }}
+                        onMouseEnter={e => e.currentTarget.style.backgroundColor = isPending ? 'var(--table-hover,rgba(241,245,249,0.5))' : 'rgba(220,252,231,0.5)'}
+                        onMouseLeave={e => e.currentTarget.style.backgroundColor = isPending ? 'transparent' : 'rgba(240,253,244,0.35)'}
+                      >
+                        {/* REQ ID */}
+                        <td style={{ padding: '0.75rem 0.75rem', verticalAlign: 'middle', whiteSpace: 'nowrap' }}>
+                          <strong style={{ color: '#059669', fontSize: '0.9rem', fontWeight: '800' }}>{req.displayId}</strong>
+                        </td>
+
+                        {/* SUPERVISOR */}
+                        <td style={{ padding: '0.75rem 0.75rem', verticalAlign: 'middle', whiteSpace: 'nowrap' }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
+                            <div style={{ width: '30px', height: '30px', borderRadius: '50%', backgroundColor: isPending ? '#eff6ff' : '#dcfce7', color: isPending ? '#2563eb' : '#15803d', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: '800', fontSize: '0.82rem', border: `1px solid ${isPending ? '#bfdbfe' : '#86efac'}`, flexShrink: 0 }}>
+                              {(req.supervisor || 'S').charAt(0)}
+                            </div>
+                            <strong style={{ color: 'var(--text-primary,#0f172a)', fontSize: '0.9rem' }}>{req.supervisor}</strong>
                           </div>
-                        ) : (
-                          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end' }}>
-                            <span style={{
-                              display: 'inline-flex',
-                              alignItems: 'center',
-                              gap: '0.35rem',
-                              fontSize: '0.78rem',
-                              fontWeight: '800',
-                              padding: '0.35rem 0.75rem',
-                              borderRadius: '20px',
-                              backgroundColor: 'rgba(16, 185, 129, 0.12)',
-                              color: '#10b981'
-                            }}>
-                              <CheckCircle2 size={13} strokeWidth={2.5} /> Send to Vendor
-                            </span>
+                        </td>
+
+                        {/* SITE */}
+                        <td style={{ padding: '0.75rem 0.75rem', verticalAlign: 'middle', whiteSpace: 'nowrap' }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '0.45rem' }}>
+                            <MapPin size={14} style={{ color: isPending ? '#2563eb' : '#059669', flexShrink: 0 }} />
+                            <strong style={{ color: 'var(--text-primary,#0f172a)', fontSize: '0.9rem' }}>{req.site}</strong>
                           </div>
-                        )}
-                      </td>
-                    </tr>
+                        </td>
+
+                        {/* PURPOSE */}
+                        <td style={{ padding: '0.75rem 0.75rem', verticalAlign: 'middle' }}>
+                          <span style={{ color: 'var(--text-secondary,#334155)', fontSize: '0.88rem' }}>{req.purpose}</span>
+                        </td>
+
+                        {/* URGENCY */}
+                        <td style={{ padding: '0.75rem 0.75rem', verticalAlign: 'middle', whiteSpace: 'nowrap' }}>
+                          <div style={{ display: 'inline-flex', alignItems: 'center', gap: '0.35rem', backgroundColor: isHigh ? 'var(--badge-danger-bg)' : isMed ? 'var(--badge-warning-bg)' : 'var(--badge-info-bg)', padding: '0.3rem 0.6rem', borderRadius: '10px', border: `1px solid ${isHigh ? 'var(--badge-danger-border)' : isMed ? 'var(--badge-warning-border)' : 'var(--badge-info-border)'}` }}>
+                            <Clock size={12} style={{ color: isHigh ? 'var(--badge-danger-text)' : isMed ? 'var(--badge-warning-text)' : 'var(--badge-info-text)' }} />
+                            <span style={{ fontSize: '0.76rem', fontWeight: '800', color: isHigh ? 'var(--badge-danger-text)' : isMed ? 'var(--badge-warning-text)' : 'var(--badge-info-text)' }}>{req.urgency}</span>
+                          </div>
+                        </td>
+
+                        {/* REQUESTED ON */}
+                        <td style={{ padding: '0.75rem 0.75rem', verticalAlign: 'middle', whiteSpace: 'nowrap' }}>
+                          <span style={{ color: 'var(--text-secondary,#475569)', fontSize: '0.87rem', fontWeight: '600' }}>{req.date}</span>
+                        </td>
+
+
+                        {/* WALLET */}
+                        <td style={{ padding: '0.75rem 0.75rem', verticalAlign: 'middle', whiteSpace: 'nowrap' }}>
+                          <span style={{ fontSize: '0.9rem', fontWeight: '700', color: walletBalance < 0 ? 'var(--badge-danger-text)' : '#0ea5e9' }}>
+                            &#8377;{(Number(walletBalance) || 0).toLocaleString('en-IN')}
+                          </span>
+                        </td>
+
+                        {/* AMOUNT */}
+                        <td style={{ padding: '0.75rem 0.75rem', verticalAlign: 'middle', whiteSpace: 'nowrap', textAlign: 'right' }}>
+                          <span style={{ fontSize: '1rem', fontWeight: '900', color: isPending ? 'var(--text-primary,#0f172a)' : '#059669' }}>
+                            &#8377;{(Number(req.amount) || 0).toLocaleString('en-IN')}
+                          </span>
+                        </td>
+
+                        {/* STATUS / ACTION */}
+                        <td style={{ padding: '0.75rem 0.75rem', verticalAlign: 'middle', textAlign: 'center', whiteSpace: 'nowrap' }}>
+                          {isPending ? (
+                            <div style={{ display: 'inline-flex', flexDirection: 'column', alignItems: 'center', gap: '0.4rem' }}>
+                              <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.3rem', padding: '0.22rem 0.55rem', borderRadius: '9999px', backgroundColor: '#dcfce7', color: '#15803d', border: '1px solid #bbf7d0', fontSize: '0.7rem', fontWeight: '800' }}>
+                                <ShieldCheck size={10} strokeWidth={2.5} /> Ops Approved
+                              </span>
+                              <div style={{ display: 'inline-flex', alignItems: 'center', gap: '0.4rem' }}>
+                                <button
+                                  onClick={() => onDisburseAdvance && onDisburseAdvance(req)}
+                                  style={{ padding: '0.38rem 0.7rem', borderRadius: '8px', border: 'none', backgroundColor: '#059669', color: '#fff', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: '0.28rem', fontSize: '0.78rem', fontWeight: '800', boxShadow: '0 2px 6px rgba(5,150,105,0.3)', transition: 'all 0.15s ease' }}
+                                  onMouseEnter={e => { e.currentTarget.style.backgroundColor = '#047857'; e.currentTarget.style.transform = 'translateY(-1px)'; }}
+                                  onMouseLeave={e => { e.currentTarget.style.backgroundColor = '#059669'; e.currentTarget.style.transform = 'none'; }}
+                                  title={`Disburse to ${req.supervisor}`}
+                                >
+                                  <IndianRupee size={12} strokeWidth={2.5} /> Disburse
+                                </button>
+                                <button
+                                  onClick={() => onRejectAdvance && onRejectAdvance(req)}
+                                  style={{ padding: '0.38rem', borderRadius: '8px', border: '1px solid #fecdd3', backgroundColor: '#fff1f2', color: '#e11d48', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', transition: 'all 0.15s ease' }}
+                                  onMouseEnter={e => e.currentTarget.style.backgroundColor = '#ffe4e6'}
+                                  onMouseLeave={e => e.currentTarget.style.backgroundColor = '#fff1f2'}
+                                  title="Reject"
+                                >
+                                  <X size={14} />
+                                </button>
+                              </div>
+                            </div>
+                          ) : (
+                            <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.35rem', padding: '0.3rem 0.75rem', borderRadius: '9999px', backgroundColor: '#dcfce7', color: '#15803d', border: '1px solid #86efac', fontSize: '0.75rem', fontWeight: '800' }}>
+                              <CheckCircle2 size={12} strokeWidth={2.5} /> Disbursed
+                            </span>
+                          )}
+                        </td>
+                      </tr>
+                    </React.Fragment>
                   );
                 })
               )}
@@ -647,10 +525,30 @@ const SupervisorWalletFundsTab = ({
         </div>
       </div>
 
-      {/* Print Footer for official printing */}
-      <PrintFooter />
+      {/* Pagination */}
+      {totalPages > 1 && (
+        <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '0.75rem' }}>
+          <button onClick={() => setCurrentPage(p => Math.max(1, p - 1))} disabled={safePage === 1}
+            style={{ padding: '0.45rem 0.9rem', borderRadius: '8px', border: '1.5px solid var(--border-color,#cbd5e1)', backgroundColor: 'var(--card-bg,#fff)', color: 'var(--text-primary)', fontWeight: '700', cursor: safePage === 1 ? 'not-allowed' : 'pointer', opacity: safePage === 1 ? 0.4 : 1 }}>
+            &larr; Prev
+          </button>
+          <span style={{ fontSize: '0.88rem', color: 'var(--text-secondary)', fontWeight: '600' }}>Page {safePage} of {totalPages}</span>
+          <button onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))} disabled={safePage === totalPages}
+            style={{ padding: '0.45rem 0.9rem', borderRadius: '8px', border: '1.5px solid var(--border-color,#cbd5e1)', backgroundColor: 'var(--card-bg,#fff)', color: 'var(--text-primary)', fontWeight: '700', cursor: safePage === totalPages ? 'not-allowed' : 'pointer', opacity: safePage === totalPages ? 0.4 : 1 }}>
+            Next &rarr;
+          </button>
+        </div>
+      )}
     </div>
   );
 };
+
+const btnStyle = (color, bg, border) => ({
+  padding: '0.45rem 1rem', borderRadius: '10px',
+  border: `1.5px solid ${border}`, backgroundColor: bg, color,
+  fontSize: '0.88rem', fontWeight: '800', cursor: 'pointer',
+  display: 'inline-flex', alignItems: 'center', gap: '0.4rem',
+  transition: 'all 0.2s ease', boxShadow: '0 1px 3px rgba(0,0,0,0.04)'
+});
 
 export default SupervisorWalletFundsTab;

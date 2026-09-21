@@ -243,7 +243,7 @@ const DailyExpenses = () => {
   const handleExportExcel = () => {
     const headers = ['Voucher ID', 'Category', 'Site Location', 'Paid To / Vendor', 'Date', 'Amount (₹)', 'Status'];
     const rows = filteredExpenses.map((exp) => [
-      exp.id,
+      exp.id?.slice(0, 8)?.toUpperCase() || '—',
       exp.category,
       exp.site,
       exp.paidTo || 'Local Vendor',
@@ -257,7 +257,7 @@ const DailyExpenses = () => {
   const handleExportPDF = () => {
     const headers = ['Voucher ID', 'Category', 'Site Location', 'Vendor / Details', 'Date', 'Amount (Rs)', 'Status'];
     const rows = filteredExpenses.map((exp) => [
-      exp.id,
+      exp.id?.slice(0, 8)?.toUpperCase() || '—',
       exp.category,
       exp.site,
       exp.paidTo || 'Local Vendor',

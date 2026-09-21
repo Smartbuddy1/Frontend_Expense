@@ -7,7 +7,7 @@ import {
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import { useLanguage } from '../../context/LanguageContext';
-import { addPdfHeaderWithLogo, addPdfFooterWithPageNumbers, getCompanyLogoBase64, escapeHtml } from '../../utils/pdfHeaderHelper';
+import { addPdfHeaderWithLogo, addPdfFooterWithPageNumbers, addPdfSignatures, getCompanyLogoBase64, escapeHtml } from '../../utils/pdfHeaderHelper';
 import toast from 'react-hot-toast';
 
 const API = import.meta.env.VITE_API_BASE_URL;
@@ -338,8 +338,18 @@ const ReconciliationTab = ({
           '100%'
         ]],
         theme: 'grid',
-        styles: { fontSize: 9, fontStyle: 'bold', halign: 'center' },
-        headStyles: { fillColor: [37, 99, 235], textColor: [255, 255, 255] }
+        styles: { 
+          fontSize: 9, 
+          fontStyle: 'bold', 
+          halign: 'center',
+          lineColor: [37, 99, 235],
+          lineWidth: 0.1,
+        },
+        headStyles: { 
+          fillColor: [16, 185, 129], 
+          textColor: [255, 255, 255] 
+        },
+        alternateRowStyles: { fillColor: [248, 250, 252] }
       });
 
       // Section 1: Supervisor Live Float
@@ -361,8 +371,16 @@ const ReconciliationTab = ({
         head: [['SUPERVISOR', 'ASSIGNED SITE', 'TOTAL ADVANCE', 'TOTAL SPENT', 'CASH IN HAND', 'STATUS']],
         body: supData,
         theme: 'grid',
-        styles: { fontSize: 8 },
-        headStyles: { fillColor: [15, 23, 42], textColor: [255, 255, 255] }
+        styles: { 
+          fontSize: 8,
+          lineColor: [37, 99, 235],
+          lineWidth: 0.1,
+        },
+        headStyles: { 
+          fillColor: [16, 185, 129], 
+          textColor: [255, 255, 255] 
+        },
+        alternateRowStyles: { fillColor: [248, 250, 252] }
       });
 
       // Section 2: Bank Ledger
@@ -385,12 +403,23 @@ const ReconciliationTab = ({
         head: [['TXN ID', 'DATE', 'SITE / PROJECT', 'TYPE & MODE', 'UTR / REF', 'ASSIGNED TECH', 'AMOUNT']],
         body: ledgerData,
         theme: 'grid',
-        styles: { fontSize: 8 },
-        headStyles: { fillColor: [15, 23, 42], textColor: [255, 255, 255] }
+        styles: { 
+          fontSize: 8,
+          lineColor: [37, 99, 235],
+          lineWidth: 0.1,
+        },
+        headStyles: { 
+          fillColor: [16, 185, 129], 
+          textColor: [255, 255, 255] 
+        },
+        alternateRowStyles: { fillColor: [248, 250, 252] }
       });
 
       // Add corporate footer with page numbers
-      addPdfFooterWithPageNumbers(doc);
+      await addPdfFooterWithPageNumbers(doc);
+
+      // Add Signatures
+      addPdfSignatures(doc);
 
       // Save directly to Downloads folder
       const filename = `Reconciliation_Statement_${new Date().toISOString().split('T')[0]}.pdf`;
@@ -576,29 +605,7 @@ const ReconciliationTab = ({
         {/* Action Buttons: Print & PDF */}
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', flexWrap: 'wrap' }}>
           {/* 📄 Print Button */}
-          <button
-            onClick={handlePrintStatement}
-            style={{
-              padding: '0.5rem 1.15rem',
-              borderRadius: '10px',
-              border: '1.5px solid var(--border-color, #cbd5e1)',
-              backgroundColor: 'var(--card-bg, #ffffff)',
-              color: 'var(--text-primary, #1e293b)',
-              fontSize: '0.9rem',
-              fontWeight: '800',
-              cursor: 'pointer',
-              display: 'inline-flex',
-              alignItems: 'center',
-              gap: '0.45rem',
-              transition: 'all 0.2s ease',
-              boxShadow: '0 1px 3px rgba(0,0,0,0.04)'
-            }}
-            onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'var(--input-bg, #f8fafc)'}
-            onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'var(--card-bg, #ffffff)'}
-          >
-            <Printer size={16} />
-            <span>Print</span>
-          </button>
+          
 
           {/* 📥 PDF Button (Red Outline - Direct Download) */}
           <button

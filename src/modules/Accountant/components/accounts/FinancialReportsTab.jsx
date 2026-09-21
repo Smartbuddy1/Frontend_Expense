@@ -10,7 +10,7 @@ import {
   CreditCard
 } from 'lucide-react';
 import jsPDF from 'jspdf';
-import 'jspdf-autotable';
+import autoTable from 'jspdf-autotable';
 import { applyPDFHeader, applyPDFFooter, getLogoDataUrl } from '../../utils/exportUtils';
 import PrintFooter from '../PrintFooter';
 
@@ -145,7 +145,7 @@ const FinancialReportsTab = ({
         e.amount
       ]);
 
-      doc.autoTable({
+      autoTable(doc, {
         startY: 35, margin: { bottom: 30 }, head: headers, body: data,
         theme: 'grid', headStyles: { fillColor: [59, 130, 246] }, styles: { fontSize: 8.5 }
       });
@@ -161,7 +161,7 @@ const FinancialReportsTab = ({
         const projectForPayment = projects.find(proj => proj.id === p.projectId);
         const actualSupervisor = projectForPayment?.supervisor || 'Unknown';
         return [
-          p.id,
+          p.id?.slice(0, 8)?.toUpperCase() || '—',
           actualSupervisor,
           formatDateTime(p.date),
           p.amount,
@@ -169,7 +169,7 @@ const FinancialReportsTab = ({
         ];
       });
 
-      doc.autoTable({
+      autoTable(doc, {
         startY: 35, margin: { bottom: 30 }, head: headers, body: data,
         theme: 'grid', headStyles: { fillColor: [59, 130, 246] }, styles: { fontSize: 8.5 }
       });
@@ -200,7 +200,7 @@ const FinancialReportsTab = ({
         const actualSupervisor = projectForPayment?.supervisor || 'Unknown';
         
         rows.push([
-          p.id, 
+          p.id?.slice(0, 8)?.toUpperCase() || '—', 
           actualSupervisor, 
           formatDateTime(p.date).replace(/,/g, ''), 
           p.amount,  

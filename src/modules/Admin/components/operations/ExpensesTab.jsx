@@ -10,7 +10,7 @@ import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import toast from 'react-hot-toast';
 import { useLanguage } from '../../context/LanguageContext';
-import { addPdfHeaderWithLogo, addPdfFooterWithPageNumbers, getCompanyLogoBase64, escapeHtml } from '../../utils/pdfHeaderHelper';
+import { addPdfHeaderWithLogo, addPdfFooterWithPageNumbers, addPdfSignatures, getCompanyLogoBase64, escapeHtml } from '../../utils/pdfHeaderHelper';
 import './operations-dashboard.css';
 
 const ExpensesTab = ({
@@ -133,15 +133,24 @@ const ExpensesTab = ({
           `Rs. ${pendingAmount.toLocaleString('en-IN')}`
         ]],
         theme: 'grid',
-        styles: { fontSize: 9, fontStyle: 'bold', halign: 'center' },
-        headStyles: { fillColor: [37, 99, 235], textColor: [255, 255, 255] }
+        styles: { 
+          fontSize: 9, 
+          fontStyle: 'bold', 
+          halign: 'center',
+          lineColor: [37, 99, 235],
+          lineWidth: 0.1,
+        },
+        headStyles: { 
+          fillColor: [16, 185, 129], 
+          textColor: [255, 255, 255] 
+        },
+        alternateRowStyles: { fillColor: [248, 250, 252] }
       });
 
       const expData = filteredExpenses.map(e => [
-        e.id,
+        e.id?.slice(0, 8)?.toUpperCase() || '—',
         e.date,
         e.projectName,
-        e.voucherNo || 'VCH-GEN',
         `[${e.category}]\n${e.description}`,
         e.supervisorName,
         `Rs. ${(e.amount || 0).toLocaleString('en-IN')}`,
@@ -150,15 +159,26 @@ const ExpensesTab = ({
 
       autoTable(doc, {
         startY: doc.lastAutoTable.finalY + 8,
-        head: [['ID', 'DATE', 'PROJECT / SITE', 'VOUCHER NO', 'CATEGORY & DESC', 'SUPERVISOR', 'AMOUNT', 'STATUS']],
+        head: [['ID', 'DATE', 'PROJECT / SITE', 'CATEGORY & DESC', 'SUPERVISOR', 'AMOUNT', 'STATUS']],
         body: expData,
         theme: 'grid',
-        styles: { fontSize: 8 },
-        headStyles: { fillColor: [15, 23, 42], textColor: [255, 255, 255] }
+        styles: { 
+          fontSize: 8,
+          lineColor: [37, 99, 235],
+          lineWidth: 0.1,
+        },
+        headStyles: { 
+          fillColor: [16, 185, 129], 
+          textColor: [255, 255, 255] 
+        },
+        alternateRowStyles: { fillColor: [248, 250, 252] }
       });
 
       // Add corporate footer with page numbers
-      addPdfFooterWithPageNumbers(doc);
+      await addPdfFooterWithPageNumbers(doc);
+
+      // Add Signatures
+      addPdfSignatures(doc);
 
       const filename = `ASEMS_Expenses_Audit_Report_${new Date().toISOString().split('T')[0]}.pdf`;
       doc.save(filename);
@@ -173,10 +193,9 @@ const ExpensesTab = ({
   const generateExpensesPrintHtml = () => {
     const rows = filteredExpenses.map(e => `
       <tr>
-        <td style="font-weight: 800; font-family: monospace; text-align: center;">${e.id}</td>
+        <td style="font-weight: 800; font-family: monospace; text-align: center;">${e.id?.slice(0, 8)?.toUpperCase() || '—'}</td>
         <td>${e.date}</td>
         <td><strong>${escapeHtml(e.projectName)}</strong></td>
-        <td><code>${escapeHtml(e.voucherNo || 'VCH-GEN')}</code></td>
         <td><strong>${escapeHtml(e.category)}</strong><br/><span style="color:#64748b; font-size:10px;">${escapeHtml(e.description)}</span></td>
         <td>${escapeHtml(e.supervisorName)}</td>
         <td style="font-weight: 800; color: #1e3a8a; text-align: right;">₹${(e.amount || 0).toLocaleString('en-IN')}</td>
@@ -246,7 +265,6 @@ const ExpensesTab = ({
               <th style="text-align: center;">ID</th>
               <th>DATE</th>
               <th>PROJECT / SITE</th>
-              <th>VOUCHER NO</th>
               <th>CATEGORY & DESC</th>
               <th>SUPERVISOR</th>
               <th style="text-align: right;">AMOUNT</th>

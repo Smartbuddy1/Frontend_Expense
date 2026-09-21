@@ -13,8 +13,8 @@ import {
   X
 } from 'lucide-react';
 import jsPDF from 'jspdf';
-import 'jspdf-autotable';
-import { applyPDFHeader, applyPDFFooter, getLogoDataUrl } from '../../utils/exportUtils';
+import autoTable from 'jspdf-autotable';
+import { addPdfHeaderWithLogo, addPdfFooterWithLogo, addPdfSignatures, escapeHtml } from '../../../Operations/utils/pdfHeaderHelper';
 import aiLogo from '../../assets/ai_logo.jpg';
 import PrintFooter from '../PrintFooter';
 
@@ -95,17 +95,16 @@ const AdvanceDisbursalTab = ({
 
   const handleExportPDF = async () => {
     const doc = new jsPDF();
-    const logoDataUrl = await getLogoDataUrl();
 
-    applyPDFHeader(doc, {
-      title: 'Site Advances & Disbursal Queue Statement',
-      metaInfo: `Generated: ${new Date().toLocaleString()} | Total Records: ${filteredAdvances.length}`,
-      logoDataUrl
-    });
+    const startY = await addPdfHeaderWithLogo(
+      doc,
+      'Site Advances & Disbursal Queue Statement',
+      `Generated on: ${new Date().toLocaleString('en-GB')} | Total Records: ${filteredAdvances.length}`
+    );
 
     const headers = [['Request ID', 'Date', 'Supervisor', 'Project', 'Amount', 'Purpose', 'Status']];
     const data = filteredAdvances.map(a => [
-      a.id,
+      a.id?.slice(0, 8)?.toUpperCase() || '—',
       a.requestDate || a.date || '-',
       a.supervisor,
       a.projectName,
@@ -114,17 +113,26 @@ const AdvanceDisbursalTab = ({
       a.status === 'Disbursed' ? 'Disbursed' : 'Pending Payout'
     ]);
 
-    doc.autoTable({
-      startY: 35,
+    autoTable(doc, {
+      startY: startY + 2,
       margin: { bottom: 30 },
       head: headers,
       body: data,
       theme: 'grid',
-      headStyles: { fillColor: [59, 130, 246] },
-      styles: { fontSize: 8.5 }
+      styles: { 
+        fontSize: 8,
+        lineColor: [37, 99, 235],
+        lineWidth: 0.1,
+      },
+      headStyles: { 
+        fillColor: [16, 185, 129], 
+        textColor: [255, 255, 255] 
+      },
+      alternateRowStyles: { fillColor: [248, 250, 252] }
     });
 
-    applyPDFFooter(doc);
+    await addPdfFooterWithLogo(doc);
+    addPdfSignatures(doc);
     doc.save(`ASEMS_Advance_Disbursals_${new Date().toISOString().split('T')[0]}.pdf`);
   };
 
@@ -158,50 +166,10 @@ const AdvanceDisbursalTab = ({
         gap: '0.75rem'
       }}>
         {/* Print Button */}
-        <button
-          onClick={handlePrint}
-          style={{
-            padding: '0.55rem 1.15rem',
-            borderRadius: '12px',
-            backgroundColor: 'var(--surface-bg)',
-            color: 'var(--text-primary)',
-            border: '1.5px solid #cbd5e1',
-            fontWeight: '600',
-            fontSize: '0.86rem',
-            display: 'inline-flex',
-            alignItems: 'center',
-            gap: '0.45rem',
-            cursor: 'pointer',
-            boxShadow: '0 1px 4px rgba(0,0,0,0.03)',
-            transition: 'all 0.15s ease'
-          }}
-        >
-          <Printer size={17} style={{ color: 'var(--text-primary)' }} />
-          Print
-        </button>
+        
 
         {/* Excel Button */}
-        <button
-          onClick={handleExportCSV}
-          style={{
-            padding: '0.55rem 1.15rem',
-            borderRadius: '12px',
-            backgroundColor: 'var(--surface-bg)',
-            color: '#16a34a',
-            border: '1.5px solid #16a34a',
-            fontWeight: '600',
-            fontSize: '0.86rem',
-            display: 'inline-flex',
-            alignItems: 'center',
-            gap: '0.45rem',
-            cursor: 'pointer',
-            boxShadow: '0 1px 4px rgba(0,0,0,0.03)',
-            transition: 'all 0.15s ease'
-          }}
-        >
-          <FileSpreadsheet size={17} color="#16a34a" />
-          Excel
-        </button>
+        
 
         {/* PDF Button */}
         <button

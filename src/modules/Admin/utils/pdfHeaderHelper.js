@@ -114,31 +114,50 @@ export const getCompanyLogoBase64 = () => {
 export const addPdfHeaderWithLogo = async (doc, title, subtitle) => {
   const pageWidth = doc.internal.pageSize.getWidth();
   
+  let logoWidth = 36;
+  let logoHeight = 12;
+  const maxW = 40;
+  const maxH = 13;
+
   try {
     const logoBase64 = await getCompanyLogoBase64();
+    const aspect = (cachedLogoData && cachedLogoData.aspect) ? cachedLogoData.aspect : (240 / 60);
+
+    // Calculate un-stretched exact aspect ratio
+    if (aspect >= maxW / maxH) {
+      logoWidth = maxW;
+      logoHeight = maxW / aspect;
+    } else {
+      logoHeight = maxH;
+      logoWidth = maxH * aspect;
+    }
+
     if (logoBase64) {
-      // Draw Logo at top-left
-      doc.addImage(logoBase64, 'PNG', 14, 7, 36, 13);
+      const offsetY = 7 + (maxH - logoHeight) / 2;
+      // Draw Logo at top-right
+      doc.addImage(logoBase64, 'PNG', pageWidth - 14 - logoWidth, offsetY, logoWidth, logoHeight);
     }
   } catch (e) {
-    console.warn('Could not embed logo in PDF:', e);
+    console.warn('Could not embed logo in PDF header:', e);
   }
 
-  // Draw Title & Subtitle next to the logo
-  doc.setFontSize(13);
+  // Draw Title & Subtitle centered
+  const centerX = pageWidth / 2;
+  
+  doc.setFontSize(14);
   doc.setFont('helvetica', 'bold');
-  doc.setTextColor(15, 23, 42);
-  doc.text(title, 54, 13);
+  doc.setTextColor(32, 178, 170); // Cyan/Green for title
+  doc.text(title, centerX, 13.5, { align: 'center' });
 
-  doc.setFontSize(8);
-  doc.setFont('helvetica', 'normal');
-  doc.setTextColor(100, 116, 139);
-  doc.text(subtitle || 'AI AARYA INNOVTECH PVT. LTD. • Official Site Operations & Expense Report', 54, 18);
+  doc.setFontSize(9);
+  doc.setFont('helvetica', 'bold');
+  doc.setTextColor(37, 99, 235); // Blue for subtitle
+  doc.text(subtitle || 'Official Site Operations & Expense Report', centerX, 19, { align: 'center' });
 
-  // Top Divider Line across full page width
-  doc.setDrawColor(203, 213, 225);
-  doc.setLineWidth(0.4);
-  doc.line(14, 23, pageWidth - 14, 23);
+  // Decorative blue header accent line
+  doc.setDrawColor(37, 99, 235);
+  doc.setLineWidth(0.6);
+  doc.line(14, 23.5, pageWidth - 14, 23.5);
 
   return 28; // Suggested startY for autoTable
 };
@@ -148,20 +167,17 @@ export const addPdfHeaderWithLogo = async (doc, title, subtitle) => {
  */
 export const getPrintHeaderHtml = async (title, subtitle, metaDetails = []) => {
   const logoBase64 = await getCompanyLogoBase64();
-  const logoSrc = logoBase64 || '/logo_new.png';
-
-  const metaHtml = metaDetails.map(m => `<div><strong>${m.label}:</strong> ${m.value}</div>`).join('');
+  
+  const metaHtml = metaDetails.map(meta => `
+    <div style="display: flex; justify-content: space-between; margin-bottom: 0.25rem; font-size: 0.85rem; color: #475569;">
+      <strong>${escapeHtml(meta.label)}:</strong> <span>${escapeHtml(meta.value)}</span>
+    </div>
+  `).join('');
 
   return `
-    <div style="display: flex; align-items: center; justify-content: space-between; border-bottom: 2.5px solid #2563eb; padding-bottom: 12px; margin-bottom: 16px;">
-      <div style="display: flex; align-items: center; gap: 14px;">
-        <img src="${logoSrc}" alt="Aarya Innovtech Pvt. Ltd." style="height: 50px; max-width: 180px; object-fit: contain;" />
+    <div style="border-bottom: 2px solid #2563eb; padding-bottom: 1rem; margin-bottom: 1.5rem;">
+      <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 1rem;">
         <div>
-          <h1 style="font-size: 19px; font-weight: 900; color: #0f172a; margin: 0; letter-spacing: 0.02em;">
-            AI AARYA INNOVTECH PVT. LTD.
-          </h1>
-          <p style="font-size: 12px; color: #475569; margin: 3px 0 0 0; font-weight: 600;">
-            ${title} ${subtitle ? '• ' + subtitle : ''}
           </p>
         </div>
       </div>
@@ -176,35 +192,62 @@ export const getPrintHeaderHtml = async (title, subtitle, metaDetails = []) => {
 /**
  * Adds official corporate footer with page numbers and confidentiality note to every page in jsPDF document
  */
-export const addPdfFooterWithPageNumbers = (doc, customFooterText) => {
-  try {
-    const pageCount = doc.internal.getNumberOfPages();
-    const pageWidth = doc.internal.pageSize.getWidth();
-    const pageHeight = doc.internal.pageSize.getHeight();
+export const addPdfFooterWithPageNumbers = async (doc) => {
+  const totalPages = doc.internal.getNumberOfPages();
+  const pageWidth = doc.internal.pageSize.width;
+  const pageHeight = doc.internal.pageSize.height;
 
-    for (let i = 1; i <= pageCount; i++) {
-      doc.setPage(i);
-      
-      // Bottom Divider Line
-      doc.setDrawColor(203, 213, 225);
-      doc.setLineWidth(0.4);
-      doc.line(14, pageHeight - 12, pageWidth - 14, pageHeight - 12);
+  for (let i = 1; i <= totalPages; i++) {
+    doc.setPage(i);
 
-      // Footer Text Left
-      doc.setFontSize(7.5);
-      doc.setFont('helvetica', 'normal');
-      doc.setTextColor(100, 116, 139);
-      const footerLeft = customFooterText || 'AI AARYA INNOVTECH PVT. LTD. • Official & Confidential Operations Document';
-      doc.text(footerLeft, 14, pageHeight - 7);
+    // Footer divider line
+    doc.setDrawColor(203, 213, 225);
+    doc.setLineWidth(0.5);
+    doc.line(14, pageHeight - 16, pageWidth - 14, pageHeight - 16);
 
-      // Footer Text Right (Page X of Y + Timestamp)
-      const printTime = new Date().toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' });
-      const footerRight = `Page ${i} of ${pageCount} • Printed at ${printTime}`;
-      doc.text(footerRight, pageWidth - 14, pageHeight - 7, { align: 'right' });
-    }
-  } catch (e) {
-    console.warn('Could not add PDF footer:', e);
+    const textStartX = 14;
+
+    doc.setFontSize(7);
+    doc.setFont('helvetica', 'normal');
+    doc.setTextColor(100, 116, 139);
+    
+    // Left side footer text
+    doc.text('AARYA INNOVTECH PVT. LTD. CIN: U29305MH2019PTC327551 | +91 9359604384 | https://aaryainnovtech.com/', textStartX, pageHeight - 11);
+    doc.text('Nashik Office: Flat No.4A, Sayali Darshan A-Wing, Makhamalabad Road, Nashik-422003.', textStartX, pageHeight - 7);
+
+    // Right side text
+    const rightAlignX = pageWidth - 14;
+    doc.text(`Page ${i} of ${totalPages}`, rightAlignX, pageHeight - 11, { align: 'right' });
+    doc.text(`Generated on: ${new Date().toLocaleString('en-GB')}`, rightAlignX, pageHeight - 7, { align: 'right' });
   }
+};
+
+/**
+ * Adds signature blocks at the end of the document, on the last page.
+ */
+export const addPdfSignatures = (doc) => {
+  const pageWidth = doc.internal.pageSize.width;
+  const pageHeight = doc.internal.pageSize.height;
+  
+  // Go to the last page to add signatures
+  const totalPages = doc.internal.getNumberOfPages();
+  doc.setPage(totalPages);
+
+  const signatureY = pageHeight - 25; // Placed above the footer
+  
+  doc.setDrawColor(148, 163, 184); // Gray lines for signature
+  doc.setLineWidth(0.3);
+
+  // Left Signature (System Administrator)
+  doc.line(20, signatureY, 70, signatureY);
+  doc.setFontSize(9);
+  doc.setFont('helvetica', 'normal');
+  doc.setTextColor(71, 85, 105);
+  doc.text('System Administrator', 45, signatureY + 4, { align: 'center' });
+
+  // Right Signature (Authorized Signatory)
+  doc.line(pageWidth - 70, signatureY, pageWidth - 20, signatureY);
+  doc.text('Authorized Signatory', pageWidth - 45, signatureY + 4, { align: 'center' });
 };
 
 /**

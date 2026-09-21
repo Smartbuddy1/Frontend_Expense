@@ -9,7 +9,7 @@ import toast from 'react-hot-toast';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import { useLanguage } from '../../context/LanguageContext';
-import { addPdfHeaderWithLogo, addPdfFooterWithLogo, escapeHtml } from '../../utils/pdfHeaderHelper';
+import { addPdfHeaderWithLogo, addPdfFooterWithLogo, addPdfSignatures, escapeHtml } from '../../utils/pdfHeaderHelper';
 import Pagination from '../../../../components/ui/Pagination';
 
 const TeamAssignmentTab = ({
@@ -116,18 +116,20 @@ const TeamAssignmentTab = ({
 
       // Prepare table data
       const tableData = filteredSupervisors.map((sup, idx) => {
-        const assignedProject = projects.find(p => 
-          p.supervisor_id === sup.id || 
+        const assignedProjects = projects.filter(p => 
           (p.supervisorId && sup.id && p.supervisorId === sup.id) ||
+          (p.supervisor_id && sup.id && p.supervisor_id === sup.id) ||
+          (p.supervisorName && sup.name && p.supervisorName.trim().toLowerCase() === sup.name.trim().toLowerCase()) ||
+          (sup.activeProjects && sup.activeProjects.some(ap => ap === p.id || ap === p.code || ap === p.name)) ||
           (p.assignees && Array.isArray(p.assignees) && p.assignees.some(a => a.id === sup.id))
         );
 
-        const projectName = assignedProject ? assignedProject.name : 'Unassigned / Available';
-        const status = assignedProject ? 'ACTIVE (On-Site)' : 'INACTIVE (Available)';
+        const projectName = assignedProjects.length > 0 ? assignedProjects.map(p => p.name).join(', ') : 'Unassigned / Available';
+        const status = assignedProjects.length > 0 ? 'ACTIVE (On-Site)' : 'INACTIVE (Available)';
 
         return [
           idx + 1,
-          `${sup.name || 'Supervisor'}\nTel: ${sup.phone || '-'}${sup.email ? '\n' + sup.email : ''}`,
+          `${sup.name || 'Supervisor'}\n${sup.phone || '-'}${sup.email ? '\n' + sup.email : ''}`,
           projectName,
           status
         ];
@@ -138,8 +140,18 @@ const TeamAssignmentTab = ({
         head: [['SR NO', 'SUPERVISOR & CONTACT', 'PROJECT', 'STATUS']],
         body: tableData,
         theme: 'grid',
-        styles: { fontSize: 8, cellPadding: 3 },
-        headStyles: { fillColor: [37, 99, 235], textColor: [255, 255, 255], fontStyle: 'bold' },
+        styles: { 
+          fontSize: 8, 
+          cellPadding: 3,
+          lineColor: [37, 99, 235],
+          lineWidth: 0.1, 
+        },
+        headStyles: { 
+          fillColor: [16, 185, 129], 
+          textColor: [255, 255, 255], 
+          fontStyle: 'bold' 
+        },
+        alternateRowStyles: { fillColor: [248, 250, 252] },
         columnStyles: {
           0: { cellWidth: 15, halign: 'center' },
           1: { cellWidth: 65 },
@@ -150,6 +162,9 @@ const TeamAssignmentTab = ({
 
       // Add official company footer across all pages
       await addPdfFooterWithLogo(doc);
+
+      // Add Signatures
+      addPdfSignatures(doc);
 
       const filename = `ASEMS_Site_Supervisors_List_${new Date().toISOString().split('T')[0]}.pdf`;
       doc.save(filename);
@@ -163,7 +178,7 @@ const TeamAssignmentTab = ({
   // Generate Official Print HTML with Company Logo & Clean Layout
   const generateSupervisorsPrintHtml = () => {
     const rows = filteredSupervisors.map((sup, idx) => {
-      const assignedProject = projects.find(p => 
+      const assignedProjects = projects.filter(p => 
         (p.supervisorId && sup.id && p.supervisorId === sup.id) ||
         (p.supervisor_id && sup.id && p.supervisor_id === sup.id) ||
         (p.supervisorName && sup.name && p.supervisorName.trim().toLowerCase() === sup.name.trim().toLowerCase()) ||
@@ -171,10 +186,10 @@ const TeamAssignmentTab = ({
         (p.assignees && Array.isArray(p.assignees) && p.assignees.some(a => a.id === sup.id))
       );
 
-      const projectName = assignedProject ? assignedProject.name : 'Unassigned / Available';
-      const location = assignedProject?.location || '-';
-      const statusText = assignedProject ? 'ACTIVE (On-Site)' : 'INACTIVE (Available)';
-      const statusClass = assignedProject ? 'badge-active' : 'badge-inactive';
+      const projectName = assignedProjects.length > 0 ? assignedProjects.map(p => p.name).join(', ') : 'Unassigned / Available';
+      const location = assignedProjects.length > 0 ? assignedProjects.map(p => p.location || '-').join(', ') : '-';
+      const statusText = assignedProjects.length > 0 ? 'ACTIVE (On-Site)' : 'INACTIVE (Available)';
+      const statusClass = assignedProjects.length > 0 ? 'badge-active' : 'badge-inactive';
 
       return `
         <tr>
@@ -350,66 +365,10 @@ const TeamAssignmentTab = ({
         {/* Top Right Action Buttons: Print, Excel, PDF */}
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem', flexWrap: 'wrap' }}>
           {/* 🖨️ Print Button (Slate Outline) */}
-          <button
-            onClick={handlePrint}
-            style={{
-              padding: '0.45rem 1rem',
-              borderRadius: '8px',
-              border: '1.5px solid var(--border-color, #cbd5e1)',
-              backgroundColor: 'var(--card-bg, #ffffff)',
-              color: 'var(--text-primary, #0f172a)',
-              fontSize: '0.92rem',
-              fontWeight: '600',
-              cursor: 'pointer',
-              display: 'inline-flex',
-              alignItems: 'center',
-              gap: '0.45rem',
-              boxShadow: '0 1px 2px rgba(0, 0, 0, 0.05)',
-              transition: 'all 0.15s ease'
-            }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.backgroundColor = '#f8fafc';
-              e.currentTarget.style.borderColor = '#94a3b8';
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.backgroundColor = '#ffffff';
-              e.currentTarget.style.borderColor = '#cbd5e1';
-            }}
-          >
-            <Printer size={16} style={{ color: 'var(--text-primary, #0f172a)' }} />
-            <span>Print</span>
-          </button>
+          
 
           {/* 📄 Excel Button (Green Outline) */}
-          <button
-            onClick={handleExportCSV}
-            style={{
-              padding: '0.45rem 1rem',
-              borderRadius: '8px',
-              border: '1.5px solid #16a34a',
-              backgroundColor: 'var(--card-bg, #ffffff)',
-              color: '#16a34a',
-              fontSize: '0.92rem',
-              fontWeight: '600',
-              cursor: 'pointer',
-              display: 'inline-flex',
-              alignItems: 'center',
-              gap: '0.45rem',
-              boxShadow: '0 1px 2px rgba(0, 0, 0, 0.05)',
-              transition: 'all 0.15s ease'
-            }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.backgroundColor = '#f0fdf4';
-              e.currentTarget.style.borderColor = '#15803d';
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.backgroundColor = '#ffffff';
-              e.currentTarget.style.borderColor = '#16a34a';
-            }}
-          >
-            <FileSpreadsheet size={16} style={{ color: '#16a34a' }} />
-            <span>Excel</span>
-          </button>
+          
 
           {/* 📥 PDF Button (Red Outline) */}
           <button

@@ -61,6 +61,7 @@ export const addPdfHeaderWithLogo = async (doc, title, subtitle) => {
   let logoHeight = 12;
   const maxW = 40;
   const maxH = 13;
+  const pageWidth = doc.internal.pageSize.getWidth();
 
   try {
     const logoBase64 = await getCompanyLogoBase64();
@@ -77,94 +78,91 @@ export const addPdfHeaderWithLogo = async (doc, title, subtitle) => {
 
     if (logoBase64) {
       const offsetY = 7 + (maxH - logoHeight) / 2;
-      doc.addImage(logoBase64, 'PNG', 14, offsetY, logoWidth, logoHeight);
+      // Draw Logo at top-right
+      doc.addImage(logoBase64, 'PNG', pageWidth - 14 - logoWidth, offsetY, logoWidth, logoHeight);
     }
   } catch (e) {
     console.warn('Could not embed logo in PDF header:', e);
   }
 
-  const textStartX = 14 + logoWidth + 4;
-
-  // Draw Title & Subtitle next to the logo
-  doc.setFontSize(13);
+  // Draw Title & Subtitle centered
+  const centerX = pageWidth / 2;
+  
+  doc.setFontSize(14);
   doc.setFont('helvetica', 'bold');
-  doc.setTextColor(15, 23, 42);
-  doc.text(title, textStartX, 13.5);
+  doc.setTextColor(32, 178, 170); // Cyan/Green for title
+  doc.text(title, centerX, 13.5, { align: 'center' });
 
-  doc.setFontSize(8);
-  doc.setFont('helvetica', 'normal');
-  doc.setTextColor(100, 116, 139);
-  doc.text(subtitle || 'Official Operations & Management Ledger', textStartX, 19);
+  doc.setFontSize(9);
+  doc.setFont('helvetica', 'bold');
+  doc.setTextColor(37, 99, 235); // Blue for subtitle
+  doc.text(subtitle || 'Official Operations Ledger', centerX, 19, { align: 'center' });
 
   // Decorative blue header accent line
   doc.setDrawColor(37, 99, 235);
   doc.setLineWidth(0.6);
-  doc.line(14, 23.5, doc.internal.pageSize.width - 14, 23.5);
+  doc.line(14, 23.5, pageWidth - 14, 23.5);
 
-  return 27; // Suggested startY for autoTable
+  return 28; // Suggested startY for autoTable
 };
 
 /**
- * Adds official Aarya Innovtech footer with logo, CIN, contact info, and page numbers across all pages without distortion
+ * Adds official Aarya Innovtech footer with CIN, contact info, and page numbers across all pages without distortion
  */
 export const addPdfFooterWithLogo = async (doc) => {
-  try {
-    const logoBase64 = await getCompanyLogoBase64();
-    const aspect = (cachedLogoData && cachedLogoData.aspect) ? cachedLogoData.aspect : (240 / 60);
-    const maxFootW = 20;
-    const maxFootH = 6.5;
-    let footW = maxFootW;
-    let footH = maxFootH;
+  const totalPages = doc.internal.getNumberOfPages();
+  const pageWidth = doc.internal.pageSize.width;
+  const pageHeight = doc.internal.pageSize.height;
 
-    if (aspect >= maxFootW / maxFootH) {
-      footW = maxFootW;
-      footH = maxFootW / aspect;
-    } else {
-      footH = maxFootH;
-      footW = maxFootH * aspect;
-    }
+  for (let i = 1; i <= totalPages; i++) {
+    doc.setPage(i);
 
-    const totalPages = doc.internal.getNumberOfPages();
-    const pageWidth = doc.internal.pageSize.width;
-    const pageHeight = doc.internal.pageSize.height;
+    // Footer divider line
+    doc.setDrawColor(203, 213, 225);
+    doc.setLineWidth(0.5);
+    doc.line(14, pageHeight - 16, pageWidth - 14, pageHeight - 16);
 
-    for (let i = 1; i <= totalPages; i++) {
-      doc.setPage(i);
+    const textStartX = 14;
 
-      // Footer divider line
-      doc.setDrawColor(226, 232, 240);
-      doc.setLineWidth(0.5);
-      doc.line(14, pageHeight - 16, pageWidth - 14, pageHeight - 16);
+    doc.setFontSize(7);
+    doc.setFont('helvetica', 'normal');
+    doc.setTextColor(100, 116, 139);
+    
+    // Left side footer text
+    doc.text('AARYA INNOVTECH PVT. LTD. CIN: U29305MH2019PTC327551 | +91 9359604384 | https://aaryainnovtech.com/', textStartX, pageHeight - 11);
+    doc.text('Nashik Office: Flat No.4A, Sayali Darshan A-Wing, Makhamalabad Road, Nashik-422003.', textStartX, pageHeight - 7);
 
-      // Footer small logo
-      if (logoBase64) {
-        try {
-          const footOffsetY = pageHeight - 14.5 + (maxFootH - footH) / 2;
-          doc.addImage(logoBase64, 'PNG', 14, footOffsetY, footW, footH);
-        } catch (err) {
-          // ignore image error in footer
-        }
-      }
-
-      const textStartX = 14 + footW + 4;
-
-      // Company info in footer
-      doc.setFontSize(7.5);
-      doc.setFont('helvetica', 'bold');
-      doc.setTextColor(30, 41, 59);
-      doc.text('AARYA INNOVTECH PVT. LTD.', textStartX, pageHeight - 11.5);
-
-      doc.setFont('helvetica', 'normal');
-      doc.setTextColor(100, 116, 139);
-      doc.text('CIN: U29305MH2019PTC327551 | Ph: +91 9359604384 | Nashik: Makhamalabad Road, Nashik-422003', textStartX, pageHeight - 8);
-
-      // Page numbers on bottom-right
-      doc.setFontSize(7.5);
-      doc.setFont('helvetica', 'bold');
-      doc.setTextColor(71, 85, 105);
-      doc.text(`Page ${i} of ${totalPages}`, pageWidth - 14, pageHeight - 9.5, { align: 'right' });
-    }
-  } catch (e) {
-    console.warn('Could not add footer to PDF:', e);
+    // Right side text
+    const rightAlignX = pageWidth - 14;
+    doc.text(`Page ${i} of ${totalPages}`, rightAlignX, pageHeight - 11, { align: 'right' });
+    doc.text(`Generated on: ${new Date().toLocaleString('en-GB')}`, rightAlignX, pageHeight - 7, { align: 'right' });
   }
+};
+
+/**
+ * Adds signature blocks at the end of the document, on the last page.
+ */
+export const addPdfSignatures = (doc) => {
+  const pageWidth = doc.internal.pageSize.width;
+  const pageHeight = doc.internal.pageSize.height;
+  
+  // Go to the last page to add signatures
+  const totalPages = doc.internal.getNumberOfPages();
+  doc.setPage(totalPages);
+
+  const signatureY = pageHeight - 25; // Placed above the footer
+  
+  doc.setDrawColor(148, 163, 184); // Gray lines for signature
+  doc.setLineWidth(0.3);
+
+  // Left Signature (System Administrator)
+  doc.line(20, signatureY, 70, signatureY);
+  doc.setFontSize(9);
+  doc.setFont('helvetica', 'normal');
+  doc.setTextColor(71, 85, 105);
+  doc.text('System Administrator', 45, signatureY + 4, { align: 'center' });
+
+  // Right Signature (Authorized Signatory)
+  doc.line(pageWidth - 70, signatureY, pageWidth - 20, signatureY);
+  doc.text('Authorized Signatory', pageWidth - 45, signatureY + 4, { align: 'center' });
 };

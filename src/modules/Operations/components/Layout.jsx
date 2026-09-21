@@ -37,7 +37,6 @@ const Layout = () => {
   const [theme, setTheme] = useState(localStorage.getItem('theme') || 'light');
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
-  const [showLogoutModal, setShowLogoutModal] = useState(false);
   const profileRef = useRef(null);
 
   useEffect(() => {
@@ -251,35 +250,6 @@ const Layout = () => {
               </span>
             </div>
           </div>
-
-          {/* Logout Action Icon */}
-          <button
-            onClick={() => setShowLogoutModal(true)}
-            title="Logout"
-            style={{
-              background: 'transparent',
-              border: 'none',
-              color: '#94a3b8',
-              padding: '0.45rem',
-              borderRadius: '8px',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              cursor: 'pointer',
-              transition: 'all 0.2s ease',
-              flexShrink: 0
-            }}
-            onMouseOver={(e) => {
-              e.currentTarget.style.color = '#f87171';
-              e.currentTarget.style.backgroundColor = 'rgba(239, 68, 68, 0.15)';
-            }}
-            onMouseOut={(e) => {
-              e.currentTarget.style.color = '#94a3b8';
-              e.currentTarget.style.backgroundColor = 'transparent';
-            }}
-          >
-            <LogOut size={18} />
-          </button>
         </div>
       </aside>
 
@@ -556,39 +526,6 @@ const Layout = () => {
                         </span>
                       </div>
                     </div>
-
-                    {/* Logout Button */}
-                    <button
-                      onClick={() => {
-                        setIsProfileOpen(false);
-                        setShowLogoutModal(true);
-                      }}
-                      style={{
-                        marginTop: '0.35rem',
-                        padding: '0.65rem',
-                        backgroundColor: 'transparent',
-                        border: 'none',
-                        color: '#ef4444',
-                        fontSize: '0.88rem',
-                        fontWeight: '800',
-                        display: 'inline-flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        gap: '0.45rem',
-                        cursor: 'pointer',
-                        borderRadius: '8px',
-                        transition: 'all 0.15s ease'
-                      }}
-                      onMouseEnter={(e) => {
-                        e.currentTarget.style.backgroundColor = 'rgba(239, 68, 68, 0.12)';
-                      }}
-                      onMouseLeave={(e) => {
-                        e.currentTarget.style.backgroundColor = 'transparent';
-                      }}
-                    >
-                      <LogOut size={16} />
-                      <span>Secure Logout</span>
-                    </button>
                   </div>
                 </div>
               )}
@@ -602,120 +539,6 @@ const Layout = () => {
           <Footer />
         </div>
       </main>
-
-      {/* Matching Secure Logout Confirmation Modal */}
-      {showLogoutModal && (
-        <div
-          onClick={() => setShowLogoutModal(false)}
-          style={{
-            position: 'fixed',
-            top: 0,
-            left: 0,
-            right: 0,
-            bottom: 0,
-            backgroundColor: 'rgba(15, 23, 42, 0.75)',
-            backdropFilter: 'blur(8px)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            zIndex: 9999,
-            padding: '1rem',
-            animation: 'fadeIn 0.2s ease'
-          }}
-        >
-          <div
-            onClick={(e) => e.stopPropagation()}
-            style={{
-              backgroundColor: '#111827',
-              borderRadius: '24px',
-              border: '1px solid #374151',
-              width: '100%',
-              maxWidth: '380px',
-              overflow: 'hidden',
-              boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.5)',
-              animation: 'fadeInUp 0.25s cubic-bezier(0.16, 1, 0.3, 1)'
-            }}
-          >
-            {/* Top Banner with Red Logout Icon */}
-            <div style={{
-              background: 'linear-gradient(135deg, #ef4444 0%, #dc2626 100%)',
-              padding: '1.5rem',
-              display: 'flex',
-              flexDirection: 'column',
-              alignItems: 'center',
-              justifyContent: 'center',
-              color: '#ffffff'
-            }}>
-              <div style={{
-                width: '54px',
-                height: '54px',
-                borderRadius: '50%',
-                backgroundColor: 'rgba(255, 255, 255, 0.25)',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                marginBottom: '0.65rem',
-                border: '2px solid rgba(255, 255, 255, 0.4)'
-              }}>
-                <LogOut size={26} style={{ color: '#ffffff' }} />
-              </div>
-              <h3 style={{ fontSize: '1.25rem', fontWeight: '900', margin: 0, color: '#ffffff' }}>
-                Confirm Secure Logout
-              </h3>
-            </div>
-
-            {/* Content & Action Buttons */}
-            <div style={{ padding: '1.5rem 1.25rem' }}>
-              <p style={{ fontSize: '0.94rem', color: '#9ca3af', textAlign: 'center', margin: '0 0 1.5rem 0', lineHeight: 1.4 }}>
-                Are you sure you want to end your active session as <strong style={{ color: '#ffffff' }}>{user?.name || 'Admin'}</strong>?
-              </p>
-
-              <div style={{ display: 'flex', gap: '0.75rem' }}>
-                <button
-                  type="button"
-                  onClick={() => setShowLogoutModal(false)}
-                  style={{
-                    flex: 1,
-                    padding: '0.75rem',
-                    borderRadius: '12px',
-                    backgroundColor: '#1f2937',
-                    color: '#d1d5db',
-                    border: '1px solid #374151',
-                    fontSize: '0.92rem',
-                    fontWeight: '800',
-                    cursor: 'pointer',
-                    transition: 'all 0.15s ease'
-                  }}
-                >
-                  Cancel
-                </button>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setShowLogoutModal(false);
-                    handleLogout();
-                  }}
-                  style={{
-                    flex: 1,
-                    padding: '0.75rem',
-                    borderRadius: '12px',
-                    background: 'linear-gradient(135deg, #ef4444 0%, #dc2626 100%)',
-                    color: '#ffffff',
-                    border: 'none',
-                    fontSize: '0.92rem',
-                    fontWeight: '800',
-                    cursor: 'pointer',
-                    boxShadow: '0 4px 14px rgba(239, 68, 68, 0.4)',
-                    transition: 'all 0.15s ease'
-                  }}
-                >
-                  Logout
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 };

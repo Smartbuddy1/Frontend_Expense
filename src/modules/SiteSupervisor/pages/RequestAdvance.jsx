@@ -237,27 +237,7 @@ const RequestAdvance = () => {
             <span>PDF</span>
           </button>
 
-          <button
-            onClick={handleExportExcel}
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: '0.35rem',
-              padding: '0.45rem 0.85rem',
-              borderRadius: '0.65rem',
-              border: '1px solid rgba(16, 185, 129, 0.3)',
-              backgroundColor: 'rgba(16, 185, 129, 0.1)',
-              color: '#10b981',
-              fontWeight: '700',
-              fontSize: '0.8rem',
-              cursor: 'pointer',
-              transition: 'all 0.2s ease'
-            }}
-            title="Export to Excel / CSV Spreadsheet"
-          >
-            <FileSpreadsheet size={15} />
-            <span>Excel</span>
-          </button>
+          
 
           <button
             onClick={triggerPrint}

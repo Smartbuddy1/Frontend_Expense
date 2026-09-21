@@ -1122,15 +1122,6 @@ const OperationsOverview = ({
             onClick={onOpenCreateSupervisor}
           />
 
-          {/* Card 3: Submit Expense */}
-          <QuickActionCard
-            title="Submit Expense"
-            description="Submit a new expense or claim"
-            icon={IndianRupee}
-            iconBg="#ea580c"
-            onClick={onOpenSubmitExpense}
-          />
-
           {/* Card 4: Request Advance */}
           <QuickActionCard
             title="Request Advance"

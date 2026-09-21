@@ -251,48 +251,10 @@ export const SiteTeamTab = ({
         {/* Action Tools: Print, Excel, PDF, Add Member */}
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem', flexWrap: 'wrap' }}>
           {/* 🖨️ Print */}
-          <button
-            onClick={handlePrint}
-            style={{
-              padding: '0.55rem 1.05rem',
-              borderRadius: '10px',
-              border: '1.5px solid #0284c7',
-              backgroundColor: '#ffffff',
-              color: '#0284c7',
-              fontSize: '0.92rem',
-              fontWeight: '700',
-              cursor: 'pointer',
-              display: 'inline-flex',
-              alignItems: 'center',
-              gap: '0.45rem',
-              boxShadow: '0 1px 2px rgba(0, 0, 0, 0.05)'
-            }}
-          >
-            <Printer size={16} />
-            <span>Print</span>
-          </button>
+          
 
           {/* 📄 Excel */}
-          <button
-            onClick={handleExportExcel}
-            style={{
-              padding: '0.55rem 1.05rem',
-              borderRadius: '10px',
-              border: '1.5px solid #16a34a',
-              backgroundColor: '#ffffff',
-              color: '#16a34a',
-              fontSize: '0.92rem',
-              fontWeight: '700',
-              cursor: 'pointer',
-              display: 'inline-flex',
-              alignItems: 'center',
-              gap: '0.45rem',
-              boxShadow: '0 1px 2px rgba(0, 0, 0, 0.05)'
-            }}
-          >
-            <FileSpreadsheet size={16} />
-            <span>Excel</span>
-          </button>
+          
 
           {/* 📥 PDF */}
           <button

@@ -127,66 +127,10 @@ export const AlertsTab = ({ alerts: rawAlerts = [], onSelectProject }) => {
         {/* Top Right Action Buttons: Print, Excel, PDF */}
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem', flexWrap: 'wrap' }}>
           {/* 🖨️ Print Button */}
-          <button
-            onClick={handlePrint}
-            style={{
-              padding: '0.45rem 1rem',
-              borderRadius: '8px',
-              border: '1.5px solid #cbd5e1',
-              backgroundColor: '#ffffff',
-              color: '#0f172a',
-              fontSize: '0.92rem',
-              fontWeight: '600',
-              cursor: 'pointer',
-              display: 'inline-flex',
-              alignItems: 'center',
-              gap: '0.45rem',
-              boxShadow: '0 1px 2px rgba(0, 0, 0, 0.05)',
-              transition: 'all 0.15s ease'
-            }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.backgroundColor = '#f8fafc';
-              e.currentTarget.style.borderColor = '#94a3b8';
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.backgroundColor = '#ffffff';
-              e.currentTarget.style.borderColor = '#cbd5e1';
-            }}
-          >
-            <Printer size={16} style={{ color: '#0f172a' }} />
-            <span>Print</span>
-          </button>
+          
 
           {/* 📄 Excel Button */}
-          <button
-            onClick={handleExportExcel}
-            style={{
-              padding: '0.45rem 1rem',
-              borderRadius: '8px',
-              border: '1.5px solid #16a34a',
-              backgroundColor: '#ffffff',
-              color: '#16a34a',
-              fontSize: '0.92rem',
-              fontWeight: '600',
-              cursor: 'pointer',
-              display: 'inline-flex',
-              alignItems: 'center',
-              gap: '0.45rem',
-              boxShadow: '0 1px 2px rgba(0, 0, 0, 0.05)',
-              transition: 'all 0.15s ease'
-            }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.backgroundColor = '#f0fdf4';
-              e.currentTarget.style.borderColor = '#15803d';
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.backgroundColor = '#ffffff';
-              e.currentTarget.style.borderColor = '#16a34a';
-            }}
-          >
-            <FileSpreadsheet size={16} style={{ color: '#16a34a' }} />
-            <span>Excel</span>
-          </button>
+          
 
           {/* 📥 PDF Button */}
           <button

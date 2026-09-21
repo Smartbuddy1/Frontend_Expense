@@ -81,6 +81,7 @@ const mapExpenseForAccounts = (e) => ({
   projectName: e.project?.name || 'Unknown Project',
   siteName: e.project?.site || '',
   supervisor: e.submittedBy?.name || 'Unknown',
+  supervisorId: e.submittedById || e.submittedBy?.id || null,
   category: e.category?.name || 'Uncategorized',
   itemDescription: e.description,
   vendorName: e.vendorName || '',
@@ -109,6 +110,9 @@ const mapAdvanceForAccounts = (a) => ({
   purpose: a.purpose || '',
   requestDate: a.createdAt,
   date: a.createdAt,
+  updatedAt: a.updatedAt,
+  disbursedAt: a.disbursedAt || (a.status === 'disbursed' ? a.updatedAt : null),
+  supervisorId: a.requestedById || a.requestedBy?.id || null,
   urgency: a.urgency || 'Regular',
   opsVerificationStatus: a.status === 'requested' ? 'Pending' : (a.status === 'rejected' ? 'Rejected' : 'Verified'),
   status: ADVANCE_STATUS_TO_DISPLAY[a.status] || 'Pending Operations Approval',
@@ -152,7 +156,7 @@ const mapSettlementForAccounts = (s) => ({
 const TABS = [
   { id: 'overview', label: 'Overview', icon: Layers, count: null },
   { id: 'verification', label: 'Expense Verification', icon: Clock, countKey: 'pendingExpenses' },
-  { id: 'wallets', label: 'Wallet Funds', icon: Wallet, countKey: 'pendingAdvances' },
+  { id: 'wallets', label: 'Fund Requests', icon: Wallet, countKey: 'pendingAdvances' },
   { id: 'analytics', label: 'Analytics', icon: Activity, count: null },
   { id: 'reports', label: 'Financial Reports', icon: FileSpreadsheet, count: null },
   { id: 'public-form', label: 'Public Form', icon: Folder, count: null }
@@ -165,7 +169,7 @@ const TAB_METADATA = {
     title: 'Dashboard',
     subtitle: 'Hello Admin, here is your system overview.',
     icon: ShieldCheck,
-    color: '#3b82f6'
+    color: 'var(--badge-info-text)'
   },
   verification: {
     prefix: 'Expense',
@@ -173,13 +177,13 @@ const TAB_METADATA = {
     title: 'Expense Verification',
     subtitle: 'Verify & approve site vendor invoices indented by site in-charge',
     icon: FileText,
-    color: '#3b82f6'
+    color: 'var(--badge-info-text)'
   },
   wallets: {
-    prefix: 'Supervisor',
-    highlight: 'Wallets',
-    title: 'Supervisor Wallets',
-    subtitle: 'Monitor live site float balances, approve fund requisitions & disburse float',
+    prefix: 'Advance Fund',
+    highlight: 'Requests',
+    title: 'Advance Fund Requests',
+    subtitle: 'Operations-approved advances — review & disburse to supervisor wallets',
     icon: Wallet,
     color: '#059669'
   },
@@ -213,7 +217,7 @@ const TAB_METADATA = {
     title: 'Enterprise Reports',
     subtitle: 'Generate and export detailed analytics.',
     icon: FileSpreadsheet,
-    color: '#3b82f6'
+    color: 'var(--badge-info-text)'
   },
   'public-form': {
     prefix: 'Public',
@@ -221,7 +225,7 @@ const TAB_METADATA = {
     title: 'Public Form Submissions',
     subtitle: 'Expense submissions received from the public-facing field expense form',
     icon: Folder,
-    color: '#3b82f6'
+    color: 'var(--badge-info-text)'
   }
 };
 
@@ -422,7 +426,7 @@ const Dashboard = () => {
           top: '20px',
           right: '20px',
           zIndex: 100000,
-          backgroundColor: toastMessage.type === 'warning' ? '#f59e0b' : '#10b981',
+          backgroundColor: toastMessage.type === 'warning' ? 'var(--badge-warning-text)' : 'var(--badge-success-text)',
           color: '#ffffff',
           padding: '0.9rem 1.4rem',
           borderRadius: '12px',
@@ -464,7 +468,7 @@ const Dashboard = () => {
               }}>
                 {activeTab === 'overview' ? (
                   <>
-                    Welcome to <span style={{ color: '#3b82f6' }}>Dashboard</span>
+                    Welcome to <span style={{ color: 'var(--badge-info-text)' }}>Dashboard</span>
                   </>
                 ) : (
                   currentMeta.title

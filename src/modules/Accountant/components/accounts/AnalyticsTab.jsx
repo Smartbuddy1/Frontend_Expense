@@ -35,8 +35,8 @@ import {
   Layers
 } from 'lucide-react';
 import jsPDF from 'jspdf';
-import 'jspdf-autotable';
-import { applyPDFHeader, applyPDFFooter, getLogoDataUrl } from '../../utils/exportUtils';
+import autoTable from 'jspdf-autotable';
+import { addPdfHeaderWithLogo, addPdfFooterWithLogo, addPdfSignatures, escapeHtml } from '../../../Operations/utils/pdfHeaderHelper';
 import aiLogo from '../../assets/ai_logo.jpg';
 import PrintFooter from '../PrintFooter';
 
@@ -305,13 +305,12 @@ const AnalyticsTab = ({
   // PDF Export Handler
   const handleExportPDF = async () => {
     const doc = new jsPDF('landscape');
-    const logoDataUrl = await getLogoDataUrl();
 
-    applyPDFHeader(doc, {
-      title: 'Executive Financial Analytics & Operational Charts Report',
-      metaInfo: `Generated: ${new Date().toLocaleString()} | Scope: ${selectedProject === 'ALL' ? 'All Installation Sites' : selectedProject} | Sanctioned BOQ: ${formatPDFINR(totalBudget)}`,
-      logoDataUrl
-    });
+    const startY = await addPdfHeaderWithLogo(
+      doc,
+      'Executive Financial Analytics & Operational Charts Report',
+      `Generated on: ${new Date().toLocaleString('en-GB')} | Scope: ${selectedProject === 'ALL' ? 'All Installation Sites' : selectedProject} | Sanctioned BOQ: ${formatPDFINR(totalBudget)}`
+    );
 
     // Executive Metrics Table
     const summaryHeaders = [['Total Sanctioned Budget', 'Total Funds Released', 'Verified Site Expenses', 'Unspent Site Balance', 'Budget Utilization Rate']];
@@ -323,13 +322,24 @@ const AnalyticsTab = ({
       `${utilizationRate}%`
     ]];
 
-    doc.autoTable({
-      startY: 34,
+    autoTable(doc, {
+      startY: startY + 2,
       head: summaryHeaders,
       body: summaryData,
       theme: 'grid',
-      headStyles: { fillColor: [30, 41, 59], fontSize: 8.5, fontStyle: 'bold' },
-      styles: { fontSize: 8.5, halign: 'center' }
+      styles: { 
+        fontSize: 8.5, 
+        halign: 'center',
+        lineColor: [37, 99, 235],
+        lineWidth: 0.1,
+      },
+      headStyles: { 
+        fillColor: [30, 41, 59], 
+        textColor: [255, 255, 255],
+        fontSize: 8.5, 
+        fontStyle: 'bold' 
+      },
+      alternateRowStyles: { fillColor: [248, 250, 252] }
     });
 
     // Supervisor Audit Table
@@ -341,14 +351,23 @@ const AnalyticsTab = ({
       formatPDFINR((s.advance || 0) - (s.expenses || 0))
     ]);
 
-    doc.autoTable({
+    autoTable(doc, {
       startY: doc.lastAutoTable.finalY + 8,
       margin: { bottom: 30 },
       head: supHeaders,
       body: supRows,
       theme: 'grid',
-      headStyles: { fillColor: [6, 182, 212], fontSize: 8 },
-      styles: { fontSize: 7.5 }
+      styles: { 
+        fontSize: 7.5,
+        lineColor: [37, 99, 235],
+        lineWidth: 0.1,
+      },
+      headStyles: { 
+        fillColor: [16, 185, 129], 
+        textColor: [255, 255, 255],
+        fontSize: 8 
+      },
+      alternateRowStyles: { fillColor: [248, 250, 252] }
     });
 
     // Payment Mode Breakdown Table
@@ -359,17 +378,27 @@ const AnalyticsTab = ({
       `${p.percentage}%`
     ]);
 
-    doc.autoTable({
+    autoTable(doc, {
       startY: doc.lastAutoTable.finalY + 8,
       margin: { bottom: 30 },
       head: payHeaders,
       body: payRows,
       theme: 'grid',
-      headStyles: { fillColor: [59, 130, 246], fontSize: 8 },
-      styles: { fontSize: 7.5 }
+      styles: { 
+        fontSize: 7.5,
+        lineColor: [37, 99, 235],
+        lineWidth: 0.1,
+      },
+      headStyles: { 
+        fillColor: [16, 185, 129], 
+        textColor: [255, 255, 255],
+        fontSize: 8 
+      },
+      alternateRowStyles: { fillColor: [248, 250, 252] }
     });
 
-    applyPDFFooter(doc);
+    await addPdfFooterWithLogo(doc);
+    addPdfSignatures(doc);
     doc.save(`ASEMS_Visual_Analytics_${new Date().toISOString().split('T')[0]}.pdf`);
   };
 
@@ -396,29 +425,9 @@ const AnalyticsTab = ({
       </div>
 
       {/* Top Right Action Header (Hidden in Print) */}
-      <div className="no-print top-action-header">
+      <div className="no-print" style={{ display: 'flex', justifyContent: 'flex-end', width: '100%', marginBottom: '1.25rem' }}>
         {/* Print Button */}
-        <button
-          onClick={handlePrint}
-          style={{
-            padding: '0.55rem 1.15rem',
-            borderRadius: '12px',
-            backgroundColor: 'var(--surface-bg)',
-            color: 'var(--text-primary)',
-            border: '1.5px solid #cbd5e1',
-            fontWeight: '600',
-            fontSize: '0.86rem',
-            display: 'inline-flex',
-            alignItems: 'center',
-            gap: '0.45rem',
-            cursor: 'pointer',
-            boxShadow: '0 1px 4px rgba(0,0,0,0.03)',
-            transition: 'all 0.15s ease'
-          }}
-        >
-          <Printer size={17} style={{ color: 'var(--text-primary)' }} />
-          Print
-        </button>
+        
 
         {/* PDF Button */}
         <button
@@ -676,7 +685,6 @@ const AnalyticsTab = ({
                 <Legend verticalAlign="top" align="right" iconType="circle" wrapperStyle={{ fontSize: '11.5px', paddingBottom: '14px' }} />
                 <XAxis 
                   dataKey="month" 
-                  interval={0} 
                   stroke="var(--text-secondary)" 
                   fontSize={11} 
                   fontWeight={600}
@@ -728,7 +736,6 @@ const AnalyticsTab = ({
                 <Legend verticalAlign="top" align="right" iconType="circle" wrapperStyle={{ fontSize: '11.5px', paddingBottom: '14px' }} />
                 <XAxis 
                   dataKey="name" 
-                  interval={0} 
                   tick={renderStraightTick}
                   height={65}
                   stroke="var(--text-secondary)" 

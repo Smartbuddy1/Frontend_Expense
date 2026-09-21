@@ -9,7 +9,7 @@ import toast from 'react-hot-toast';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import { useLanguage } from '../../context/LanguageContext';
-import { addPdfHeaderWithLogo, addPdfFooterWithPageNumbers, getCompanyLogoBase64, escapeHtml } from '../../utils/pdfHeaderHelper';
+import { addPdfHeaderWithLogo, addPdfFooterWithPageNumbers, addPdfSignatures, getCompanyLogoBase64, escapeHtml } from '../../utils/pdfHeaderHelper';
 
 const TeamAssignmentTab = ({
   projects = [],
@@ -122,8 +122,18 @@ const TeamAssignmentTab = ({
         head: [['SR NO', 'SUPERVISOR & CONTACT', 'ASSIGNED PROJECT', 'TEAM MEMBERS', 'STATUS']],
         body: tableData,
         theme: 'grid',
-        styles: { fontSize: 8, cellPadding: 3 },
-        headStyles: { fillColor: [37, 99, 235], textColor: [255, 255, 255], fontStyle: 'bold' },
+        styles: { 
+          fontSize: 8, 
+          cellPadding: 3,
+          lineColor: [37, 99, 235],
+          lineWidth: 0.1, 
+        },
+        headStyles: { 
+          fillColor: [16, 185, 129], 
+          textColor: [255, 255, 255], 
+          fontStyle: 'bold' 
+        },
+        alternateRowStyles: { fillColor: [248, 250, 252] },
         columnStyles: {
           0: { cellWidth: 15, halign: 'center' },
           1: { cellWidth: 55 },
@@ -134,7 +144,10 @@ const TeamAssignmentTab = ({
       });
 
       // Add corporate footer with page numbers
-      addPdfFooterWithPageNumbers(doc);
+      await addPdfFooterWithPageNumbers(doc);
+
+      // Add Signatures
+      addPdfSignatures(doc);
 
       const filename = `ASEMS_Site_Supervisors_List_${new Date().toISOString().split('T')[0]}.pdf`;
       doc.save(filename);
