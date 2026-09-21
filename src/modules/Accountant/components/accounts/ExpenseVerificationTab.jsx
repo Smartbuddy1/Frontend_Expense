@@ -113,7 +113,7 @@ const ExpenseVerificationTab = ({
   const handleExportPDF = async () => {
     const doc = new jsPDF();
 
-    const startY = await addPdfHeaderWithLogo(
+    await addPdfHeaderWithLogo(
       doc,
       'Site Expenses Verification & Audit Queue Statement',
       `Generated on: ${new Date().toLocaleString('en-GB')} | Total Verified/Pending Claims: ${filteredExpenses.length}`
@@ -131,7 +131,7 @@ const ExpenseVerificationTab = ({
     ]);
 
     autoTable(doc, {
-      startY: startY + 2,
+      startY: 26,
       margin: { bottom: 30 },
       head: headers,
       body: data,

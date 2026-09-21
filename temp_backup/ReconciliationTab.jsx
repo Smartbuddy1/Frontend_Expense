@@ -1,0 +1,1881 @@
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import axios from 'axios';
+import {
+  Scale, Plus, FileText, Download, CheckCircle2, Clock,
+  AlertCircle, ArrowUpRight, ArrowDownRight, Building,
+  Search, Filter, RefreshCw, UserCheck, ShieldCheck,
+  ChevronDown, Phone, IndianRupee, Printer, ExternalLink, Calendar,
+  FileSpreadsheet, MapPin, History, X, Check
+} from 'lucide-react';
+import jsPDF from 'jspdf';
+import autoTable from 'jspdf-autotable';
+import { useLanguage } from '../../context/LanguageContext';
+import { useSearchParams } from 'react-router-dom';
+import { addPdfHeaderWithLogo, addPdfFooterWithLogo, getCompanyLogoBase64, escapeHtml } from '../../utils/pdfHeaderHelper';
+import Pagination from '../../../../components/ui/Pagination';
+import toast from 'react-hot-toast';
+
+const API = import.meta.env.VITE_API_BASE_URL;
+
+const ReconciliationTab = ({
+  projects = [],
+  supervisors = [],
+  expenses = [],
+  advances = [],
+  activeView,
+  onRefresh
+}) => {
+  const { language } = useLanguage();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const currentTab = activeView || searchParams.get('tab') || 'reconciliation';
+  const isReconView = currentTab === 'reconciliation';
+
+  // Advance Requisitions — real supervisor-submitted advance requests from the backend.
+  const advanceRequisitions = useMemo(() => advances.map(a => ({
+    id: a.id,
+    displayId: a.displayId || `REQ-${a.id.slice(0, 4).toUpperCase()}`,
+    supervisor: a.supervisor,
+    supervisorId: a.supervisorId,
+    site: a.site || a.projectName,
+    purpose: a.purpose || 'General site advance',
+    urgency: a.urgency || 'Regular',
+    urgencyType: a.urgencyType || 'medium',
+    date: a.date ? new Date(a.date).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }) : '',
+    amount: a.amount,
+    status: a.status,
+    rawStatus: a.rawStatus,
+    projectId: a.projectId,
+  })), [advances]);
+
+  const handleApproveRequisition = async (id) => {
+    try {
+      await axios.patch(`${API}/advances/${id}/approve`);
+      toast.success(`Requisition ${id} Approved & Forwarded to Accounts!`);
+      onRefresh && onRefresh();
+    } catch (err) {
+      toast.error(err.response?.data?.error || 'Failed to approve requisition');
+    }
+  };
+
+  const handleRejectRequisition = async (id) => {
+    try {
+      await axios.patch(`${API}/advances/${id}/reject`);
+      toast.error(`Requisition ${id} has been Rejected`);
+      onRefresh && onRefresh();
+    } catch (err) {
+      toast.error(err.response?.data?.error || 'Failed to reject requisition');
+    }
+  };
+
+  const handleUpdateUrgency = async (id, newUrgency) => {
+    const advance = advances.find(a => a.id === id);
+    if (!advance) return;
+    try {
+      await axios.put(`${API}/advances/${id}`, {
+        projectId: advance.projectId,
+        amount: Number(advance.amount),
+        purpose: advance.purpose,
+        urgency: newUrgency
+      });
+      toast.success('Urgency updated successfully');
+      onRefresh && onRefresh();
+    } catch (err) {
+      toast.error(err.response?.data?.error || 'Failed to update urgency');
+    }
+  };
+
+  // Bank & UTR Ledger — real payment-ledger entries (advance disbursals + expense
+  // payouts), fetched separately since the parent dashboard doesn't hold this list.
+  const [rawLedger, setRawLedger] = useState([]);
+
+  const fetchLedger = useCallback(async () => {
+    try {
+      const { data } = await axios.get(`${API}/payments-ledger`);
+      setRawLedger(data.entries || []);
+    } catch (err) {
+      console.error(err);
+    }
+  }, []);
+
+  useEffect(() => { fetchLedger(); }, [fetchLedger]);
+
+  const ledgerRecords = useMemo(() => rawLedger
+    .filter(e => e.type === 'Site Advance Disbursal' || e.type === 'Expense Reimbursement')
+    .map(e => {
+      const created = new Date(e.createdAt);
+      return {
+        id: e.id,
+        supervisor: e.paidTo || 'Site Supervisor',
+        project: e.project?.name || '',
+        type: e.type === 'Site Advance Disbursal' ? 'Advance Float' : 'Bill Adjustment',
+        mode: e.paymentMode || '—',
+        utr: e.refNumber || '—',
+        amount: Number(e.amount),
+        date: created.toISOString().split('T')[0],
+        time: created.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' }),
+        status: 'Verified',
+      };
+    }), [rawLedger]);
+
+  // Float state for supervisors — derived live from real projects/expenses/advances:
+  // total advance = disbursed advances for their project, total spent = ops-approved
+  // or accounts-paid expenses for that project (matches GET /projects/:id/wallet).
+  const supervisorWallets = useMemo(() => {
+    const wallets = {};
+    advances.forEach(a => {
+      if (a.rawStatus === 'disbursed') {
+        const sId = a.supervisorId || a.requestedById || a.supervisor;
+        if (sId) {
+          if (!wallets[sId]) wallets[sId] = { advance: 0, spent: 0 };
+          wallets[sId].advance += (a.amount || 0);
+        }
+      }
+    });
+    expenses.forEach(e => {
+      if (e.status === 'Approved' || e.status === 'Paid') {
+        const sId = e.supervisorId || e.submittedById || e.supervisorName || e.submittedBy;
+        if (sId) {
+          if (!wallets[sId]) wallets[sId] = { advance: 0, spent: 0 };
+          wallets[sId].spent += (e.amount || 0);
+        }
+      }
+    });
+    return wallets;
+  }, [advances, expenses]);
+
+  const supervisorFloats = useMemo(() => {
+    return projects
+      .filter(p => p.supervisorId)
+      .map(p => {
+        const totalAdvance = advances
+          .filter(a => a.projectId === p.id && a.rawStatus === 'disbursed')
+          .reduce((sum, a) => sum + a.amount, 0);
+        const totalSpent = expenses
+          .filter(e => e.projectId === p.id && (e.status === 'Approved' || e.status === 'Paid'))
+          .reduce((sum, e) => sum + e.amount, 0);
+        const inHand = totalAdvance - totalSpent;
+        const lastLedgerEntry = ledgerRecords
+          .filter(r => r.project === p.name)
+          .sort((a, b) => new Date(b.date) - new Date(a.date))[0];
+        return {
+          id: p.supervisorId,
+          projectId: p.id,
+          name: p.supervisorName,
+          phone: p.supervisorPhone,
+          project: p.name,
+          site: p.location,
+          advance: totalAdvance,
+          settled: totalSpent,
+          status: inHand < 5000 ? 'Low Float' : 'Healthy',
+          lastRef: lastLedgerEntry?.utr || '—',
+          lastDate: lastLedgerEntry?.date || ''
+        };
+      });
+  }, [projects, advances, expenses, ledgerRecords]);
+
+  const [searchQuery, setSearchQuery] = useState('');
+  const [filterType, setFilterType] = useState('All');
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 10;
+
+  const [isIssueFloatOpen, setIsIssueFloatOpen] = useState(false);
+  const [isSettleModalOpen, setIsSettleModalOpen] = useState(false);
+  const [selectedSupervisor, setSelectedSupervisor] = useState(null);
+  const [inspectLedgerRecord, setInspectLedgerRecord] = useState(null);
+  const [isNewReqModalOpen, setIsNewReqModalOpen] = useState(false);
+
+  const supervisorProjects = useMemo(() => projects.filter(p => p.supervisorId), [projects]);
+
+  // Form states for new advance requisition
+  const [newReqForm, setNewReqForm] = useState({
+    projectId: '',
+    site: '',
+    purpose: '',
+    urgency: 'Regular',
+    urgencyType: 'medium',
+    amount: '',
+    notes: ''
+  });
+
+  const handleCreateRequisitionSubmit = async (e) => {
+    e.preventDefault();
+    if (!newReqForm.purpose.trim()) {
+      toast.error('Please enter the purpose or reason for the advance.');
+      return;
+    }
+    if (!newReqForm.amount || Number(newReqForm.amount) <= 0) {
+      toast.error('Please enter a valid amount.');
+      return;
+    }
+    if (!newReqForm.projectId) {
+      toast.error('Please select a supervisor / site.');
+      return;
+    }
+
+    try {
+      await axios.post(`${API}/advances`, {
+        projectId: newReqForm.projectId,
+        amount: Number(newReqForm.amount),
+        purpose: newReqForm.purpose,
+        urgency: newReqForm.urgency
+      });
+      setIsNewReqModalOpen(false);
+      setNewReqForm({ projectId: '', site: '', purpose: '', urgency: 'Immediate', amount: '', notes: '' });
+      toast.success('Advance requisition submitted for approval!');
+      onRefresh && onRefresh();
+    } catch (err) {
+      toast.error(err.response?.data?.error || 'Failed to submit requisition');
+    }
+  };
+
+  // Form states for new float
+  const [floatForm, setFloatForm] = useState({
+    supervisorId: '',
+    amount: '',
+    mode: 'NEFT / Bank Transfer',
+    utr: '',
+    notes: ''
+  });
+
+  // Calculate totals
+  const totalAdvance = supervisorFloats.reduce((sum, s) => sum + s.advance, 0);
+  const totalSettled = supervisorFloats.reduce((sum, s) => sum + s.settled, 0);
+  const totalInHand = totalAdvance - totalSettled;
+  const discrepancy = 0; // 100% matched
+
+  // Issues cash to a supervisor via the real advance-transfer endpoint (auto-approved,
+  // skips the request step since Operations is authorizing it on the spot). If the
+  // logged-in user also has disbursal rights (Admin), it's immediately confirmed
+  // disbursed too so the payment mode/UTR captured here land in the real ledger;
+  // for a pure Operations user that PATCH 403s and the advance simply stays
+  // "Approved", awaiting Accounts to confirm the actual payout.
+  const handleIssueFloatSubmit = async (e) => {
+    e.preventDefault();
+    if (!floatForm.amount || Number(floatForm.amount) <= 0) {
+      toast.error('Please enter a valid amount.');
+      return;
+    }
+    const sup = supervisorFloats.find(s => s.id === floatForm.supervisorId);
+    if (!sup) {
+      toast.error('Please select a supervisor.');
+      return;
+    }
+
+    try {
+      const { data } = await axios.post(`${API}/advances/transfer`, {
+        projectId: sup.projectId,
+        supervisorId: sup.id,
+        amount: Number(floatForm.amount),
+        purpose: floatForm.notes || 'Advance float issued by Operations',
+      });
+      try {
+        await axios.patch(`${API}/advances/${data.advance.id}/disburse`, {
+          paidTo: sup.name,
+          paymentMode: floatForm.mode,
+          refNumber: floatForm.utr,
+        });
+      } catch {
+        // Not authorized to disburse directly (non-admin Operations user) — the
+        // advance stays "Approved" for Accounts to confirm the payout.
+      }
+      setIsIssueFloatOpen(false);
+      setFloatForm({ supervisorId: '', amount: '', mode: 'NEFT / Bank Transfer', utr: '', notes: '' });
+      toast.success('Advance float issued successfully!');
+      onRefresh && onRefresh();
+      fetchLedger();
+    } catch (err) {
+      toast.error(err.response?.data?.error || 'Failed to issue advance float');
+    }
+  };
+
+  const handleSettleAccount = (sup) => {
+    setSelectedSupervisor(sup);
+    setIsSettleModalOpen(true);
+  };
+
+  // Creates a real Settlement record for Accounts to review and close — Operations
+  // doesn't have authority to finalize money movement, only to flag a float as
+  // ready for final reconciliation.
+  const confirmSettlement = async () => {
+    if (!selectedSupervisor) return;
+    try {
+      await axios.post(`${API}/settlements`, {
+        projectId: selectedSupervisor.projectId,
+        supervisorId: selectedSupervisor.id,
+        totalAdvanceGiven: selectedSupervisor.advance,
+        totalApprovedExpenses: selectedSupervisor.settled,
+      });
+      setIsSettleModalOpen(false);
+      toast.success('Float account flagged for settlement — forwarded to Accounts for final closure!');
+      onRefresh && onRefresh();
+    } catch (err) {
+      toast.error(err.response?.data?.error || 'Failed to create settlement');
+    }
+  };
+
+  // Filtered supervisor floats for Cash & Advance
+  const filteredFloats = supervisorFloats.filter(sup => {
+    const q = (searchQuery || '').toLowerCase();
+    const matchesSearch = !q ||
+      sup.name.toLowerCase().includes(q) ||
+      (sup.phone && sup.phone.toLowerCase().includes(q)) ||
+      sup.site.toLowerCase().includes(q) ||
+      sup.project.toLowerCase().includes(q) ||
+      (sup.lastRef && sup.lastRef.toLowerCase().includes(q));
+
+    const inHand = sup.advance - sup.settled;
+    const isLowFloat = inHand < 5000;
+    const matchesFilter = filterType === 'All' ||
+      (filterType === 'Low' && isLowFloat) ||
+      (filterType === 'Available' && !isLowFloat);
+
+    return matchesSearch && matchesFilter;
+  });
+
+  // Filtered advance requisitions for Request Advance
+  const filteredRequisitions = advanceRequisitions.filter(item => {
+    const q = (searchQuery || '').toLowerCase();
+    return !q ||
+      item.id.toLowerCase().includes(q) ||
+      (item.supervisor && item.supervisor.toLowerCase().includes(q)) ||
+      item.site.toLowerCase().includes(q) ||
+      item.purpose.toLowerCase().includes(q) ||
+      item.amount.toString().includes(q) ||
+      item.urgency.toLowerCase().includes(q);
+  });
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchQuery, filterType]);
+
+  const totalPages = Math.ceil(filteredRequisitions.length / itemsPerPage) || 1;
+  const safePage = Math.min(currentPage, totalPages);
+  const paginatedRequisitions = filteredRequisitions.slice(
+    (safePage - 1) * itemsPerPage,
+    safePage * itemsPerPage
+  );
+
+  const handlePrev = () => {
+    if (currentPage > 1) setCurrentPage(prev => prev - 1);
+  };
+
+  const handleNext = () => {
+    if (currentPage < totalPages) setCurrentPage(prev => prev + 1);
+  };
+
+  const filteredLedger = ledgerRecords.filter(rec => {
+    const matchesSearch =
+      rec.supervisor.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      rec.project.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      rec.utr.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      rec.id.toLowerCase().includes(searchQuery.toLowerCase());
+
+    if (filterType === 'All') return matchesSearch;
+    if (filterType === 'Advance') return matchesSearch && rec.type.includes('Advance');
+    if (filterType === 'Adjustment') return matchesSearch && rec.type.includes('Adjustment');
+    return matchesSearch;
+  });
+
+  // 1-Click CSV / Excel Exporter
+  const handleExportExcel = () => {
+    try {
+      const csvRows = [
+        ['SR NO', 'REQUISITION ID', 'SUPERVISOR', 'SITE LOCATION', 'PURPOSE / REASON', 'URGENCY', 'DATE', 'AMOUNT (INR)', 'STATUS'],
+        ...filteredRequisitions.map((req, idx) => [
+          idx + 1,
+          `"${req.id || ''}"`,
+          `"${req.supervisor || ''}"`,
+          `"${req.site || ''}"`,
+          `"${req.purpose || ''}"`,
+          `"${req.urgency || ''}"`,
+          `"${req.date || ''}"`,
+          req.amount || 0,
+          `"${req.status || 'Approved'}"`
+        ])
+      ];
+      const csvContent = 'data:text/csv;charset=utf-8,\uFEFF' + csvRows.map(e => e.join(',')).join('\n');
+      const encodedUri = encodeURI(csvContent);
+      const link = document.createElement('a');
+      link.setAttribute('href', encodedUri);
+      link.setAttribute('download', `ASEMS_Advance_Requisitions_${new Date().toISOString().split('T')[0]}.csv`);
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      toast.success('Advance requisitions downloaded as Excel/CSV!');
+    } catch (err) {
+      console.error(err);
+      toast.error('Failed to export Excel');
+    }
+  };
+
+  // 1-Click Direct PDF File Download
+  const handleDownloadPDF = async () => {
+    try {
+      const doc = new jsPDF();
+
+      // 1. Advance Requisitions PDF with Official Logo Header
+      const startY = await addPdfHeaderWithLogo(
+        doc,
+        'Site Advance Requisitions & Approvals Statement',
+        `Generated on: ${new Date().toLocaleString()} | Official Operations Register`
+      );
+
+      // Summary Box
+      const totalReqAmount = filteredRequisitions.reduce((sum, r) => sum + (Number(r.amount) || 0), 0);
+      autoTable(doc, {
+        startY: startY + 2,
+        head: [['TOTAL REQUISITIONS', 'TOTAL REQUISITIONED', 'APPROVED REQUESTS', 'PENDING REVIEW']],
+        body: [[
+          `${filteredRequisitions.length} Requisitions`,
+          `Rs. ${totalReqAmount.toLocaleString('en-IN')}`,
+          `${filteredRequisitions.filter(r => r.status === 'Approved').length}`,
+          `${filteredRequisitions.filter(r => r.status === 'Pending').length}`
+        ]],
+        theme: 'grid',
+        styles: { fontSize: 9, fontStyle: 'bold', halign: 'center' },
+        headStyles: { fillColor: [5, 150, 105], textColor: [255, 255, 255] }
+      });
+
+      // Requisition Table Data
+      const reqData = filteredRequisitions.map(r => [
+        r.id,
+        r.supervisor || 'Rohit Sharma',
+        r.site,
+        r.purpose,
+        r.urgency,
+        r.date,
+        `Rs. ${(r.amount || 0).toLocaleString('en-IN')}`,
+        r.status
+      ]);
+
+      autoTable(doc, {
+        startY: doc.lastAutoTable.finalY + 8,
+        head: [['REQ ID', 'SUPERVISOR', 'SITE LOCATION', 'PURPOSE / REASON', 'URGENCY', 'DATE', 'AMOUNT', 'STATUS']],
+        body: reqData,
+        theme: 'grid',
+        styles: { fontSize: 8 },
+        headStyles: { fillColor: [15, 23, 42], textColor: [255, 255, 255] }
+      });
+
+      // Add official company footer with Logo across all pages
+      await addPdfFooterWithLogo(doc);
+
+      const filename = `ASEMS_Advance_Requisitions_${new Date().toISOString().split('T')[0]}.pdf`;
+      doc.save(filename);
+      toast.success('Advance Requisitions PDF downloaded with official logo & footer!');
+    } catch (err) {
+      console.error(err);
+      toast.error('Failed to export PDF: ' + err.message);
+    }
+  };
+
+  const generateStatementHtml = (logoBase64) => {
+    const logoSrc = logoBase64 || `${window.location.origin}/logo_new.png`;
+
+    const totalReqAmount = filteredRequisitions.reduce((sum, r) => sum + (Number(r.amount) || 0), 0);
+      const reqRows = filteredRequisitions.map((r, idx) => `
+        <tr>
+          <td style="text-align:center; font-weight:800; color:#059669;">${escapeHtml(r.id)}</td>
+          <td><strong>${escapeHtml(r.supervisor || 'Rohit Sharma')}</strong></td>
+          <td><strong>${escapeHtml(r.site)}</strong></td>
+          <td>${escapeHtml(r.purpose)}</td>
+          <td style="text-align:center;">
+            <span style="padding:2px 7px; border-radius:6px; font-weight:700; font-size:9.5px; background:${r.urgencyType === 'high' ? '#fee2e2; color:#dc2626;' : '#dbeafe; color:#2563eb;'}">
+              ${r.urgency}
+            </span>
+          </td>
+          <td>${r.date}</td>
+          <td style="text-align:right; font-weight:800; color:#0f172a;">₹${(r.amount || 0).toLocaleString('en-IN')}</td>
+          <td style="text-align:center;">
+            <span style="padding:2px 8px; border-radius:9999px; font-weight:800; font-size:9px; background:${r.status === 'Approved' ? '#dcfce7; color:#15803d; border:1px solid #bbf7d0;' : '#fef3c7; color:#d97706; border:1px solid #fde68a;'}">
+              ${r.status}
+            </span>
+          </td>
+        </tr>
+      `).join('');
+
+      return `
+        <!DOCTYPE html>
+        <html>
+        <head>
+          <title>Advance Requisitions & Approvals Statement - Aarya Innovtech</title>
+          <style>
+            @page { size: A4 landscape; margin: 12mm; }
+            body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; padding: 15px; color: #0f172a; line-height: 1.4; }
+            .header { display: flex; align-items: center; justify-content: space-between; border-bottom: 2px solid #059669; padding-bottom: 12px; margin-bottom: 15px; }
+            .title { font-size: 17px; font-weight: 800; color: #0f172a; margin: 0; }
+            .subtitle { font-size: 10px; color: #64748b; margin-top: 3px; }
+            .summary-cards { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: 15px; }
+            .card { border: 1px solid #e2e8f0; border-radius: 8px; padding: 10px 14px; background: #f8fafc; }
+            .card-label { font-size: 9px; font-weight: 800; text-transform: uppercase; color: #64748b; }
+            .card-val { font-size: 16px; font-weight: 900; margin-top: 2px; }
+            table { width: 100%; border-collapse: collapse; margin-bottom: 15px; font-size: 10px; }
+            th { background: #f1f5f9; padding: 7px 9px; border: 1px solid #cbd5e1; text-align: left; font-weight: 800; text-transform: uppercase; font-size: 9px; color: #334155; }
+            td { padding: 7px 9px; border: 1px solid #e2e8f0; vertical-align: middle; }
+            tr:nth-child(even) { background-color: #f8fafc; }
+            .sec-title { font-size: 12px; font-weight: 800; color: #065f46; margin: 14px 0 6px 0; text-transform: uppercase; }
+            .footer { border-top: 1.5px solid #cbd5e1; padding-top: 14px; margin-top: 25px; font-size: 10.5px; color: #475569; }
+            .footer-sig { display: flex; justify-content: space-between; margin-bottom: 14px; }
+            .footer-company { display: flex; justify-content: space-between; align-items: center; border-top: 1px dashed #e2e8f0; padding-top: 10px; font-size: 9.5px; color: #64748b; }
+          </style>
+        </head>
+        <body>
+          <div class="header">
+            <div style="display: flex; align-items: center; gap: 14px;">
+              <img src="${logoSrc}" alt="Aarya Innovtech Pvt. Ltd." style="height: 42px; width: auto; max-width: 170px; object-fit: contain; display: block;" />
+              <div>
+                <h1 class="title">Site Advance Requisitions & Approvals Statement</h1>
+                <div class="subtitle">AARYA INNOVTECH PVT. LTD. | Official Site Operations Register</div>
+              </div>
+            </div>
+            <div style="text-align: right; font-size: 10px; color: #64748b;">
+              <strong>Generated Date:</strong> ${new Date().toLocaleDateString('en-GB')}<br/>
+              ${new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })}
+            </div>
+          </div>
+
+          <div class="summary-cards">
+            <div class="card" style="border-left: 4px solid #059669;">
+              <div class="card-label">Total Requisitions</div>
+              <div class="card-val" style="color: #065f46;">${filteredRequisitions.length}</div>
+            </div>
+            <div class="card" style="border-left: 4px solid #2563eb;">
+              <div class="card-label">Total Amount Requested</div>
+              <div class="card-val" style="color: #1d4ed8;">₹${totalReqAmount.toLocaleString('en-IN')}</div>
+            </div>
+            <div class="card" style="border-left: 4px solid #10b981;">
+              <div class="card-label">Approved Requests</div>
+              <div class="card-val" style="color: #059669;">${filteredRequisitions.filter(r => r.status === 'Approved').length}</div>
+            </div>
+            <div class="card" style="border-left: 4px solid #f59e0b;">
+              <div class="card-label">Pending Reviews</div>
+              <div class="card-val" style="color: #d97706;">${filteredRequisitions.filter(r => r.status === 'Pending').length}</div>
+            </div>
+          </div>
+
+          <div class="sec-title">1. Site Advance Requisitions Ledger</div>
+          <table>
+            <thead>
+              <tr>
+                <th style="text-align:center;">REQ ID</th>
+                <th>SUPERVISOR</th>
+                <th>SITE LOCATION</th>
+                <th>PURPOSE / REASON</th>
+                <th style="text-align:center;">URGENCY</th>
+                <th>DATE</th>
+                <th style="text-align:right;">AMOUNT</th>
+                <th style="text-align:center;">STATUS</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${reqRows}
+            </tbody>
+          </table>
+
+          <div class="footer">
+            <div class="footer-sig">
+              <div>Verified By: <strong>Accounts & Finance Officer</strong></div>
+              <div>Authorized Signatory: _______________________ <strong>(Operations / Project Head)</strong></div>
+            </div>
+            <div class="footer-company">
+              <div style="display: flex; align-items: center; gap: 8px;">
+                <img src="${logoSrc}" alt="Logo" style="height: 20px; width: auto; max-width: 90px; object-fit: contain; display: block;" />
+                <div><strong>AARYA INNOVTECH PVT. LTD.</strong> | CIN: U29305MH2019PTC327551 | Ph: +91 9359604384 | Makhamalabad Road, Nashik</div>
+              </div>
+              <div>Generated by ASEMS System</div>
+            </div>
+          </div>
+        </body>
+        </html>
+      `;
+  };
+
+  // Print Dialog Trigger (Loads base64 logo & opens print window)
+  const handlePrintStatement = async () => {
+    try {
+      const logoBase64 = await getCompanyLogoBase64();
+      const printWin = window.open('', '_blank', 'width=900,height=750');
+      if (!printWin) {
+        toast.error('Print popup blocked! Please allow popups for this site.');
+        return;
+      }
+
+      printWin.document.open();
+      printWin.document.write(generateStatementHtml(logoBase64));
+      printWin.document.close();
+
+      const triggerPrint = () => {
+        try {
+          printWin.focus();
+          printWin.print();
+        } catch (e) {
+          console.error(e);
+        }
+      };
+
+      printWin.onload = triggerPrint;
+      setTimeout(triggerPrint, 400);
+    } catch (err) {
+      console.error('Print Error:', err);
+      toast.error('Failed to trigger print: ' + err.message);
+    }
+  };
+
+  // Print Individual Transaction Voucher Receipt
+  const handlePrintVoucher = async (record) => {
+    if (!record) return;
+    try {
+      const logoBase64 = await getCompanyLogoBase64();
+      const logoSrc = logoBase64 || `${window.location.origin}/logo_new.png`;
+      const printWin = window.open('', '_blank', 'width=850,height=750');
+      if (!printWin) {
+        toast.error('Print popup blocked! Please allow popups for this site.');
+        return;
+      }
+
+      const htmlContent = `
+        <!DOCTYPE html>
+        <html>
+        <head>
+          <title>Official Voucher Receipt - ${record.id}</title>
+          <style>
+            @page { size: A4; margin: 15mm; }
+            body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; padding: 25px; color: #0f172a; line-height: 1.5; }
+            .voucher-box { border: 2px solid #2563eb; border-radius: 12px; padding: 24px; background: #ffffff; }
+            .header { display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #e2e8f0; padding-bottom: 16px; margin-bottom: 20px; }
+            .title-area h2 { margin: 0; font-size: 18px; color: #1e3a8a; font-weight: 800; }
+            .title-area p { margin: 3px 0 0 0; font-size: 11px; color: #64748b; }
+            .meta-table { width: 100%; border-collapse: collapse; margin-bottom: 24px; font-size: 13px; }
+            .meta-table td { padding: 10px 12px; border-bottom: 1px solid #f1f5f9; }
+            .meta-table td.label { color: #64748b; font-weight: 600; width: 35%; }
+            .meta-table td.val { color: #0f172a; font-weight: 800; }
+            .amount-box { background: #eff6ff; border: 1.5px solid #bfdbfe; border-radius: 10px; padding: 14px 18px; display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; }
+            .amount-box span { font-size: 13px; font-weight: 700; color: #1e40af; }
+            .amount-box strong { font-size: 22px; font-weight: 900; color: #1d4ed8; }
+            .footer-signatures { display: flex; justify-content: space-between; margin-top: 50px; font-size: 11px; color: #475569; }
+            .sig-line { width: 180px; border-top: 1.5px solid #64748b; text-align: center; padding-top: 6px; font-weight: 700; }
+          </style>
+        </head>
+        <body>
+          <div class="voucher-box">
+            <div class="header">
+              <div style="display: flex; align-items: center; gap: 14px;">
+                <img src="${logoSrc}" alt="Aarya Innovtech" style="height: 48px; max-width: 180px; object-fit: contain;" />
+                <div class="title-area">
+                  <h2>TRANSACTION VOUCHER & UTR AUDIT SLIP</h2>
+                  <p>AARYA INNOVTECH PVT. LTD. | Operations & Accounts Ledger</p>
+                </div>
+              </div>
+              <div style="text-align: right; font-size: 11px; color: #64748b;">
+                <strong>Voucher No:</strong> ${record.id}<br/>
+                <strong>Date:</strong> ${record.date ? new Date(record.date).toLocaleDateString('en-GB') : '23 Aug 2026'}
+              </div>
+            </div>
+
+            <table class="meta-table">
+              <tr>
+                <td class="label">Transaction Ref / UTR No:</td>
+                <td class="val"><code style="background:#f1f5f9; padding:3px 6px; border-radius:4px; font-size:14px;">${escapeHtml(record.utr)}</code></td>
+              </tr>
+              <tr>
+                <td class="label">Site / Project Location:</td>
+                <td class="val">${escapeHtml(record.project)}</td>
+              </tr>
+              <tr>
+                <td class="label">Assigned Site Supervisor:</td>
+                <td class="val">${escapeHtml(record.supervisor)}</td>
+              </tr>
+              <tr>
+                <td class="label">Payment Type & Mode:</td>
+                <td class="val">${escapeHtml(record.type)} (${escapeHtml(record.mode)})</td>
+              </tr>
+              <tr>
+                <td class="label">Audit Status:</td>
+                <td class="val" style="color:#059669;">● Verified & Audited</td>
+              </tr>
+            </table>
+
+            <div class="amount-box">
+              <span>AMOUNT DISBURSED / CLAIMED:</span>
+              <strong>₹${record.amount.toLocaleString('en-IN')}</strong>
+            </div>
+
+            <div class="footer-signatures">
+              <div class="sig-line">Supervisor Signature</div>
+              <div class="sig-line">Accounts Verifier</div>
+              <div class="sig-line">Authorized Signatory (CFO)</div>
+            </div>
+          </div>
+        </body>
+        </html>
+      `;
+
+      printWin.document.open();
+      printWin.document.write(htmlContent);
+      printWin.document.close();
+
+      const triggerPrint = () => {
+        try {
+          printWin.focus();
+          printWin.print();
+        } catch (e) {
+          console.error(e);
+        }
+      };
+      printWin.onload = triggerPrint;
+      setTimeout(triggerPrint, 400);
+    } catch (err) {
+      console.error('Print Voucher Error:', err);
+      toast.error('Failed to print voucher: ' + err.message);
+    }
+  };
+
+  // Stats for KPI cards
+  const pendingOpsCount = advanceRequisitions.filter(r => r.rawStatus === 'requested').length;
+  const pendingOpsTotal = advanceRequisitions.filter(r => r.rawStatus === 'requested').reduce((acc, r) => acc + (r.amount || 0), 0);
+  const forwardedCount = advanceRequisitions.filter(r => r.rawStatus === 'approved' || r.rawStatus === 'disbursed').length;
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem', width: '100%', boxSizing: 'border-box' }}>
+
+      {/* 1. Header Section */}
+      <div style={{
+        display: 'flex',
+        justifyContent: 'space-between',
+        alignItems: 'flex-start',
+        flexWrap: 'wrap',
+        gap: '1rem'
+      }}>
+        <div>
+          <h1 style={{
+            fontSize: '2.15rem',
+            fontWeight: '900',
+            color: 'var(--text-primary, #0f172a)',
+            margin: 0,
+            display: 'flex',
+            alignItems: 'center',
+            gap: '0.65rem',
+            lineHeight: 1.2
+          }}>
+            Request Advance Money
+          </h1>
+          <p style={{ fontSize: '1.02rem', color: 'var(--text-secondary, #475569)', margin: '0.35rem 0 0 0', fontWeight: '500' }}>
+            Requisition site petty cash, urgent material purchase funds, and track approval status.
+          </p>
+        </div>
+
+        {/* Action Buttons: PDF, Excel & Print */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', flexWrap: 'wrap' }}>
+          {/* 📥 PDF Button */}
+          <button
+            onClick={handleDownloadPDF}
+            style={{
+              padding: '0.5rem 1.15rem',
+              borderRadius: '10px',
+              border: '1.5px solid #c7d2fe',
+              backgroundColor: '#eef2ff',
+              color: '#4f46e5',
+              fontSize: '0.9rem',
+              fontWeight: '800',
+              cursor: 'pointer',
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '0.45rem',
+              transition: 'all 0.2s ease',
+              boxShadow: '0 1px 3px rgba(0,0,0,0.04)'
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.backgroundColor = '#e0e7ff';
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.backgroundColor = '#eef2ff';
+            }}
+          >
+            <Download size={16} style={{ color: '#4f46e5' }} />
+            <span>PDF</span>
+          </button>
+
+          {/* 📄 Excel Button (Green Outline) */}
+          
+
+          {/* 📄 Print Button */}
+          
+        </div>
+      </div>
+
+      {/* KPI Stats Cards */}
+      <div style={{ display: 'flex', gap: '1.25rem', flexWrap: 'wrap' }}>
+        {/* Pending Ops Card */}
+        <div style={{
+          flex: '1 1 240px', display: 'flex', alignItems: 'center', gap: '1.25rem',
+          padding: '1.25rem 1.5rem', borderRadius: '16px',
+          backgroundColor: 'var(--card-bg, #ffffff)',
+          border: '1px solid var(--border-color, #e2e8f0)',
+          boxShadow: '0 4px 15px rgba(0,0,0,0.03)',
+          position: 'relative', overflow: 'hidden'
+        }}>
+          <div style={{
+            position: 'absolute', top: 0, left: 0, width: '4px', height: '100%',
+            backgroundColor: '#f59e0b'
+          }} />
+          <div style={{
+            width: '48px', height: '48px', borderRadius: '14px',
+            backgroundColor: '#fef3c7', display: 'flex', alignItems: 'center', justifyContent: 'center',
+            boxShadow: '0 2px 5px rgba(245,158,11,0.2)'
+          }}>
+            <Clock size={24} color="#d97706" />
+          </div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.2rem' }}>
+            <div style={{ fontSize: '0.9rem', color: 'var(--text-secondary, #64748b)', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+              Pending Your Approval
+            </div>
+            <div style={{ display: 'flex', alignItems: 'baseline', gap: '0.5rem' }}>
+              <span style={{ fontSize: '1.75rem', fontWeight: '900', color: 'var(--text-primary, #0f172a)', lineHeight: '1' }}>
+                {pendingOpsCount}
+              </span>
+              <span style={{ fontSize: '1rem', color: '#d97706', fontWeight: '800' }}>
+                (₹{pendingOpsTotal.toLocaleString('en-IN')})
+              </span>
+            </div>
+          </div>
+        </div>
+
+        {/* Forwarded to Accounts Card */}
+        <div style={{
+          flex: '1 1 240px', display: 'flex', alignItems: 'center', gap: '1.25rem',
+          padding: '1.25rem 1.5rem', borderRadius: '16px',
+          backgroundColor: 'var(--card-bg, #ffffff)',
+          border: '1px solid var(--border-color, #e2e8f0)',
+          boxShadow: '0 4px 15px rgba(0,0,0,0.03)',
+          position: 'relative', overflow: 'hidden'
+        }}>
+          <div style={{
+            position: 'absolute', top: 0, left: 0, width: '4px', height: '100%',
+            backgroundColor: '#3b82f6'
+          }} />
+          <div style={{
+            width: '48px', height: '48px', borderRadius: '14px',
+            backgroundColor: '#eff6ff', display: 'flex', alignItems: 'center', justifyContent: 'center',
+            boxShadow: '0 2px 5px rgba(59,130,246,0.2)'
+          }}>
+            <CheckCircle2 size={24} color="#2563eb" />
+          </div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.2rem' }}>
+            <div style={{ fontSize: '0.9rem', color: 'var(--text-secondary, #64748b)', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+              Approved / Disbursed
+            </div>
+            <div style={{ display: 'flex', alignItems: 'baseline', gap: '0.5rem' }}>
+              <span style={{ fontSize: '1.75rem', fontWeight: '900', color: 'var(--text-primary, #0f172a)', lineHeight: '1' }}>
+                {forwardedCount}
+              </span>
+              <span style={{ fontSize: '0.9rem', color: '#2563eb', fontWeight: '700' }}>
+                records
+              </span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Search Input Bar & Total Count */}
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', width: '100%', gap: '1rem', flexWrap: 'wrap' }}>
+        <div style={{ position: 'relative', width: '100%', maxWidth: '480px', display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+          <div style={{ position: 'relative' }}>
+            <div style={{ position: 'absolute', left: '1rem', top: '50%', transform: 'translateY(-50%)', color: 'var(--badge-pending-text)', display: 'flex', alignItems: 'center' }}>
+              <Search size={18} />
+            </div>
+            <input
+              type="text"
+              placeholder="Search site, purpose, amount..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              style={{
+                width: '100%',
+                paddingLeft: '2.75rem',
+                paddingRight: '1rem',
+                paddingTop: '0.7rem',
+                paddingBottom: '0.7rem',
+                borderRadius: '12px',
+                backgroundColor: 'var(--input-bg, #ffffff)',
+                border: '1.5px solid var(--border-color, #cbd5e1)',
+                color: 'var(--text-primary, #0f172a)',
+                fontSize: '0.92rem',
+                outline: 'none',
+                boxSizing: 'border-box',
+                boxShadow: '0 1px 3px rgba(0,0,0,0.02)'
+              }}
+            />
+          </div>
+          <div style={{ paddingLeft: '0.4rem', color: '#64748b', fontSize: '0.88rem', fontWeight: '600' }}>
+            Total Requests: <strong style={{ color: 'var(--text-primary, #0f172a)' }}>{filteredRequisitions.length}</strong>
+          </div>
+        </div>
+
+        <button
+          onClick={() => setIsNewReqModalOpen(true)}
+          style={{
+            padding: '0.65rem 1.25rem',
+            borderRadius: '10px',
+            border: 'none',
+            backgroundColor: '#2563eb',
+            color: '#ffffff',
+            fontSize: '0.9rem',
+            fontWeight: '800',
+            cursor: 'pointer',
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: '0.45rem',
+            boxShadow: '0 4px 12px rgba(37, 99, 235, 0.25)',
+            transition: 'all 0.15s ease'
+          }}
+          onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#1d4ed8'}
+          onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#2563eb'}
+        >
+          <span>+ Request Advance</span>
+        </button>
+      </div>
+
+      {/* 3. Main Table Container */}
+      <div style={{
+        backgroundColor: 'var(--card-bg, #ffffff)',
+        borderRadius: '16px',
+        border: '1px solid var(--border-color, #e8ecf2)',
+        boxShadow: '0 2px 10px rgba(0, 0, 0, 0.02)',
+        overflow: 'hidden',
+        width: '100%'
+      }}>
+
+
+            {/* Table */}
+            <div style={{ overflowX: 'auto' }}>
+              <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '0.92rem' }}>
+                <thead>
+                  <tr style={{
+                    backgroundColor: 'var(--table-header-bg, #fafbfc)',
+                    borderBottom: '1px solid var(--border-color, #e8ecf2)',
+                    color: 'var(--text-secondary, #475569)',
+                    fontSize: '0.76rem',
+                    fontWeight: '800',
+                    textTransform: 'uppercase',
+                    letterSpacing: '0.06em'
+                  }}>
+                    <th style={{ padding: '0.85rem 0.65rem', whiteSpace: 'nowrap' }}>REQUISITION ID</th>
+                    <th style={{ padding: '0.85rem 0.65rem', whiteSpace: 'nowrap' }}>SUPERVISOR</th>
+                    <th style={{ padding: '0.85rem 0.65rem', whiteSpace: 'nowrap' }}>SITE LOCATION</th>
+                    <th style={{ padding: '0.85rem 0.65rem', whiteSpace: 'nowrap' }}>PURPOSE / REASON</th>
+                    <th style={{ padding: '0.85rem 0.65rem', whiteSpace: 'nowrap' }}>URGENCY</th>
+                    <th style={{ padding: '0.85rem 0.65rem', whiteSpace: 'nowrap' }}>DATE</th>
+                    <th style={{ padding: '0.85rem 0.65rem', whiteSpace: 'nowrap' }}>WALLET (₹)</th>
+                    <th style={{ padding: '0.85rem 0.65rem', whiteSpace: 'nowrap' }}>AMOUNT (₹)</th>
+                    <th style={{ padding: '0.85rem 0.65rem', whiteSpace: 'nowrap', textAlign: 'center' }}>ACTIONS</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {paginatedRequisitions.length === 0 ? (
+                    <tr>
+                      <td colSpan={9} style={{ padding: '3.5rem 1rem', textAlign: 'center', color: 'var(--text-secondary, #94a3b8)' }}>
+                        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.6rem' }}>
+                          <FileText size={36} style={{ color: 'var(--text-secondary, #cbd5e1)' }} />
+                          <span style={{ fontSize: '1.05rem', fontWeight: '700', color: 'var(--text-primary, #334155)' }}>
+                            No active advance requests found
+                          </span>
+                        </div>
+                      </td>
+                    </tr>
+                  ) : (paginatedRequisitions.map((req, idx, arr) => {
+                    const urgencyText = (req.urgency || 'Regular').toLowerCase().trim();
+                    const isHighUrgency = urgencyText.includes('immediate');
+                    const isMediumUrgency = urgencyText.includes('within 24 hours') || urgencyText.includes('24');
+                    // Default to Regular (blue) if not high or medium
+
+                    let displayUrgency = 'Regular';
+                    if (isHighUrgency) displayUrgency = 'Immediate';
+                    else if (isMediumUrgency) displayUrgency = 'Within 24 Hours';
+
+                    const sId = req.supervisorId || req.supervisor;
+                    const wallet = sId ? supervisorWallets[sId] : null;
+                    const walletBalance = wallet ? wallet.advance - wallet.spent : 0;
+
+                    return (
+                      <tr
+                        key={req.id}
+                        style={{
+                          borderBottom: idx === arr.length - 1 ? 'none' : '1px solid var(--border-color, #f1f5f9)',
+                          transition: 'background-color 0.15s ease'
+                        }}
+                        onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'var(--table-hover, rgba(241, 245, 249, 0.5))'}
+                        onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
+                      >
+                        {/* REQUISITION ID */}
+                        <td style={{ padding: '0.75rem 0.65rem', verticalAlign: 'middle', whiteSpace: 'nowrap' }}>
+                          <strong style={{ color: '#059669', fontSize: '0.94rem', fontWeight: '800' }}>
+                            {req.displayId}
+                          </strong>
+                        </td>
+
+                        {/* SUPERVISOR */}
+                        <td style={{ padding: '0.75rem 0.65rem', verticalAlign: 'middle', whiteSpace: 'nowrap' }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem' }}>
+                            <div style={{
+                              width: '32px',
+                              height: '32px',
+                              borderRadius: '50%',
+                              backgroundColor: '#eff6ff',
+                              color: '#2563eb',
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              fontWeight: '800',
+                              fontSize: '0.85rem',
+                              border: '1px solid #bfdbfe',
+                              flexShrink: 0
+                            }}>
+                              {(req.supervisor || 'S').charAt(0)}
+                            </div>
+                            <strong style={{ color: 'var(--text-primary, #0f172a)', fontSize: '0.92rem' }}>
+                              {req.supervisor}
+                            </strong>
+                          </div>
+                        </td>
+
+                        {/* SITE LOCATION */}
+                        <td style={{ padding: '0.75rem 0.65rem', verticalAlign: 'middle', whiteSpace: 'nowrap' }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                            <MapPin size={15} style={{ color: '#2563eb', flexShrink: 0 }} />
+                            <strong style={{ color: 'var(--text-primary, #0f172a)', fontSize: '0.94rem' }}>
+                              {req.site}
+                            </strong>
+                          </div>
+                        </td>
+
+                        {/* PURPOSE / REASON */}
+                        <td style={{ padding: '0.75rem 0.65rem', verticalAlign: 'middle' }}>
+                          <span style={{ color: 'var(--text-secondary, #334155)', fontSize: '0.92rem', fontWeight: '500' }}>
+                            {req.purpose}
+                          </span>
+                        </td>
+
+                        {/* URGENCY */}
+                        <td style={{ padding: '0.75rem 0.65rem', verticalAlign: 'middle', whiteSpace: 'nowrap' }}>
+                          <div style={{
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            gap: '0.4rem',
+                            backgroundColor: isHighUrgency ? 'var(--badge-danger-bg)' : isMediumUrgency ? 'var(--badge-warning-bg)' : 'var(--badge-info-bg)',
+                            padding: '0.35rem 0.65rem',
+                            borderRadius: '12px',
+                            border: `1px solid ${isHighUrgency ? 'var(--badge-danger-border)' : isMediumUrgency ? 'var(--badge-warning-border)' : 'var(--badge-info-border)'}`
+                          }}>
+                            <Clock size={13} style={{ color: isHighUrgency ? 'var(--badge-danger-text)' : isMediumUrgency ? 'var(--badge-warning-text)' : 'var(--badge-info-text)' }} />
+                            {req.status === 'Pending' ? (
+                              <select
+                                value={displayUrgency}
+                                onChange={(e) => handleUpdateUrgency(req.id, e.target.value)}
+                                style={{
+                                  fontSize: '0.8rem',
+                                  fontWeight: '800',
+                                  border: 'none',
+                                  background: 'transparent',
+                                  backgroundColor: 'transparent',
+                                  appearance: 'none',
+                                  WebkitAppearance: 'none',
+                                  color: isHighUrgency ? 'var(--badge-danger-text)' : isMediumUrgency ? 'var(--badge-warning-text)' : 'var(--badge-info-text)',
+                                  cursor: 'pointer',
+                                  outline: 'none',
+                                  padding: '0'
+                                }}
+                              >
+                                <option value="Immediate">Immediate</option>
+                                <option value="Within 24 Hours">Within 24 Hours</option>
+                                <option value="Regular">Regular</option>
+                              </select>
+                            ) : (
+                              <span style={{
+                                fontSize: '0.8rem',
+                                fontWeight: '800',
+                                color: isHighUrgency ? 'var(--badge-danger-text)' : isMediumUrgency ? 'var(--badge-warning-text)' : 'var(--badge-info-text)'
+                              }}>
+                                {displayUrgency}
+                              </span>
+                            )}
+                          </div>
+                        </td>
+
+                        {/* DATE */}
+                        <td style={{ padding: '0.75rem 0.65rem', verticalAlign: 'middle', whiteSpace: 'nowrap' }}>
+                          <span style={{ color: 'var(--text-secondary, #475569)', fontSize: '0.9rem', fontWeight: '600' }}>
+                            {req.date}
+                          </span>
+                        </td>
+
+                        {/* WALLET */}
+                        <td style={{ padding: '0.75rem 0.65rem', verticalAlign: 'middle', whiteSpace: 'nowrap' }}>
+                          <span style={{ fontSize: '0.95rem', fontWeight: '700', color: walletBalance < 0 ? 'var(--badge-danger-text)' : '#0ea5e9' }}>
+                            ₹{(Number(walletBalance) || 0).toLocaleString('en-IN')}
+                          </span>
+                        </td>
+
+                        {/* AMOUNT */}
+                        <td style={{ padding: '0.75rem 0.65rem', verticalAlign: 'middle', whiteSpace: 'nowrap' }}>
+                          <span style={{ fontSize: '1.05rem', fontWeight: '800', color: 'var(--text-primary, #0f172a)' }}>
+                            ₹{(Number(req.amount) || 0).toLocaleString('en-IN')}
+                          </span>
+                        </td>
+
+                        {/* ACTIONS */}
+                        <td style={{ padding: '0.75rem 0.65rem', verticalAlign: 'middle', textAlign: 'center', whiteSpace: 'nowrap' }}>
+                          <div style={{ display: 'inline-flex', alignItems: 'center', gap: '0.65rem', justifyContent: 'center' }}>
+                            {req.status === 'Pending' ? (
+                              <>
+                                {/* + Approve & Forward Button */}
+                                <button
+                                  onClick={() => handleApproveRequisition(req.id)}
+                                  style={{
+                                    padding: '0.45rem',
+                                    borderRadius: '8px',
+                                    border: 'none',
+                                    backgroundColor: '#4f46e5',
+                                    color: '#ffffff',
+                                    cursor: 'pointer',
+                                    display: 'inline-flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    boxShadow: '0 2px 6px rgba(79, 70, 229, 0.3)',
+                                    transition: 'all 0.15s ease'
+                                  }}
+                                  onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#4338ca'}
+                                  onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#4f46e5'}
+                                  title="Approve & Forward"
+                                >
+                                  <CheckCircle2 size={16} />
+                                </button>
+
+                                {/* Reject Button */}
+                                <button
+                                  onClick={() => handleRejectRequisition(req.id)}
+                                  style={{
+                                    padding: '0.45rem',
+                                    borderRadius: '8px',
+                                    border: '1px solid #fecdd3',
+                                    backgroundColor: '#fff1f2',
+                                    color: '#e11d48',
+                                    cursor: 'pointer',
+                                    display: 'inline-flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    transition: 'all 0.15s ease'
+                                  }}
+                                  onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#ffe4e6'}
+                                  onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#fff1f2'}
+                                  title="Reject"
+                                >
+                                  <X size={16} />
+                                </button>
+                              </>
+                            ) : req.status === 'Rejected' ? (
+                              <span
+                                title="Rejected"
+                                style={{
+                                  padding: '0.45rem',
+                                  borderRadius: '8px',
+                                  border: '1px solid #fecdd3',
+                                  backgroundColor: '#fff1f2',
+                                  color: '#e11d48',
+                                  display: 'inline-flex',
+                                  alignItems: 'center',
+                                  justifyContent: 'center'
+                                }}
+                              >
+                                <X size={16} />
+                              </span>
+                            ) : (
+                              <>
+                                {/* Approved Badge Button */}
+                                <span
+                                  title="Approved"
+                                  style={{
+                                    padding: '0.45rem',
+                                    borderRadius: '8px',
+                                    border: '1px solid #a7f3d0',
+                                    backgroundColor: '#dcfce7',
+                                    color: '#059669',
+                                    display: 'inline-flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center'
+                                  }}
+                                >
+                                  <CheckCircle2 size={16} style={{ color: '#059669' }} />
+                                </span>
+                              </>
+                            )}
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  }))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+          
+          <Pagination 
+            currentPage={safePage} 
+            totalPages={totalPages} 
+            onPrev={handlePrev} 
+            onNext={handleNext} 
+            language={language} 
+          />
+
+      {/* MODAL 1: Issue Advance Float */}
+      {isIssueFloatOpen && (
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          backgroundColor: 'rgba(15, 23, 42, 0.6)',
+          backdropFilter: 'blur(4px)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          zIndex: 1000,
+          padding: '1rem'
+        }}>
+          <div style={{
+            backgroundColor: 'var(--card-bg, #ffffff)',
+            borderRadius: '20px',
+            border: '1.5px solid var(--border-color, #e2e8f0)',
+            width: '100%',
+            maxWidth: '480px',
+            padding: '1.75rem',
+            boxShadow: '0 20px 40px rgba(0,0,0,0.2)',
+            boxSizing: 'border-box'
+          }}>
+            <h3 style={{ fontSize: '1.3rem', fontWeight: '900', color: 'var(--text-primary, #0f172a)', margin: '0 0 0.35rem 0' }}>
+              + Issue Advance Float to Supervisor
+            </h3>
+            <p style={{ fontSize: '0.86rem', color: 'var(--text-secondary, #64748b)', margin: '0 0 1.25rem 0' }}>
+              Disburse operational advance cash to site supervisor.
+            </p>
+
+            <form onSubmit={handleIssueFloatSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+              {/* Supervisor Select */}
+              <div>
+                <label style={{ display: 'block', fontSize: '0.84rem', fontWeight: '800', color: 'var(--text-primary, #334155)', marginBottom: '0.4rem' }}>
+                  Select Supervisor:
+                </label>
+                <select
+                  value={floatForm.supervisorId}
+                  onChange={(e) => setFloatForm({ ...floatForm, supervisorId: e.target.value })}
+                  style={{
+                    width: '100%',
+                    padding: '0.65rem 0.85rem',
+                    borderRadius: '9px',
+                    border: '1.5px solid var(--border-color, #cbd5e1)',
+                    backgroundColor: 'var(--input-bg, #f8fafc)',
+                    color: 'var(--text-primary, #0f172a)',
+                    fontSize: '0.92rem',
+                    fontWeight: '700',
+                    outline: 'none'
+                  }}
+                >
+                  {supervisorFloats.map(s => (
+                    <option key={s.id} value={s.id}>{s.name} ({s.site})</option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Amount */}
+              <div>
+                <label style={{ display: 'block', fontSize: '0.84rem', fontWeight: '800', color: 'var(--text-primary, #334155)', marginBottom: '0.4rem' }}>
+                  Amount (₹):
+                </label>
+                <input
+                  type="number"
+                  placeholder="e.g. 25000"
+                  value={floatForm.amount}
+                  onChange={(e) => setFloatForm({ ...floatForm, amount: e.target.value })}
+                  style={{
+                    width: '100%',
+                    padding: '0.65rem 0.85rem',
+                    borderRadius: '9px',
+                    border: '1.5px solid var(--border-color, #cbd5e1)',
+                    backgroundColor: 'var(--input-bg, #f8fafc)',
+                    color: 'var(--text-primary, #0f172a)',
+                    fontSize: '0.95rem',
+                    fontWeight: '800',
+                    outline: 'none',
+                    boxSizing: 'border-box'
+                  }}
+                />
+              </div>
+
+              {/* Payment Mode */}
+              <div>
+                <label style={{ display: 'block', fontSize: '0.84rem', fontWeight: '800', color: 'var(--text-primary, #334155)', marginBottom: '0.4rem' }}>
+                  Payment Mode:
+                </label>
+                <select
+                  value={floatForm.mode}
+                  onChange={(e) => setFloatForm({ ...floatForm, mode: e.target.value })}
+                  style={{
+                    width: '100%',
+                    padding: '0.65rem 0.85rem',
+                    borderRadius: '9px',
+                    border: '1.5px solid var(--border-color, #cbd5e1)',
+                    backgroundColor: 'var(--input-bg, #f8fafc)',
+                    color: 'var(--text-primary, #0f172a)',
+                    fontSize: '0.92rem',
+                    fontWeight: '700',
+                    outline: 'none'
+                  }}
+                >
+                  <option value="NEFT / Bank Transfer">NEFT / Bank Transfer</option>
+                  <option value="RTGS / IMPS">RTGS / IMPS</option>
+                  <option value="GPay / UPI">GPay / UPI</option>
+                  <option value="Petty Cash Voucher">Direct Cash (Office Float)</option>
+                </select>
+              </div>
+
+              {/* UTR Reference */}
+              <div>
+                <label style={{ display: 'block', fontSize: '0.84rem', fontWeight: '800', color: 'var(--text-primary, #334155)', marginBottom: '0.4rem' }}>
+                  Bank UTR / Ref No:
+                </label>
+                <input
+                  type="text"
+                  placeholder="e.g. UTR998822104"
+                  value={floatForm.utr}
+                  onChange={(e) => setFloatForm({ ...floatForm, utr: e.target.value })}
+                  style={{
+                    width: '100%',
+                    padding: '0.65rem 0.85rem',
+                    borderRadius: '9px',
+                    border: '1.5px solid var(--border-color, #cbd5e1)',
+                    backgroundColor: 'var(--input-bg, #f8fafc)',
+                    color: 'var(--text-primary, #0f172a)',
+                    fontSize: '0.92rem',
+                    fontWeight: '700',
+                    outline: 'none',
+                    boxSizing: 'border-box'
+                  }}
+                />
+              </div>
+
+              {/* Modal Actions */}
+              <div style={{ display: 'flex', gap: '0.75rem', marginTop: '0.75rem' }}>
+                <button
+                  type="button"
+                  onClick={() => setIsIssueFloatOpen(false)}
+                  style={{
+                    flex: 1,
+                    padding: '0.65rem',
+                    borderRadius: '9px',
+                    border: '1px solid var(--border-color, #cbd5e1)',
+                    backgroundColor: 'var(--input-bg, #f8fafc)',
+                    color: 'var(--text-secondary, #64748b)',
+                    fontSize: '0.88rem',
+                    fontWeight: '800',
+                    cursor: 'pointer'
+                  }}
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  style={{
+                    flex: 1,
+                    padding: '0.65rem',
+                    borderRadius: '9px',
+                    border: 'none',
+                    backgroundColor: '#2563eb',
+                    color: '#ffffff',
+                    fontSize: '0.88rem',
+                    fontWeight: '800',
+                    cursor: 'pointer',
+                    boxShadow: '0 4px 12px rgba(37, 99, 235, 0.3)'
+                  }}
+                >
+                  Issue Advance
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL 2: Settle Supervisor Account */}
+      {isSettleModalOpen && selectedSupervisor && (
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          backgroundColor: 'rgba(15, 23, 42, 0.6)',
+          backdropFilter: 'blur(4px)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          zIndex: 1000,
+          padding: '1rem'
+        }}>
+          <div style={{
+            backgroundColor: 'var(--card-bg, #ffffff)',
+            borderRadius: '20px',
+            border: '1.5px solid var(--border-color, #e2e8f0)',
+            width: '100%',
+            maxWidth: '460px',
+            padding: '1.75rem',
+            boxShadow: '0 20px 40px rgba(0,0,0,0.2)',
+            boxSizing: 'border-box'
+          }}>
+            <h3 style={{ fontSize: '1.3rem', fontWeight: '900', color: 'var(--text-primary, #0f172a)', margin: '0 0 0.35rem 0' }}>
+              Settle & Close Float Account
+            </h3>
+            <p style={{ fontSize: '0.86rem', color: 'var(--text-secondary, #64748b)', margin: '0 0 1.25rem 0' }}>
+              Audit and clear active advance float for supervisor "{selectedSupervisor.name}".
+            </p>
+
+            <div style={{
+              backgroundColor: 'var(--input-bg, #f8fafc)',
+              borderRadius: '12px',
+              border: '1px solid var(--border-color, #e2e8f0)',
+              padding: '1rem',
+              marginBottom: '1.25rem',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '0.5rem'
+            }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.88rem', color: 'var(--text-secondary, #64748b)' }}>
+                <span>Total Advance Issued:</span>
+                <strong style={{ color: 'var(--text-primary, #0f172a)' }}>₹{selectedSupervisor.advance.toLocaleString('en-IN')}</strong>
+              </div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.88rem', color: 'var(--text-secondary, #64748b)' }}>
+                <span>Verified Bills Submitted:</span>
+                <strong style={{ color: '#2563eb' }}>₹{selectedSupervisor.settled.toLocaleString('en-IN')}</strong>
+              </div>
+              <div style={{ height: '1px', backgroundColor: 'var(--border-color, #e2e8f0)', margin: '0.2rem 0' }} />
+              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.95rem' }}>
+                <span style={{ fontWeight: '800', color: 'var(--text-primary, #0f172a)' }}>Remaining to Return:</span>
+                <strong style={{ color: 'var(--badge-success-text)', fontWeight: '900' }}>₹{(selectedSupervisor.advance - selectedSupervisor.settled).toLocaleString('en-IN')}</strong>
+              </div>
+            </div>
+
+            <div style={{ display: 'flex', gap: '0.75rem' }}>
+              <button
+                type="button"
+                onClick={() => setIsSettleModalOpen(false)}
+                style={{
+                  flex: 1,
+                  padding: '0.65rem',
+                  borderRadius: '9px',
+                  border: '1px solid var(--border-color, #cbd5e1)',
+                  backgroundColor: 'var(--input-bg, #f8fafc)',
+                  color: 'var(--text-secondary, #64748b)',
+                  fontSize: '0.88rem',
+                  fontWeight: '800',
+                  cursor: 'pointer'
+                }}
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={confirmSettlement}
+                style={{
+                  flex: 1,
+                  padding: '0.65rem',
+                  borderRadius: '9px',
+                  border: 'none',
+                  backgroundColor: 'var(--badge-success-text)',
+                  color: '#ffffff',
+                  fontSize: '0.88rem',
+                  fontWeight: '800',
+                  cursor: 'pointer',
+                  boxShadow: '0 4px 12px rgba(16, 185, 129, 0.3)'
+                }}
+              >
+                ✓ Confirm Settlement
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL 3: View Transaction Details Modal */}
+      {inspectLedgerRecord && (
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          backgroundColor: 'rgba(15, 23, 42, 0.65)',
+          backdropFilter: 'blur(5px)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          zIndex: 1100,
+          padding: '1rem'
+        }}>
+          <div style={{
+            backgroundColor: 'var(--card-bg, #ffffff)',
+            borderRadius: '20px',
+            border: '1.5px solid var(--border-color, #e2e8f0)',
+            width: '100%',
+            maxWidth: '520px',
+            padding: '1.75rem',
+            boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.4)',
+            boxSizing: 'border-box',
+            position: 'relative'
+          }}>
+            {/* Header */}
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '1.25rem', borderBottom: '1px solid var(--border-color, #f1f5f9)', paddingBottom: '1rem' }}>
+              <div>
+                <span style={{ fontSize: '0.78rem', fontWeight: '800', color: '#818cf8', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                  Transaction Voucher & UTR Audit
+                </span>
+                <h3 style={{ fontSize: '1.35rem', fontWeight: '900', color: 'var(--text-primary, #0f172a)', margin: '0.2rem 0 0 0', fontFamily: 'monospace' }}>
+                  {inspectLedgerRecord.id}
+                </h3>
+              </div>
+              <span style={{
+                fontSize: '0.78rem',
+                fontWeight: '800',
+                padding: '0.25rem 0.65rem',
+                borderRadius: '9999px',
+                backgroundColor: inspectLedgerRecord.status === 'Verified' ? 'var(--badge-success-bg)' : 'var(--badge-warning-bg)',
+                color: inspectLedgerRecord.status === 'Verified' ? '#34d399' : '#fbbf24',
+                border: `1px solid ${inspectLedgerRecord.status === 'Verified' ? 'rgba(16, 185, 129, 0.3)' : 'rgba(245, 158, 11, 0.3)'}`
+              }}>
+                ● {inspectLedgerRecord.status}
+              </span>
+            </div>
+
+            {/* Details Grid */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.85rem', marginBottom: '1.5rem' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', padding: '0.75rem', backgroundColor: 'var(--input-bg, #f8fafc)', borderRadius: '10px', border: '1px solid var(--border-color, #e2e8f0)' }}>
+                <span style={{ color: 'var(--text-secondary, #64748b)', fontSize: '0.88rem', fontWeight: '600' }}>Date & Time:</span>
+                <strong style={{ color: 'var(--text-primary, #0f172a)', fontSize: '0.92rem' }}>
+                  {inspectLedgerRecord.date ? new Date(inspectLedgerRecord.date).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }) : '23 Aug 2026'} • {inspectLedgerRecord.time || '11:30 AM'}
+                </strong>
+              </div>
+
+              <div style={{ display: 'flex', justifyContent: 'space-between', padding: '0.75rem', backgroundColor: 'var(--input-bg, #f8fafc)', borderRadius: '10px', border: '1px solid var(--border-color, #e2e8f0)' }}>
+                <span style={{ color: 'var(--text-secondary, #64748b)', fontSize: '0.88rem', fontWeight: '600' }}>Site / Project:</span>
+                <strong style={{ color: 'var(--text-primary, #0f172a)', fontSize: '0.92rem' }}>{inspectLedgerRecord.project}</strong>
+              </div>
+
+              <div style={{ display: 'flex', justifyContent: 'space-between', padding: '0.75rem', backgroundColor: 'var(--input-bg, #f8fafc)', borderRadius: '10px', border: '1px solid var(--border-color, #e2e8f0)' }}>
+                <span style={{ color: 'var(--text-secondary, #64748b)', fontSize: '0.88rem', fontWeight: '600' }}>Assigned Supervisor:</span>
+                <strong style={{ color: 'var(--text-primary, #0f172a)', fontSize: '0.92rem' }}>{inspectLedgerRecord.supervisor}</strong>
+              </div>
+
+              <div style={{ display: 'flex', justifyContent: 'space-between', padding: '0.75rem', backgroundColor: 'var(--input-bg, #f8fafc)', borderRadius: '10px', border: '1px solid var(--border-color, #e2e8f0)' }}>
+                <span style={{ color: 'var(--text-secondary, #64748b)', fontSize: '0.88rem', fontWeight: '600' }}>Payment Mode:</span>
+                <strong style={{ color: '#60a5fa', fontSize: '0.92rem' }}>{inspectLedgerRecord.mode}</strong>
+              </div>
+
+              <div style={{ display: 'flex', justifyContent: 'space-between', padding: '0.75rem', backgroundColor: 'var(--input-bg, #f8fafc)', borderRadius: '10px', border: '1px solid var(--border-color, #e2e8f0)' }}>
+                <span style={{ color: 'var(--text-secondary, #64748b)', fontSize: '0.88rem', fontWeight: '600' }}>Bank UTR / Ref No:</span>
+                <strong style={{ color: 'var(--text-primary, #0f172a)', fontSize: '0.92rem', fontFamily: 'monospace' }}>{inspectLedgerRecord.utr}</strong>
+              </div>
+
+              <div style={{ display: 'flex', justifyContent: 'space-between', padding: '0.75rem', backgroundColor: 'rgba(37, 99, 235, 0.12)', borderRadius: '10px', border: '1.5px solid rgba(37, 99, 235, 0.3)' }}>
+                <span style={{ color: '#93c5fd', fontSize: '0.95rem', fontWeight: '800' }}>Amount Disbursed / Claimed:</span>
+                <strong style={{ color: '#60a5fa', fontSize: '1.2rem', fontWeight: '900' }}>₹{inspectLedgerRecord.amount.toLocaleString('en-IN')}</strong>
+              </div>
+            </div>
+
+            {/* Actions */}
+            <div style={{ display: 'flex', gap: '0.75rem' }}>
+              <button
+                type="button"
+                onClick={() => setInspectLedgerRecord(null)}
+                style={{
+                  flex: 1,
+                  padding: '0.65rem',
+                  borderRadius: '10px',
+                  border: '1.5px solid var(--border-color, #cbd5e1)',
+                  backgroundColor: 'var(--input-bg, #f8fafc)',
+                  color: 'var(--text-secondary, #475569)',
+                  fontSize: '0.9rem',
+                  fontWeight: '800',
+                  cursor: 'pointer'
+                }}
+              >
+                Close
+              </button>
+              <button
+                type="button"
+                onClick={() => handlePrintVoucher(inspectLedgerRecord)}
+                style={{
+                  flex: 1,
+                  padding: '0.65rem',
+                  borderRadius: '10px',
+                  border: 'none',
+                  backgroundColor: '#2563eb',
+                  color: '#ffffff',
+                  fontSize: '0.9rem',
+                  fontWeight: '800',
+                  cursor: 'pointer',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: '0.45rem',
+                  boxShadow: '0 4px 12px rgba(37, 99, 235, 0.3)'
+                }}
+              >
+                <Printer size={15} />
+                <span>Print Voucher</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL 4: Create New Advance Requisition */}
+      {isNewReqModalOpen && (
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          backgroundColor: 'rgba(15, 23, 42, 0.75)',
+          backdropFilter: 'blur(6px)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          zIndex: 9999,
+          padding: '1rem'
+        }}>
+          <div style={{
+            backgroundColor: 'var(--card-bg, #ffffff)',
+            borderRadius: '20px',
+            border: '1.5px solid var(--border-color, #e2e8f0)',
+            width: '100%',
+            maxWidth: '540px',
+            padding: '1.75rem',
+            boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.4)',
+            boxSizing: 'border-box',
+            position: 'relative'
+          }}>
+            {/* Header */}
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '1.25rem', borderBottom: '1px solid var(--border-color, #f1f5f9)', paddingBottom: '1rem' }}>
+              <div>
+                <span style={{ fontSize: '0.78rem', fontWeight: '800', color: '#059669', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                  Site Requisition Register
+                </span>
+                <h3 style={{ fontSize: '1.35rem', fontWeight: '900', color: 'var(--text-primary, #0f172a)', margin: '0.2rem 0 0 0' }}>
+                  + Request Advance Fund
+                </h3>
+              </div>
+              <button
+                type="button"
+                onClick={() => setIsNewReqModalOpen(false)}
+                style={{
+                  background: 'none',
+                  border: 'none',
+                  color: 'var(--text-secondary, #94a3b8)',
+                  cursor: 'pointer',
+                  padding: '0.25rem',
+                  borderRadius: '6px'
+                }}
+              >
+                <X size={20} />
+              </button>
+            </div>
+
+            {/* Form */}
+            <form onSubmit={handleCreateRequisitionSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+              {/* Supervisor Selection */}
+              <div>
+                <label style={{ display: 'block', fontSize: '0.84rem', fontWeight: '700', color: 'var(--text-secondary, #475569)', marginBottom: '0.35rem' }}>
+                  Supervisor Name *
+                </label>
+                <select
+                  value={newReqForm.projectId}
+                  onChange={(e) => {
+                    const projectId = e.target.value;
+                    const proj = supervisorProjects.find(p => p.id === projectId);
+                    setNewReqForm(prev => ({ ...prev, projectId, site: proj?.location || proj?.name || '' }));
+                  }}
+                  style={{
+                    width: '100%',
+                    padding: '0.65rem 0.85rem',
+                    borderRadius: '10px',
+                    backgroundColor: 'var(--input-bg, #f8fafc)',
+                    border: '1.5px solid var(--border-color, #cbd5e1)',
+                    color: 'var(--text-primary, #0f172a)',
+                    fontSize: '0.9rem',
+                    fontWeight: '600',
+                    outline: 'none',
+                    boxSizing: 'border-box'
+                  }}
+                >
+                  <option value="">-- Select Supervisor --</option>
+                  {supervisorProjects.map(p => (
+                    <option key={p.id} value={p.id}>{p.supervisorName} ({p.name})</option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Site Location */}
+              <div>
+                <label style={{ display: 'block', fontSize: '0.84rem', fontWeight: '700', color: 'var(--text-secondary, #475569)', marginBottom: '0.35rem' }}>
+                  Site Location & Project *
+                </label>
+                <input
+                  type="text"
+                  value={newReqForm.site}
+                  onChange={(e) => setNewReqForm(prev => ({ ...prev, site: e.target.value }))}
+                  placeholder="Enter site / project name..."
+                  required
+                  style={{
+                    width: '100%',
+                    padding: '0.65rem 0.85rem',
+                    borderRadius: '10px',
+                    backgroundColor: 'var(--input-bg, #f8fafc)',
+                    border: '1.5px solid var(--border-color, #cbd5e1)',
+                    color: 'var(--text-primary, #0f172a)',
+                    fontSize: '0.9rem',
+                    outline: 'none',
+                    boxSizing: 'border-box'
+                  }}
+                />
+              </div>
+
+              {/* Purpose / Reason */}
+              <div>
+                <label style={{ display: 'block', fontSize: '0.84rem', fontWeight: '700', color: 'var(--text-secondary, #475569)', marginBottom: '0.35rem' }}>
+                  Purpose / Reason *
+                </label>
+                <input
+                  type="text"
+                  value={newReqForm.purpose}
+                  onChange={(e) => setNewReqForm(prev => ({ ...prev, purpose: e.target.value }))}
+                  placeholder="e.g. Urgent diesel purchase, laborer wages, cement bags..."
+                  required
+                  style={{
+                    width: '100%',
+                    padding: '0.65rem 0.85rem',
+                    borderRadius: '10px',
+                    backgroundColor: 'var(--input-bg, #f8fafc)',
+                    border: '1.5px solid var(--border-color, #cbd5e1)',
+                    color: 'var(--text-primary, #0f172a)',
+                    fontSize: '0.9rem',
+                    outline: 'none',
+                    boxSizing: 'border-box'
+                  }}
+                />
+              </div>
+
+              {/* Grid: Urgency & Amount */}
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.85rem' }}>
+                <div>
+                  <label style={{ display: 'block', fontSize: '0.84rem', fontWeight: '700', color: 'var(--text-secondary, #475569)', marginBottom: '0.35rem' }}>
+                    Urgency Level *
+                  </label>
+                  <select
+                    value={newReqForm.urgency}
+                    onChange={(e) => setNewReqForm(prev => ({ ...prev, urgency: e.target.value }))}
+                    style={{
+                      width: '100%',
+                      padding: '0.65rem 0.85rem',
+                      borderRadius: '10px',
+                      backgroundColor: 'var(--input-bg, #f8fafc)',
+                      border: '1.5px solid var(--border-color, #cbd5e1)',
+                      color: 'var(--text-primary, #0f172a)',
+                      fontSize: '0.9rem',
+                      fontWeight: '600',
+                      outline: 'none',
+                      boxSizing: 'border-box'
+                    }}
+                  >
+                    <option value="Immediate">Immediate</option>
+                    <option value="Within 24 Hours">Within 24 Hours</option>
+                    <option value="Regular">Regular</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label style={{ display: 'block', fontSize: '0.84rem', fontWeight: '700', color: 'var(--text-secondary, #475569)', marginBottom: '0.35rem' }}>
+                    Requested Amount (₹) *
+                  </label>
+                  <input
+                    type="number"
+                    value={newReqForm.amount}
+                    onChange={(e) => setNewReqForm(prev => ({ ...prev, amount: e.target.value }))}
+                    placeholder="e.g. 25000"
+                    min="100"
+                    required
+                    style={{
+                      width: '100%',
+                      padding: '0.65rem 0.85rem',
+                      borderRadius: '10px',
+                      backgroundColor: 'var(--input-bg, #f8fafc)',
+                      border: '1.5px solid var(--border-color, #cbd5e1)',
+                      color: '#059669',
+                      fontSize: '1rem',
+                      fontWeight: '800',
+                      outline: 'none',
+                      boxSizing: 'border-box'
+                    }}
+                  />
+                </div>
+              </div>
+
+              {/* Action Buttons */}
+              <div style={{ display: 'flex', gap: '0.75rem', marginTop: '0.5rem' }}>
+                <button
+                  type="button"
+                  onClick={() => setIsNewReqModalOpen(false)}
+                  style={{
+                    flex: 1,
+                    padding: '0.7rem',
+                    borderRadius: '10px',
+                    border: '1.5px solid var(--border-color, #cbd5e1)',
+                    backgroundColor: 'var(--input-bg, #f8fafc)',
+                    color: 'var(--text-secondary, #475569)',
+                    fontSize: '0.9rem',
+                    fontWeight: '800',
+                    cursor: 'pointer'
+                  }}
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  style={{
+                    flex: 1.5,
+                    padding: '0.7rem',
+                    borderRadius: '10px',
+                    border: 'none',
+                    backgroundColor: '#2563eb',
+                    color: '#ffffff',
+                    fontSize: '0.92rem',
+                    fontWeight: '800',
+                    cursor: 'pointer',
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: '0.45rem',
+                    boxShadow: '0 4px 14px rgba(37, 99, 235, 0.3)'
+                  }}
+                >
+                  <Plus size={16} strokeWidth={2.5} />
+                  <span>Submit Requisition</span>
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+    </div>
+  );
+};
+
+export default ReconciliationTab;

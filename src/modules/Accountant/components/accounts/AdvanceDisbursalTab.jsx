@@ -96,7 +96,7 @@ const AdvanceDisbursalTab = ({
   const handleExportPDF = async () => {
     const doc = new jsPDF();
 
-    const startY = await addPdfHeaderWithLogo(
+    await addPdfHeaderWithLogo(
       doc,
       'Site Advances & Disbursal Queue Statement',
       `Generated on: ${new Date().toLocaleString('en-GB')} | Total Records: ${filteredAdvances.length}`
@@ -114,7 +114,7 @@ const AdvanceDisbursalTab = ({
     ]);
 
     autoTable(doc, {
-      startY: startY + 2,
+      startY: 26,
       margin: { bottom: 30 },
       head: headers,
       body: data,
@@ -200,6 +200,8 @@ const AdvanceDisbursalTab = ({
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'space-between',
+        flexWrap: 'wrap',
+        gap: '0.85rem',
         marginBottom: '-0.35rem'
       }}>
         <div style={{

@@ -10,7 +10,7 @@ import {
   CreditCard
 } from 'lucide-react';
 import jsPDF from 'jspdf';
-import autoTable from 'jspdf-autotable';
+import 'jspdf-autotable';
 import { applyPDFHeader, applyPDFFooter, getLogoDataUrl } from '../../utils/exportUtils';
 import PrintFooter from '../PrintFooter';
 
@@ -92,7 +92,7 @@ const FinancialReportsTab = ({
   });
 
   const filteredExpenses = expenses.filter(e => {
-    if (e.status === 'Pending Operations Approval' || e.status === 'Rejected') return false;
+    if (e.status === 'Pending Operations Approval') return false;
     const q = searchQuery.toLowerCase();
     
     // Project Match
@@ -135,17 +135,18 @@ const FinancialReportsTab = ({
         logoDataUrl
       });
 
-      const headers = [['ID', 'Project & Site', 'Supervisor', 'Category', 'Vendor', 'Amount (INR)']];
+      const headers = [['ID', 'Project & Site', 'Supervisor', 'Category', 'Vendor', 'Amount (INR)', 'Status']];
       const data = filteredExpenses.map(e => [
         e.id?.slice(0, 8)?.toUpperCase(),
         `${e.projectName || '—'} - ${e.siteName || ''}`,
         e.supervisor || '—',
         e.category || '—',
         e.vendorName || '—',
-        e.amount
+        e.amount,
+        e.status || '—'
       ]);
 
-      autoTable(doc, {
+      doc.autoTable({
         startY: 35, margin: { bottom: 30 }, head: headers, body: data,
         theme: 'grid', headStyles: { fillColor: [59, 130, 246] }, styles: { fontSize: 8.5 }
       });
@@ -161,7 +162,7 @@ const FinancialReportsTab = ({
         const projectForPayment = projects.find(proj => proj.id === p.projectId);
         const actualSupervisor = projectForPayment?.supervisor || 'Unknown';
         return [
-          p.id?.slice(0, 8)?.toUpperCase() || '—',
+          p.id,
           actualSupervisor,
           formatDateTime(p.date),
           p.amount,
@@ -169,7 +170,7 @@ const FinancialReportsTab = ({
         ];
       });
 
-      autoTable(doc, {
+      doc.autoTable({
         startY: 35, margin: { bottom: 30 }, head: headers, body: data,
         theme: 'grid', headStyles: { fillColor: [59, 130, 246] }, styles: { fontSize: 8.5 }
       });
@@ -182,7 +183,7 @@ const FinancialReportsTab = ({
   const handleExportCSV = () => {
     let rows = [];
     if (reportMode === 'EXPENSE_VERIFICATION') {
-      rows.push(['ID', 'Project & Site', 'Supervisor', 'Category', 'Vendor', 'Amount']);
+      rows.push(['ID', 'Project & Site', 'Supervisor', 'Category', 'Vendor', 'Amount', 'Status']);
       filteredExpenses.forEach(e => {
         rows.push([
           e.id?.slice(0, 8)?.toUpperCase(), 
@@ -190,7 +191,8 @@ const FinancialReportsTab = ({
           (e.supervisor || '—').replace(/,/g, ';'), 
           (e.category || '—').replace(/,/g, ';'), 
           (e.vendorName || '—').replace(/,/g, ';'), 
-          e.amount
+          e.amount,
+          e.status || '—'
         ]);
       });
     } else {
@@ -200,7 +202,7 @@ const FinancialReportsTab = ({
         const actualSupervisor = projectForPayment?.supervisor || 'Unknown';
         
         rows.push([
-          p.id?.slice(0, 8)?.toUpperCase() || '—', 
+          p.id, 
           actualSupervisor, 
           formatDateTime(p.date).replace(/,/g, ''), 
           p.amount,  
@@ -225,39 +227,9 @@ const FinancialReportsTab = ({
       {/* Render Action Header into Dashboard Header Portal if it exists */}
       {document.getElementById('header-actions-portal') && createPortal(
         <div className="no-print" style={{ display: 'flex', gap: '0.75rem' }}>
-          <button
-            onClick={handlePrint}
-            style={{
-              padding: '0.55rem 1.15rem', borderRadius: '12px', backgroundColor: 'var(--surface-bg)',
-              color: 'var(--text-primary)', border: '1.5px solid #cbd5e1', fontWeight: '600',
-              fontSize: '0.86rem', display: 'inline-flex', alignItems: 'center', gap: '0.45rem',
-              cursor: 'pointer', boxShadow: '0 1px 4px rgba(0,0,0,0.03)', transition: 'all 0.15s ease'
-            }}
-          >
-            <Printer size={17} /> Print
-          </button>
-          <button
-            onClick={handleExportCSV}
-            style={{
-              padding: '0.55rem 1.15rem', borderRadius: '12px', background: 'linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%)',
-              color: '#ffffff', border: 'none', fontWeight: '600',
-              fontSize: '0.86rem', display: 'inline-flex', alignItems: 'center', gap: '0.45rem',
-              cursor: 'pointer', boxShadow: '0 4px 12px rgba(99, 102, 241, 0.25)', transition: 'all 0.15s ease'
-            }}
-          >
-            <FileSpreadsheet size={17} color="#ffffff" /> Excel
-          </button>
-          <button
-            onClick={handleExportPDF}
-            style={{
-              padding: '0.55rem 1.15rem', borderRadius: '12px', background: 'linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%)',
-              color: '#ffffff', border: 'none', fontWeight: '600',
-              fontSize: '0.86rem', display: 'inline-flex', alignItems: 'center', gap: '0.45rem',
-              cursor: 'pointer', boxShadow: '0 4px 12px rgba(99, 102, 241, 0.25)', transition: 'all 0.15s ease'
-            }}
-          >
-            <Download size={17} color="#ffffff" /> PDF
-          </button>
+          
+          
+          
         </div>,
         document.getElementById('header-actions-portal')
       )}
@@ -277,7 +249,7 @@ const FinancialReportsTab = ({
             background: 'none',
             border: 'none',
             borderBottom: reportMode === 'EXPENSE_VERIFICATION' ? '3px solid #3b82f6' : '3px solid transparent',
-            color: reportMode === 'EXPENSE_VERIFICATION' ? '#3b82f6' : 'var(--text-secondary)',
+            color: reportMode === 'EXPENSE_VERIFICATION' ? 'var(--badge-info-text)' : 'var(--text-secondary)',
             fontWeight: '700',
             fontSize: '0.9rem',
             cursor: 'pointer',
@@ -296,7 +268,7 @@ const FinancialReportsTab = ({
             background: 'none',
             border: 'none',
             borderBottom: reportMode === 'ADVANCED_PAYOUT' ? '3px solid #3b82f6' : '3px solid transparent',
-            color: reportMode === 'ADVANCED_PAYOUT' ? '#3b82f6' : 'var(--text-secondary)',
+            color: reportMode === 'ADVANCED_PAYOUT' ? 'var(--badge-info-text)' : 'var(--text-secondary)',
             fontWeight: '700',
             fontSize: '0.9rem',
             cursor: 'pointer',
@@ -395,7 +367,7 @@ const FinancialReportsTab = ({
         {/* Row 2: Filter Type, Date Selectors & Action Button */}
         <div style={{
           display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
+          gridTemplateColumns: filterType === 'FY' ? '1fr 1fr 1fr' : 'repeat(4, 1fr)',
           gap: '1.5rem',
           alignItems: 'flex-end',
           width: '100%',
@@ -414,7 +386,7 @@ const FinancialReportsTab = ({
                   value="FY" 
                   checked={filterType === 'FY'} 
                   onChange={() => setFilterType('FY')}
-                  style={{ accentColor: '#3b82f6', width: '16px', height: '16px', cursor: 'pointer' }}
+                  style={{ accentColor: 'var(--badge-info-text)', width: '16px', height: '16px', cursor: 'pointer' }}
                 />
                 Financial Year
               </label>
@@ -425,7 +397,7 @@ const FinancialReportsTab = ({
                   value="DATE_RANGE" 
                   checked={filterType === 'DATE_RANGE'} 
                   onChange={() => setFilterType('DATE_RANGE')}
-                  style={{ accentColor: '#3b82f6', width: '16px', height: '16px', cursor: 'pointer' }}
+                  style={{ accentColor: 'var(--badge-info-text)', width: '16px', height: '16px', cursor: 'pointer' }}
                 />
                 Date Range
               </label>
@@ -592,7 +564,7 @@ const FinancialReportsTab = ({
               </p>
             </div>
             <span style={{ fontSize: '0.76rem', fontWeight: '700', color: '#059669', backgroundColor: 'rgba(5, 150, 105, 0.1)', padding: '0.25rem 0.65rem', borderRadius: '12px' }}>
-              Ops Approved
+              Financial Reports
             </span>
           </div>
           <div style={{ overflowX: 'auto' }}>
@@ -608,6 +580,7 @@ const FinancialReportsTab = ({
                   <th style={{ padding: '0.9rem 1.25rem', fontWeight: '700' }}>Category</th>
                   <th style={{ padding: '0.9rem 1.25rem', fontWeight: '700' }}>Vendor</th>
                   <th style={{ padding: '0.9rem 1.25rem', fontWeight: '700', textAlign: 'right' }}>Amount</th>
+                  <th style={{ padding: '0.9rem 1.25rem', fontWeight: '700', textAlign: 'center' }}>Status</th>
                   <th style={{ padding: '0.9rem 1.25rem', fontWeight: '700', textAlign: 'center' }}>View Bills</th>
                 </tr>
               </thead>
@@ -617,7 +590,7 @@ const FinancialReportsTab = ({
                     .map(e => (
                       <tr key={e.id} style={{ borderBottom: '1px solid var(--border-color)' }} className="table-row-hover">
                         <td style={{ padding: '0.9rem 1.25rem' }}>
-                          <div style={{ fontWeight: '700', fontFamily: 'monospace', color: '#3b82f6', fontSize: '0.75rem' }}>
+                          <div style={{ fontWeight: '700', fontFamily: 'monospace', color: 'var(--badge-info-text)', fontSize: '0.75rem' }}>
                             {e.id?.slice(0, 8)?.toUpperCase()}
                           </div>
                           <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', marginTop: '0.15rem' }}>
@@ -637,8 +610,18 @@ const FinancialReportsTab = ({
                         <td style={{ padding: '0.9rem 1.25rem', color: 'var(--text-secondary)' }}>
                           {e.vendorName || '—'}
                         </td>
-                        <td style={{ padding: '0.9rem 1.25rem', textAlign: 'right', fontWeight: '800', color: '#10b981', fontFamily: 'monospace' }}>
+                        <td style={{ padding: '0.9rem 1.25rem', textAlign: 'right', fontWeight: '800', color: 'var(--badge-success-text)', fontFamily: 'monospace' }}>
                           {formatINR(e.amount)}
+                        </td>
+                        <td style={{ padding: '0.9rem 1.25rem', textAlign: 'center' }}>
+                          <span style={{
+                            fontSize: '0.75rem', fontWeight: '700', padding: '0.3rem 0.65rem', borderRadius: '12px', whiteSpace: 'nowrap',
+                            backgroundColor: e.status?.includes('Paid') ? '#dcfce7' : e.status?.includes('Rejected') ? '#fee2e2' : '#fef9c3',
+                            color: e.status?.includes('Paid') ? '#15803d' : e.status?.includes('Rejected') ? '#b91c1c' : '#a16207',
+                            border: `1px solid ${e.status?.includes('Paid') ? '#86efac' : e.status?.includes('Rejected') ? '#fca5a5' : '#fde68a'}`
+                          }}>
+                            {e.status}
+                          </span>
                         </td>
                         <td style={{ padding: '0.9rem 1.25rem', textAlign: 'center' }}>
                           {e.billUrl ? (
@@ -648,7 +631,7 @@ const FinancialReportsTab = ({
                               rel="noopener noreferrer"
                               style={{
                                 display: 'inline-flex', alignItems: 'center', gap: '0.3rem',
-                                fontSize: '0.78rem', fontWeight: '700', color: '#3b82f6',
+                                fontSize: '0.78rem', fontWeight: '700', color: 'var(--badge-info-text)',
                                 textDecoration: 'none', padding: '0.3rem 0.7rem',
                                 borderRadius: '8px', border: '1.5px solid #3b82f6',
                                 transition: 'all 0.15s ease'
@@ -687,7 +670,7 @@ const FinancialReportsTab = ({
                 Funds released to Site Supervisors
               </p>
             </div>
-            <span style={{ fontSize: '0.76rem', fontWeight: '700', color: '#3b82f6', backgroundColor: 'rgba(59, 130, 246, 0.1)', padding: '0.25rem 0.65rem', borderRadius: '12px' }}>
+            <span style={{ fontSize: '0.76rem', fontWeight: '700', color: 'var(--badge-info-text)', backgroundColor: 'var(--badge-info-bg)', padding: '0.25rem 0.65rem', borderRadius: '12px' }}>
               Real-Time Audit Log
             </span>
           </div>
@@ -710,7 +693,7 @@ const FinancialReportsTab = ({
                 {filteredPayments.length > 0 ? (
                   filteredPayments.map(p => (
                     <tr key={p.id} style={{ borderBottom: '1px solid var(--border-color)' }} className="table-row-hover">
-                      <td style={{ padding: '0.9rem 1.25rem', fontWeight: '700', fontFamily: 'monospace', color: '#3b82f6', fontSize: '0.75rem' }}>
+                      <td style={{ padding: '0.9rem 1.25rem', fontWeight: '700', fontFamily: 'monospace', color: 'var(--badge-info-text)', fontSize: '0.75rem' }}>
                         {p.id?.slice(0, 8)?.toUpperCase()}
                       </td>
                       <td style={{ padding: '0.9rem 1.25rem', fontWeight: '700', color: 'var(--text-primary)' }}>
@@ -719,7 +702,7 @@ const FinancialReportsTab = ({
                       <td style={{ padding: '0.9rem 1.25rem', color: 'var(--text-secondary)' }}>
                         {formatDateTime(p.date)}
                       </td>
-                      <td style={{ padding: '0.9rem 1.25rem', textAlign: 'right', fontWeight: '800', color: '#10b981', fontFamily: 'monospace' }}>
+                      <td style={{ padding: '0.9rem 1.25rem', textAlign: 'right', fontWeight: '800', color: 'var(--badge-success-text)', fontFamily: 'monospace' }}>
                         {formatINR(p.amount)}
                       </td>
                       <td style={{ padding: '0.9rem 1.25rem', color: 'var(--text-secondary)' }}>

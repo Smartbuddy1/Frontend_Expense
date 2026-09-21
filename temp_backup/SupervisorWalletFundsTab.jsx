@@ -6,7 +6,7 @@ import {
 import toast, { Toaster } from 'react-hot-toast';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
-import { addPdfHeaderWithLogo, addPdfFooterWithLogo, addPdfSignatures, getCompanyLogoBase64, escapeHtml } from '../../../Operations/utils/pdfHeaderHelper';
+import { addPdfHeaderWithLogo, addPdfFooterWithLogo, getCompanyLogoBase64, escapeHtml } from '../../../Operations/utils/pdfHeaderHelper';
 
 const SupervisorWalletFundsTab = ({
   projects = [],
@@ -141,9 +141,9 @@ const SupervisorWalletFundsTab = ({
   const handleDownloadPDF = async () => {
     try {
       const doc = new jsPDF();
-      await addPdfHeaderWithLogo(doc, 'Advance Fund Requests', `Generated: ${new Date().toLocaleString()}`);
+      const startY = await addPdfHeaderWithLogo(doc, 'Advance Fund Requests', `Generated: ${new Date().toLocaleString()}`);
       autoTable(doc, {
-        startY: 26,
+        startY: startY + 2,
         head: [['REQ ID', 'SUPERVISOR', 'SITE', 'PURPOSE', 'URGENCY', 'DATE', 'DISBURSED ON', 'AMOUNT', 'STATUS']],
         body: filtered.map(r => [
           r.displayId, r.supervisor, r.site, r.purpose, r.urgency, r.date,
@@ -152,20 +152,11 @@ const SupervisorWalletFundsTab = ({
           r.rowType === 'pending' ? 'Pending Disbursal' : 'Disbursed'
         ]),
         theme: 'grid',
-        styles: { 
-          fontSize: 8,
-          lineColor: [37, 99, 235],
-          lineWidth: 0.1,
-        },
-        headStyles: { 
-          fillColor: [16, 185, 129], 
-          textColor: [255, 255, 255] 
-        },
-        alternateRowStyles: { fillColor: [248, 250, 252] },
+        styles: { fontSize: 7.5 },
+        headStyles: { fillColor: [15, 23, 42], textColor: [255, 255, 255] },
         bodyStyles: (row) => row.rowType === 'disbursed' ? { fillColor: [240, 253, 244] } : {},
       });
       await addPdfFooterWithLogo(doc);
-      addPdfSignatures(doc);
       doc.save(`ASEMS_Fund_Requests_${new Date().toISOString().split('T')[0]}.pdf`);
       toast.success('PDF downloaded!');
     } catch (err) { toast.error('PDF failed: ' + err.message); }

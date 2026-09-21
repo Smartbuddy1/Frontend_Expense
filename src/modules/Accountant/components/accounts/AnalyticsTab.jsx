@@ -306,7 +306,7 @@ const AnalyticsTab = ({
   const handleExportPDF = async () => {
     const doc = new jsPDF('landscape');
 
-    const startY = await addPdfHeaderWithLogo(
+    await addPdfHeaderWithLogo(
       doc,
       'Executive Financial Analytics & Operational Charts Report',
       `Generated on: ${new Date().toLocaleString('en-GB')} | Scope: ${selectedProject === 'ALL' ? 'All Installation Sites' : selectedProject} | Sanctioned BOQ: ${formatPDFINR(totalBudget)}`
@@ -323,7 +323,7 @@ const AnalyticsTab = ({
     ]];
 
     autoTable(doc, {
-      startY: startY + 2,
+      startY: 26,
       head: summaryHeaders,
       body: summaryData,
       theme: 'grid',
