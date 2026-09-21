@@ -250,6 +250,21 @@ const Layout = () => {
               </span>
             </div>
           </div>
+          <button onClick={handleLogout} className="logout-btn" title="Logout" style={{
+            background: 'rgba(239, 68, 68, 0.1)',
+            border: 'none',
+            color: '#ef4444',
+            cursor: 'pointer',
+            padding: '0.45rem',
+            borderRadius: '8px',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            transition: 'all 0.2s ease',
+            flexShrink: 0
+          }} onMouseEnter={(e) => { e.currentTarget.style.background = 'rgba(239, 68, 68, 0.2)'; e.currentTarget.style.transform = 'scale(1.05)' }} onMouseLeave={(e) => { e.currentTarget.style.background = 'rgba(239, 68, 68, 0.1)'; e.currentTarget.style.transform = 'scale(1)' }}>
+            <LogOut size={18} />
+          </button>
         </div>
       </aside>
 
