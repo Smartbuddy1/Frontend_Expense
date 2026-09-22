@@ -431,7 +431,7 @@ const PublicFormTab = () => {
               {viewEntry.receiptUrl && (
                 <div style={{ marginTop: '1rem' }}>
                   <div style={{ fontSize: '0.72rem', color: 'var(--text-secondary)', fontWeight: '700', textTransform: 'uppercase', marginBottom: '0.5rem' }}>Receipt Preview</div>
-                  <img src={viewEntry.receiptUrl} alt="Receipt"
+                  <img src={viewEntry.receiptUrl.startsWith('http') && !viewEntry.receiptUrl.includes('localhost:') && !viewEntry.receiptUrl.includes(':5000/uploads/') ? viewEntry.receiptUrl : `${API || ''}${viewEntry.receiptUrl.substring(viewEntry.receiptUrl.indexOf('/uploads/'))}`} alt="Receipt"
                     style={{ width: '100%', borderRadius: '0.65rem', border: '1px solid var(--border-color)', maxHeight: '220px', objectFit: 'contain', background: '#f8fafc' }} />
                 </div>
               )}

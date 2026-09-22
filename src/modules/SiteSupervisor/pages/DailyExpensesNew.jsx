@@ -26,7 +26,7 @@ import {
   Edit2,
   XCircle
 } from 'lucide-react';
-import { useWallet } from '../context/WalletContext';
+import { useWallet, sanitizeUrl } from '../context/WalletContext';
 import { useLanguage } from '../context/LanguageContext';
 import { exportToExcel, triggerPrint, exportToPDF } from '../utils/exportUtils';
 import { toast } from '../../../components/Toast';
@@ -55,7 +55,7 @@ const DailyExpenses = () => {
       paidTo: expense.paidTo === 'Local Vendor' ? '' : expense.paidTo,
       description: '',
       receiptName: expense.receiptName || '',
-      previewUrl: expense.receiptUrl || null,
+      previewUrl: sanitizeUrl(expense.receiptUrl),
       receiptFile: null
     });
     setIsEditModalOpen(true);

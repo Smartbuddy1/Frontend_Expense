@@ -11,6 +11,14 @@ const API = import.meta.env.VITE_API_BASE_URL;
 // project yet — keeps the no-login PublicExpenseForm working exactly as before.
 const LOCAL_KEY = 'supervisor_expenses_list';
 
+export const sanitizeUrl = (url) => {
+  if (!url) return null;
+  if (url.includes('/uploads/')) {
+    return `${import.meta.env.VITE_API_BASE_URL || ''}${url.substring(url.indexOf('/uploads/'))}`;
+  }
+  return url;
+};
+
 export const WalletProvider = ({ children }) => {
   const { user } = useAuth();
 
@@ -44,7 +52,7 @@ export const WalletProvider = ({ children }) => {
     status: e.status === 'ops_rejected' ? 'Rejected' : e.status === 'submitted' ? 'Pending' : 'Approved',
     paidTo: e.vendorName || 'Local Vendor',
     receiptName: e.receiptUrl ? e.receiptUrl.split('/').pop() : null,
-    receiptUrl: e.receiptUrl || null,
+    receiptUrl: sanitizeUrl(e.receiptUrl),
     receipt: !!e.receiptUrl,
   });
 
@@ -163,7 +171,7 @@ export const WalletProvider = ({ children }) => {
       status: 'Pending',
       paidTo: expenseData.paidTo || 'Local Vendor',
       receiptName: expenseData.receiptName || null,
-      receiptUrl: expenseData.receiptUrl || null,
+      receiptUrl: sanitizeUrl(expenseData.receiptUrl),
       receipt: !!(expenseData.receiptName || expenseData.receiptUrl),
     };
     localStorage.setItem(LOCAL_KEY, JSON.stringify([entry, ...list]));

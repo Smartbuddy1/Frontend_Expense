@@ -118,7 +118,7 @@ const ExpenseApprovalModal = ({ isOpen, onClose, expense, onApprove, onReject })
               <p className="text-[11px] sm:text-xs font-semibold uppercase tracking-wider text-slate-500">Tax Invoice / Receipt</p>
               {expense.receiptUrl && (
                 <a 
-                  href={expense.receiptUrl} 
+                  href={expense.receiptUrl.startsWith('http') && !expense.receiptUrl.includes('localhost:') && !expense.receiptUrl.includes(':5000/uploads/') ? expense.receiptUrl : `${import.meta.env.VITE_API_BASE_URL || ''}${expense.receiptUrl.substring(expense.receiptUrl.indexOf('/uploads/'))}`} 
                   target="_blank" 
                   rel="noreferrer" 
                   className="text-xs text-blue-600 dark:text-blue-400 font-semibold hover:underline flex items-center gap-1"
@@ -129,7 +129,7 @@ const ExpenseApprovalModal = ({ isOpen, onClose, expense, onApprove, onReject })
             </div>
             <div className="relative rounded-xl overflow-hidden border border-slate-200 dark:border-slate-700 max-h-48 sm:max-h-56 bg-slate-100 dark:bg-slate-800 flex items-center justify-center">
               <img 
-                src={expense.receiptUrl || 'https://images.unsplash.com/photo-1554224155-8d04cb21cd6c?w=600&auto=format&fit=crop&q=60'} 
+                src={expense.receiptUrl ? (expense.receiptUrl.startsWith('http') && !expense.receiptUrl.includes('localhost:') && !expense.receiptUrl.includes(':5000/uploads/') ? expense.receiptUrl : `${import.meta.env.VITE_API_BASE_URL || ''}${expense.receiptUrl.substring(expense.receiptUrl.indexOf('/uploads/'))}`) : 'https://images.unsplash.com/photo-1554224155-8d04cb21cd6c?w=600&auto=format&fit=crop&q=60'} 
                 alt="Invoice receipt preview"
                 className="w-full h-full object-cover max-h-48 sm:max-h-56 opacity-90 hover:opacity-100 transition-opacity" 
               />

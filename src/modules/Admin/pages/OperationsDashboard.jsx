@@ -91,6 +91,13 @@ const EXPENSE_STATUS_TO_DISPLAY = {
   ops_rejected: 'Rejected',
   accounts_paid: 'Paid',
 };
+const sanitizeUrl = (url) => {
+  if (!url) return null;
+  if (url.includes('/uploads/')) {
+    return `${import.meta.env.VITE_API_BASE_URL || ''}${url.substring(url.indexOf('/uploads/'))}`;
+  }
+  return url;
+};
 
 const mapExpense = (e) => {
   const created = new Date(e.createdAt);
@@ -111,7 +118,7 @@ const mapExpense = (e) => {
     vendor: e.vendorName || '',
     amount: Number(e.amount),
     status: EXPENSE_STATUS_TO_DISPLAY[e.status] || 'Pending',
-    billPhotoUrl: e.receiptUrl || null,
+    billPhotoUrl: sanitizeUrl(e.receiptUrl),
     reviewNotes: e.opsRemarks || '',
   };
 };

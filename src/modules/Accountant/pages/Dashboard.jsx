@@ -89,7 +89,7 @@ const mapExpenseForAccounts = (e) => ({
   billDate: e.createdAt,
   amount: Number(e.amount),
   hasBill: !!e.receiptUrl,
-  billUrl: e.receiptUrl || null,
+  billUrl: sanitizeUrl(e.receiptUrl),
   status: EXPENSE_STATUS_TO_DISPLAY[e.status] || 'Pending Operations Approval',
   opsApproval: e.opsApprovedById ? { status: 'Approved', approvedBy: e.opsApprovedBy?.name || 'Operations' } : (e.status === 'ops_rejected' ? { status: 'Rejected' } : null),
   opsVerificationStatus: e.status === 'submitted' ? 'Pending' : (e.status === 'ops_rejected' ? 'Rejected' : 'Verified'),
@@ -227,6 +227,14 @@ const TAB_METADATA = {
     icon: Folder,
     color: 'var(--badge-info-text)'
   }
+};
+
+const sanitizeUrl = (url) => {
+  if (!url) return null;
+  if (url.includes('/uploads/')) {
+    return `${import.meta.env.VITE_API_BASE_URL || ''}${url.substring(url.indexOf('/uploads/'))}`;
+  }
+  return url;
 };
 
 const Dashboard = () => {
