@@ -18,7 +18,7 @@ const PublicFormTab = () => {
 
   const load = React.useCallback(async () => {
     try {
-      const token = localStorage.getItem('token');
+      const token = localStorage.getItem('expense_token');
       const res = await axios.get(`${API}/public-forms`, {
         headers: { Authorization: `Bearer ${token}` }
       });
@@ -34,7 +34,7 @@ const PublicFormTab = () => {
   const handleDelete = async (id) => {
     if (!window.confirm('Delete this submission?')) return;
     try {
-      const token = localStorage.getItem('token');
+      const token = localStorage.getItem('expense_token');
       await axios.delete(`${API}/public-forms/${id}`, {
         headers: { Authorization: `Bearer ${token}` }
       });
@@ -47,7 +47,7 @@ const PublicFormTab = () => {
 
   const handleMarkApproved = async (id) => {
     try {
-      const token = localStorage.getItem('token');
+      const token = localStorage.getItem('expense_token');
       await axios.patch(`${API}/public-forms/${id}/approve`, {}, {
         headers: { Authorization: `Bearer ${token}` }
       });

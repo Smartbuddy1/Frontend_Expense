@@ -15,8 +15,8 @@ const ProjectDetailModal = ({ isOpen, onClose, project, supervisors = [], teamMe
           setLoadingPhotos(true);
           // Standard Vite axios call using env URL
           const baseURL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/api';
-          const token = localStorage.getItem('token');
-          const userId = localStorage.getItem('userId');
+          const token = localStorage.getItem('expense_token');
+          const userId = localStorage.getItem('expense_userId');
           const res = await axios.get(`${baseURL}/projects/${project.id}/photos`, {
             headers: {
               Authorization: `Bearer ${token}`,

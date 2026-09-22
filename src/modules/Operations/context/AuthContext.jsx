@@ -9,8 +9,8 @@ export const AuthProvider = ({ children }) => {
 
   useEffect(() => {
     // Check if user is logged in
-    const token = localStorage.getItem('token');
-    const storedUser = localStorage.getItem('user');
+    const token = localStorage.getItem('expense_token');
+    const storedUser = localStorage.getItem('expense_user');
     
     if (token && storedUser) {
       setUser(JSON.parse(storedUser));
@@ -23,8 +23,8 @@ export const AuthProvider = ({ children }) => {
       (response) => response,
       (error) => {
         if (error.response && error.response.status === 401) {
-          localStorage.removeItem('token');
-          localStorage.removeItem('user');
+          localStorage.removeItem('expense_token');
+          localStorage.removeItem('expense_user');
           delete axios.defaults.headers.common['Authorization'];
           setUser(null);
           window.location.href = import.meta.env.BASE_URL;
@@ -37,8 +37,8 @@ export const AuthProvider = ({ children }) => {
   }, []);
 
   const logout = () => {
-    localStorage.removeItem('token');
-    localStorage.removeItem('user');
+    localStorage.removeItem('expense_token');
+    localStorage.removeItem('expense_user');
     delete axios.defaults.headers.common['Authorization'];
     setUser(null);
   };

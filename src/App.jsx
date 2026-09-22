@@ -45,8 +45,8 @@ function GlobalLogin() {
         password,
       });
 
-      localStorage.setItem('token', data.token);
-      localStorage.setItem('user', JSON.stringify(data.user));
+      localStorage.setItem('expense_token', data.token);
+      localStorage.setItem('expense_user', JSON.stringify(data.user));
 
       const path = ROLE_TO_PATH[data.user.role];
       if (!path) {
