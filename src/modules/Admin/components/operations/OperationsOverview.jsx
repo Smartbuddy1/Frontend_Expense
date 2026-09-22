@@ -697,16 +697,18 @@ export const BudgetDistributionPieChart = ({ expenses = [], projects = [] }) => 
 
   if (expenses && expenses.length > 0) {
     expenses.forEach(e => {
-      const cat = (e.category || '').toLowerCase();
-      const amt = Number(e.amount) || 0;
-      if (cat.includes('material') || cat.includes('cement') || cat.includes('pipe')) {
-        categoryTotals['Material'] += amt;
-      } else if (cat.includes('transport') || cat.includes('conveyance') || cat.includes('travel') || cat.includes('tempo')) {
-        categoryTotals['Transport'] += amt;
-      } else if (cat.includes('labor') || cat.includes('wages') || cat.includes('excavation')) {
-        categoryTotals['Labor'] += amt;
-      } else {
-        categoryTotals['Equipment'] += amt;
+      if (e.status !== 'Rejected') {
+        const cat = (e.category || '').toLowerCase();
+        const amt = Number(e.amount) || 0;
+        if (cat.includes('material') || cat.includes('cement') || cat.includes('pipe')) {
+          categoryTotals['Material'] += amt;
+        } else if (cat.includes('transport') || cat.includes('conveyance') || cat.includes('travel') || cat.includes('tempo')) {
+          categoryTotals['Transport'] += amt;
+        } else if (cat.includes('labor') || cat.includes('wages') || cat.includes('excavation')) {
+          categoryTotals['Labor'] += amt;
+        } else {
+          categoryTotals['Equipment'] += amt;
+        }
       }
     });
   }

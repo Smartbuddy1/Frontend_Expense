@@ -69,7 +69,8 @@ const OverviewTab = ({
   });
 
   expenses.forEach(e => {
-    if (e.status === 'Accounts Verified & Paid') {
+    // Include all statuses except Rejected
+    if (e.status !== 'Rejected') {
       const sName = e.supervisor || 'Unassigned';
       if (!supervisorMap[sName]) supervisorMap[sName] = { name: sName, fullName: sName, Released: 0, Expenses: 0, WalletBalance: 0 };
       supervisorMap[sName].Expenses += (e.amount || 0);
@@ -89,12 +90,15 @@ const OverviewTab = ({
     });
   }
   expenses.forEach(e => {
-    if (e.status === 'Accounts Verified & Paid') {
-      categoryMap[e.category] = (categoryMap[e.category] || 0) + (e.amount || 0);
+    // Include all statuses except Rejected
+    if (e.status !== 'Rejected') {
+      if (e.category) categoryMap[e.category] = (categoryMap[e.category] || 0) + (e.amount || 0);
     }
   });
   const categoryData = Object.entries(categoryMap)
-    .map(([name, value]) => ({ name, value }));
+    .map(([name, value]) => ({ name, value }))
+    .filter(item => item.value > 0)
+    .sort((a, b) => b.value - a.value);
   const totalCategoryExpense = categoryData.reduce((acc, c) => acc + (c.value || 0), 0);
   const CATEGORY_COLORS = ['#3b82f6', '#10b981', '#f59e0b', '#8b5cf6', '#ec4899', '#06b6d4', '#64748b'];
 
