@@ -201,12 +201,12 @@ const CreateSupervisorModal = ({ isOpen, onClose, onCreateSupervisor, editingSup
             <div>
               <label style={{ display: 'block', fontSize: '0.82rem', fontWeight: '800', color: 'var(--text-primary, #334155)', marginBottom: '0.4rem' }}>
                 <Phone size={13} style={{ display: 'inline', marginRight: '4px', color: '#2563eb' }} />
-                Phone Number *
+                Mobile Number (Login ID) *
               </label>
               <input
                 type="tel"
                 required
-                placeholder="+91 98765 43210"
+                placeholder="e.g. 9876543210 (used to login)"
                 value={formData.phone}
                 onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
                 style={{

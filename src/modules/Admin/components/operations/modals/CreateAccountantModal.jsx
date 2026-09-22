@@ -161,12 +161,12 @@ const CreateAccountantModal = ({
 
             <div>
               <label style={{ display: 'block', fontSize: '0.94rem', fontWeight: '700', color: 'var(--text-primary, #1e293b)', marginBottom: '0.45rem' }}>
-                Contact Phone *
+                Mobile Number (Login ID) *
               </label>
               <input
                 type="tel"
                 required
-                placeholder="+91 98220 77889"
+                placeholder="e.g. 9359604384 (used to login)"
                 value={formData.phone}
                 onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
                 style={{

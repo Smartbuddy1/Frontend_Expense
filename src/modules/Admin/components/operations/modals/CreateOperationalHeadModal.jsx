@@ -179,14 +179,14 @@ const CreateOperationalHeadModal = ({
           {/* 2. Official Phone */}
           <div>
             <label style={{ display: 'block', fontSize: '0.86rem', fontWeight: '700', color: 'var(--text-primary, #334155)', marginBottom: '0.35rem' }}>
-              Phone Number <span style={{ color: '#ef4444' }}>*</span>
+              Mobile Number (Login ID) <span style={{ color: '#ef4444' }}>*</span>
             </label>
             <div style={{ position: 'relative' }}>
               <Phone size={16} style={{ position: 'absolute', left: '0.85rem', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted, #94a3b8)' }} />
               <input
                 type="text"
                 required
-                placeholder="e.g. +91 93596 04384"
+                placeholder="e.g. 9359604384 (used to login)"
                 value={formData.phone}
                 onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
                 style={{

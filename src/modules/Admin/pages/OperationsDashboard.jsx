@@ -479,19 +479,56 @@ const OperationsDashboard = () => {
   };
 
   const handleSaveOperationalHead = async (headData) => {
+    const mobile = (headData.phone || '').replace(/\D/g, '');
+
     try {
-      const payload = {
-        name: headData.name,
-        phone: headData.phone || undefined,
-        email: headData.email || undefined,
-        department: headData.role || undefined,
-      };
       if (headData.id && operationalHeads.some(h => h.id === headData.id)) {
-        await axios.patch(`${API}/operational-heads/${headData.id}`, payload);
+        // Edit mode — update the operational-heads record
+        await axios.patch(`${API}/operational-heads/${headData.id}`, {
+          name: headData.name,
+          phone: headData.phone || undefined,
+          email: headData.email || undefined,
+          department: headData.role || undefined,
+        });
+        // Also update user record if userId is linked
+        if (headData.userId) {
+          await axios.patch(`${API}/users/${headData.userId}`, {
+            name: headData.name,
+            mobile: mobile.length >= 10 ? mobile : undefined,
+            email: headData.email || undefined,
+          });
+        }
         toast.success(`Operational Head "${headData.name}" updated!`);
       } else {
-        await axios.post(`${API}/operational-heads`, payload);
-        toast.success(`Operational Head "${headData.name}" added!`);
+        // Create mode — must have a valid mobile to create real login
+        if (mobile.length < 10) {
+          toast.error('A valid 10-digit mobile number is required to create an Operational Head login');
+          return;
+        }
+        const password = headData.password || 'changeme123';
+
+        // 1. Create real user login (role: operations)
+        const { data: userData } = await axios.post(`${API}/users`, {
+          name: headData.name,
+          mobile,
+          password,
+          role: 'operations',
+          email: headData.email || undefined,
+        });
+
+        // 2. Create the operational-head profile record (linked to user)
+        await axios.post(`${API}/operational-heads`, {
+          name: headData.name,
+          phone: headData.phone || undefined,
+          email: headData.email || undefined,
+          department: headData.role || undefined,
+          userId: userData.user.id,
+        });
+
+        toast.success(
+          `Operational Head "${headData.name}" created!\nLogin: ${mobile} / ${password}`,
+          { duration: 8000 }
+        );
       }
       await fetchCore();
     } catch (err) {
