@@ -1024,7 +1024,8 @@ const OperationsOverview = ({
   });
 
   expenses.forEach(e => {
-    if (e.status === 'Approved' || e.status === 'Paid') {
+    // Include Pending, Approved, Paid — exclude only Rejected
+    if (e.status !== 'Rejected') {
       const sName = e.supervisorName || e.submittedBy || 'Unassigned';
       if (!supervisorMap[sName]) supervisorMap[sName] = { name: sName, Released: 0, Expenses: 0, WalletBalance: 0 };
       supervisorMap[sName].Expenses += (e.amount || 0);
@@ -1037,19 +1038,22 @@ const OperationsOverview = ({
 
   const supervisorChartData = Object.values(supervisorMap).filter(s => s.Released > 0 || s.Expenses > 0);
 
-  // Category-wise chart data (matching Accountant overview pie chart)
+  // Category-wise chart data — count ALL expenses except Rejected
   const CATEGORY_COLORS = ['#3b82f6', '#10b981', '#f59e0b', '#8b5cf6', '#ec4899', '#06b6d4', '#64748b'];
   const categoryMap = {};
   if (categories && categories.length > 0) {
     categories.forEach(c => { categoryMap[c.name] = 0; });
   }
   expenses.forEach(e => {
-    if (e.status === 'Approved' || e.status === 'Paid') {
+    // Include Pending, Approved, Paid — exclude only Rejected
+    if (e.status !== 'Rejected') {
       if (e.category) categoryMap[e.category] = (categoryMap[e.category] || 0) + (e.amount || 0);
     }
   });
   const categoryChartData = Object.entries(categoryMap)
-    .map(([name, value]) => ({ name, value }));
+    .map(([name, value]) => ({ name, value }))
+    .filter(item => item.value > 0)
+    .sort((a, b) => b.value - a.value);
 
   const formatINR = (val) => new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', maximumFractionDigits: 0 }).format(val);
 
