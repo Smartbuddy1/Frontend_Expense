@@ -69,8 +69,8 @@ const OverviewTab = ({
   });
 
   expenses.forEach(e => {
-    // Include all statuses except Rejected
-    if (e.status !== 'Rejected') {
+    // Only include Approved and Paid equivalents for Accountant
+    if (e.status === 'Pending Accounts Verification' || e.status === 'Accounts Verified & Paid') {
       const sName = e.supervisor || 'Unassigned';
       if (!supervisorMap[sName]) supervisorMap[sName] = { name: sName, fullName: sName, Released: 0, Expenses: 0, WalletBalance: 0 };
       supervisorMap[sName].Expenses += (e.amount || 0);
@@ -90,8 +90,8 @@ const OverviewTab = ({
     });
   }
   expenses.forEach(e => {
-    // Include all statuses except Rejected
-    if (e.status !== 'Rejected') {
+    // Only include Approved and Paid equivalents for Accountant
+    if (e.status === 'Pending Accounts Verification' || e.status === 'Accounts Verified & Paid') {
       if (e.category) categoryMap[e.category] = (categoryMap[e.category] || 0) + (e.amount || 0);
     }
   });

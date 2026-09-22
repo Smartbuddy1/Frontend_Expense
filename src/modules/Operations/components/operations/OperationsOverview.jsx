@@ -1024,8 +1024,8 @@ const OperationsOverview = ({
   });
 
   expenses.forEach(e => {
-    // Include Pending, Approved, Paid — exclude only Rejected
-    if (e.status !== 'Rejected') {
+    // Only include Approved and Paid
+    if (e.status === 'Approved' || e.status === 'Paid') {
       const sName = e.supervisorName || e.submittedBy || 'Unassigned';
       if (!supervisorMap[sName]) supervisorMap[sName] = { name: sName, Released: 0, Expenses: 0, WalletBalance: 0 };
       supervisorMap[sName].Expenses += (e.amount || 0);
@@ -1045,8 +1045,8 @@ const OperationsOverview = ({
     categories.forEach(c => { categoryMap[c.name] = 0; });
   }
   expenses.forEach(e => {
-    // Include Pending, Approved, Paid — exclude only Rejected
-    if (e.status !== 'Rejected') {
+    // Only include Approved and Paid
+    if (e.status === 'Approved' || e.status === 'Paid') {
       if (e.category) categoryMap[e.category] = (categoryMap[e.category] || 0) + (e.amount || 0);
     }
   });

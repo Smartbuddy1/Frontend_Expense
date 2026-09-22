@@ -697,7 +697,7 @@ export const BudgetDistributionPieChart = ({ expenses = [], projects = [] }) => 
 
   if (expenses && expenses.length > 0) {
     expenses.forEach(e => {
-      if (e.status !== 'Rejected') {
+      if (e.status === 'Approved' || e.status === 'Paid') {
         const cat = (e.category || '').toLowerCase();
         const amt = Number(e.amount) || 0;
         if (cat.includes('material') || cat.includes('cement') || cat.includes('pipe')) {
