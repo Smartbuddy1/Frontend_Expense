@@ -7,12 +7,12 @@ const sanitizeForPDF = (val) => {
   return String(val).replace(/₹/g, 'Rs. ');
 };
 
+import jsPDF from 'jspdf';
+import autoTable from 'jspdf-autotable';
 import { addPdfHeaderWithLogo, addPdfFooterWithLogo, addPdfSignatures } from '../../Operations/utils/pdfHeaderHelper';
 
 export const exportToPDF = async ({ fileName, title, subtitle, headers, rows, meta = [] }) => {
   try {
-    const { jsPDF } = await import('jspdf');
-    await import('jspdf-autotable');
 
     const doc = new jsPDF({
       orientation: 'portrait',
@@ -26,24 +26,30 @@ export const exportToPDF = async ({ fileName, title, subtitle, headers, rows, me
     const cleanHeaders = headers.map(h => sanitizeForPDF(h));
     const cleanRows = rows.map(r => r.map(cell => sanitizeForPDF(cell)));
 
-    if (typeof doc.autoTable === 'function') {
-      doc.autoTable({
-        startY: startY + 2,
-        head: [cleanHeaders],
-        body: cleanRows,
-        theme: 'grid',
-        styles: { 
-          fontSize: 8,
-          lineColor: [37, 99, 235],
-          lineWidth: 0.1,
-        },
-        headStyles: { 
-          fillColor: [16, 185, 129], 
-          textColor: [255, 255, 255],
-          fontStyle: 'bold' 
-        },
-        alternateRowStyles: { fillColor: [248, 250, 252] }
-      });
+    const tableOptions = {
+      startY: startY + 2,
+      head: [cleanHeaders],
+      body: cleanRows,
+      theme: 'grid',
+      styles: { 
+        fontSize: 8,
+        lineColor: [37, 99, 235],
+        lineWidth: 0.1,
+      },
+      headStyles: { 
+        fillColor: [16, 185, 129], 
+        textColor: [255, 255, 255],
+        fontStyle: 'bold' 
+      },
+      alternateRowStyles: { fillColor: [248, 250, 252] }
+    };
+
+    if (typeof autoTable === 'function') {
+      autoTable(doc, tableOptions);
+    } else if (typeof doc.autoTable === 'function') {
+      doc.autoTable(tableOptions);
+    } else {
+      console.warn("PDF autoTable failed, using fallback");
     }
 
     await addPdfFooterWithLogo(doc);
