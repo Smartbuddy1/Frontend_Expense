@@ -140,7 +140,7 @@ const ExpensesTab = ({
   const handleExportCSV = () => {
     const headers = ['Expense ID', 'Date', 'Project Name', 'Voucher No', 'Category', 'Supervisor', 'Vendor', 'Amount (INR)', 'Status', 'Description'];
     const rows = filteredExpenses.map(e => [
-      `"${e.id || ''}"`,
+      `"${e.voucherNo || e.id || ''}"`,
       `"${e.date || ''}"`,
       `"${(e.projectName || '').replace(/"/g, '""')}"`,
       `"${e.voucherNo || ''}"`,
@@ -197,7 +197,7 @@ const ExpensesTab = ({
       });
 
       const expData = filteredExpenses.map(e => [
-        e.id?.slice(0, 8)?.toUpperCase() || '—',
+        e.voucherNo || e.id || '—',
         e.date,
         e.projectName,
         `[${e.category}]\n${e.description}`,
@@ -1022,39 +1022,48 @@ const ExpensesTab = ({
                             </button>
                           </>
                         ) : isApproved || isPaid ? (
-                          <button
-                            title={isPaid ? 'Paid' : 'Approved'}
+                          <span
+                            title={isPaid ? 'Payment Confirmed by Accounts' : 'Approved by Operations — Pending Accounts Verification'}
                             style={{
-                              padding: '0.45rem',
-                              borderRadius: '8px',
-                              backgroundColor: 'rgba(16, 185, 129, 0.12)',
-                              border: '1px solid rgba(16, 185, 129, 0.3)',
-                              color: '#10b981',
                               display: 'inline-flex',
                               alignItems: 'center',
-                              justifyContent: 'center',
-                              cursor: 'default'
+                              gap: '4px',
+                              padding: '4px 10px',
+                              borderRadius: '20px',
+                              border: isPaid ? '1px solid #7dd3fc' : '1px solid #a7f3d0',
+                              backgroundColor: isPaid ? '#e0f2fe' : '#dcfce7',
+                              color: isPaid ? '#0284c7' : '#059669',
+                              fontSize: '0.72rem',
+                              fontWeight: '700',
+                              whiteSpace: 'nowrap',
+                              cursor: 'default',
+                              letterSpacing: '0.01em'
                             }}
                           >
-                            <CheckCircle2 size={16} />
-                          </button>
+                            <CheckCircle2 size={13} />
+                            {isPaid ? '✓ Paid' : '✓ Approved'}
+                          </span>
                         ) : (
-                          <button
+                          <span
                             title="Rejected"
                             style={{
-                              padding: '0.45rem',
-                              borderRadius: '8px',
-                              backgroundColor: 'rgba(239, 68, 68, 0.12)',
-                              border: '1px solid rgba(239, 68, 68, 0.3)',
-                              color: '#f87171',
                               display: 'inline-flex',
                               alignItems: 'center',
-                              justifyContent: 'center',
+                              gap: '4px',
+                              padding: '4px 10px',
+                              borderRadius: '20px',
+                              backgroundColor: 'rgba(239, 68, 68, 0.12)',
+                              border: '1px solid rgba(239, 68, 68, 0.3)',
+                              color: '#ef4444',
+                              fontSize: '0.72rem',
+                              fontWeight: '700',
+                              whiteSpace: 'nowrap',
                               cursor: 'default'
                             }}
                           >
-                            <X size={16} />
-                          </button>
+                            <X size={13} />
+                            Rejected
+                          </span>
                         )}
                       </div>
                     </td>

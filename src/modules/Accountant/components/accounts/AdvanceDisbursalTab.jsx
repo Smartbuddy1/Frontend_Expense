@@ -44,7 +44,7 @@ const AdvanceDisbursalTab = ({
     if (!adv) return false;
     const q = searchQuery.toLowerCase();
     const matchesSearch = 
-      (adv.id || '').toLowerCase().includes(q) ||
+      (adv.displayId || adv.id || '').toLowerCase().includes(q) ||
       (adv.supervisor || '').toLowerCase().includes(q) ||
       (adv.projectName || '').toLowerCase().includes(q) ||
       (adv.purpose || '').toLowerCase().includes(q);
@@ -70,7 +70,7 @@ const AdvanceDisbursalTab = ({
     ];
     filteredAdvances.forEach(a => {
       rows.push([
-        a.id,
+        a.displayId || a.id?.slice(0, 8)?.toUpperCase() || '',
         a.requestDate || a.date || '-',
         a.supervisor,
         a.supervisorMobile || a.phone || 'N/A',
@@ -104,7 +104,7 @@ const AdvanceDisbursalTab = ({
 
     const headers = [['Request ID', 'Date', 'Supervisor', 'Project', 'Amount', 'Purpose', 'Status']];
     const data = filteredAdvances.map(a => [
-      a.id?.slice(0, 8)?.toUpperCase() || '—',
+      a.displayId || a.id?.slice(0, 8)?.toUpperCase() || '—',
       a.requestDate || a.date || '-',
       a.supervisor,
       a.projectName,

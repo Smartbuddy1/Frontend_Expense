@@ -56,7 +56,7 @@ const PaymentLedgerTab = ({ payments, onRecordNewPayment }) => {
   const handleExportCSV = () => {
     const headers = ['Txn ID', 'Date', 'Type', 'Paid To / Beneficiary', 'Project Name', 'Payment Mode', 'Reference / UTR', 'Amount (INR)', 'Status'];
     const rows = filteredPayments.map(p => [
-      p.id,
+      p.id?.slice(0, 8)?.toUpperCase() || '',
       p.date,
       p.type,
       p.paidTo,
@@ -266,7 +266,7 @@ const PaymentLedgerTab = ({ payments, onRecordNewPayment }) => {
                   <tr key={p.id} style={{ borderBottom: '1px solid var(--border-color)' }}>
                     <td style={{ padding: '1rem', whiteSpace: 'nowrap' }}>
                       <div style={{ fontWeight: '700', color: 'var(--text-primary)', fontFamily: 'monospace' }}>
-                        {p.id}
+                        {p.id?.slice(0, 8)?.toUpperCase()}
                       </div>
                       <div style={{ fontSize: '0.72rem', color: 'var(--text-secondary)', marginTop: '2px' }}>
                         {p.date}

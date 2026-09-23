@@ -10,7 +10,8 @@ const CreateSupervisorModal = ({ isOpen, onClose, onCreateSupervisor, editingSup
     email: '',
     password: '',
     specialization: 'Site Operations & Field Lead',
-    experience: '5+ Years'
+    experience: '5+ Years',
+    assignedProjects: []
   });
 
   useEffect(() => {
@@ -18,6 +19,8 @@ const CreateSupervisorModal = ({ isOpen, onClose, onCreateSupervisor, editingSup
       const parts = (editingSupervisor.name || '').trim().split(' ');
       const firstName = parts[0] || '';
       const surname = parts.slice(1).join(' ') || '';
+
+      const currentlyAssigned = projects.filter(p => String(p.supervisorId) === String(editingSupervisor.id)).map(p => String(p.id));
 
       setFormData({
         id: editingSupervisor.id,
@@ -27,7 +30,8 @@ const CreateSupervisorModal = ({ isOpen, onClose, onCreateSupervisor, editingSup
         email: editingSupervisor.email || '',
         password: editingSupervisor.password || '',
         specialization: editingSupervisor.specialization || 'Site Operations & Field Lead',
-        experience: editingSupervisor.experience || '5+ Years'
+        experience: editingSupervisor.experience || '5+ Years',
+        assignedProjects: currentlyAssigned
       });
     } else {
       setFormData({
@@ -37,7 +41,8 @@ const CreateSupervisorModal = ({ isOpen, onClose, onCreateSupervisor, editingSup
         email: '',
         password: '',
         specialization: 'Site Operations & Field Lead',
-        experience: '5+ Years'
+        experience: '5+ Years',
+        assignedProjects: []
       });
     }
   }, [editingSupervisor, isOpen]);
@@ -288,11 +293,50 @@ const CreateSupervisorModal = ({ isOpen, onClose, onCreateSupervisor, editingSup
               </button>
             </div>
           </div>
-
-
-
-
-
+          {/* Assigned Projects */}
+          {projects && projects.length > 0 && (
+            <div>
+              <label style={{ display: 'block', fontSize: '0.82rem', fontWeight: '800', color: 'var(--text-secondary, #334155)', marginBottom: '0.4rem' }}>
+                <Briefcase size={13} style={{ display: 'inline', marginRight: '4px', color: '#2563eb' }} />
+                Assigned Projects
+              </label>
+              <div style={{
+                width: '100%',
+                maxHeight: '140px',
+                overflowY: 'auto',
+                padding: '0.65rem',
+                borderRadius: '10px',
+                border: '1.5px solid var(--border-color, #cbd5e1)',
+                backgroundColor: 'var(--input-bg, #ffffff)',
+                display: 'flex',
+                flexDirection: 'column',
+                gap: '0.5rem',
+                boxSizing: 'border-box'
+              }}>
+                {projects.map((project, idx) => {
+                  const isAssigned = formData.assignedProjects.includes(project.id || project.projectId || project.name);
+                  const projectId = project.id || project.projectId || project.name;
+                  return (
+                    <label key={idx} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer', fontSize: '0.85rem', color: 'var(--text-primary, #0f172a)' }}>
+                      <input
+                        type="checkbox"
+                        checked={isAssigned}
+                        onChange={(e) => {
+                          if (e.target.checked) {
+                            setFormData(prev => ({ ...prev, assignedProjects: [...prev.assignedProjects, projectId] }));
+                          } else {
+                            setFormData(prev => ({ ...prev, assignedProjects: prev.assignedProjects.filter(id => id !== projectId) }));
+                          }
+                        }}
+                        style={{ cursor: 'pointer', accentColor: '#2563eb' }}
+                      />
+                      {project.name} {project.siteLocation ? `(${project.siteLocation})` : ''}
+                    </label>
+                  );
+                })}
+              </div>
+            </div>
+          )}
           {/* Modal Actions Footer */}
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: '0.75rem', marginTop: '1rem', paddingTop: '1rem', borderTop: '1px solid var(--border-color, #e2e8f0)' }}>
             <button

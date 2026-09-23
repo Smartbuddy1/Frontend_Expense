@@ -88,7 +88,7 @@ const ExpenseVerificationTab = ({
     ];
     filteredExpenses.forEach(e => {
       rows.push([
-        e.id,
+        `"${e.id?.slice(0, 8)?.toUpperCase() || ''}"`,
         e.category,
         e.projectName,
         e.supervisor,
@@ -372,7 +372,7 @@ const ExpenseVerificationTab = ({
                     >
                       <td style={{ padding: '1rem', whiteSpace: 'nowrap' }}>
                         <div style={{ fontWeight: '700', color: 'var(--text-primary)', fontFamily: 'monospace' }}>
-                          {exp.id ? exp.id.split('-')[0].toUpperCase() : ''}
+                          {exp.id ? exp.id.slice(0, 8).toUpperCase() : ''}
                         </div>
                         <div style={{ fontSize: '0.72rem', color: 'var(--text-secondary)', marginTop: '2px' }}>
                           {(() => {

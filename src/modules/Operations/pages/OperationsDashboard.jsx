@@ -263,8 +263,17 @@ const OperationsDashboard = () => {
         }
         await axios.patch(`${API}/users/${supData.id}`, payload);
         
-        if (supData.assignedProjectId) {
-          await axios.patch(`${API}/projects/${supData.assignedProjectId}`, { supervisorId: supData.id });
+        const previouslyAssigned = projects.filter(p => String(p.supervisorId) === String(supData.id)).map(p => String(p.id));
+        const assignedProjectsStrs = (supData.assignedProjects || []).map(String);
+        
+        const toAdd = assignedProjectsStrs.filter(pid => !previouslyAssigned.includes(pid));
+        const toRemove = previouslyAssigned.filter(pid => !assignedProjectsStrs.includes(pid));
+        
+        for (const pid of toAdd) {
+          await axios.patch(`${API}/projects/${pid}`, { supervisorId: supData.id });
+        }
+        for (const pid of toRemove) {
+          await axios.patch(`${API}/projects/${pid}`, { supervisorId: null });
         }
         
         toast.success(`Supervisor "${fullName}" updated successfully!`);
@@ -279,8 +288,10 @@ const OperationsDashboard = () => {
           email: supData.email || undefined,
         });
 
-        if (supData.assignedProjectId) {
-          await axios.patch(`${API}/projects/${supData.assignedProjectId}`, { supervisorId: data.user.id });
+        if (supData.assignedProjects && supData.assignedProjects.length > 0) {
+          for (const pid of supData.assignedProjects) {
+            await axios.patch(`${API}/projects/${pid}`, { supervisorId: data.user.id });
+          }
         }
 
         toast.success(`Supervisor "${fullName}" created! Login: ${mobile} / ${password}`, { duration: 8000 });

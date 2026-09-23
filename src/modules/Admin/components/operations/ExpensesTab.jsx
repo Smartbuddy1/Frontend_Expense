@@ -91,7 +91,7 @@ const ExpensesTab = ({
   const handleExportCSV = () => {
     const headers = ['Expense ID', 'Date', 'Project Name', 'Voucher No', 'Category', 'Supervisor', 'Vendor', 'Amount (INR)', 'Status', 'Description'];
     const rows = filteredExpenses.map(e => [
-      `"${e.id || ''}"`,
+      `"${e.voucherNo || e.id || ''}"`,
       `"${e.date || ''}"`,
       `"${(e.projectName || '').replace(/"/g, '""')}"`,
       `"${e.voucherNo || ''}"`,
@@ -148,7 +148,7 @@ const ExpensesTab = ({
       });
 
       const expData = filteredExpenses.map(e => [
-        e.id?.slice(0, 8)?.toUpperCase() || '—',
+        e.voucherNo || e.id || '—',
         e.date,
         e.projectName,
         `[${e.category}]\n${e.description}`,
@@ -193,7 +193,7 @@ const ExpensesTab = ({
   const generateExpensesPrintHtml = () => {
     const rows = filteredExpenses.map(e => `
       <tr>
-        <td style="font-weight: 800; font-family: monospace; text-align: center;">${e.id?.slice(0, 8)?.toUpperCase() || '—'}</td>
+        <td style="font-weight: 800; font-family: monospace; text-align: center;">${e.voucherNo || e.id || '—'}</td>
         <td>${e.date}</td>
         <td><strong>${escapeHtml(e.projectName)}</strong></td>
         <td><strong>${escapeHtml(e.category)}</strong><br/><span style="color:#64748b; font-size:10px;">${escapeHtml(e.description)}</span></td>

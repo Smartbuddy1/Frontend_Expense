@@ -143,7 +143,7 @@ const RequestAdvance = () => {
   const handleExportExcel = () => {
     const headers = ['Requisition ID', 'Site Location', 'Date', 'Amount (₹)', 'Urgency', 'Purpose / Reason', 'Status'];
     const rows = filteredHistory.map(req => [
-      req.id,
+      req.displayId || req.id,
       req.site,
       req.date,
       req.amount,
@@ -157,7 +157,7 @@ const RequestAdvance = () => {
   const handleExportPDF = () => {
     const headers = ['Req ID', 'Site Location', 'Date', 'Amount (Rs)', 'Urgency', 'Purpose / Reason', 'Status'];
     const rows = filteredHistory.map(req => [
-      req.id,
+      req.displayId || req.id,
       req.site,
       req.date,
       `Rs. ${req.amount.toLocaleString()}`,

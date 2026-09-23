@@ -18,7 +18,7 @@ const ProjectsTab = ({
   const { language } = useLanguage();
   const [searchQuery, setSearchQuery] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
-  const itemsPerPage = 12;
+  const itemsPerPage = 6;
 
   const filteredProjects = projects.filter(p => {
     const q = searchQuery.toLowerCase();

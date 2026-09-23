@@ -380,18 +380,24 @@ const ReconciliationTab = ({
   const handleExportExcel = () => {
     try {
       const csvRows = [
-        ['SR NO', 'REQUISITION ID', 'SUPERVISOR', 'SITE LOCATION', 'PURPOSE / REASON', 'URGENCY', 'DATE', 'AMOUNT (INR)', 'STATUS'],
-        ...filteredRequisitions.map((req, idx) => [
-          idx + 1,
-          `"${req.id || ''}"`,
-          `"${req.supervisor || ''}"`,
-          `"${req.site || ''}"`,
-          `"${req.purpose || ''}"`,
-          `"${req.urgency || ''}"`,
-          `"${req.date || ''}"`,
-          req.amount || 0,
-          `"${req.status || 'Approved'}"`
-        ])
+        ['SR NO', 'REQUISITION ID', 'SUPERVISOR', 'SITE LOCATION', 'PURPOSE / REASON', 'URGENCY', 'DATE', 'WALLET (INR)', 'AMOUNT (INR)', 'STATUS'],
+        ...filteredRequisitions.map((req, idx) => {
+          const sId = req.supervisorId || req.supervisor;
+          const wallet = sId ? supervisorWallets[sId] : null;
+          const walletBalance = wallet ? wallet.advance - wallet.spent : 0;
+          return [
+            idx + 1,
+            `"${req.displayId || req.id || ''}"`,
+            `"${req.supervisor || ''}"`,
+            `"${req.site || ''}"`,
+            `"${req.purpose || ''}"`,
+            `"${req.urgency || ''}"`,
+            `"${req.date || ''}"`,
+            walletBalance || 0,
+            req.amount || 0,
+            `"${req.status || 'Approved'}"`
+          ];
+        })
       ];
       const csvContent = 'data:text/csv;charset=utf-8,\uFEFF' + csvRows.map(e => e.join(',')).join('\n');
       const encodedUri = encodeURI(csvContent);
@@ -447,20 +453,26 @@ const ReconciliationTab = ({
       });
 
       // Requisition Table Data
-      const reqData = filteredRequisitions.map(r => [
-        r.id?.slice(0, 8)?.toUpperCase(),
-        r.supervisor || 'Rohit Sharma',
-        r.site,
-        r.purpose,
-        r.urgency,
-        r.date,
-        `Rs. ${(r.amount || 0).toLocaleString('en-IN')}`,
-        r.status
-      ]);
+      const reqData = filteredRequisitions.map(r => {
+        const sId = r.supervisorId || r.supervisor;
+        const wallet = sId ? supervisorWallets[sId] : null;
+        const walletBalance = wallet ? wallet.advance - wallet.spent : 0;
+        return [
+          r.displayId || r.id?.slice(0, 8)?.toUpperCase(),
+          r.supervisor || 'Rohit Sharma',
+          r.site,
+          r.purpose,
+          r.urgency,
+          r.date,
+          `Rs. ${(Number(walletBalance) || 0).toLocaleString('en-IN')}`,
+          `Rs. ${(r.amount || 0).toLocaleString('en-IN')}`,
+          r.status
+        ];
+      });
 
       autoTable(doc, {
         startY: doc.lastAutoTable.finalY + 8,
-        head: [['REQ ID', 'SUPERVISOR', 'SITE LOCATION', 'PURPOSE / REASON', 'URGENCY', 'DATE', 'AMOUNT', 'STATUS']],
+        head: [['REQ ID', 'SUPERVISOR', 'SITE LOCATION', 'PURPOSE / REASON', 'URGENCY', 'DATE', 'WALLET', 'AMOUNT', 'STATUS']],
         body: reqData,
         theme: 'grid',
         styles: { 
@@ -754,7 +766,8 @@ const ReconciliationTab = ({
   // Stats for KPI cards
   const pendingOpsCount = advanceRequisitions.filter(r => r.rawStatus === 'requested').length;
   const pendingOpsTotal = advanceRequisitions.filter(r => r.rawStatus === 'requested').reduce((acc, r) => acc + (r.amount || 0), 0);
-  const forwardedCount = advanceRequisitions.filter(r => r.rawStatus === 'approved' || r.rawStatus === 'disbursed').length;
+  const approvedCount = advanceRequisitions.filter(r => r.rawStatus === 'approved').length;
+  const disbursedCount = advanceRequisitions.filter(r => r.rawStatus === 'disbursed').length;
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem', width: '100%', boxSizing: 'border-box' }}>
@@ -861,9 +874,9 @@ const ReconciliationTab = ({
           </div>
         </div>
 
-        {/* Forwarded to Accounts Card */}
+        {/* Approved Card */}
         <div style={{
-          flex: '1 1 240px', display: 'flex', alignItems: 'center', gap: '1.25rem',
+          flex: '1 1 200px', display: 'flex', alignItems: 'center', gap: '1.25rem',
           padding: '1.25rem 1.5rem', borderRadius: '16px',
           backgroundColor: 'var(--card-bg, #ffffff)',
           border: '1px solid var(--border-color, #e2e8f0)',
@@ -872,24 +885,59 @@ const ReconciliationTab = ({
         }}>
           <div style={{
             position: 'absolute', top: 0, left: 0, width: '4px', height: '100%',
-            backgroundColor: '#3b82f6'
+            backgroundColor: '#10b981'
           }} />
           <div style={{
             width: '48px', height: '48px', borderRadius: '14px',
-            backgroundColor: '#eff6ff', display: 'flex', alignItems: 'center', justifyContent: 'center',
-            boxShadow: '0 2px 5px rgba(59,130,246,0.2)'
+            backgroundColor: '#ecfdf5', display: 'flex', alignItems: 'center', justifyContent: 'center',
+            boxShadow: '0 2px 5px rgba(16,185,129,0.2)'
           }}>
-            <CheckCircle2 size={24} color="#2563eb" />
+            <CheckCircle2 size={24} color="#059669" />
           </div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '0.2rem' }}>
             <div style={{ fontSize: '0.9rem', color: 'var(--text-secondary, #64748b)', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-              Approved / Disbursed
+              Ops Approved
             </div>
             <div style={{ display: 'flex', alignItems: 'baseline', gap: '0.5rem' }}>
               <span style={{ fontSize: '1.75rem', fontWeight: '900', color: 'var(--text-primary, #0f172a)', lineHeight: '1' }}>
-                {forwardedCount}
+                {approvedCount}
               </span>
-              <span style={{ fontSize: '0.9rem', color: '#2563eb', fontWeight: '700' }}>
+              <span style={{ fontSize: '0.9rem', color: '#059669', fontWeight: '700' }}>
+                records
+              </span>
+            </div>
+          </div>
+        </div>
+
+        {/* Disbursed Card */}
+        <div style={{
+          flex: '1 1 200px', display: 'flex', alignItems: 'center', gap: '1.25rem',
+          padding: '1.25rem 1.5rem', borderRadius: '16px',
+          backgroundColor: 'var(--card-bg, #ffffff)',
+          border: '1px solid var(--border-color, #e2e8f0)',
+          boxShadow: '0 4px 15px rgba(0,0,0,0.03)',
+          position: 'relative', overflow: 'hidden'
+        }}>
+          <div style={{
+            position: 'absolute', top: 0, left: 0, width: '4px', height: '100%',
+            backgroundColor: '#0ea5e9'
+          }} />
+          <div style={{
+            width: '48px', height: '48px', borderRadius: '14px',
+            backgroundColor: '#f0f9ff', display: 'flex', alignItems: 'center', justifyContent: 'center',
+            boxShadow: '0 2px 5px rgba(14,165,233,0.2)'
+          }}>
+            <CheckCircle2 size={24} color="#0284c7" />
+          </div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.2rem' }}>
+            <div style={{ fontSize: '0.9rem', color: 'var(--text-secondary, #64748b)', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+              Disbursed
+            </div>
+            <div style={{ display: 'flex', alignItems: 'baseline', gap: '0.5rem' }}>
+              <span style={{ fontSize: '1.75rem', fontWeight: '900', color: 'var(--text-primary, #0f172a)', lineHeight: '1' }}>
+                {disbursedCount}
+              </span>
+              <span style={{ fontSize: '0.9rem', color: '#0284c7', fontWeight: '700' }}>
                 records
               </span>
             </div>
@@ -1210,21 +1258,26 @@ const ReconciliationTab = ({
                               </span>
                             ) : (
                               <>
-                                {/* Approved Badge Button */}
+                                {/* Approved — clearly labelled for Operations user */}
                                 <span
-                                  title="Approved"
+                                  title={req.status === 'Approved' ? 'Approved by Operations — Pending Accountant Disbursal' : req.status === 'Disbursed' ? 'Disbursed by Accounts' : 'Approved'}
                                   style={{
-                                    padding: '0.45rem',
-                                    borderRadius: '8px',
-                                    border: '1px solid #a7f3d0',
-                                    backgroundColor: '#dcfce7',
-                                    color: '#059669',
                                     display: 'inline-flex',
                                     alignItems: 'center',
-                                    justifyContent: 'center'
+                                    gap: '4px',
+                                    padding: '4px 10px',
+                                    borderRadius: '20px',
+                                    border: req.status === 'Disbursed' ? '1px solid #7dd3fc' : '1px solid #a7f3d0',
+                                    backgroundColor: req.status === 'Disbursed' ? '#e0f2fe' : '#dcfce7',
+                                    color: req.status === 'Disbursed' ? '#0284c7' : '#059669',
+                                    fontSize: '0.72rem',
+                                    fontWeight: '700',
+                                    whiteSpace: 'nowrap',
+                                    letterSpacing: '0.01em'
                                   }}
                                 >
-                                  <CheckCircle2 size={16} style={{ color: '#059669' }} />
+                                  <CheckCircle2 size={13} />
+                                  {req.status === 'Disbursed' ? '✓ Paid Out' : '✓ Approved'}
                                 </span>
                               </>
                             )}
