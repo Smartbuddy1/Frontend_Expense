@@ -273,7 +273,7 @@ const OperationsDashboard = () => {
           await axios.patch(`${API}/projects/${pid}`, { supervisorId: supData.id });
         }
         for (const pid of toRemove) {
-          await axios.patch(`${API}/projects/${pid}`, { supervisorId: null });
+          await axios.patch(`${API}/projects/${pid}`, { supervisorId: 'UNASSIGN' });
         }
         
         toast.success(`Supervisor "${fullName}" updated successfully!`);
