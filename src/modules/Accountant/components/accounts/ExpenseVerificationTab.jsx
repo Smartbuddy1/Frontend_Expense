@@ -56,7 +56,7 @@ const ExpenseVerificationTab = ({
   };
 
   const filteredExpenses = expenses.filter(exp => {
-    // Only show expenses if operations has approved them
+    // Only show expenses that have passed operations verification OR were rejected by accounts
     if (exp.opsVerificationStatus !== 'Verified') {
       return false;
     }
@@ -72,7 +72,7 @@ const ExpenseVerificationTab = ({
       statusFilter === 'ALL' ||
       (statusFilter === 'PENDING' && exp.status === 'Pending Accounts Verification') ||
       (statusFilter === 'VERIFIED' && exp.status === 'Accounts Verified & Paid') ||
-      (statusFilter === 'REJECTED' && exp.status === 'Rejected');
+      (statusFilter === 'REJECTED' && (exp.status === 'Rejected' || exp.accountsRejected));
 
     const matchesSupervisor = selectedSupervisor === 'ALL' || exp.supervisor === selectedSupervisor;
     const matchesProject = selectedProject === 'ALL' || exp.projectId === selectedProject;
@@ -85,6 +85,7 @@ const ExpenseVerificationTab = ({
   const categories = [...new Set(expenses.map(e => e.category))];
   const pendingCount = expenses.filter(e => e.status === 'Pending Accounts Verification').length;
   const verifiedCount = expenses.filter(e => e.status === 'Accounts Verified & Paid').length;
+  const rejectedCount = expenses.filter(e => e.accountsRejected === true).length;
 
   const totalPages = Math.ceil(filteredExpenses.length / itemsPerPage);
   const currentExpenses = filteredExpenses.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
@@ -316,6 +317,43 @@ const ExpenseVerificationTab = ({
             </span>
           </div>
         </div>
+
+        {/* Rejected Card */}
+        <div 
+          onClick={() => setStatusFilter('REJECTED')}
+          style={{
+          backgroundColor: 'var(--surface-bg, #ffffff)',
+          borderRadius: '18px',
+          padding: '1.15rem 1.25rem',
+          border: statusFilter === 'REJECTED' ? '2px solid #dc2626' : '1px solid var(--border-color, #e2e8f0)',
+          boxShadow: '0 4px 18px rgba(0, 0, 0, 0.03)',
+          display: 'flex',
+          flexDirection: 'column',
+          justifyContent: 'space-between',
+          minHeight: '135px',
+          cursor: 'pointer',
+          transition: 'all 0.2s ease'
+        }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+            <div>
+              <p style={{ color: 'var(--text-secondary, #64748b)', fontSize: '0.85rem', fontWeight: '600', marginBottom: '0.2rem', textTransform: 'uppercase', letterSpacing: '0.04em' }}>Rejected</p>
+              <h3 style={{ color: 'var(--text-primary, #0f172a)', fontSize: '1.75rem', fontWeight: '800', margin: 0, letterSpacing: '-0.02em' }}>{rejectedCount}</h3>
+            </div>
+            <div style={{ padding: '0.75rem', borderRadius: '14px', backgroundColor: '#fee2e2' }}>
+              <XCircle size={24} color="#dc2626" />
+            </div>
+          </div>
+          <div style={{ marginTop: '0.75rem' }}>
+            <span style={{
+              display: 'inline-flex', alignItems: 'center', gap: '0.3rem',
+              padding: '0.25rem 0.65rem', borderRadius: '20px',
+              backgroundColor: '#fee2e2', color: '#dc2626',
+              fontSize: '0.75rem', fontWeight: '700'
+            }}>
+              <XCircle size={12} /> Accounts Rejected
+            </span>
+          </div>
+        </div>
       </div>
 
       {/* Top Right Action Header (Hidden in Print) */}
@@ -503,7 +541,7 @@ const ExpenseVerificationTab = ({
                 currentExpenses.map((exp) => {
                   const isPending = exp.status === 'Pending Accounts Verification';
                   const isVerified = exp.status === 'Accounts Verified & Paid';
-                  const isRejected = exp.status === 'Sent for Correction' || exp.status === 'Rejected';
+                  const isRejected = exp.status === 'Rejected' || exp.accountsRejected === true;
 
                   return (
                     <tr 
@@ -676,7 +714,7 @@ const ExpenseVerificationTab = ({
                             backgroundColor: 'rgba(239, 68, 68, 0.15)',
                             color: '#ef4444'
                           }}>
-                            <XCircle size={12} /> Sent for Correction
+                            <XCircle size={12} /> Accounts Rejected
                           </span>
                         )}
                       </td>

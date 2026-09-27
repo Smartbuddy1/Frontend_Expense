@@ -1,10 +1,10 @@
 import React from 'react';
-import { 
-  Wallet, 
-  Send, 
-  CheckCircle2, 
-  Clock, 
-  TrendingUp, 
+import {
+  Wallet,
+  Send,
+  CheckCircle2,
+  Clock,
+  TrendingUp,
   TrendingDown,
   AlertCircle,
   XCircle,
@@ -28,12 +28,16 @@ const KPIHeaderCards = ({ projects, expenses, advances, settlements, onNavigateT
   const totalFundsReleased = totalAdvancesDisbursed;
   const fundedSitesCount = new Set(advances.filter(a => a.status === 'Disbursed').map(a => a.projectId)).size;
 
-  const totalProjectExpenses = expenses
+  const walletDeductedExpenses = expenses
     .filter(e => e.status === 'Accounts Verified & Paid' || e.status === 'Pending Accounts Verification')
     .reduce((acc, e) => acc + (e.amount || 0), 0);
 
+  const totalApprovedExpenses = expenses
+    .filter(e => e.status === 'Accounts Verified & Paid')
+    .reduce((acc, e) => acc + (e.amount || 0), 0);
+
   // Wallet balance across all sites = total advances disbursed minus ops_approved and accounts_paid expenses
-  const totalSupervisorWalletBalance = totalAdvancesDisbursed - totalProjectExpenses;
+  const totalSupervisorWalletBalance = totalAdvancesDisbursed - walletDeductedExpenses;
 
   const pendingVerificationList = expenses.filter(e => e.status === 'Pending Accounts Verification');
   const pendingVerificationAmount = pendingVerificationList.reduce((acc, e) => acc + (e.amount || 0), 0);
@@ -47,15 +51,15 @@ const KPIHeaderCards = ({ projects, expenses, advances, settlements, onNavigateT
   const totalPendingAmount = pendingVerificationAmount + pendingAdvancesAmount;
   const totalPendingCount = pendingVerificationList.length + pendingAdvancesList.length + pendingSettlementsList.length;
 
-  const budgetVariance = totalBudget - totalProjectExpenses;
+  const budgetVariance = totalBudget - totalApprovedExpenses;
   const walletFundPercent = totalFundsReleased > 0 ? ((totalSupervisorWalletBalance / totalFundsReleased) * 100).toFixed(1) : 0;
-  const spentPercent = totalFundsReleased > 0 ? ((totalProjectExpenses / totalFundsReleased) * 100).toFixed(1) : 0;
+  const spentPercent = totalFundsReleased > 0 ? ((totalApprovedExpenses / totalFundsReleased) * 100).toFixed(1) : 0;
 
   const totalAuditItems = expenses.length;
   const verifiedExpensesCount = expenses.filter(e => e.status === 'Accounts Verified & Paid').length;
   const pendingAuditCount = totalAuditItems - verifiedExpensesCount;
-  const auditReadinessPercent = totalAuditItems > 0 
-    ? Math.round((verifiedExpensesCount / totalAuditItems) * 100) 
+  const auditReadinessPercent = totalAuditItems > 0
+    ? Math.round((verifiedExpensesCount / totalAuditItems) * 100)
     : 100;
   const isFullyAuditReady = auditReadinessPercent === 100 && correctionList.length === 0;
 
@@ -81,7 +85,7 @@ const KPIHeaderCards = ({ projects, expenses, advances, settlements, onNavigateT
     {
       id: 'expenses',
       title: 'Total Expenses',
-      value: formatINR(totalProjectExpenses),
+      value: formatINR(totalApprovedExpenses),
       icon: Receipt,
       iconBg: '#7c3aed', // Purple
       pillText: `${spentPercent}% of released`,
@@ -178,7 +182,7 @@ const KPIHeaderCards = ({ projects, expenses, advances, settlements, onNavigateT
               </div>
 
               {/* Right Side Solid Vibrant Colored Rounded Square */}
-              <div 
+              <div
                 className="kpi-icon-box"
                 style={{
                   width: '44px',
@@ -208,16 +212,16 @@ const KPIHeaderCards = ({ projects, expenses, advances, settlements, onNavigateT
                 fontSize: '0.72rem',
                 fontWeight: '700',
                 whiteSpace: 'nowrap',
-                backgroundColor: isDanger 
-                  ? '#fee2e2' 
-                  : isWarning 
-                  ? '#fef3c7' 
-                  : '#dcfce7',
-                color: isDanger 
-                  ? '#b91c1c' 
-                  : isWarning 
-                  ? '#b45309' 
-                  : '#15803d'
+                backgroundColor: isDanger
+                  ? '#fee2e2'
+                  : isWarning
+                    ? '#fef3c7'
+                    : '#dcfce7',
+                color: isDanger
+                  ? '#b91c1c'
+                  : isWarning
+                    ? '#b45309'
+                    : '#15803d'
               }}>
                 {isDanger ? (
                   <TrendingDown size={12} strokeWidth={2.5} />

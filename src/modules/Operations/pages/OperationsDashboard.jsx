@@ -65,6 +65,7 @@ const EXPENSE_STATUS_TO_DISPLAY = {
   ops_approved: 'Approved',
   ops_rejected: 'Rejected',
   accounts_paid: 'Paid',
+  accounts_rejected: 'Accounts Rejected',
 };
 const sanitizeUrl = (url) => {
   if (!url) return null;
@@ -93,6 +94,8 @@ const mapExpense = (e) => {
     vendor: e.vendorName || '',
     amount: Number(e.amount),
     status: EXPENSE_STATUS_TO_DISPLAY[e.status] || 'Pending',
+    opsRejected: e.status === 'ops_rejected',
+    accountsRejected: e.status === 'accounts_rejected',
     billPhotoUrl: sanitizeUrl(e.receiptUrl),
     reviewNotes: e.opsRemarks || '',
   };

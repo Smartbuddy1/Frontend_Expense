@@ -44,12 +44,15 @@ const EXPENSE_STATUS_TO_DISPLAY = {
   ops_approved: 'Pending Accounts Verification',
   accounts_paid: 'Accounts Verified & Paid',
   ops_rejected: 'Rejected',
+  accounts_rejected: 'Rejected',
+  rejected: 'Rejected',
 };
 
 const ADVANCE_STATUS_TO_DISPLAY = {
   requested: 'Pending Operations Approval',
   approved: 'Pending Accounts Payment',
   rejected: 'Rejected',
+  accounts_rejected: 'Rejected',
   disbursed: 'Disbursed',
 };
 
@@ -93,6 +96,7 @@ const mapExpenseForAccounts = (e) => ({
   status: EXPENSE_STATUS_TO_DISPLAY[e.status] || 'Pending Operations Approval',
   opsApproval: e.opsApprovedById ? { status: 'Approved', approvedBy: e.opsApprovedBy?.name || 'Operations' } : (e.status === 'ops_rejected' ? { status: 'Rejected' } : null),
   opsVerificationStatus: e.status === 'submitted' ? 'Pending' : (e.status === 'ops_rejected' ? 'Rejected' : 'Verified'),
+  accountsRejected: e.status === 'rejected' || e.status === 'accounts_rejected',
   urgency: 'Regular', // Expenses don't have urgency in schema, default to Regular
   submittedAt: e.createdAt,
 });
@@ -542,7 +546,7 @@ const Dashboard = () => {
           projects={projects}
           onInspectExpense={(exp) => setInspectingExpense(exp)}
           onQuickApprove={(exp) => handleApproveExpense(exp)}
-          onRejectExpense={(exp) => setCorrectingItem(exp)}
+          onRejectExpense={(exp) => handleRejectExpense(exp, 'Rejected by Accountant')}
         />
       )}
 
@@ -553,9 +557,9 @@ const Dashboard = () => {
           advances={advances}
           onNavigateTab={(tab) => handleTabChange(tab)}
           onQuickApprove={(exp) => handleApproveExpense(exp)}
-          onRejectExpense={(exp) => setCorrectingItem(exp)}
+          onRejectExpense={(exp) => handleRejectExpense(exp, 'Rejected by Accountant')}
           onDisburseAdvance={(adv) => handleTriggerAdvancePayment(adv)}
-          onRejectAdvance={(adv) => setCorrectingItem(adv)}
+          onRejectAdvance={(adv) => handleRejectAdvance(adv, 'Rejected by Accountant')}
         />
       )}
 
@@ -580,10 +584,7 @@ const Dashboard = () => {
           expense={inspectingExpense}
           onClose={() => setInspectingExpense(null)}
           onApprove={(exp) => handleApproveExpense(exp)}
-          onReject={(exp) => {
-            setCorrectingItem(exp);
-            setInspectingExpense(null);
-          }}
+          onReject={(exp) => handleRejectExpense(exp, 'Rejected by Accountant')}
         />
       )}
 

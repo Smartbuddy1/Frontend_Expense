@@ -1,23 +1,23 @@
 import React from 'react';
-import { 
-  ResponsiveContainer, 
-  BarChart, 
-  Bar, 
-  XAxis, 
-  YAxis, 
-  Tooltip, 
-  Legend, 
-  PieChart, 
-  Pie, 
+import {
+  ResponsiveContainer,
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  Tooltip,
+  Legend,
+  PieChart,
+  Pie,
   Cell,
   CartesianGrid
 } from 'recharts';
-import { 
-  Building2, 
-  TrendingUp, 
-  Clock, 
-  Send, 
-  ArrowUpRight, 
+import {
+  Building2,
+  TrendingUp,
+  Clock,
+  Send,
+  ArrowUpRight,
   Zap,
   ExternalLink,
   Wallet,
@@ -33,16 +33,16 @@ import {
   Activity
 } from 'lucide-react';
 
-const OverviewTab = ({ 
-  projects, 
-  expenses, 
-  advances, 
-  settlements, 
+const OverviewTab = ({
+  projects,
+  expenses,
+  advances,
+  settlements,
   auditLogs,
   categories,
   onNavigateTab,
   onInspectExpense,
-  onDisburseAdvance 
+  onDisburseAdvance
 }) => {
   const formatINR = (val) => {
     return new Intl.NumberFormat('en-IN', {
@@ -90,8 +90,8 @@ const OverviewTab = ({
     });
   }
   expenses.forEach(e => {
-    // Only include Approved and Paid equivalents for Accountant
-    if (e.status === 'Pending Accounts Verification' || e.status === 'Accounts Verified & Paid') {
+    // Only count fully approved and paid expenses for the breakdown
+    if (e.status === 'Accounts Verified & Paid') {
       if (e.category) categoryMap[e.category] = (categoryMap[e.category] || 0) + (e.amount || 0);
     }
   });
@@ -148,7 +148,7 @@ const OverviewTab = ({
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '1.75rem' }}>
-      
+
       {/* 1. ACCOUNTS QUICK ACTIONS CARDS GRID (Matching User Sample) */}
       <div>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.1rem' }}>
@@ -193,7 +193,7 @@ const OverviewTab = ({
               >
                 {/* Left: Solid Rounded Color Icon Box + Text */}
                 <div style={{ display: 'flex', alignItems: 'center', gap: '1.1rem', minWidth: 0, flex: 1 }}>
-                  <div 
+                  <div
                     style={{
                       width: '48px',
                       height: '48px',
@@ -247,7 +247,7 @@ const OverviewTab = ({
 
       {/* 2. VISUAL CHARTS GRID */}
       <div className="overview-charts-grid">
-        
+
         {/* Project Financial Comparison (Bar Chart) */}
         <div style={{
           backgroundColor: 'var(--surface-bg)',
@@ -267,7 +267,7 @@ const OverviewTab = ({
                 Site-by-site expenditure and wallet fund comparison
               </p>
             </div>
-            <button 
+            <button
               onClick={() => onNavigateTab('analytics')}
               style={{ background: 'transparent', border: 'none', color: '#3b82f6', fontSize: '0.8rem', fontWeight: '600', display: 'flex', alignItems: 'center', gap: '0.2rem', cursor: 'pointer', flexShrink: 0 }}
             >
@@ -280,22 +280,22 @@ const OverviewTab = ({
               <BarChart data={projectChartData} maxBarSize={28} barGap={4} margin={{ top: 15, right: 10, left: -15, bottom: 25 }}>
                 <CartesianGrid strokeDasharray="3 3" vertical={false} opacity={0.25} />
                 <Legend verticalAlign="top" align="right" iconType="circle" wrapperStyle={{ fontSize: '0.78rem', paddingBottom: '14px' }} />
-                <XAxis 
-                  dataKey="name" 
-                  interval={0} 
+                <XAxis
+                  dataKey="name"
+                  interval={0}
                   tick={({ x, y, payload }) => {
                     if (!payload || !payload.value) return null;
                     const text = String(payload.value);
                     return (
                       <g transform={`translate(${x},${y + 6})`}>
-                        <text 
-                          x={0} 
-                          y={0} 
+                        <text
+                          x={0}
+                          y={0}
                           dy={6}
-                          textAnchor="end" 
-                          transform="rotate(-35)" 
-                          fill="var(--text-secondary)" 
-                          fontSize={10.5} 
+                          textAnchor="end"
+                          transform="rotate(-35)"
+                          fill="var(--text-secondary)"
+                          fontSize={10.5}
                           fontWeight={600}
                         >
                           {text}
@@ -304,11 +304,11 @@ const OverviewTab = ({
                     );
                   }}
                   height={56}
-                  stroke="var(--text-secondary)" 
-                  tickLine={false} 
+                  stroke="var(--text-secondary)"
+                  tickLine={false}
                 />
-                <YAxis stroke="var(--text-secondary)" fontSize={11} tickFormatter={(v) => `₹${v/1000}k`} tickLine={false} />
-                <Tooltip 
+                <YAxis stroke="var(--text-secondary)" fontSize={11} tickFormatter={(v) => `₹${v / 1000}k`} tickLine={false} />
+                <Tooltip
                   formatter={(value, name) => [formatINR(value), name]}
                   contentStyle={{ backgroundColor: 'var(--surface-bg)', borderRadius: '10px', border: '1px solid var(--border-color)', color: 'var(--text-primary)' }}
                 />
@@ -339,7 +339,7 @@ const OverviewTab = ({
                 Top expense categories across all sites
               </p>
             </div>
-            <button 
+            <button
               onClick={() => onNavigateTab('reports')}
               style={{ background: 'transparent', border: 'none', color: '#3b82f6', fontSize: '0.8rem', fontWeight: '600', display: 'flex', alignItems: 'center', gap: '0.2rem', cursor: 'pointer' }}
             >
@@ -364,7 +364,7 @@ const OverviewTab = ({
                       <Cell key={`cell-${index}`} fill={CATEGORY_COLORS[index % CATEGORY_COLORS.length]} />
                     ))}
                   </Pie>
-                  <Tooltip 
+                  <Tooltip
                     formatter={(value, name) => [formatINR(value), name]}
                     contentStyle={{ backgroundColor: 'var(--surface-bg)', borderRadius: '10px', border: '1px solid var(--border-color)', color: 'var(--text-primary)' }}
                   />
@@ -376,9 +376,9 @@ const OverviewTab = ({
               {categoryData.map((cat, idx) => (
                 <div key={idx} className="overview-pie-legend-row">
                   <div className="overview-pie-legend-label">
-                    <span 
-                      className="overview-pie-legend-dot" 
-                      style={{ backgroundColor: CATEGORY_COLORS[idx % CATEGORY_COLORS.length] }} 
+                    <span
+                      className="overview-pie-legend-dot"
+                      style={{ backgroundColor: CATEGORY_COLORS[idx % CATEGORY_COLORS.length] }}
                     />
                     <span className="overview-pie-legend-name">
                       {cat.name}

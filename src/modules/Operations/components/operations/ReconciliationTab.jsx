@@ -5,7 +5,7 @@ import {
   AlertCircle, ArrowUpRight, ArrowDownRight, Building,
   Search, Filter, RefreshCw, UserCheck, ShieldCheck,
   ChevronDown, Phone, IndianRupee, Printer, ExternalLink, Calendar,
-  FileSpreadsheet, MapPin, History, X, Check
+  FileSpreadsheet, MapPin, History, X, Check, XCircle
 } from 'lucide-react';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
@@ -347,6 +347,7 @@ const ReconciliationTab = ({
     if (filterType === 'ReqPending') matchesFilter = item.rawStatus === 'requested';
     if (filterType === 'ReqApproved') matchesFilter = item.rawStatus === 'approved';
     if (filterType === 'ReqDisbursed') matchesFilter = item.rawStatus === 'disbursed';
+    if (filterType === 'ReqRejected') matchesFilter = item.rawStatus === 'rejected';
 
     return matchesSearch && matchesFilter;
   });
@@ -775,6 +776,7 @@ const ReconciliationTab = ({
   const pendingOpsTotal = advanceRequisitions.filter(r => r.rawStatus === 'requested').reduce((acc, r) => acc + (r.amount || 0), 0);
   const approvedCount = advanceRequisitions.filter(r => r.rawStatus === 'approved').length;
   const disbursedCount = advanceRequisitions.filter(r => r.rawStatus === 'disbursed').length;
+  const rejectedCount = advanceRequisitions.filter(r => r.rawStatus === 'rejected').length;
   const totalReqCount = advanceRequisitions.length;
   const totalReqAmount = advanceRequisitions.reduce((acc, r) => acc + (r.amount || 0), 0);
 
@@ -990,6 +992,43 @@ const ReconciliationTab = ({
                 {disbursedCount}
               </span>
               <span style={{ fontSize: '0.9rem', color: '#0284c7', fontWeight: '700' }}>
+                records
+              </span>
+            </div>
+          </div>
+        </div>
+
+        {/* Rejected Card */}
+        <div 
+          onClick={() => setFilterType('ReqRejected')}
+          style={{
+          flex: '1 1 200px', display: 'flex', alignItems: 'center', gap: '1.25rem',
+          padding: '1.25rem 1.5rem', borderRadius: '16px',
+          backgroundColor: filterType === 'ReqRejected' ? 'rgba(239, 68, 68, 0.16)' : 'var(--card-bg, #ffffff)',
+          border: filterType === 'ReqRejected' ? '1px solid #ef4444' : '1px solid var(--border-color, #e2e8f0)',
+          boxShadow: filterType === 'ReqRejected' ? '0 4px 15px rgba(239, 68, 68, 0.15)' : '0 4px 15px rgba(0,0,0,0.03)',
+          position: 'relative', overflow: 'hidden', cursor: 'pointer', transition: 'all 0.2s ease'
+        }}>
+          <div style={{
+            position: 'absolute', top: 0, left: 0, width: '4px', height: '100%',
+            backgroundColor: '#ef4444'
+          }} />
+          <div style={{
+            width: '48px', height: '48px', borderRadius: '14px',
+            backgroundColor: 'rgba(239, 68, 68, 0.18)', display: 'flex', alignItems: 'center', justifyContent: 'center',
+            boxShadow: '0 2px 5px rgba(239, 68, 68, 0.2)'
+          }}>
+            <XCircle size={24} color="#ef4444" />
+          </div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.2rem' }}>
+            <div style={{ fontSize: '0.9rem', color: 'var(--text-secondary, #64748b)', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+              Rejected
+            </div>
+            <div style={{ display: 'flex', alignItems: 'baseline', gap: '0.5rem' }}>
+              <span style={{ fontSize: '1.75rem', fontWeight: '900', color: 'var(--text-primary, #0f172a)', lineHeight: '1' }}>
+                {rejectedCount}
+              </span>
+              <span style={{ fontSize: '0.9rem', color: '#ef4444', fontWeight: '700' }}>
                 records
               </span>
             </div>

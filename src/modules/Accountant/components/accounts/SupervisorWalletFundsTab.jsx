@@ -101,9 +101,9 @@ const SupervisorWalletFundsTab = ({
       req.purpose.toLowerCase().includes(q) ||
       req.amount.toString().includes(q) ||
       req.urgency.toLowerCase().includes(q);
-      
+
     const matchesStatus = statusFilter === 'ALL' || req.rowType === statusFilter.toLowerCase();
-    
+
     return matchesSearch && matchesStatus;
   });
 
@@ -162,15 +162,15 @@ const SupervisorWalletFundsTab = ({
           ];
         }),
         theme: 'grid',
-        styles: { 
+        styles: {
           fontSize: 8,
           lineColor: [37, 99, 235],
           lineWidth: 0.1,
         },
-        headStyles: { 
-          fillColor: [16, 185, 129], 
+        headStyles: {
+          fillColor: [16, 185, 129],
           textColor: [255, 255, 255],
-          fontStyle: 'bold' 
+          fontStyle: 'bold'
         },
         alternateRowStyles: { fillColor: [248, 250, 252] },
         bodyStyles: (row) => row.rowType === 'disbursed' ? { fillColor: [240, 253, 244] } : {},
@@ -250,16 +250,16 @@ const SupervisorWalletFundsTab = ({
       {/* Top bar: Stats Cards */}
       <div style={{ display: 'flex', gap: '1.25rem', flexWrap: 'wrap' }}>
         {/* All Requests Card */}
-        <div 
+        <div
           onClick={() => setStatusFilter('ALL')}
           style={{
-          flex: '1 1 200px', display: 'flex', alignItems: 'center', gap: '1.25rem',
-          padding: '1.25rem 1.5rem', borderRadius: '16px',
-          backgroundColor: 'var(--card-bg, #ffffff)',
-          border: statusFilter === 'ALL' ? '2px solid #4f46e5' : '1px solid var(--border-color, #e2e8f0)',
-          boxShadow: '0 4px 15px rgba(0,0,0,0.03)',
-          position: 'relative', overflow: 'hidden', cursor: 'pointer', transition: 'all 0.2s ease'
-        }}>
+            flex: '1 1 200px', display: 'flex', alignItems: 'center', gap: '1.25rem',
+            padding: '1.25rem 1.5rem', borderRadius: '16px',
+            backgroundColor: 'var(--card-bg, #ffffff)',
+            border: statusFilter === 'ALL' ? '2px solid #4f46e5' : '1px solid var(--border-color, #e2e8f0)',
+            boxShadow: '0 4px 15px rgba(0,0,0,0.03)',
+            position: 'relative', overflow: 'hidden', cursor: 'pointer', transition: 'all 0.2s ease'
+          }}>
           <div style={{
             position: 'absolute', top: 0, left: 0, width: '4px', height: '100%',
             backgroundColor: '#4f46e5'
@@ -284,16 +284,16 @@ const SupervisorWalletFundsTab = ({
         </div>
 
         {/* Pending Card */}
-        <div 
+        <div
           onClick={() => setStatusFilter('PENDING')}
           style={{
-          flex: '1 1 200px', display: 'flex', alignItems: 'center', gap: '1.25rem',
-          padding: '1.25rem 1.5rem', borderRadius: '16px',
-          backgroundColor: 'var(--card-bg, #ffffff)',
-          border: statusFilter === 'PENDING' ? '2px solid #eab308' : '1px solid var(--border-color, #e2e8f0)',
-          boxShadow: '0 4px 15px rgba(0,0,0,0.03)',
-          position: 'relative', overflow: 'hidden', cursor: 'pointer', transition: 'all 0.2s ease'
-        }}>
+            flex: '1 1 200px', display: 'flex', alignItems: 'center', gap: '1.25rem',
+            padding: '1.25rem 1.5rem', borderRadius: '16px',
+            backgroundColor: 'var(--card-bg, #ffffff)',
+            border: statusFilter === 'PENDING' ? '2px solid #eab308' : '1px solid var(--border-color, #e2e8f0)',
+            boxShadow: '0 4px 15px rgba(0,0,0,0.03)',
+            position: 'relative', overflow: 'hidden', cursor: 'pointer', transition: 'all 0.2s ease'
+          }}>
           <div style={{
             position: 'absolute', top: 0, left: 0, width: '4px', height: '100%',
             backgroundColor: '#eab308'
@@ -321,16 +321,16 @@ const SupervisorWalletFundsTab = ({
         </div>
 
         {/* Disbursed Card */}
-        <div 
+        <div
           onClick={() => setStatusFilter('DISBURSED')}
           style={{
-          flex: '1 1 200px', display: 'flex', alignItems: 'center', gap: '1.25rem',
-          padding: '1.25rem 1.5rem', borderRadius: '16px',
-          backgroundColor: 'var(--card-bg, #ffffff)',
-          border: statusFilter === 'DISBURSED' ? '2px solid #10b981' : '1px solid var(--border-color, #e2e8f0)',
-          boxShadow: '0 4px 15px rgba(0,0,0,0.03)',
-          position: 'relative', overflow: 'hidden', cursor: 'pointer', transition: 'all 0.2s ease'
-        }}>
+            flex: '1 1 200px', display: 'flex', alignItems: 'center', gap: '1.25rem',
+            padding: '1.25rem 1.5rem', borderRadius: '16px',
+            backgroundColor: 'var(--card-bg, #ffffff)',
+            border: statusFilter === 'DISBURSED' ? '2px solid #10b981' : '1px solid var(--border-color, #e2e8f0)',
+            boxShadow: '0 4px 15px rgba(0,0,0,0.03)',
+            position: 'relative', overflow: 'hidden', cursor: 'pointer', transition: 'all 0.2s ease'
+          }}>
           <div style={{
             position: 'absolute', top: 0, left: 0, width: '4px', height: '100%',
             backgroundColor: '#10b981'
@@ -386,8 +386,8 @@ const SupervisorWalletFundsTab = ({
           <button onClick={handleDownloadPDF} style={btnStyle('#4f46e5', '#eef2ff', '#c7d2fe')}>
             <Download size={15} style={{ color: '#4f46e5' }} /> PDF
           </button>
-          
-          
+
+
         </div>
       </div>
 

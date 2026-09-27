@@ -58,6 +58,7 @@ const ExpensesTab = ({
   const approvedClaims = expenses.filter(e => e.status === 'Approved');
   const approvedAmount = approvedClaims.reduce((acc, curr) => acc + (curr.amount || 0), 0);
   const rejectedClaims = expenses.filter(e => e.status === 'Rejected');
+  const accountsRejectedClaims = expenses.filter(e => e.status === 'Accounts Rejected');
 
   // Unique supervisors list for filter dropdown
   const uniqueSupervisors = Array.from(new Set([
@@ -591,6 +592,98 @@ const ExpensesTab = ({
             </div>
           </div>
         </div>
+
+        {/* Card 5: Rejected Bills (Red Left Border - Filters Rejected) */}
+        <div
+          onClick={() => {
+            setStatusFilter('Rejected');
+            setShowBudgetBreakdown(false);
+          }}
+          style={{
+            backgroundColor: statusFilter === 'Rejected' && !showBudgetBreakdown ? 'rgba(239, 68, 68, 0.16)' : 'var(--card-bg, #ffffff)',
+            borderRadius: '16px',
+            border: statusFilter === 'Rejected' && !showBudgetBreakdown ? '2px solid #ef4444' : '1px solid var(--border-color, #e8ecf2)',
+            borderLeft: '5px solid #ef4444',
+            boxShadow: statusFilter === 'Rejected' && !showBudgetBreakdown ? '0 8px 20px -4px rgba(239, 68, 68, 0.25)' : '0 2px 8px rgba(0, 0, 0, 0.02)',
+            padding: '1.2rem 1.4rem',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '1.15rem',
+            cursor: 'pointer',
+            transform: statusFilter === 'Rejected' && !showBudgetBreakdown ? 'translateY(-2px)' : 'none',
+            transition: 'all 0.15s ease'
+          }}
+          onMouseEnter={(e) => e.currentTarget.style.transform = 'translateY(-3px)'}
+          onMouseLeave={(e) => e.currentTarget.style.transform = statusFilter === 'Rejected' && !showBudgetBreakdown ? 'translateY(-2px)' : 'translateY(0)'}
+        >
+          <div style={{
+            width: '52px',
+            height: '52px',
+            borderRadius: '50%',
+            backgroundColor: 'rgba(239, 68, 68, 0.18)',
+            color: '#ef4444',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            flexShrink: 0
+          }}>
+            <XCircle size={22} strokeWidth={2.4} />
+          </div>
+          <div>
+            <div style={{ fontSize: '1.85rem', fontWeight: '800', color: 'var(--text-primary, #0f172a)', lineHeight: 1.1 }}>
+              {rejectedClaims.length}
+            </div>
+            <div style={{ fontSize: '0.88rem', fontWeight: '600', color: 'var(--text-secondary, #64748b)', marginTop: '0.2rem' }}>
+              Rejected Bills
+            </div>
+          </div>
+        </div>
+
+        {/* Card 6: Accounts Rejected (Orange Left Border - Filters Accounts Rejected) */}
+        <div
+          onClick={() => {
+            setStatusFilter('Accounts Rejected');
+            setShowBudgetBreakdown(false);
+          }}
+          style={{
+            backgroundColor: statusFilter === 'Accounts Rejected' && !showBudgetBreakdown ? 'rgba(249, 115, 22, 0.16)' : 'var(--card-bg, #ffffff)',
+            borderRadius: '16px',
+            border: statusFilter === 'Accounts Rejected' && !showBudgetBreakdown ? '2px solid #f97316' : '1px solid var(--border-color, #e8ecf2)',
+            borderLeft: '5px solid #f97316',
+            boxShadow: statusFilter === 'Accounts Rejected' && !showBudgetBreakdown ? '0 8px 20px -4px rgba(249, 115, 22, 0.25)' : '0 2px 8px rgba(0, 0, 0, 0.02)',
+            padding: '1.2rem 1.4rem',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '1.15rem',
+            cursor: 'pointer',
+            transform: statusFilter === 'Accounts Rejected' && !showBudgetBreakdown ? 'translateY(-2px)' : 'none',
+            transition: 'all 0.15s ease'
+          }}
+          onMouseEnter={(e) => e.currentTarget.style.transform = 'translateY(-3px)'}
+          onMouseLeave={(e) => e.currentTarget.style.transform = statusFilter === 'Accounts Rejected' && !showBudgetBreakdown ? 'translateY(-2px)' : 'translateY(0)'}
+        >
+          <div style={{
+            width: '52px',
+            height: '52px',
+            borderRadius: '50%',
+            backgroundColor: 'rgba(249, 115, 22, 0.18)',
+            color: '#f97316',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            flexShrink: 0
+          }}>
+            <AlertCircle size={22} strokeWidth={2.4} />
+          </div>
+          <div>
+            <div style={{ fontSize: '1.85rem', fontWeight: '800', color: 'var(--text-primary, #0f172a)', lineHeight: 1.1 }}>
+              {accountsRejectedClaims.length}
+            </div>
+            <div style={{ fontSize: '0.88rem', fontWeight: '600', color: 'var(--text-secondary, #64748b)', marginTop: '0.2rem' }}>
+              Accounts Rejected
+            </div>
+          </div>
+        </div>
       </div>
 
       {/* 📊 Expandable Active Projects Expense Breakdown */}
@@ -855,6 +948,7 @@ const ExpensesTab = ({
                     const isApproved = exp.status === 'Approved';
                   const isPaid = exp.status === 'Paid';
                   const isRejected = exp.status === 'Rejected';
+                  const isAccountsRejected = exp.status === 'Accounts Rejected';
 
                 return (
                   <tr
@@ -1042,6 +1136,27 @@ const ExpensesTab = ({
                           >
                             <CheckCircle2 size={13} />
                             {isPaid ? '✓ Paid' : '✓ Approved'}
+                          </span>
+                        ) : isAccountsRejected ? (
+                          <span
+                            title="Rejected by Accounts"
+                            style={{
+                              display: 'inline-flex',
+                              alignItems: 'center',
+                              gap: '4px',
+                              padding: '4px 10px',
+                              borderRadius: '20px',
+                              backgroundColor: 'rgba(249, 115, 22, 0.12)',
+                              border: '1px solid rgba(249, 115, 22, 0.3)',
+                              color: '#ea580c',
+                              fontSize: '0.72rem',
+                              fontWeight: '700',
+                              whiteSpace: 'nowrap',
+                              cursor: 'default'
+                            }}
+                          >
+                            <AlertCircle size={13} />
+                            Accounts Rejected
                           </span>
                         ) : (
                           <span
