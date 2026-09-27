@@ -115,7 +115,7 @@ const ReceiptViewerModal = ({ expense, onClose, onApprove, onReject }) => {
           }}>
             {expense.billUrl ? (
               <img
-                src={expense.billUrl.startsWith('http') ? expense.billUrl : `${import.meta.env.VITE_API_BASE_URL || ''}${expense.billUrl.startsWith('/') ? '' : '/'}${expense.billUrl}`}
+                src={expense.billUrl}
                 alt="Bill Receipt"
                 style={{
                   maxWidth: '100%',
