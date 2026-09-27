@@ -61,6 +61,17 @@ const Dashboard = () => {
   const isAllProjects = true;
 
   const [activeModal, setActiveModal] = useState(null); // 'expense', 'advance', 'bill', null
+  const [viewReceiptModal, setViewReceiptModal] = useState(null);
+
+  // Helper function to build full URLs for receipts
+  const sanitizeUrl = (url) => {
+    if (!url) return null;
+    if (url.startsWith('http://') || url.startsWith('https://') || url.startsWith('blob:')) {
+      return url;
+    }
+    const baseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000';
+    return `${baseUrl}${url.startsWith('/') ? '' : '/'}${url}`;
+  };
   const [expenseForm, setExpenseForm] = useState({
     category: '',
     projectId: '',
@@ -238,7 +249,7 @@ const Dashboard = () => {
       description: t('descExpenses'),
       icon: <ReceiptText className="w-6 h-6 text-white" />,
       iconBg: '#f97316',
-      action: () => navigate('/daily-expenses')
+      action: () => navigate('/daily-expenses', { state: { openModal: true } })
     },
     {
       id: 'assigned-projects',
@@ -254,7 +265,7 @@ const Dashboard = () => {
       description: t('descAdvance'),
       icon: <Banknote className="w-6 h-6 text-white" />,
       iconBg: '#10b981',
-      action: () => navigate('/request-advance')
+      action: () => navigate('/request-advance', { state: { openModal: true } })
     },
     {
       id: 'track-settlement',
@@ -730,7 +741,7 @@ const Dashboard = () => {
                     <td data-label="RECEIPT" style={{ padding: '0.85rem 1rem', textAlign: 'center', whiteSpace: 'nowrap' }}>
                       {exp.receipt ? (
                         <button 
-                          onClick={() => toast.info(`Showing receipt for ${exp.id}`)}
+                          onClick={() => setViewReceiptModal(exp)}
                           style={{
                             background: 'rgba(59, 130, 246, 0.1)',
                             color: '#3b82f6',
@@ -1315,6 +1326,88 @@ const Dashboard = () => {
               }}
             >
               Confirm & Submit Voucher
+            </button>
+          </div>
+        </div>
+      )}
+      {/* View Receipt Modal */}
+      {viewReceiptModal && (
+        <div style={{
+          position: 'fixed',
+          inset: 0,
+          backgroundColor: 'rgba(0, 0, 0, 0.6)',
+          backdropFilter: 'blur(4px)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          zIndex: 1000,
+          padding: '1rem'
+        }}
+          onClick={() => setViewReceiptModal(null)}
+        >
+          <div
+            style={{
+              backgroundColor: 'var(--surface-bg)',
+              borderRadius: '1.25rem',
+              width: '100%',
+              maxWidth: '500px',
+              padding: '1.75rem',
+              boxShadow: '0 20px 40px rgba(0,0,0,0.3)',
+              border: '1px solid var(--border-color)',
+              position: 'relative'
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                <ReceiptText color="#3b82f6" />
+                <h3 style={{ fontSize: '1.2rem', fontWeight: '800', color: 'var(--text-primary)', margin: 0 }}>
+                  {language === 'mr' ? 'पावती / बिल (Receipt)' : language === 'hi' ? 'रसीद / बिल (Receipt)' : 'Receipt / Bill'}
+                </h3>
+              </div>
+              <button
+                onClick={() => setViewReceiptModal(null)}
+                style={{ background: 'transparent', border: 'none', fontSize: '1.4rem', color: 'var(--text-secondary)', cursor: 'pointer' }}
+              >
+                ✕
+              </button>
+            </div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', alignItems: 'center' }}>
+              {viewReceiptModal.receiptUrl ? (
+                <img
+                  src={sanitizeUrl(viewReceiptModal.receiptUrl)}
+                  alt="Receipt Preview"
+                  style={{ width: '100%', maxHeight: '60vh', objectFit: 'contain', borderRadius: '0.75rem', border: '1px solid var(--border-color)' }}
+                  onError={(e) => {
+                    e.target.onerror = null;
+                    e.target.src = 'https://via.placeholder.com/400x500?text=Receipt+Not+Found';
+                  }}
+                />
+              ) : (
+                <div style={{ width: '100%', padding: '3rem 1rem', background: 'var(--card-bg)', borderRadius: '0.75rem', textAlign: 'center', border: '1px dashed var(--border-color)' }}>
+                  <AlertCircle size={40} color="#94a3b8" style={{ margin: '0 auto 1rem' }} />
+                  <p style={{ margin: 0, color: 'var(--text-secondary)', fontSize: '0.95rem' }}>
+                    {language === 'mr' ? 'या खर्चासाठी कोणतीही पावती उपलब्ध नाही.' : language === 'hi' ? 'इस खर्च के लिए कोई रसीद उपलब्ध नहीं है।' : 'No receipt image available for this expense.'}
+                  </p>
+                </div>
+              )}
+              {viewReceiptModal.receiptName && (
+                <p style={{ margin: 0, fontSize: '0.9rem', color: 'var(--text-secondary)', alignSelf: 'flex-start' }}>
+                  <strong>File:</strong> {viewReceiptModal.receiptName}
+                </p>
+              )}
+            </div>
+            <button
+              onClick={() => setViewReceiptModal(null)}
+              style={{
+                width: '100%', padding: '0.75rem', borderRadius: '0.75rem',
+                background: 'var(--card-bg)', color: 'var(--text-primary)', border: '1px solid var(--border-color)',
+                fontWeight: '700', fontSize: '0.95rem', cursor: 'pointer', marginTop: '1.25rem', transition: 'all 0.2s ease'
+              }}
+              onMouseEnter={(e) => e.currentTarget.style.background = 'var(--surface-bg)'}
+              onMouseLeave={(e) => e.currentTarget.style.background = 'var(--card-bg)'}
+            >
+              {language === 'mr' ? 'बंद करा' : language === 'hi' ? 'बंद करें' : 'Close'}
             </button>
           </div>
         </div>

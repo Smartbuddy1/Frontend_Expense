@@ -17,6 +17,7 @@ const SupervisorWalletFundsTab = ({
   onRejectAdvance,
 }) => {
   const [searchQuery, setSearchQuery] = useState('');
+  const [statusFilter, setStatusFilter] = useState('ALL');
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 15;
 
@@ -93,13 +94,17 @@ const SupervisorWalletFundsTab = ({
   // ── Search + pagination ───────────────────────────────────────────────────
   const filtered = allRows.filter(req => {
     const q = (searchQuery || '').toLowerCase();
-    return !q ||
+    const matchesSearch = !q ||
       req.id.toLowerCase().includes(q) ||
       (req.supervisor && req.supervisor.toLowerCase().includes(q)) ||
       req.site.toLowerCase().includes(q) ||
       req.purpose.toLowerCase().includes(q) ||
       req.amount.toString().includes(q) ||
       req.urgency.toLowerCase().includes(q);
+      
+    const matchesStatus = statusFilter === 'ALL' || req.rowType === statusFilter.toLowerCase();
+    
+    return matchesSearch && matchesStatus;
   });
 
   const totalPages = Math.ceil(filtered.length / itemsPerPage) || 1;
@@ -140,17 +145,22 @@ const SupervisorWalletFundsTab = ({
   // ── Export PDF ─────────────────────────────────────────────────────────────
   const handleDownloadPDF = async () => {
     try {
-      const doc = new jsPDF();
+      const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
       await addPdfHeaderWithLogo(doc, 'Advance Fund Requests', `Generated: ${new Date().toLocaleString()}`);
       autoTable(doc, {
-        startY: 26,
-        head: [['REQ ID', 'SUPERVISOR', 'SITE', 'PURPOSE', 'URGENCY', 'DATE', 'DISBURSED ON', 'AMOUNT', 'STATUS']],
-        body: filtered.map(r => [
-          r.displayId, r.supervisor, r.site, r.purpose, r.urgency, r.date,
-          r.disbursedAt || '—',
-          `Rs. ${(r.amount || 0).toLocaleString('en-IN')}`,
-          r.rowType === 'pending' ? 'Pending Disbursal' : 'Disbursed'
-        ]),
+        startY: 28,
+        margin: { bottom: 35, top: 20 },
+        head: [['REQ ID', 'SUPERVISOR', 'SITE', 'PURPOSE', 'URGENCY', 'REQUESTED ON', 'WALLET BALANCE', 'AMOUNT', 'STATUS']],
+        body: filtered.map(r => {
+          const w = supervisorWallets[r.supervisorId || r.supervisor] || { advance: 0, spent: 0 };
+          const bal = w.advance - w.spent;
+          return [
+            r.displayId, r.supervisor, r.site, r.purpose, r.urgency, r.date,
+            `Rs. ${bal.toLocaleString('en-IN')}`,
+            `Rs. ${(r.amount || 0).toLocaleString('en-IN')}`,
+            r.rowType === 'pending' ? 'Pending Disbursal' : 'Disbursed'
+          ];
+        }),
         theme: 'grid',
         styles: { 
           fontSize: 8,
@@ -159,7 +169,8 @@ const SupervisorWalletFundsTab = ({
         },
         headStyles: { 
           fillColor: [16, 185, 129], 
-          textColor: [255, 255, 255] 
+          textColor: [255, 255, 255],
+          fontStyle: 'bold' 
         },
         alternateRowStyles: { fillColor: [248, 250, 252] },
         bodyStyles: (row) => row.rowType === 'disbursed' ? { fillColor: [240, 253, 244] } : {},
@@ -178,6 +189,8 @@ const SupervisorWalletFundsTab = ({
       const logoSrc = logoBase64 || `${window.location.origin}/logo_new.png`;
       const rows = filtered.map(r => {
         const isPending = r.rowType === 'pending';
+        const w = supervisorWallets[r.supervisorId || r.supervisor] || { advance: 0, spent: 0 };
+        const bal = w.advance - w.spent;
         return `<tr style="background:${isPending ? '#fff' : '#f0fdf4'}">
           <td style="font-weight:800;color:#059669;">${escapeHtml(r.displayId)}</td>
           <td><strong>${escapeHtml(r.supervisor)}</strong></td>
@@ -185,7 +198,7 @@ const SupervisorWalletFundsTab = ({
           <td>${escapeHtml(r.purpose)}</td>
           <td>${escapeHtml(r.urgency)}</td>
           <td>${r.date}</td>
-          <td>${r.date}</td>
+          <td style="font-weight:600;color:#2563eb;">&#8377;${bal.toLocaleString('en-IN')}</td>
           <td style="text-align:right;font-weight:800;">&#8377;${(r.amount || 0).toLocaleString('en-IN')}</td>
           <td style="text-align:center;">
             <span style="padding:2px 8px;border-radius:9999px;font-weight:800;font-size:9px;
@@ -212,7 +225,7 @@ const SupervisorWalletFundsTab = ({
             <strong>Disbursed:</strong> ${disbursedCount}
           </div>
         </div>
-        <table><thead><tr><th>REQ ID</th><th>SUPERVISOR</th><th>SITE</th><th>PURPOSE</th><th>URGENCY</th><th>REQUESTED ON</th><th style="text-align:right;">AMOUNT</th><th>STATUS</th></tr></thead>
+        <table><thead><tr><th>REQ ID</th><th>SUPERVISOR</th><th>SITE</th><th>PURPOSE</th><th>URGENCY</th><th>REQUESTED ON</th><th>WALLET BALANCE</th><th style="text-align:right;">AMOUNT</th><th>STATUS</th></tr></thead>
         <tbody>${rows}</tbody></table></body></html>`;
       const w = window.open('', '_blank', 'width=1100,height=750');
       if (!w) { toast.error('Popup blocked!'); return; }
@@ -236,14 +249,50 @@ const SupervisorWalletFundsTab = ({
 
       {/* Top bar: Stats Cards */}
       <div style={{ display: 'flex', gap: '1.25rem', flexWrap: 'wrap' }}>
-        {/* Pending Card */}
-        <div style={{
-          flex: '1 1 240px', display: 'flex', alignItems: 'center', gap: '1.25rem',
+        {/* All Requests Card */}
+        <div 
+          onClick={() => setStatusFilter('ALL')}
+          style={{
+          flex: '1 1 200px', display: 'flex', alignItems: 'center', gap: '1.25rem',
           padding: '1.25rem 1.5rem', borderRadius: '16px',
           backgroundColor: 'var(--card-bg, #ffffff)',
-          border: '1px solid var(--border-color, #e2e8f0)',
+          border: statusFilter === 'ALL' ? '2px solid #4f46e5' : '1px solid var(--border-color, #e2e8f0)',
           boxShadow: '0 4px 15px rgba(0,0,0,0.03)',
-          position: 'relative', overflow: 'hidden'
+          position: 'relative', overflow: 'hidden', cursor: 'pointer', transition: 'all 0.2s ease'
+        }}>
+          <div style={{
+            position: 'absolute', top: 0, left: 0, width: '4px', height: '100%',
+            backgroundColor: '#4f46e5'
+          }} />
+          <div style={{
+            width: '48px', height: '48px', borderRadius: '14px',
+            backgroundColor: '#e0e7ff', display: 'flex', alignItems: 'center', justifyContent: 'center',
+            boxShadow: '0 2px 5px rgba(79,70,229,0.2)'
+          }}>
+            <FileSpreadsheet size={24} color="#4f46e5" />
+          </div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.2rem' }}>
+            <div style={{ fontSize: '0.9rem', color: 'var(--text-secondary, #64748b)', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+              All Requests
+            </div>
+            <div style={{ display: 'flex', alignItems: 'baseline', gap: '0.5rem' }}>
+              <span style={{ fontSize: '1.75rem', fontWeight: '900', color: 'var(--text-primary, #0f172a)', lineHeight: '1' }}>
+                {allRows.length}
+              </span>
+            </div>
+          </div>
+        </div>
+
+        {/* Pending Card */}
+        <div 
+          onClick={() => setStatusFilter('PENDING')}
+          style={{
+          flex: '1 1 200px', display: 'flex', alignItems: 'center', gap: '1.25rem',
+          padding: '1.25rem 1.5rem', borderRadius: '16px',
+          backgroundColor: 'var(--card-bg, #ffffff)',
+          border: statusFilter === 'PENDING' ? '2px solid #eab308' : '1px solid var(--border-color, #e2e8f0)',
+          boxShadow: '0 4px 15px rgba(0,0,0,0.03)',
+          position: 'relative', overflow: 'hidden', cursor: 'pointer', transition: 'all 0.2s ease'
         }}>
           <div style={{
             position: 'absolute', top: 0, left: 0, width: '4px', height: '100%',
@@ -272,13 +321,15 @@ const SupervisorWalletFundsTab = ({
         </div>
 
         {/* Disbursed Card */}
-        <div style={{
-          flex: '1 1 240px', display: 'flex', alignItems: 'center', gap: '1.25rem',
+        <div 
+          onClick={() => setStatusFilter('DISBURSED')}
+          style={{
+          flex: '1 1 200px', display: 'flex', alignItems: 'center', gap: '1.25rem',
           padding: '1.25rem 1.5rem', borderRadius: '16px',
           backgroundColor: 'var(--card-bg, #ffffff)',
-          border: '1px solid var(--border-color, #e2e8f0)',
+          border: statusFilter === 'DISBURSED' ? '2px solid #10b981' : '1px solid var(--border-color, #e2e8f0)',
           boxShadow: '0 4px 15px rgba(0,0,0,0.03)',
-          position: 'relative', overflow: 'hidden'
+          position: 'relative', overflow: 'hidden', cursor: 'pointer', transition: 'all 0.2s ease'
         }}>
           <div style={{
             position: 'absolute', top: 0, left: 0, width: '4px', height: '100%',

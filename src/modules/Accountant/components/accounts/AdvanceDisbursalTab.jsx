@@ -94,7 +94,7 @@ const AdvanceDisbursalTab = ({
   };
 
   const handleExportPDF = async () => {
-    const doc = new jsPDF();
+    const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
 
     await addPdfHeaderWithLogo(
       doc,
@@ -114,8 +114,8 @@ const AdvanceDisbursalTab = ({
     ]);
 
     autoTable(doc, {
-      startY: 26,
-      margin: { bottom: 30 },
+      startY: 28,
+      margin: { bottom: 35, top: 20 },
       head: headers,
       body: data,
       theme: 'grid',
@@ -126,7 +126,8 @@ const AdvanceDisbursalTab = ({
       },
       headStyles: { 
         fillColor: [16, 185, 129], 
-        textColor: [255, 255, 255] 
+        textColor: [255, 255, 255],
+        fontStyle: 'bold'
       },
       alternateRowStyles: { fillColor: [248, 250, 252] }
     });

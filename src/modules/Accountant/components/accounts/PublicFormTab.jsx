@@ -2,8 +2,11 @@ import React, { useState, useEffect } from 'react';
 import {
   Globe, FileText, CheckCircle2, Clock, Eye, Trash2,
   RefreshCw, Search, ExternalLink, ClipboardList,
-  AlertCircle, IndianRupee, X
+  AlertCircle, IndianRupee, X, Download
 } from 'lucide-react';
+import jsPDF from 'jspdf';
+import autoTable from 'jspdf-autotable';
+import { addPdfHeaderWithLogo, addPdfFooterWithLogo, addPdfSignatures } from '../../../Operations/utils/pdfHeaderHelper';
 import axios from 'axios';
 import { toast } from '../../../../components/Toast';
 
@@ -75,12 +78,68 @@ const PublicFormTab = () => {
   });
 
   const totalAmount = filtered.reduce((s, e) => s + (Number(e.amount) || 0), 0);
-  const pendingCount = filtered.filter(e => e.status !== 'Approved').length;
+  const pendingCount = submissions.filter(e => e.status !== 'Approved').length;
   const publicFormUrl = `${window.location.origin}${import.meta.env.BASE_URL || '/'}supervisor/expense-form`;
 
   const avatarColor = (name = '') => {
     const colors = ['#3b82f6', '#8b5cf6', '#ec4899', '#10b981', '#f59e0b', '#ef4444', '#06b6d4'];
     return colors[name.charCodeAt(0) % colors.length] || '#3b82f6';
+  };
+
+  const getReceiptUrl = (url) => {
+    if (!url) return '';
+    if (url.startsWith('blob:')) return url;
+    if (url.includes('/uploads/')) {
+      const baseUrl = (API || '').replace(/\/api$/, '');
+      return `${baseUrl}${url.substring(url.indexOf('/uploads/'))}`;
+    }
+    return url;
+  };
+
+  const handleExportPDF = async () => {
+    const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
+
+    await addPdfHeaderWithLogo(
+      doc,
+      'Public Form Submissions Report',
+      `Generated on: ${new Date().toLocaleString('en-GB')} | Total Amount: INR ${totalAmount.toLocaleString('en-IN')}`
+    );
+
+    const headers = [['#', 'Voucher ID', 'Submitted By', 'Site', 'Category', 'Vendor', 'Amount (INR)', 'Date', 'Status']];
+    const data = filtered.map((s, idx) => [
+      idx + 1,
+      `EXP-${String(s.id).substring(0, 6).toUpperCase()}`,
+      s.submitterName || '—',
+      s.site || '—',
+      s.category || '—',
+      s.paidTo || '—',
+      Number(s.amount) || 0,
+      s.date || new Date(s.createdAt).toLocaleDateString('en-GB'),
+      s.status || 'Pending'
+    ]);
+
+    autoTable(doc, {
+      startY: 28,
+      margin: { bottom: 35, top: 20 },
+      head: headers,
+      body: data,
+      theme: 'grid',
+      styles: { 
+        fontSize: 8,
+        lineColor: [37, 99, 235],
+        lineWidth: 0.1,
+      },
+      headStyles: { 
+        fillColor: [16, 185, 129], 
+        textColor: [255, 255, 255],
+        fontStyle: 'bold'
+      },
+      alternateRowStyles: { fillColor: [248, 250, 252] }
+    });
+
+    await addPdfFooterWithLogo(doc);
+    addPdfSignatures(doc);
+    doc.save(`ASEMS_PublicForm_${new Date().toISOString().split('T')[0]}.pdf`);
   };
 
   return (
@@ -100,6 +159,17 @@ const PublicFormTab = () => {
           </p>
         </div>
         <div style={{ display: 'flex', gap: '0.65rem', flexWrap: 'wrap' }}>
+          <button
+            onClick={handleExportPDF}
+            style={{
+              display: 'inline-flex', alignItems: 'center', gap: '0.45rem',
+              background: 'rgba(59,130,246,0.1)', color: '#3b82f6',
+              border: '1px solid rgba(59,130,246,0.2)', padding: '0.5rem 1rem',
+              borderRadius: '0.65rem', fontWeight: '700', fontSize: '0.82rem', cursor: 'pointer'
+            }}
+          >
+            <Download size={13} /> PDF
+          </button>
           <a
             href={publicFormUrl} target="_blank" rel="noopener noreferrer"
             style={{
@@ -130,16 +200,22 @@ const PublicFormTab = () => {
       {/* ── KPI Strip ── */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(150px,1fr))', gap: '0.9rem', marginBottom: '1.25rem' }}>
         {[
-          { label: 'Total', value: submissions.length, color: '#3b82f6', icon: ClipboardList },
-          { label: 'Pending', value: pendingCount, color: '#f59e0b', icon: AlertCircle },
-          { label: 'Approved', value: submissions.length - pendingCount, color: '#10b981', icon: CheckCircle2 },
-          { label: 'Total Amount', value: `₹${totalAmount.toLocaleString('en-IN')}`, color: '#8b5cf6', icon: IndianRupee },
-        ].map(({ label, value, color, icon: Icon }) => (
-          <div key={label} style={{
-            background: 'var(--surface-bg)', border: '1px solid var(--border-color)',
-            borderRadius: '0.85rem', padding: '0.9rem 1rem',
-            display: 'flex', alignItems: 'center', gap: '0.75rem'
-          }}>
+          { label: 'Total', value: submissions.length, color: '#3b82f6', icon: ClipboardList, filter: 'All' },
+          { label: 'Pending', value: pendingCount, color: '#f59e0b', icon: AlertCircle, filter: 'Pending' },
+          { label: 'Approved', value: submissions.length - pendingCount, color: '#10b981', icon: CheckCircle2, filter: 'Approved' },
+          { label: 'Total Amount', value: `₹${totalAmount.toLocaleString('en-IN')}`, color: '#8b5cf6', icon: IndianRupee, filter: 'All' },
+        ].map(({ label, value, color, icon: Icon, filter }) => (
+          <div 
+            key={label} 
+            onClick={() => setFilterStatus(filter)}
+            style={{
+              background: 'var(--surface-bg)', border: '1px solid var(--border-color)',
+              borderRadius: '0.85rem', padding: '0.9rem 1rem',
+              display: 'flex', alignItems: 'center', gap: '0.75rem',
+              cursor: 'pointer', transition: 'all 0.2s ease',
+              boxShadow: filterStatus === filter && label !== 'Total Amount' ? `0 0 0 2px ${color}` : 'none'
+            }}
+          >
             <div style={{ width: '36px', height: '36px', borderRadius: '0.6rem', background: `${color}1a`, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
               <Icon size={18} color={color} />
             </div>
@@ -430,9 +506,28 @@ const PublicFormTab = () => {
               {/* Receipt Image */}
               {viewEntry.receiptUrl && (
                 <div style={{ marginTop: '1rem' }}>
-                  <div style={{ fontSize: '0.72rem', color: 'var(--text-secondary)', fontWeight: '700', textTransform: 'uppercase', marginBottom: '0.5rem' }}>Receipt Preview</div>
-                  <img src={viewEntry.receiptUrl.startsWith('http') && !viewEntry.receiptUrl.includes('localhost:') && !viewEntry.receiptUrl.includes(':5000/uploads/') ? viewEntry.receiptUrl : `${API || ''}${viewEntry.receiptUrl.substring(viewEntry.receiptUrl.indexOf('/uploads/'))}`} alt="Receipt"
-                    style={{ width: '100%', borderRadius: '0.65rem', border: '1px solid var(--border-color)', maxHeight: '220px', objectFit: 'contain', background: '#f8fafc' }} />
+                  <div style={{ fontSize: '0.72rem', color: 'var(--text-secondary)', fontWeight: '700', textTransform: 'uppercase', marginBottom: '0.5rem', display: 'flex', justifyContent: 'space-between' }}>
+                    <span>Receipt Preview</span>
+                  </div>
+                  {/\.pdf($|\?)/i.test(viewEntry.receiptUrl) ? (
+                    <div style={{ padding: '2rem', textAlign: 'center', background: 'var(--card-bg)', border: '1px solid var(--border-color)', borderRadius: '0.65rem' }}>
+                      <FileText size={40} color="#6366f1" style={{ marginBottom: '1rem' }} />
+                      <p style={{ margin: 0, fontSize: '0.85rem', color: 'var(--text-secondary)' }}>PDF Receipt Attached</p>
+                      <a 
+                        href={getReceiptUrl(viewEntry.receiptUrl)}
+                        target="_blank" rel="noopener noreferrer"
+                        style={{ display: 'inline-block', marginTop: '0.75rem', padding: '0.5rem 1rem', background: 'linear-gradient(135deg,#3b82f6,#6366f1)', color: '#fff', borderRadius: '0.5rem', fontSize: '0.8rem', fontWeight: '600', textDecoration: 'none' }}
+                      >
+                        View Document
+                      </a>
+                    </div>
+                  ) : (
+                    <img 
+                      src={getReceiptUrl(viewEntry.receiptUrl)} 
+                      alt="Receipt"
+                      style={{ width: '100%', borderRadius: '0.65rem', border: '1px solid var(--border-color)', maxHeight: '220px', objectFit: 'contain', background: '#f8fafc' }} 
+                    />
+                  )}
                 </div>
               )}
             </div>

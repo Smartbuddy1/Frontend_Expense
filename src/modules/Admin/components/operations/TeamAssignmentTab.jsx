@@ -23,6 +23,8 @@ const TeamAssignmentTab = ({
 }) => {
   const { language } = useLanguage();
   const [searchQuery, setSearchQuery] = useState('');
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 10;
 
   // Filtered Supervisors matching search query and site filter
   const filteredSupervisors = supervisors.filter((sup) => {
@@ -40,6 +42,15 @@ const TeamAssignmentTab = ({
 
     return true;
   });
+
+  // Reset to first page when search changes
+  React.useEffect(() => {
+    setCurrentPage(1);
+  }, [searchQuery]);
+
+  const totalPages = Math.ceil(filteredSupervisors.length / itemsPerPage);
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const currentSupervisors = filteredSupervisors.slice(startIndex, startIndex + itemsPerPage);
 
   // 1-Click CSV / Excel Export Handler for Supervisors
   const handleExportCSV = () => {
@@ -448,7 +459,8 @@ const TeamAssignmentTab = ({
                   </td>
                 </tr>
               ) : (
-                filteredSupervisors.map((sup, idx) => {
+                currentSupervisors.map((sup, index) => {
+                  const idx = startIndex + index;
                   const assignedProjects = projects.filter(p => 
                     (p.supervisorId && sup.id && p.supervisorId === sup.id) ||
                     (p.supervisor_id && sup.id && p.supervisor_id === sup.id) ||
@@ -657,6 +669,72 @@ const TeamAssignmentTab = ({
             </tbody>
           </table>
         </div>
+
+        {/* Pagination Controls */}
+        <div style={{
+          display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            padding: '1rem 1.5rem',
+            borderTop: '1px solid var(--border-color, #e2e8f0)',
+            backgroundColor: 'var(--card-bg, #ffffff)'
+          }}>
+            <span style={{ fontSize: '0.85rem', color: '#64748b' }}>
+              Showing {startIndex + 1} to {Math.min(startIndex + itemsPerPage, filteredSupervisors.length)} of {filteredSupervisors.length} entries
+            </span>
+            <div style={{ display: 'flex', gap: '0.25rem', flexWrap: 'wrap' }}>
+              <button
+                onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+                disabled={currentPage === 1}
+                style={{
+                  padding: '0.4rem 0.8rem',
+                  borderRadius: '6px',
+                  border: '1px solid #cbd5e1',
+                  backgroundColor: currentPage === 1 ? '#f8fafc' : '#ffffff',
+                  color: currentPage === 1 ? '#94a3b8' : '#334155',
+                  cursor: currentPage === 1 ? 'not-allowed' : 'pointer',
+                  fontSize: '0.85rem',
+                  fontWeight: '600'
+                }}
+              >
+                Previous
+              </button>
+              {Array.from({ length: totalPages }).map((_, i) => (
+                <button
+                  key={i + 1}
+                  onClick={() => setCurrentPage(i + 1)}
+                  style={{
+                    padding: '0.4rem 0.8rem',
+                    borderRadius: '6px',
+                    border: currentPage === i + 1 ? '1px solid #3b82f6' : '1px solid #cbd5e1',
+                    backgroundColor: currentPage === i + 1 ? '#eff6ff' : '#ffffff',
+                    color: currentPage === i + 1 ? '#2563eb' : '#334155',
+                    cursor: 'pointer',
+                    fontSize: '0.85rem',
+                    fontWeight: currentPage === i + 1 ? '700' : '600'
+                  }}
+                >
+                  {i + 1}
+                </button>
+              ))}
+              <button
+                onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+                disabled={currentPage === totalPages}
+                style={{
+                  padding: '0.4rem 0.8rem',
+                  borderRadius: '6px',
+                  border: '1px solid #cbd5e1',
+                  backgroundColor: currentPage === totalPages ? '#f8fafc' : '#ffffff',
+                  color: currentPage === totalPages ? '#94a3b8' : '#334155',
+                  cursor: currentPage === totalPages ? 'not-allowed' : 'pointer',
+                  fontSize: '0.85rem',
+                  fontWeight: '600'
+                }}
+              >
+                Next
+              </button>
+            </div>
+          </div>
       </div>
     </div>
   );

@@ -103,9 +103,9 @@ export const OrganizationsTab = ({
     const roleMatch = head.role ? head.role.toLowerCase().includes(q) : false;
     const deptMatch = head.department ? head.department.toLowerCase().includes(q) : false;
     const idMatch = head.employeeId ? head.employeeId.toLowerCase().includes(q) : false;
-    const locMatch = head.location ? head.location.toLowerCase().includes(q) : false;
+    const emailMatch = head.email ? head.email.toLowerCase().includes(q) : false;
     const phoneMatch = head.phone ? head.phone.toLowerCase().includes(q) : false;
-    return !searchTerm || nameMatch || roleMatch || deptMatch || idMatch || locMatch || phoneMatch;
+    return !searchTerm || nameMatch || roleMatch || deptMatch || idMatch || emailMatch || phoneMatch;
   });
 
   // 1-Click PDF Export with Official Logo
@@ -352,7 +352,7 @@ export const OrganizationsTab = ({
           <Search size={18} style={{ position: 'absolute', left: '1.15rem', top: '50%', transform: 'translateY(-50%)', color: '#94a3b8', pointerEvents: 'none' }} />
           <input 
             type="text"
-            placeholder={language === 'mr' ? "ऑपरेशनल हेड नाव, फोन, स्थान शोधा..." : "Search operational heads by Name, Phone, Email, Location..."}
+            placeholder={language === 'mr' ? "ऑपरेशनल हेड नाव, फोन, ईमेल शोधा..." : "Search operational heads by Name, Phone, Email..."}
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             style={{
@@ -429,7 +429,6 @@ export const OrganizationsTab = ({
                 <th style={{ padding: '0.9rem 1rem', width: '50px', textAlign: 'center', whiteSpace: 'nowrap' }}>ID</th>
                 <th style={{ padding: '0.9rem 1.15rem', whiteSpace: 'nowrap', minWidth: '220px' }}>HEAD NAME ↕</th>
                 <th style={{ padding: '0.9rem 1.15rem', whiteSpace: 'nowrap', minWidth: '150px' }}>PHONE ↕</th>
-                <th style={{ padding: '0.9rem 1.15rem', whiteSpace: 'nowrap', minWidth: '220px' }}>LOCATION ↕</th>
                 <th style={{ padding: '0.9rem 1.15rem', textAlign: 'center', whiteSpace: 'nowrap', minWidth: '120px' }}>STATUS ↕</th>
                 <th style={{ padding: '0.9rem 1.15rem', textAlign: 'center', whiteSpace: 'nowrap', width: '120px' }}>ACTIONS</th>
               </tr>
@@ -437,7 +436,7 @@ export const OrganizationsTab = ({
             <tbody>
               {filteredHeads.length === 0 ? (
                 <tr>
-                  <td colSpan="6" style={{ padding: '3rem 1rem', textAlign: 'center', color: '#94a3b8', fontSize: '0.95rem' }}>
+                  <td colSpan="5" style={{ padding: '3rem 1rem', textAlign: 'center', color: '#94a3b8', fontSize: '0.95rem' }}>
                     <ShieldCheck size={38} style={{ margin: '0 auto 0.5rem auto', display: 'block', color: '#cbd5e1' }} />
                     <p style={{ margin: 0, fontWeight: '700', fontSize: '1rem', color: '#475569' }}>
                       {language === 'mr' ? 'कोणतेही ऑपरेशनल हेड आढळले नाहीत' : 'No Operational Heads found'}
@@ -501,14 +500,6 @@ export const OrganizationsTab = ({
                         <span style={{ color: 'var(--text-primary, #0f172a)', fontSize: '0.9rem', fontWeight: '700' }}>
                           {head.phone || '+91 93596 04384'}
                         </span>
-                      </td>
-
-                      {/* Location */}
-                      <td style={{ padding: '1rem', whiteSpace: 'nowrap', color: 'var(--text-secondary, #334155)', fontWeight: '600' }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
-                          <MapPin size={14} style={{ color: 'var(--text-secondary, #64748b)', flexShrink: 0 }} />
-                          <span>{head.location || 'Head Office - Pune, Maharashtra'}</span>
-                        </div>
                       </td>
 
                       {/* Status */}

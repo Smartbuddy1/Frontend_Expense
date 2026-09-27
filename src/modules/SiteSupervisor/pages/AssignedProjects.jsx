@@ -14,7 +14,7 @@ import {
 } from 'lucide-react';
 import { useLanguage } from '../context/LanguageContext';
 import { useWallet } from '../context/WalletContext';
-import { exportToExcel, triggerPrint, exportToPDF } from '../utils/exportUtils';
+import { exportToPDF } from '../utils/exportUtils';
 import { toast } from '../../../components/Toast';
 
 const AssignedProjects = () => {
@@ -40,22 +40,11 @@ const AssignedProjects = () => {
     if (!term) return true;
     return (
       p.id.toLowerCase().includes(term) ||
-      p.name.toLowerCase().includes(term) ||
-      p.location.toLowerCase().includes(term) ||
-      p.status.toLowerCase().includes(term)
+      p.name.toLowerCase().includes(term)
     );
   });
 
-  const handleExportExcel = () => {
-    const headers = ['Project ID', 'Project Name', 'Location', 'Status'];
-    const rows = filteredProjects.map(p => [
-      p.id,
-      p.name,
-      p.location,
-      p.status
-    ]);
-    exportToExcel('Assigned_Projects_Master_List', headers, rows);
-  };
+
 
   const handleExportPDF = () => {
     const headers = ['Project ID', 'Project Name', 'Location', 'Status'];
@@ -112,7 +101,7 @@ const AssignedProjects = () => {
           </p>
         </div>
 
-        {/* Action Buttons: PDF, Excel, Print */}
+        {/* Action Buttons: PDF */}
         <div style={{ display: 'flex', gap: '0.6rem', alignItems: 'center', flexWrap: 'wrap' }}>
           <button
             onClick={handleExportPDF}
@@ -134,30 +123,6 @@ const AssignedProjects = () => {
           >
             <FileDown size={15} />
             <span>PDF</span>
-          </button>
-
-          
-
-          <button
-            onClick={triggerPrint}
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: '0.35rem',
-              padding: '0.45rem 0.85rem',
-              borderRadius: '0.65rem',
-              border: '1px solid rgba(59, 130, 246, 0.3)',
-              backgroundColor: 'rgba(59, 130, 246, 0.1)',
-              color: '#3b82f6',
-              fontWeight: '700',
-              fontSize: '0.8rem',
-              cursor: 'pointer',
-              transition: 'all 0.2s ease'
-            }}
-            title="Print Projects Table"
-          >
-            <Printer size={15} />
-            <span>Print</span>
           </button>
         </div>
       </div>
@@ -182,7 +147,7 @@ const AssignedProjects = () => {
         />
         <input
           type="text"
-          placeholder={language === 'mr' ? 'साइट, लोकेशन किंवा प्रोजेक्ट शोधा...' : language === 'hi' ? 'साइट, लोकेशन या प्रोजेक्ट खोजें...' : 'Search site, location, client, status...'}
+          placeholder={language === 'mr' ? 'प्रोजेक्ट ID किंवा साइट शोधा...' : language === 'hi' ? 'प्रोजेक्ट ID या साइट खोजें...' : 'Search project id, site...'}
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
           style={{
@@ -267,15 +232,13 @@ const AssignedProjects = () => {
               <tr style={{ borderBottom: '2px solid var(--border-color)', color: 'var(--text-secondary)', backgroundColor: 'var(--card-bg)' }}>
                 <th style={{ padding: '0.85rem 1rem', fontWeight: '700' }}>Project ID</th>
                 <th style={{ padding: '0.85rem 1rem', fontWeight: '700' }}>Project & Site Name</th>
-                <th style={{ padding: '0.85rem 1rem', fontWeight: '700' }}>Location</th>
-                <th style={{ padding: '0.85rem 1rem', fontWeight: '700' }}>Status</th>
                 <th style={{ padding: '0.85rem 1rem', fontWeight: '700', textAlign: 'center' }}>Details</th>
               </tr>
             </thead>
             <tbody>
               {filteredProjects.length === 0 ? (
                 <tr>
-                  <td colSpan="5" style={{ padding: '2rem', textAlign: 'center', color: 'var(--text-secondary)' }}>
+                  <td colSpan="3" style={{ padding: '2rem', textAlign: 'center', color: 'var(--text-secondary)' }}>
                     {language === 'mr' ? 'कोणताही जुळणारा प्रोजेक्ट सापडला नाही.' : language === 'hi' ? 'कोई मिलता-जुलता प्रोजेक्ट नहीं मिला।' : 'No matching projects found.'}
                   </td>
                 </tr>
@@ -297,31 +260,9 @@ const AssignedProjects = () => {
                       <div style={{ fontWeight: '700', color: 'var(--text-primary)', fontSize: '0.95rem' }}>
                         {proj.name}
                       </div>
-                      <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', marginTop: '0.15rem' }}>
-                        Lead: {proj.supervisor}
-                      </div>
                     </td>
-                    <td data-label="LOCATION" style={{ padding: '0.9rem 1rem', color: 'var(--text-secondary)', whiteSpace: 'nowrap' }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
-                        <MapPin size={14} color="#ef4444" />
-                        <span>{proj.location}</span>
-                      </div>
-                    </td>
-                    <td data-label="STATUS" style={{ padding: '0.9rem 1rem', whiteSpace: 'nowrap' }}>
-                      <span style={{
-                        display: 'inline-flex',
-                        alignItems: 'center',
-                        gap: '0.3rem',
-                        padding: '0.25rem 0.65rem',
-                        borderRadius: '1rem',
-                        fontSize: '0.75rem',
-                        fontWeight: '700',
-                        backgroundColor: 'rgba(16, 185, 129, 0.15)',
-                        color: '#10b981'
-                      }}>
-                        <CheckCircle2 size={12} /> {proj.status}
-                      </span>
-                    </td>
+
+
                     <td data-label="DETAILS" style={{ padding: '0.9rem 1rem', textAlign: 'center', whiteSpace: 'nowrap' }}>
                       <button
                         onClick={() => setSelectedProjectModal(proj)}
@@ -400,24 +341,7 @@ const AssignedProjects = () => {
                 </p>
               </div>
 
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
-                <div style={{ background: 'var(--card-bg)', padding: '0.75rem 0.9rem', borderRadius: '0.75rem', border: '1px solid var(--border-color)' }}>
-                  <span style={{ fontSize: '0.725rem', color: 'var(--text-secondary)', fontWeight: '700', textTransform: 'uppercase' }}>
-                    {language === 'mr' ? 'लोकेशन' : language === 'hi' ? 'लोकेशन' : 'LOCATION'}
-                  </span>
-                  <div style={{ fontSize: '0.875rem', fontWeight: '700', color: 'var(--text-primary)', marginTop: '0.2rem' }}>
-                    {selectedProjectModal.location}
-                  </div>
-                </div>
-                <div style={{ background: 'var(--card-bg)', padding: '0.75rem 0.9rem', borderRadius: '0.75rem', border: '1px solid var(--border-color)' }}>
-                  <span style={{ fontSize: '0.725rem', color: 'var(--text-secondary)', fontWeight: '700', textTransform: 'uppercase' }}>
-                    {language === 'mr' ? 'प्रकल्प स्थिती' : language === 'hi' ? 'प्रोजेक्ट स्थिति' : 'PROJECT STATUS'}
-                  </span>
-                  <div style={{ fontSize: '0.875rem', fontWeight: '800', color: '#10b981', marginTop: '0.2rem' }}>
-                    {selectedProjectModal.status}
-                  </div>
-                </div>
-              </div>
+
 
               <button
                 onClick={() => {

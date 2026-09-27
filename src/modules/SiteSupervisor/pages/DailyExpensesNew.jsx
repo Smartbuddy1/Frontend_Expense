@@ -1,4 +1,5 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
+import { useLocation } from 'react-router-dom';
 import {
   ReceiptText,
   Plus,
@@ -28,12 +29,21 @@ import {
 } from 'lucide-react';
 import { useWallet, sanitizeUrl } from '../context/WalletContext';
 import { useLanguage } from '../context/LanguageContext';
-import { exportToExcel, triggerPrint, exportToPDF } from '../utils/exportUtils';
+import { exportToPDF } from '../utils/exportUtils';
 import { toast } from '../../../components/Toast';
 
 const DailyExpenses = () => {
   const { project, projects, defaultTargetProject, categories, walletBalance, expensesList, recordExpense, todaySpend, deleteExpense, updateExpense } = useWallet();
   const { t, language } = useLanguage();
+  const location = useLocation();
+
+  useEffect(() => {
+    if (location.state?.openModal) {
+      setIsAddModalOpen(true);
+      // Clear the state so it doesn't reopen on refresh
+      window.history.replaceState({}, document.title);
+    }
+  }, [location.state]);
 
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('All');
@@ -240,19 +250,7 @@ const DailyExpenses = () => {
 
   const totalFilteredAmount = filteredExpenses.reduce((sum, item) => sum + (item.amount || 0), 0);
 
-  const handleExportExcel = () => {
-    const headers = ['Voucher ID', 'Category', 'Site Location', 'Paid To / Vendor', 'Date', 'Amount (₹)', 'Status'];
-    const rows = filteredExpenses.map((exp) => [
-      exp.displayId || exp.id?.slice(0, 8)?.toUpperCase() || '—',
-      exp.category,
-      exp.site,
-      exp.paidTo || 'Local Vendor',
-      exp.date,
-      exp.amount,
-      exp.status
-    ]);
-    exportToExcel('Daily_Site_Expenses_Report', headers, rows);
-  };
+
 
   const handleExportPDF = () => {
     const headers = ['Voucher ID', 'Category', 'Site Location', 'Vendor / Details', 'Date', 'Amount (Rs)', 'Status'];
@@ -313,7 +311,7 @@ const DailyExpenses = () => {
           </p>
         </div>
 
-        {/* Action Buttons: PDF, Excel, Print */}
+        {/* Action Buttons: PDF */}
         <div style={{ display: 'flex', gap: '0.6rem', alignItems: 'center', flexWrap: 'wrap' }}>
           <button
             onClick={handleExportPDF}
@@ -335,50 +333,6 @@ const DailyExpenses = () => {
           >
             <FileDown size={15} />
             <span>PDF</span>
-          </button>
-
-          <button
-            onClick={handleExportExcel}
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: '0.35rem',
-              padding: '0.45rem 0.85rem',
-              borderRadius: '0.65rem',
-              border: '1px solid rgba(16, 185, 129, 0.3)',
-              backgroundColor: 'rgba(16, 185, 129, 0.1)',
-              color: '#10b981',
-              fontWeight: '700',
-              fontSize: '0.8rem',
-              cursor: 'pointer',
-              transition: 'all 0.2s ease'
-            }}
-            title="Export to Excel Spreadsheet"
-          >
-            <FileSpreadsheet size={15} />
-            <span>Excel</span>
-          </button>
-
-          <button
-            onClick={triggerPrint}
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: '0.35rem',
-              padding: '0.45rem 0.85rem',
-              borderRadius: '0.65rem',
-              border: '1px solid rgba(59, 130, 246, 0.3)',
-              backgroundColor: 'rgba(59, 130, 246, 0.1)',
-              color: '#3b82f6',
-              fontWeight: '700',
-              fontSize: '0.8rem',
-              cursor: 'pointer',
-              transition: 'all 0.2s ease'
-            }}
-            title="Print Expenses Table"
-          >
-            <Printer size={15} />
-            <span>Print</span>
           </button>
         </div>
       </div>
@@ -595,35 +549,7 @@ const DailyExpenses = () => {
           </select>
         </div>
 
-        {/* Date Filter */}
-        <div style={{
-          position: 'relative',
-          flex: '1 1 140px',
-          minWidth: '140px'
-        }}>
-          <select
-            value={selectedDate}
-            onChange={(e) => setSelectedDate(e.target.value)}
-            style={{
-              width: '100%',
-              padding: '0.55rem 1rem',
-              borderRadius: '0.75rem',
-              border: '1.5px solid var(--border-color)',
-              backgroundColor: 'var(--surface-bg)',
-              color: 'var(--text-primary)',
-              fontSize: '0.875rem',
-              outline: 'none',
-              cursor: 'pointer',
-              boxShadow: '0 2px 8px -2px var(--shadow-color)',
-              boxSizing: 'border-box'
-            }}
-          >
-            <option value="">{language === 'mr' ? 'सर्व तारखा (All Dates)' : 'All Dates'}</option>
-            {uniqueDates.filter(d => d).map((date, index) => (
-              <option key={index} value={date}>{date}</option>
-            ))}
-          </select>
-        </div>
+
       </div>
 
       {/* Main Table Card */}

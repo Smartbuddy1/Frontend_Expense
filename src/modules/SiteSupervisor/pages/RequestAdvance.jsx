@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { useLocation } from 'react-router-dom';
 import {
   Banknote,
   Send,
@@ -20,12 +21,20 @@ import {
 } from 'lucide-react';
 import { useWallet } from '../context/WalletContext';
 import { useLanguage } from '../context/LanguageContext';
-import { exportToExcel, triggerPrint, exportToPDF } from '../utils/exportUtils';
+import { exportToPDF } from '../utils/exportUtils';
 import { toast } from '../../../components/Toast';
 
 const RequestAdvance = () => {
   const { requestAdvance, walletBalance, totalAdvance, advancesList, projects, defaultTargetProject, deleteAdvance, updateAdvance } = useWallet();
   const { t, language } = useLanguage();
+  const location = useLocation();
+
+  useEffect(() => {
+    if (location.state?.openModal) {
+      setIsModalOpen(true);
+      window.history.replaceState({}, document.title);
+    }
+  }, [location.state]);
 
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
@@ -140,19 +149,6 @@ const RequestAdvance = () => {
 
   const totalRequisitionAmount = history.reduce((sum, item) => sum + item.amount, 0);
 
-  const handleExportExcel = () => {
-    const headers = ['Requisition ID', 'Site Location', 'Date', 'Amount (₹)', 'Urgency', 'Purpose / Reason', 'Status'];
-    const rows = filteredHistory.map(req => [
-      req.displayId || req.id,
-      req.site,
-      req.date,
-      req.amount,
-      req.urgency,
-      req.note,
-      req.status
-    ]);
-    exportToExcel('Site_Advance_Requisitions_Report', headers, rows);
-  };
 
   const handleExportPDF = () => {
     const headers = ['Req ID', 'Site Location', 'Date', 'Amount (Rs)', 'Urgency', 'Purpose / Reason', 'Status'];
@@ -213,7 +209,7 @@ const RequestAdvance = () => {
           </p>
         </div>
 
-        {/* Action Buttons: PDF, Excel, Print */}
+        {/* Action Buttons: PDF */}
         <div style={{ display: 'flex', gap: '0.6rem', alignItems: 'center', flexWrap: 'wrap' }}>
           <button
             onClick={handleExportPDF}
@@ -235,30 +231,6 @@ const RequestAdvance = () => {
           >
             <FileDown size={15} />
             <span>PDF</span>
-          </button>
-
-          
-
-          <button
-            onClick={triggerPrint}
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: '0.35rem',
-              padding: '0.45rem 0.85rem',
-              borderRadius: '0.65rem',
-              border: '1px solid rgba(59, 130, 246, 0.3)',
-              backgroundColor: 'rgba(59, 130, 246, 0.1)',
-              color: '#3b82f6',
-              fontWeight: '700',
-              fontSize: '0.8rem',
-              cursor: 'pointer',
-              transition: 'all 0.2s ease'
-            }}
-            title="Print Requisitions Table"
-          >
-            <Printer size={15} />
-            <span>Print</span>
           </button>
         </div>
       </div>

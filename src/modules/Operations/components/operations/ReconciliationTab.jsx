@@ -335,13 +335,20 @@ const ReconciliationTab = ({
   // Filtered advance requisitions for Request Advance
   const filteredRequisitions = advanceRequisitions.filter(item => {
     const q = (searchQuery || '').toLowerCase();
-    return !q ||
+    const matchesSearch = !q ||
       item.id.toLowerCase().includes(q) ||
       (item.supervisor && item.supervisor.toLowerCase().includes(q)) ||
       item.site.toLowerCase().includes(q) ||
       item.purpose.toLowerCase().includes(q) ||
       item.amount.toString().includes(q) ||
       item.urgency.toLowerCase().includes(q);
+      
+    let matchesFilter = true;
+    if (filterType === 'ReqPending') matchesFilter = item.rawStatus === 'requested';
+    if (filterType === 'ReqApproved') matchesFilter = item.rawStatus === 'approved';
+    if (filterType === 'ReqDisbursed') matchesFilter = item.rawStatus === 'disbursed';
+
+    return matchesSearch && matchesFilter;
   });
 
   useEffect(() => {
@@ -768,6 +775,8 @@ const ReconciliationTab = ({
   const pendingOpsTotal = advanceRequisitions.filter(r => r.rawStatus === 'requested').reduce((acc, r) => acc + (r.amount || 0), 0);
   const approvedCount = advanceRequisitions.filter(r => r.rawStatus === 'approved').length;
   const disbursedCount = advanceRequisitions.filter(r => r.rawStatus === 'disbursed').length;
+  const totalReqCount = advanceRequisitions.length;
+  const totalReqAmount = advanceRequisitions.reduce((acc, r) => acc + (r.amount || 0), 0);
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem', width: '100%', boxSizing: 'border-box' }}>
@@ -839,14 +848,53 @@ const ReconciliationTab = ({
 
       {/* KPI Stats Cards */}
       <div style={{ display: 'flex', gap: '1.25rem', flexWrap: 'wrap' }}>
-        {/* Pending Ops Card */}
-        <div style={{
+        {/* Total Requests Card */}
+        <div 
+          onClick={() => setFilterType('All')}
+          style={{
           flex: '1 1 240px', display: 'flex', alignItems: 'center', gap: '1.25rem',
           padding: '1.25rem 1.5rem', borderRadius: '16px',
-          backgroundColor: 'var(--card-bg, #ffffff)',
-          border: '1px solid var(--border-color, #e2e8f0)',
-          boxShadow: '0 4px 15px rgba(0,0,0,0.03)',
-          position: 'relative', overflow: 'hidden'
+          backgroundColor: filterType === 'All' ? '#eff6ff' : 'var(--card-bg, #ffffff)',
+          border: filterType === 'All' ? '1px solid #3b82f6' : '1px solid var(--border-color, #e2e8f0)',
+          boxShadow: filterType === 'All' ? '0 4px 15px rgba(59, 130, 246, 0.15)' : '0 4px 15px rgba(0,0,0,0.03)',
+          position: 'relative', overflow: 'hidden', cursor: 'pointer', transition: 'all 0.2s ease'
+        }}>
+          <div style={{
+            position: 'absolute', top: 0, left: 0, width: '4px', height: '100%',
+            backgroundColor: '#3b82f6'
+          }} />
+          <div style={{
+            width: '48px', height: '48px', borderRadius: '14px',
+            backgroundColor: '#eff6ff', display: 'flex', alignItems: 'center', justifyContent: 'center',
+            boxShadow: '0 2px 5px rgba(59,130,246,0.2)'
+          }}>
+            <FileText size={24} color="#2563eb" />
+          </div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.2rem' }}>
+            <div style={{ fontSize: '0.9rem', color: 'var(--text-secondary, #64748b)', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+              Total Requests
+            </div>
+            <div style={{ display: 'flex', alignItems: 'baseline', gap: '0.5rem' }}>
+              <span style={{ fontSize: '1.75rem', fontWeight: '900', color: 'var(--text-primary, #0f172a)', lineHeight: '1' }}>
+                {totalReqCount}
+              </span>
+              <span style={{ fontSize: '1rem', color: '#2563eb', fontWeight: '800' }}>
+                (₹{totalReqAmount.toLocaleString('en-IN')})
+              </span>
+            </div>
+          </div>
+        </div>
+
+        {/* Pending Ops Card */}
+        <div 
+          onClick={() => setFilterType('ReqPending')}
+          style={{
+          flex: '1 1 240px', display: 'flex', alignItems: 'center', gap: '1.25rem',
+          padding: '1.25rem 1.5rem', borderRadius: '16px',
+          backgroundColor: filterType === 'ReqPending' ? '#fffbeb' : 'var(--card-bg, #ffffff)',
+          border: filterType === 'ReqPending' ? '1px solid #f59e0b' : '1px solid var(--border-color, #e2e8f0)',
+          boxShadow: filterType === 'ReqPending' ? '0 4px 15px rgba(245, 158, 11, 0.15)' : '0 4px 15px rgba(0,0,0,0.03)',
+          position: 'relative', overflow: 'hidden', cursor: 'pointer', transition: 'all 0.2s ease'
         }}>
           <div style={{
             position: 'absolute', top: 0, left: 0, width: '4px', height: '100%',
@@ -875,13 +923,15 @@ const ReconciliationTab = ({
         </div>
 
         {/* Approved Card */}
-        <div style={{
+        <div 
+          onClick={() => setFilterType('ReqApproved')}
+          style={{
           flex: '1 1 200px', display: 'flex', alignItems: 'center', gap: '1.25rem',
           padding: '1.25rem 1.5rem', borderRadius: '16px',
-          backgroundColor: 'var(--card-bg, #ffffff)',
-          border: '1px solid var(--border-color, #e2e8f0)',
-          boxShadow: '0 4px 15px rgba(0,0,0,0.03)',
-          position: 'relative', overflow: 'hidden'
+          backgroundColor: filterType === 'ReqApproved' ? '#ecfdf5' : 'var(--card-bg, #ffffff)',
+          border: filterType === 'ReqApproved' ? '1px solid #10b981' : '1px solid var(--border-color, #e2e8f0)',
+          boxShadow: filterType === 'ReqApproved' ? '0 4px 15px rgba(16, 185, 129, 0.15)' : '0 4px 15px rgba(0,0,0,0.03)',
+          position: 'relative', overflow: 'hidden', cursor: 'pointer', transition: 'all 0.2s ease'
         }}>
           <div style={{
             position: 'absolute', top: 0, left: 0, width: '4px', height: '100%',
@@ -910,13 +960,15 @@ const ReconciliationTab = ({
         </div>
 
         {/* Disbursed Card */}
-        <div style={{
+        <div 
+          onClick={() => setFilterType('ReqDisbursed')}
+          style={{
           flex: '1 1 200px', display: 'flex', alignItems: 'center', gap: '1.25rem',
           padding: '1.25rem 1.5rem', borderRadius: '16px',
-          backgroundColor: 'var(--card-bg, #ffffff)',
-          border: '1px solid var(--border-color, #e2e8f0)',
-          boxShadow: '0 4px 15px rgba(0,0,0,0.03)',
-          position: 'relative', overflow: 'hidden'
+          backgroundColor: filterType === 'ReqDisbursed' ? '#f0f9ff' : 'var(--card-bg, #ffffff)',
+          border: filterType === 'ReqDisbursed' ? '1px solid #0ea5e9' : '1px solid var(--border-color, #e2e8f0)',
+          boxShadow: filterType === 'ReqDisbursed' ? '0 4px 15px rgba(14, 165, 233, 0.15)' : '0 4px 15px rgba(0,0,0,0.03)',
+          position: 'relative', overflow: 'hidden', cursor: 'pointer', transition: 'all 0.2s ease'
         }}>
           <div style={{
             position: 'absolute', top: 0, left: 0, width: '4px', height: '100%',

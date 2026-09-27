@@ -252,7 +252,7 @@ const ProjectsTab = ({
         <Search size={18} style={{ position: 'absolute', left: '1rem', top: '50%', transform: 'translateY(-50%)', color: '#94a3b8', pointerEvents: 'none' }} />
         <input
           type="text"
-          placeholder={language === 'mr' ? 'प्रोजेक्ट किंवा क्लायंट नावाने शोधा...' : 'Search projects by Name or Client...'}
+          placeholder={language === 'mr' ? 'प्रोजेक्ट नावाने शोधा...' : 'Search projects by Name...'}
           value={searchQuery}
           onChange={(e) => {
             setSearchQuery(e.target.value);

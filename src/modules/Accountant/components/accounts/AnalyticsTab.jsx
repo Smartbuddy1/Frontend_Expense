@@ -1,31 +1,32 @@
-import React, { useState } from 'react';
-import { 
-  ResponsiveContainer, 
-  BarChart, 
-  Bar, 
-  XAxis, 
-  YAxis, 
-  Tooltip, 
-  Legend, 
-  PieChart, 
-  Pie, 
+import React, { useState, useRef } from 'react';
+import html2canvas from 'html2canvas';
+import {
+  ResponsiveContainer,
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  Tooltip,
+  Legend,
+  PieChart,
+  Pie,
   Cell,
   AreaChart,
   Area,
   CartesianGrid
 } from 'recharts';
-import { 
-  Activity, 
-  TrendingUp, 
-  PieChart as PieIcon, 
-  BarChart3, 
-  Printer, 
-  Download, 
-  Calendar, 
-  Folder, 
-  CreditCard, 
-  Percent, 
-  ShieldCheck, 
+import {
+  Activity,
+  TrendingUp,
+  PieChart as PieIcon,
+  BarChart3,
+  Printer,
+  Download,
+  Calendar,
+  Folder,
+  CreditCard,
+  Percent,
+  ShieldCheck,
   Building2,
   Wallet,
   Users,
@@ -42,13 +43,14 @@ import PrintFooter from '../PrintFooter';
 
 const MODE_COLORS = ['#3b82f6', '#10b981', '#8b5cf6', '#f59e0b', '#06b6d4', '#ec4899'];
 
-const AnalyticsTab = ({ 
-  projects = [], 
-  expenses = [], 
-  advances = [], 
-  payments = [], 
-  settlements = [] 
+const AnalyticsTab = ({
+  projects = [],
+  expenses = [],
+  advances = [],
+  payments = [],
+  settlements = []
 }) => {
+  const chartsRef = useRef(null);
   const [filterType, setFilterType] = useState('FY'); // 'FY' or 'DATE_RANGE'
   const [selectedProject, setSelectedProject] = useState('ALL');
   const [selectedSupervisor, setSelectedSupervisor] = useState('ALL');
@@ -81,8 +83,18 @@ const AnalyticsTab = ({
     setSelectedProject(projId);
     if (projId !== 'ALL') {
       const projSupervisors = projects.filter(p => p.id === projId).map(p => p.supervisor);
-      if (!projSupervisors.includes(selectedSupervisor)) {
+      if (selectedSupervisor !== 'ALL' && !projSupervisors.includes(selectedSupervisor)) {
         setSelectedSupervisor('ALL');
+      }
+    }
+  };
+
+  const handleSupervisorChange = (supName) => {
+    setSelectedSupervisor(supName);
+    if (supName !== 'ALL' && selectedProject !== 'ALL') {
+      const proj = projects.find(p => p.id === selectedProject);
+      if (proj && proj.supervisor !== supName) {
+        setSelectedProject('ALL');
       }
     }
   };
@@ -154,7 +166,7 @@ const AnalyticsTab = ({
   const totalBudget = filteredProjects.reduce((acc, p) => acc + (p.budget || 0), 0);
   const totalReleased = filteredProjects.reduce((acc, p) => acc + (p.fundsReleased || 0), 0);
   const totalExpenses = filteredExpenses
-    .filter(e => e.status === 'Accounts Verified & Paid')
+    .filter(e => e.status === 'Accounts Verified & Paid' || e.status === 'Pending Accounts Verification')
     .reduce((acc, e) => acc + (e.amount || 0), 0);
   const totalAdvancesDisbursed = filteredAdvances
     .filter(a => a.status === 'Disbursed')
@@ -172,48 +184,50 @@ const AnalyticsTab = ({
     'July', 'August', 'September', 'October', 'November', 'December'
   ];
 
-  // Determine which year(s) to show months for
-  const referenceYear = dateFrom ? dateFrom.getFullYear() : new Date().getFullYear();
-  const currentDate = new Date();
+  const generateMonthlyData = () => {
+    let startMonth = dateFrom ? dateFrom.getMonth() : 3; // default April
+    let startYear = dateFrom ? dateFrom.getFullYear() : new Date().getFullYear();
+    
+    const months = [];
+    for (let i = 0; i < 12; i++) {
+      const currentMonthIndex = (startMonth + i) % 12;
+      const currentYear = startYear + Math.floor((startMonth + i) / 12);
+      
+      const isFuture = new Date(currentYear, currentMonthIndex, 1) > new Date();
 
-  const monthlyFlowData = MONTH_LABELS.map((mon, idx) => {
-    const monthDate = new Date(referenceYear, idx, 1);
-    const isFuture = monthDate > currentDate;
+      const monthExpenses = filteredExpenses
+        .filter(e => {
+          const d = new Date(e.billDate || e.submittedAt || '');
+          return d.getMonth() === currentMonthIndex && d.getFullYear() === currentYear && (e.status === 'Accounts Verified & Paid' || e.status === 'Pending Accounts Verification');
+        })
+        .reduce((acc, e) => acc + (e.amount || 0), 0);
 
-    // Sum expenses verified this month
-    const monthExpenses = filteredExpenses
-      .filter(e => {
-        const d = new Date(e.billDate || e.submittedAt || '');
-        return d.getMonth() === idx && d.getFullYear() === referenceYear && e.status === 'Accounts Verified & Paid';
-      })
-      .reduce((acc, e) => acc + (e.amount || 0), 0);
+      const monthAdvances = filteredAdvances
+        .filter(a => {
+          const d = new Date(a.requestDate || a.date || '');
+          return d.getMonth() === currentMonthIndex && d.getFullYear() === currentYear && a.status === 'Disbursed';
+        })
+        .reduce((acc, a) => acc + (a.approvedAmount || 0), 0);
 
-    // Sum advances disbursed this month
-    const monthAdvances = filteredAdvances
-      .filter(a => {
-        const d = new Date(a.requestDate || a.date || '');
-        return d.getMonth() === idx && d.getFullYear() === referenceYear && a.status === 'Disbursed';
-      })
-      .reduce((acc, a) => acc + (a.approvedAmount || 0), 0);
+      const monthReleased = filteredPayments
+        .filter(p => {
+          const d = new Date(p.date || '');
+          return d.getMonth() === currentMonthIndex && d.getFullYear() === currentYear;
+        })
+        .reduce((acc, p) => acc + (p.amount || 0), 0);
 
-    // Sum payments released this month
-    const monthReleased = filteredPayments
-      .filter(p => {
-        const d = new Date(p.date || '');
-        return d.getMonth() === idx && d.getFullYear() === referenceYear;
-      })
-      .reduce((acc, p) => acc + (p.amount || 0), 0);
+      months.push({
+        month: MONTH_LABELS[currentMonthIndex],
+        fullMonth: isFuture ? `${MONTH_FULL[currentMonthIndex]} ${currentYear} (Upcoming)` : `${MONTH_FULL[currentMonthIndex]} ${currentYear}`,
+        Advances: isFuture ? null : monthAdvances,
+        Expenses: isFuture ? null : monthExpenses,
+        Released: isFuture ? null : monthReleased,
+      });
+    }
+    return months;
+  };
 
-    return {
-      month: mon,
-      fullMonth: isFuture
-        ? `${MONTH_FULL[idx]} ${referenceYear} (Upcoming)`
-        : `${MONTH_FULL[idx]} ${referenceYear}`,
-      Advances: isFuture ? null : monthAdvances,
-      Expenses: isFuture ? null : monthExpenses,
-      Released: isFuture ? null : monthReleased,
-    };
-  });
+  const monthlyFlowData = generateMonthlyData();
 
   // Chart 2: Supervisor Disbursal vs Claim Efficiency (Fixed positions on X-axis, unselected items hidden with null so position never shifts)
   const supervisorData = allMasterSupervisors.map(supName => {
@@ -231,7 +245,7 @@ const AnalyticsTab = ({
       .filter(a => a.supervisor === supName && a.status === 'Disbursed')
       .reduce((acc, a) => acc + (a.approvedAmount || 0), 0);
     const totalExp = filteredExpenses
-      .filter(e => e.supervisor === supName && e.status === 'Accounts Verified & Paid')
+      .filter(e => e.supervisor === supName && (e.status === 'Accounts Verified & Paid' || e.status === 'Pending Accounts Verification'))
       .reduce((acc, e) => acc + (e.amount || 0), 0);
 
     return {
@@ -254,14 +268,14 @@ const AnalyticsTab = ({
 
     return (
       <g transform={`translate(${x},${y + 6})`}>
-        <text 
-          x={0} 
-          y={0} 
+        <text
+          x={0}
+          y={0}
           dy={6}
-          textAnchor="end" 
-          transform="rotate(-35)" 
-          fill="var(--text-secondary)" 
-          fontSize={10.5} 
+          textAnchor="end"
+          transform="rotate(-35)"
+          fill="var(--text-secondary)"
+          fontSize={10.5}
           fontWeight={600}
         >
           {text}
@@ -304,7 +318,7 @@ const AnalyticsTab = ({
 
   // PDF Export Handler
   const handleExportPDF = async () => {
-    const doc = new jsPDF('landscape');
+    const doc = new jsPDF('portrait');
 
     await addPdfHeaderWithLogo(
       doc,
@@ -312,90 +326,49 @@ const AnalyticsTab = ({
       `Generated on: ${new Date().toLocaleString('en-GB')} | Scope: ${selectedProject === 'ALL' ? 'All Installation Sites' : selectedProject} | Sanctioned BOQ: ${formatPDFINR(totalBudget)}`
     );
 
-    // Executive Metrics Table
-    const summaryHeaders = [['Total Sanctioned Budget', 'Total Funds Released', 'Verified Site Expenses', 'Unspent Site Balance', 'Budget Utilization Rate']];
-    const summaryData = [[
-      formatPDFINR(totalBudget),
-      formatPDFINR(totalReleased),
-      formatPDFINR(totalExpenses),
-      formatPDFINR(totalBalance),
-      `${utilizationRate}%`
-    ]];
+    if (chartsRef.current) {
+      try {
+        const originalWidth = chartsRef.current.style.width;
+        chartsRef.current.style.width = '1000px';
+        chartsRef.current.style.maxWidth = '1000px';
 
-    autoTable(doc, {
-      startY: 26,
-      head: summaryHeaders,
-      body: summaryData,
-      theme: 'grid',
-      styles: { 
-        fontSize: 8.5, 
-        halign: 'center',
-        lineColor: [37, 99, 235],
-        lineWidth: 0.1,
-      },
-      headStyles: { 
-        fillColor: [30, 41, 59], 
-        textColor: [255, 255, 255],
-        fontSize: 8.5, 
-        fontStyle: 'bold' 
-      },
-      alternateRowStyles: { fillColor: [248, 250, 252] }
-    });
+        // Give Recharts time to re-render to the new fixed width
+        await new Promise(resolve => setTimeout(resolve, 300));
 
-    // Supervisor Audit Table
-    const supHeaders = [['Site Supervisor', 'Assigned Advances (INR)', 'Verified Claims (INR)', 'Reconciliation Buffer (INR)']];
-    const supRows = supervisorData.filter(s => s.advance !== null || s.expenses !== null).map(s => [
-      s.name,
-      formatPDFINR(s.advance || 0),
-      formatPDFINR(s.expenses || 0),
-      formatPDFINR((s.advance || 0) - (s.expenses || 0))
-    ]);
+        const canvas = await html2canvas(chartsRef.current, { scale: 2, useCORS: true });
 
-    autoTable(doc, {
-      startY: doc.lastAutoTable.finalY + 8,
-      margin: { bottom: 30 },
-      head: supHeaders,
-      body: supRows,
-      theme: 'grid',
-      styles: { 
-        fontSize: 7.5,
-        lineColor: [37, 99, 235],
-        lineWidth: 0.1,
-      },
-      headStyles: { 
-        fillColor: [16, 185, 129], 
-        textColor: [255, 255, 255],
-        fontSize: 8 
-      },
-      alternateRowStyles: { fillColor: [248, 250, 252] }
-    });
+        // Revert styling
+        chartsRef.current.style.width = originalWidth;
+        chartsRef.current.style.maxWidth = '';
 
-    // Payment Mode Breakdown Table
-    const payHeaders = [['Payment Disbursal Channel', 'Disbursed Volume (INR)', '% Channel Share']];
-    const payRows = paymentModeData.map(p => [
-      p.name,
-      formatPDFINR(p.value),
-      `${p.percentage}%`
-    ]);
+        const imgData = canvas.toDataURL('image/png');
 
-    autoTable(doc, {
-      startY: doc.lastAutoTable.finalY + 8,
-      margin: { bottom: 30 },
-      head: payHeaders,
-      body: payRows,
-      theme: 'grid',
-      styles: { 
-        fontSize: 7.5,
-        lineColor: [37, 99, 235],
-        lineWidth: 0.1,
-      },
-      headStyles: { 
-        fillColor: [16, 185, 129], 
-        textColor: [255, 255, 255],
-        fontSize: 8 
-      },
-      alternateRowStyles: { fillColor: [248, 250, 252] }
-    });
+        const pdfWidth = doc.internal.pageSize.getWidth();
+        const pdfHeight = doc.internal.pageSize.getHeight();
+        const imgProps = doc.getImageProperties(imgData);
+        const margin = 12;
+
+        const availableWidth = pdfWidth - margin * 2;
+        // 26 is the starting Y for the image (below header)
+        // 40 is the reserved height at the bottom for signatures and footer
+        const availableHeight = pdfHeight - 26 - 40 - margin;
+
+        const ratio = imgProps.width / imgProps.height;
+        let imgWidth = availableWidth;
+        let imgHeight = imgWidth / ratio;
+
+        if (imgHeight > availableHeight) {
+          imgHeight = availableHeight;
+          imgWidth = imgHeight * ratio;
+        }
+
+        const xOffset = margin + (availableWidth - imgWidth) / 2;
+
+        doc.addImage(imgData, 'PNG', xOffset, 26, imgWidth, imgHeight);
+      } catch (err) {
+        console.error("Error capturing charts:", err);
+      }
+    }
 
     await addPdfFooterWithLogo(doc);
     addPdfSignatures(doc);
@@ -404,7 +377,7 @@ const AnalyticsTab = ({
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
-      
+
       {/* Printable Letterhead Header (Only visible on Print) */}
       <div className="print-only" style={{ display: 'none', marginBottom: '1rem', borderBottom: '2px solid #2563eb', paddingBottom: '0.6rem' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
@@ -427,7 +400,7 @@ const AnalyticsTab = ({
       {/* Top Right Action Header (Hidden in Print) */}
       <div className="no-print" style={{ display: 'flex', justifyContent: 'flex-end', width: '100%', marginBottom: '1.25rem' }}>
         {/* Print Button */}
-        
+
 
         {/* PDF Button */}
         <button
@@ -472,22 +445,22 @@ const AnalyticsTab = ({
             Filter Type:
           </span>
           <label style={{ display: 'inline-flex', alignItems: 'center', gap: '0.45rem', cursor: 'pointer', fontSize: '0.86rem', fontWeight: '600', color: 'var(--text-primary)' }}>
-            <input 
-              type="radio" 
-              name="analyticsFilterType" 
-              value="FY" 
-              checked={filterType === 'FY'} 
+            <input
+              type="radio"
+              name="analyticsFilterType"
+              value="FY"
+              checked={filterType === 'FY'}
               onChange={() => setFilterType('FY')}
               style={{ accentColor: '#2563eb', width: '16px', height: '16px', cursor: 'pointer' }}
             />
             Financial Year
           </label>
           <label style={{ display: 'inline-flex', alignItems: 'center', gap: '0.45rem', cursor: 'pointer', fontSize: '0.86rem', fontWeight: '600', color: 'var(--text-primary)' }}>
-            <input 
-              type="radio" 
-              name="analyticsFilterType" 
-              value="DATE_RANGE" 
-              checked={filterType === 'DATE_RANGE'} 
+            <input
+              type="radio"
+              name="analyticsFilterType"
+              value="DATE_RANGE"
+              checked={filterType === 'DATE_RANGE'}
               onChange={() => setFilterType('DATE_RANGE')}
               style={{ accentColor: '#2563eb', width: '16px', height: '16px', cursor: 'pointer' }}
             />
@@ -541,7 +514,7 @@ const AnalyticsTab = ({
             </label>
             <select
               value={selectedSupervisor}
-              onChange={(e) => setSelectedSupervisor(e.target.value)}
+              onChange={(e) => handleSupervisorChange(e.target.value)}
               style={{
                 width: '100%',
                 padding: '0.6rem 0.85rem',
@@ -600,9 +573,9 @@ const AnalyticsTab = ({
                 <label style={{ display: 'block', fontSize: '0.82rem', fontWeight: '700', color: 'var(--text-secondary)', marginBottom: '0.45rem', whiteSpace: 'nowrap' }}>
                   From Date
                 </label>
-                <input 
-                  type="date" 
-                  value={startDate} 
+                <input
+                  type="date"
+                  value={startDate}
                   onChange={(e) => setStartDate(e.target.value)}
                   style={{
                     width: '100%',
@@ -624,9 +597,9 @@ const AnalyticsTab = ({
                 <label style={{ display: 'block', fontSize: '0.82rem', fontWeight: '700', color: 'var(--text-secondary)', marginBottom: '0.45rem', whiteSpace: 'nowrap' }}>
                   To Date
                 </label>
-                <input 
-                  type="date" 
-                  value={endDate} 
+                <input
+                  type="date"
+                  value={endDate}
                   onChange={(e) => setEndDate(e.target.value)}
                   style={{
                     width: '100%',
@@ -650,12 +623,14 @@ const AnalyticsTab = ({
 
 
       {/* Full-Width Stacked Visual Charts (One Below The Other) */}
-      <div style={{
-        display: 'flex',
-        flexDirection: 'column',
-        gap: '1.75rem',
-        width: '100%'
-      }}>
+      <div
+        ref={chartsRef}
+        style={{
+          display: 'flex',
+          flexDirection: 'column',
+          gap: '1.75rem',
+          width: '100%'
+        }}>
         {/* Chart 1: Cumulative Cash Flow & Monthly Velocity */}
         <div style={{
           backgroundColor: 'var(--surface-bg)',
@@ -683,16 +658,16 @@ const AnalyticsTab = ({
               <BarChart data={monthlyFlowData} maxBarSize={32} barGap={4} margin={{ top: 15, right: 10, left: -10, bottom: 10 }}>
                 <CartesianGrid strokeDasharray="3 3" vertical={false} opacity={0.3} />
                 <Legend verticalAlign="top" align="right" iconType="circle" wrapperStyle={{ fontSize: '11.5px', paddingBottom: '14px' }} />
-                <XAxis 
-                  dataKey="month" 
-                  stroke="var(--text-secondary)" 
-                  fontSize={11} 
+                <XAxis
+                  dataKey="month"
+                  stroke="var(--text-secondary)"
+                  fontSize={11}
                   fontWeight={600}
                   tick={{ dy: 6 }}
-                  tickLine={false} 
+                  tickLine={false}
                 />
-                <YAxis stroke="var(--text-secondary)" fontSize={11} tickFormatter={(v) => `₹${v/1000}k`} tickLine={false} />
-                <Tooltip 
+                <YAxis stroke="var(--text-secondary)" fontSize={11} tickFormatter={(v) => `₹${v / 1000}k`} tickLine={false} />
+                <Tooltip
                   formatter={(val) => (val !== null && val !== undefined) ? formatINR(val) : '— (Pending)'}
                   labelFormatter={(label, items) => {
                     const item = monthlyFlowData.find(m => m.month === label);
@@ -700,8 +675,8 @@ const AnalyticsTab = ({
                   }}
                   contentStyle={{ backgroundColor: 'var(--surface-bg)', borderColor: 'var(--border-color)', borderRadius: '10px' }}
                 />
-                <Bar dataKey="Released" name="Funds Disbursed" fill="#3b82f6" maxBarSize={32} radius={[4, 4, 0, 0]} />
-                <Bar dataKey="Expenses" name="Verified Expenses" fill="#10b981" maxBarSize={32} radius={[4, 4, 0, 0]} />
+                <Bar dataKey="Advances" name="Funds Disbursed" fill="#3b82f6" maxBarSize={32} radius={[4, 4, 0, 0]} isAnimationActive={false} />
+                <Bar dataKey="Expenses" name="Verified Expenses" fill="#10b981" maxBarSize={32} radius={[4, 4, 0, 0]} isAnimationActive={false} />
               </BarChart>
             </ResponsiveContainer>
           </div>
@@ -734,15 +709,15 @@ const AnalyticsTab = ({
               <BarChart data={supervisorData} maxBarSize={36} barGap={6} margin={{ top: 15, right: 10, left: -10, bottom: 25 }}>
                 <CartesianGrid strokeDasharray="3 3" vertical={false} opacity={0.3} />
                 <Legend verticalAlign="top" align="right" iconType="circle" wrapperStyle={{ fontSize: '11.5px', paddingBottom: '14px' }} />
-                <XAxis 
-                  dataKey="name" 
+                <XAxis
+                  dataKey="name"
                   tick={renderStraightTick}
                   height={65}
-                  stroke="var(--text-secondary)" 
-                  tickLine={false} 
+                  stroke="var(--text-secondary)"
+                  tickLine={false}
                 />
-                <YAxis stroke="var(--text-secondary)" fontSize={11} tickFormatter={(v) => `₹${v/1000}k`} tickLine={false} />
-                <Tooltip 
+                <YAxis stroke="var(--text-secondary)" fontSize={11} tickFormatter={(v) => `₹${v / 1000}k`} tickLine={false} />
+                <Tooltip
                   content={({ active, payload, label }) => {
                     if (active && payload && payload.length) {
                       const validItems = payload.filter(p => p.value !== null && p.value !== undefined);
@@ -769,8 +744,8 @@ const AnalyticsTab = ({
                     return null;
                   }}
                 />
-                <Bar dataKey="advance" name="Advance Disbursed" fill="#06b6d4" maxBarSize={36} radius={[4, 4, 0, 0]} />
-                <Bar dataKey="expenses" name="Verified Expenses" fill="#10b981" maxBarSize={36} radius={[4, 4, 0, 0]} />
+                <Bar dataKey="advance" name="Advance Disbursed" fill="#06b6d4" maxBarSize={36} radius={[4, 4, 0, 0]} isAnimationActive={false} />
+                <Bar dataKey="expenses" name="Verified Expenses" fill="#10b981" maxBarSize={36} radius={[4, 4, 0, 0]} isAnimationActive={false} />
               </BarChart>
             </ResponsiveContainer>
           </div>

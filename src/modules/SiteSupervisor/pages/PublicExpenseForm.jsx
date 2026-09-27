@@ -169,6 +169,7 @@ const PublicExpenseForm = () => {
       const preview = URL.createObjectURL(file);
       setFormData(prev => ({
         ...prev,
+        receiptFile: file,
         receiptName: file.name,
         previewUrl: preview
       }));
@@ -243,11 +244,32 @@ const PublicExpenseForm = () => {
 
     // Save to backend API
     try {
-      const response = await axios.post(`${API}/public-forms`, newExpense);
+      const submitData = new FormData();
+      submitData.append('role', formData.role);
+      submitData.append('submitterName', formData.submitterName);
+      submitData.append('category', formData.category);
+      submitData.append('site', selectedSite);
+      submitData.append('amount', formData.amount);
+      submitData.append('paidTo', formData.paidTo);
+      submitData.append('paymentMode', formData.paymentMode);
+      if (formData.description) submitData.append('description', formData.description);
+      if (formData.receiptName) submitData.append('receiptName', formData.receiptName);
+      if (formData.receiptFile) submitData.append('receiptFile', formData.receiptFile);
+      submitData.append('receipt', 'true');
+      if (formData.gpsLocation) submitData.append('gpsLocation', formData.gpsLocation);
+      if (formData.gpsAddress) submitData.append('gpsAddress', formData.gpsAddress);
+      submitData.append('submittedVia', 'Public Expense Form');
+
+      const response = await axios.post(`${API}/public-forms`, submitData, {
+        headers: { 'Content-Type': 'multipart/form-data' }
+      });
       if (response.data && response.data.submission) {
         const dbId = response.data.submission.id;
         newExpense.id = dbId;
         newExpense.displayId = `EXP-${String(dbId).substring(0, 6).toUpperCase()}`;
+        if (response.data.submission.receiptUrl) {
+          newExpense.receiptUrl = response.data.submission.receiptUrl;
+        }
       }
     } catch (err) {
       console.error('Failed to submit public expense', err);

@@ -20,20 +20,20 @@ import {
 
 const KPIHeaderCards = ({ projects, expenses, advances, settlements, onNavigateTab }) => {
   const totalBudget = projects.reduce((acc, p) => acc + (p.budget || 0), 0);
-  const totalFundsReleased = projects.reduce((acc, p) => acc + (p.fundsReleased || 0), 0);
-  
   const totalAdvancesDisbursed = advances
     .filter(a => a.status === 'Disbursed')
     .reduce((acc, a) => acc + (a.approvedAmount || 0), 0);
 
-  const totalVerifiedExpenses = expenses
-    .filter(e => e.status === 'Accounts Verified & Paid')
+  // Real-time funds released is the sum of disbursed advances
+  const totalFundsReleased = totalAdvancesDisbursed;
+  const fundedSitesCount = new Set(advances.filter(a => a.status === 'Disbursed').map(a => a.projectId)).size;
+
+  const totalProjectExpenses = expenses
+    .filter(e => e.status === 'Accounts Verified & Paid' || e.status === 'Pending Accounts Verification')
     .reduce((acc, e) => acc + (e.amount || 0), 0);
 
-  const totalProjectExpenses = totalVerifiedExpenses;
-  // Wallet balance across all sites = total advances actually disbursed minus expenses actually verified/paid
-  const totalSupervisorWalletBalance = totalAdvancesDisbursed - totalVerifiedExpenses;
-
+  // Wallet balance across all sites = total advances disbursed minus ops_approved and accounts_paid expenses
+  const totalSupervisorWalletBalance = totalAdvancesDisbursed - totalProjectExpenses;
 
   const pendingVerificationList = expenses.filter(e => e.status === 'Pending Accounts Verification');
   const pendingVerificationAmount = pendingVerificationList.reduce((acc, e) => acc + (e.amount || 0), 0);
@@ -45,7 +45,7 @@ const KPIHeaderCards = ({ projects, expenses, advances, settlements, onNavigateT
   const pendingSettlementsList = settlements.filter(s => s.status !== 'Completed');
 
   const totalPendingAmount = pendingVerificationAmount + pendingAdvancesAmount;
-  const totalPendingCount = pendingVerificationList.length + pendingAdvancesList.length;
+  const totalPendingCount = pendingVerificationList.length + pendingAdvancesList.length + pendingSettlementsList.length;
 
   const budgetVariance = totalBudget - totalProjectExpenses;
   const walletFundPercent = totalFundsReleased > 0 ? ((totalSupervisorWalletBalance / totalFundsReleased) * 100).toFixed(1) : 0;
@@ -74,7 +74,7 @@ const KPIHeaderCards = ({ projects, expenses, advances, settlements, onNavigateT
       value: formatINR(totalFundsReleased),
       icon: Wallet,
       iconBg: '#2563eb', // Royal Blue
-      pillText: `${projects.length} Sites Funded`,
+      pillText: `${fundedSitesCount} Sites Funded`,
       pillType: 'success',
       targetTab: 'wallets'
     },
@@ -99,14 +99,24 @@ const KPIHeaderCards = ({ projects, expenses, advances, settlements, onNavigateT
       targetTab: 'wallets'
     },
     {
-      id: 'pending',
-      title: 'Pending Approval',
-      value: totalPendingCount > 0 ? `${totalPendingCount}` : '0',
+      id: 'pending_bills',
+      title: 'Pending Bills',
+      value: pendingVerificationList.length > 0 ? `${pendingVerificationList.length}` : '0',
       icon: Clock,
       iconBg: '#f59e0b', // Amber/Orange
-      pillText: totalPendingCount > 0 ? `${totalPendingCount} Needs action` : 'All clear',
-      pillType: totalPendingCount > 0 ? 'warning' : 'success',
+      pillText: pendingVerificationList.length > 0 ? `${pendingVerificationList.length} Bills to verify` : 'All clear',
+      pillType: pendingVerificationList.length > 0 ? 'warning' : 'success',
       targetTab: 'verification'
+    },
+    {
+      id: 'pending_requests',
+      title: 'Pending Requests',
+      value: (pendingAdvancesList.length + pendingSettlementsList.length) > 0 ? `${pendingAdvancesList.length + pendingSettlementsList.length}` : '0',
+      icon: Send,
+      iconBg: '#ef4444', // Red
+      pillText: (pendingAdvancesList.length + pendingSettlementsList.length) > 0 ? `${pendingAdvancesList.length + pendingSettlementsList.length} Advances to pay` : 'All clear',
+      pillType: (pendingAdvancesList.length + pendingSettlementsList.length) > 0 ? 'danger' : 'success',
+      targetTab: 'wallets'
     },
 
   ];

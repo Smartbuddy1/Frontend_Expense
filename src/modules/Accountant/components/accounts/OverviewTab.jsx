@@ -124,7 +124,7 @@ const OverviewTab = ({
     },
     {
       id: 'wallets',
-      title: 'Wallet Funds',
+      title: 'Request Advanced',
       desc: 'Site supervisor float & top-ups',
       icon: Wallet,
       color: '#10b981' // Green

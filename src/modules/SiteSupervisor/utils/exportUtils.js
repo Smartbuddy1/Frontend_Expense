@@ -31,6 +31,7 @@ export const exportToPDF = async ({ fileName, title, subtitle, headers, rows, me
       head: [cleanHeaders],
       body: cleanRows,
       theme: 'grid',
+      margin: { bottom: 35, top: 20 },
       styles: { 
         fontSize: 8,
         lineColor: [37, 99, 235],

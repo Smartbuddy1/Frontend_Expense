@@ -11,7 +11,7 @@ import {
 } from 'lucide-react';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
-import { applyPDFHeader, applyPDFFooter, getLogoDataUrl } from '../../utils/exportUtils';
+import { addPdfHeaderWithLogo, addPdfFooterWithLogo, addPdfSignatures } from '../../../Operations/utils/pdfHeaderHelper';
 import PrintFooter from '../PrintFooter';
 
 const FinancialReportsTab = ({ 
@@ -125,20 +125,19 @@ const FinancialReportsTab = ({
   };
 
   const handleExportPDF = async () => {
-    const doc = new jsPDF();
-    const logoDataUrl = await getLogoDataUrl();
+    const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
 
     if (reportMode === 'EXPENSE_VERIFICATION') {
-      applyPDFHeader(doc, {
-        title: `Financial Report: Expense Verification Records`,
-        metaInfo: `Generated: ${new Date().toLocaleString()}`,
-        logoDataUrl
-      });
+      await addPdfHeaderWithLogo(
+        doc,
+        `Financial Report: Expense Verification Records`,
+        `Generated on: ${new Date().toLocaleString('en-GB')}`
+      );
 
       const headers = [['ID', 'Project & Site', 'Supervisor', 'Category', 'Vendor', 'Amount (INR)']];
       const data = filteredExpenses.map(e => [
         e.id?.slice(0, 8)?.toUpperCase(),
-        `${e.projectName || '—'} - ${e.siteName || ''}`,
+        e.siteName ? `${e.projectName || '—'} - ${e.siteName}` : (e.projectName || '—'),
         e.supervisor || '—',
         e.category || '—',
         e.vendorName || '—',
@@ -146,15 +145,29 @@ const FinancialReportsTab = ({
       ]);
 
       autoTable(doc, {
-        startY: 35, margin: { bottom: 30 }, head: headers, body: data,
-        theme: 'grid', headStyles: { fillColor: [59, 130, 246] }, styles: { fontSize: 8.5 }
+        startY: 28,
+        margin: { bottom: 35, top: 20 },
+        head: headers,
+        body: data,
+        theme: 'grid',
+        styles: { 
+          fontSize: 8,
+          lineColor: [37, 99, 235],
+          lineWidth: 0.1,
+        },
+        headStyles: { 
+          fillColor: [16, 185, 129], 
+          textColor: [255, 255, 255],
+          fontStyle: 'bold'
+        },
+        alternateRowStyles: { fillColor: [248, 250, 252] }
       });
     } else {
-      applyPDFHeader(doc, {
-        title: `Financial Report: Live Payment Records`,
-        metaInfo: `Generated: ${new Date().toLocaleString()}`,
-        logoDataUrl
-      });
+      await addPdfHeaderWithLogo(
+        doc,
+        `Financial Report: Live Payment Records`,
+        `Generated on: ${new Date().toLocaleString('en-GB')}`
+      );
 
       const headers = [['ID', 'Site Supervisor', 'Date/Time', 'Amount (INR)', 'Details']];
       const data = filteredPayments.map(p => {
@@ -170,12 +183,27 @@ const FinancialReportsTab = ({
       });
 
       autoTable(doc, {
-        startY: 35, margin: { bottom: 30 }, head: headers, body: data,
-        theme: 'grid', headStyles: { fillColor: [59, 130, 246] }, styles: { fontSize: 8.5 }
+        startY: 28,
+        margin: { bottom: 35, top: 20 },
+        head: headers,
+        body: data,
+        theme: 'grid',
+        styles: { 
+          fontSize: 8,
+          lineColor: [37, 99, 235],
+          lineWidth: 0.1,
+        },
+        headStyles: { 
+          fillColor: [16, 185, 129], 
+          textColor: [255, 255, 255],
+          fontStyle: 'bold'
+        },
+        alternateRowStyles: { fillColor: [248, 250, 252] }
       });
     }
 
-    applyPDFFooter(doc);
+    await addPdfFooterWithLogo(doc);
+    addPdfSignatures(doc);
     doc.save(`ASEMS_FinancialReport_${new Date().toISOString().split('T')[0]}.pdf`);
   };
 
@@ -225,28 +253,7 @@ const FinancialReportsTab = ({
       {/* Render Action Header into Dashboard Header Portal if it exists */}
       {document.getElementById('header-actions-portal') && createPortal(
         <div className="no-print" style={{ display: 'flex', gap: '0.75rem' }}>
-          <button
-            onClick={handlePrint}
-            style={{
-              padding: '0.55rem 1.15rem', borderRadius: '12px', backgroundColor: 'var(--surface-bg)',
-              color: 'var(--text-primary)', border: '1.5px solid #cbd5e1', fontWeight: '600',
-              fontSize: '0.86rem', display: 'inline-flex', alignItems: 'center', gap: '0.45rem',
-              cursor: 'pointer', boxShadow: '0 1px 4px rgba(0,0,0,0.03)', transition: 'all 0.15s ease'
-            }}
-          >
-            <Printer size={17} /> Print
-          </button>
-          <button
-            onClick={handleExportCSV}
-            style={{
-              padding: '0.55rem 1.15rem', borderRadius: '12px', background: 'linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%)',
-              color: '#ffffff', border: 'none', fontWeight: '600',
-              fontSize: '0.86rem', display: 'inline-flex', alignItems: 'center', gap: '0.45rem',
-              cursor: 'pointer', boxShadow: '0 4px 12px rgba(99, 102, 241, 0.25)', transition: 'all 0.15s ease'
-            }}
-          >
-            <FileSpreadsheet size={17} color="#ffffff" /> Excel
-          </button>
+
           <button
             onClick={handleExportPDF}
             style={{

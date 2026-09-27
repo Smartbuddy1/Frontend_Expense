@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   CheckCircle2, 
   Eye, 
@@ -20,6 +20,7 @@ import autoTable from 'jspdf-autotable';
 import { addPdfHeaderWithLogo, addPdfFooterWithLogo, addPdfSignatures, escapeHtml } from '../../../Operations/utils/pdfHeaderHelper';
 import aiLogo from '../../assets/ai_logo.jpg';
 import PrintFooter from '../PrintFooter';
+import Pagination from '../../../../components/ui/Pagination';
 
 const ExpenseVerificationTab = ({ 
   expenses, 
@@ -33,6 +34,13 @@ const ExpenseVerificationTab = ({
   const [selectedSupervisor, setSelectedSupervisor] = useState('ALL');
   const [selectedProject, setSelectedProject] = useState('ALL');
   const [selectedCategory, setSelectedCategory] = useState('ALL');
+
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 10;
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchQuery, statusFilter, selectedSupervisor, selectedProject, selectedCategory, expenses]);
 
   const formatINR = (val) => {
     return new Intl.NumberFormat('en-IN', {
@@ -78,6 +86,17 @@ const ExpenseVerificationTab = ({
   const pendingCount = expenses.filter(e => e.status === 'Pending Accounts Verification').length;
   const verifiedCount = expenses.filter(e => e.status === 'Accounts Verified & Paid').length;
 
+  const totalPages = Math.ceil(filteredExpenses.length / itemsPerPage);
+  const currentExpenses = filteredExpenses.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
+
+  const handleNextPage = () => {
+    if (currentPage < totalPages) setCurrentPage(prev => prev + 1);
+  };
+
+  const handlePrevPage = () => {
+    if (currentPage > 1) setCurrentPage(prev => prev - 1);
+  };
+
   const handlePrint = () => {
     window.print();
   };
@@ -111,7 +130,7 @@ const ExpenseVerificationTab = ({
   };
 
   const handleExportPDF = async () => {
-    const doc = new jsPDF();
+    const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
 
     await addPdfHeaderWithLogo(
       doc,
@@ -119,20 +138,30 @@ const ExpenseVerificationTab = ({
       `Generated on: ${new Date().toLocaleString('en-GB')} | Total Verified/Pending Claims: ${filteredExpenses.length}`
     );
 
-    const headers = [['Expense ID', 'Category', 'Project', 'Supervisor', 'Vendor', 'Amount', 'Status']];
-    const data = filteredExpenses.map(e => [
-      e.id?.slice(0, 8)?.toUpperCase() || '—',
-      e.category,
-      e.projectName,
-      e.supervisor,
-      e.vendorName || '-',
-      e.amount,
-      e.status === 'Accounts Verified & Paid' ? 'Verified' : 'Pending'
-    ]);
+    const headers = [['DATE', 'PROJECT', 'SUPERVISOR', 'VENDOR', 'AMOUNT', 'STATUS']];
+    const data = filteredExpenses.map(e => {
+      let dateStr = '';
+      const rawDate = e.billDate || e.submittedAt;
+      if (rawDate) {
+        try {
+          dateStr = new Date(rawDate).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
+        } catch (err) {
+          dateStr = rawDate.split('T')[0];
+        }
+      }
+      return [
+        dateStr || '—',
+        e.projectName,
+        e.supervisor,
+        e.vendorName || '-',
+        e.amount,
+        e.status === 'Accounts Verified & Paid' ? 'Verified' : 'Pending'
+      ];
+    });
 
     autoTable(doc, {
-      startY: 26,
-      margin: { bottom: 30 },
+      startY: 28,
+      margin: { bottom: 35, top: 20 },
       head: headers,
       body: data,
       theme: 'grid',
@@ -143,7 +172,8 @@ const ExpenseVerificationTab = ({
       },
       headStyles: { 
         fillColor: [16, 185, 129], 
-        textColor: [255, 255, 255] 
+        textColor: [255, 255, 255],
+        fontStyle: 'bold'
       },
       alternateRowStyles: { fillColor: [248, 250, 252] }
     });
@@ -171,6 +201,119 @@ const ExpenseVerificationTab = ({
           <div style={{ textAlign: 'right', fontSize: '8pt', color: '#64748b' }}>
             <div>Date: {new Date().toLocaleDateString('en-IN')}</div>
             <div>Total Records: {filteredExpenses.length}</div>
+          </div>
+        </div>
+      </div>
+
+      {/* KPI Cards */}
+      <div className="kpi-cards-grid no-print" style={{ marginBottom: '-0.5rem' }}>
+        <div 
+          onClick={() => setStatusFilter('ALL')}
+          style={{
+          backgroundColor: 'var(--surface-bg, #ffffff)',
+          borderRadius: '18px',
+          padding: '1.15rem 1.25rem',
+          border: statusFilter === 'ALL' ? '2px solid #4f46e5' : '1px solid var(--border-color, #e2e8f0)',
+          boxShadow: '0 4px 18px rgba(0, 0, 0, 0.03)',
+          display: 'flex',
+          flexDirection: 'column',
+          justifyContent: 'space-between',
+          minHeight: '135px',
+          cursor: 'pointer',
+          transition: 'all 0.2s ease'
+        }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+            <div>
+              <p style={{ color: 'var(--text-secondary, #64748b)', fontSize: '0.85rem', fontWeight: '600', marginBottom: '0.2rem', textTransform: 'uppercase', letterSpacing: '0.04em' }}>Invoices from Ops</p>
+              <h3 style={{ color: 'var(--text-primary, #0f172a)', fontSize: '1.75rem', fontWeight: '800', margin: 0, letterSpacing: '-0.02em' }}>{expenses.filter(e => e.opsVerificationStatus === 'Verified').length}</h3>
+            </div>
+            <div style={{ padding: '0.75rem', borderRadius: '14px', backgroundColor: '#e0e7ff' }}>
+              <FileSpreadsheet size={24} color="#4f46e5" />
+            </div>
+          </div>
+          <div style={{ marginTop: '0.75rem' }}>
+            <span style={{
+              display: 'inline-flex', alignItems: 'center', gap: '0.3rem',
+              padding: '0.25rem 0.65rem', borderRadius: '20px',
+              backgroundColor: '#e0e7ff', color: '#4f46e5',
+              fontSize: '0.75rem', fontWeight: '700'
+            }}>
+              <CheckCircle2 size={12} /> Operations Verified
+            </span>
+          </div>
+        </div>
+
+        <div 
+          onClick={() => setStatusFilter('PENDING')}
+          style={{
+          backgroundColor: 'var(--surface-bg, #ffffff)',
+          borderRadius: '18px',
+          padding: '1.15rem 1.25rem',
+          border: statusFilter === 'PENDING' ? '2px solid #d97706' : '1px solid var(--border-color, #e2e8f0)',
+          boxShadow: '0 4px 18px rgba(0, 0, 0, 0.03)',
+          display: 'flex',
+          flexDirection: 'column',
+          justifyContent: 'space-between',
+          minHeight: '135px',
+          cursor: 'pointer',
+          transition: 'all 0.2s ease'
+        }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+            <div>
+              <p style={{ color: 'var(--text-secondary, #64748b)', fontSize: '0.85rem', fontWeight: '600', marginBottom: '0.2rem', textTransform: 'uppercase', letterSpacing: '0.04em' }}>Pending Your Approval</p>
+              <h3 style={{ color: 'var(--text-primary, #0f172a)', fontSize: '1.75rem', fontWeight: '800', margin: 0, letterSpacing: '-0.02em' }}>{pendingCount}</h3>
+            </div>
+            <div style={{ padding: '0.75rem', borderRadius: '14px', backgroundColor: '#fef3c7' }}>
+              <Clock size={24} color="#d97706" />
+            </div>
+          </div>
+          <div style={{ marginTop: '0.75rem' }}>
+            <span style={{
+              display: 'inline-flex', alignItems: 'center', gap: '0.3rem',
+              padding: '0.25rem 0.65rem', borderRadius: '20px',
+              backgroundColor: pendingCount > 0 ? '#fef3c7' : '#dcfce7',
+              color: pendingCount > 0 ? '#d97706' : '#15803d',
+              fontSize: '0.75rem', fontWeight: '700'
+            }}>
+              {pendingCount > 0 ? <AlertCircle size={12} /> : <CheckCircle2 size={12} />} 
+              {pendingCount > 0 ? `${pendingCount} action required` : 'All caught up!'}
+            </span>
+          </div>
+        </div>
+
+        <div 
+          onClick={() => setStatusFilter('VERIFIED')}
+          style={{
+          backgroundColor: 'var(--surface-bg, #ffffff)',
+          borderRadius: '18px',
+          padding: '1.15rem 1.25rem',
+          border: statusFilter === 'VERIFIED' ? '2px solid #15803d' : '1px solid var(--border-color, #e2e8f0)',
+          boxShadow: '0 4px 18px rgba(0, 0, 0, 0.03)',
+          display: 'flex',
+          flexDirection: 'column',
+          justifyContent: 'space-between',
+          minHeight: '135px',
+          cursor: 'pointer',
+          transition: 'all 0.2s ease'
+        }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+            <div>
+              <p style={{ color: 'var(--text-secondary, #64748b)', fontSize: '0.85rem', fontWeight: '600', marginBottom: '0.2rem', textTransform: 'uppercase', letterSpacing: '0.04em' }}>Approved & Paid</p>
+              <h3 style={{ color: 'var(--text-primary, #0f172a)', fontSize: '1.75rem', fontWeight: '800', margin: 0, letterSpacing: '-0.02em' }}>{verifiedCount}</h3>
+            </div>
+            <div style={{ padding: '0.75rem', borderRadius: '14px', backgroundColor: '#dcfce7' }}>
+              <ShieldCheck size={24} color="#15803d" />
+            </div>
+          </div>
+          <div style={{ marginTop: '0.75rem' }}>
+            <span style={{
+              display: 'inline-flex', alignItems: 'center', gap: '0.3rem',
+              padding: '0.25rem 0.65rem', borderRadius: '20px',
+              backgroundColor: '#dcfce7', color: '#15803d',
+              fontSize: '0.75rem', fontWeight: '700'
+            }}>
+              <CheckCircle2 size={12} /> Processed
+            </span>
           </div>
         </div>
       </div>
@@ -350,14 +493,14 @@ const ExpenseVerificationTab = ({
               </tr>
             </thead>
             <tbody>
-              {filteredExpenses.length === 0 ? (
+              {currentExpenses.length === 0 ? (
                 <tr>
                   <td colSpan={9} style={{ padding: '3rem', textAlign: 'center', color: 'var(--text-secondary)' }}>
                     No vendor invoices or procurement bills found.
                   </td>
                 </tr>
               ) : (
-                filteredExpenses.map((exp) => {
+                currentExpenses.map((exp) => {
                   const isPending = exp.status === 'Pending Accounts Verification';
                   const isVerified = exp.status === 'Accounts Verified & Paid';
                   const isRejected = exp.status === 'Sent for Correction' || exp.status === 'Rejected';
@@ -609,6 +752,18 @@ const ExpenseVerificationTab = ({
             </tbody>
           </table>
         </div>
+        
+        {/* Pagination Control */}
+        {totalPages > 1 && (
+          <div className="no-print" style={{ padding: '1rem', borderTop: '1px solid var(--border-color)' }}>
+            <Pagination 
+              currentPage={currentPage}
+              totalPages={totalPages}
+              onNext={handleNextPage}
+              onPrev={handlePrevPage}
+            />
+          </div>
+        )}
       </div>
 
       {/* Corporate Printable Footer with Signatures */}

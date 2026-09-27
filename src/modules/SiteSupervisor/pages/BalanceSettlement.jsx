@@ -16,7 +16,7 @@ import {
 } from 'lucide-react';
 import { useWallet } from '../context/WalletContext';
 import { useLanguage } from '../context/LanguageContext';
-import { exportToExcel, triggerPrint, exportToPDF } from '../utils/exportUtils';
+import { exportToPDF } from '../utils/exportUtils';
 
 const BalanceSettlement = () => {
   const { walletBalance, totalAdvance, expensesList } = useWallet();
@@ -79,18 +79,7 @@ const BalanceSettlement = () => {
     return matchesSearch && matchesSite && matchesCategory;
   });
 
-  const handleExportExcel = () => {
-    const headers = ['ID', 'Date', 'Project / Site Name', 'Details', 'Amount (₹)', 'Balance (₹)'];
-    const rows = filteredEntries.map(entry => [
-      entry.id,
-      entry.date,
-      entry.site,
-      entry.desc,
-      entry.type === 'Credit' ? `+${entry.amount}` : `-${entry.amount}`,
-      entry.balanceAfter
-    ]);
-    exportToExcel('Site_Supervisor_Passbook_Ledger', headers, rows);
-  };
+
 
   const handleExportPDF = () => {
     const headers = ['ID', 'Date', 'Project / Site', 'Details', 'Amount (Rs)', 'Balance (Rs)'];
@@ -150,7 +139,7 @@ const BalanceSettlement = () => {
           </p>
         </div>
 
-        {/* Action Buttons: PDF, Excel, Print */}
+        {/* Action Buttons: PDF */}
         <div style={{ display: 'flex', gap: '0.6rem', alignItems: 'center', flexWrap: 'wrap' }}>
           <button
             onClick={handleExportPDF}
@@ -172,30 +161,6 @@ const BalanceSettlement = () => {
           >
             <FileDown size={15} />
             <span>PDF</span>
-          </button>
-
-          
-
-          <button
-            onClick={triggerPrint}
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: '0.35rem',
-              padding: '0.45rem 0.85rem',
-              borderRadius: '0.65rem',
-              border: '1px solid rgba(59, 130, 246, 0.3)',
-              backgroundColor: 'rgba(59, 130, 246, 0.1)',
-              color: '#3b82f6',
-              fontWeight: '700',
-              fontSize: '0.8rem',
-              cursor: 'pointer',
-              transition: 'all 0.2s ease'
-            }}
-            title="Print Passbook Statement"
-          >
-            <Printer size={15} />
-            <span>Print</span>
           </button>
         </div>
       </div>

@@ -156,7 +156,7 @@ const mapSettlementForAccounts = (s) => ({
 const TABS = [
   { id: 'overview', label: 'Overview', icon: Layers, count: null },
   { id: 'verification', label: 'Expense Verification', icon: Clock, countKey: 'pendingExpenses' },
-  { id: 'wallets', label: 'Fund Requests', icon: Wallet, countKey: 'pendingAdvances' },
+  { id: 'wallets', label: 'Request Advanced', icon: Wallet, countKey: 'pendingAdvances' },
   { id: 'analytics', label: 'Analytics', icon: Activity, count: null },
   { id: 'reports', label: 'Financial Reports', icon: FileSpreadsheet, count: null },
   { id: 'public-form', label: 'Public Form', icon: Folder, count: null }
@@ -180,9 +180,9 @@ const TAB_METADATA = {
     color: 'var(--badge-info-text)'
   },
   wallets: {
-    prefix: 'Advance Fund',
-    highlight: 'Requests',
-    title: 'Advance Fund Requests',
+    prefix: 'Request',
+    highlight: 'Advanced',
+    title: 'Request Advanced',
     subtitle: 'Operations-approved advances — review & disburse to supervisor wallets',
     icon: Wallet,
     color: '#059669'
