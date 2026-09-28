@@ -67,7 +67,7 @@ const RequestAdvance = () => {
       await updateAdvance(editAdvanceData.id, editAdvanceData);
       setIsEditModalOpen(false);
       setEditAdvanceData(null);
-      toast.success('Advance updated successfully!');
+      toast.success(language === 'mr' ? 'अ‍ॅडव्हान्स यशस्वीरित्या अपडेट झाला!' : language === 'hi' ? 'एडवांस सफलतापूर्वक अपडेट हुआ!' : 'Advance updated successfully!');
     } catch (err) {
       toast.error(err.response?.data?.error || 'Failed to update advance');
     } finally {

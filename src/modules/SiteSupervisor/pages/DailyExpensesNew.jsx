@@ -100,7 +100,7 @@ const DailyExpenses = () => {
       await updateExpense(editExpenseData.id, editExpenseData);
       setIsEditModalOpen(false);
       setEditExpenseData(null);
-      toast.success('Expense updated successfully!');
+      toast.success(language === 'mr' ? 'खर्च यशस्वीरित्या अपडेट झाला!' : language === 'hi' ? 'खर्च सफलतापूर्वक अपडेट हुआ!' : 'Expense updated successfully!');
     } catch (err) {
       toast.error(err.response?.data?.error || 'Failed to update expense');
     } finally {
@@ -1206,7 +1206,7 @@ const DailyExpenses = () => {
               onClick={(e) => {
                 if (!viewReceiptModal.receiptUrl) {
                   e.preventDefault();
-                  toast.error('No receipt file available to download.');
+                  toast.error(language === 'mr' ? 'डाउनलोड करण्यासाठी कोणतीही पावती फाइल उपलब्ध नाही.' : language === 'hi' ? 'डाउनलोड करने के लिए कोई रसीद फ़ाइल उपलब्ध नहीं है।' : 'No receipt file available to download.');
                 }
               }}
               style={{

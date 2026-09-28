@@ -67,12 +67,12 @@ const UploadBills = () => {
     const file = e.target.files[0];
     if (file) {
       if (file.size > 5242880) {
-        toast.error('File must be smaller than 5MB!');
+        toast.error(language === 'mr' ? 'फाईल 5MB पेक्षा लहान असावी!' : language === 'hi' ? 'फ़ाइल 5MB से छोटी होनी चाहिए!' : 'File must be smaller than 5MB!');
         return;
       }
       const allowedTypes = ['application/pdf', 'image/jpeg', 'image/png', 'image/jpg'];
       if (!allowedTypes.includes(file.type)) {
-        toast.error('Only PDF, JPG, PNG files allowed!');
+        toast.error(language === 'mr' ? 'फक्त PDF, JPG, PNG फाइल्स चालतील!' : language === 'hi' ? 'केवल PDF, JPG, PNG फ़ाइलें स्वीकृत हैं!' : 'Only PDF, JPG, PNG files allowed!');
         return;
       }
       setReceiptFile(file);
@@ -85,7 +85,7 @@ const UploadBills = () => {
     e.preventDefault();
     if (!uploadTitle || !amount) return;
     if (!receiptFile) {
-      toast.error('Please attach a bill photo or document.');
+      toast.error(language === 'mr' ? 'कृपया बिलाचा फोटो किंवा डॉक्युमेंट जोडा.' : language === 'hi' ? 'कृपया बिल का फोटो या दस्तावेज़ संलग्न करें।' : 'Please attach a bill photo or document.');
       return;
     }
     setSubmitting(true);
@@ -102,7 +102,7 @@ const UploadBills = () => {
       setVendor('');
       setAmount('');
       setReceiptFile(null);
-      toast.success('Bill uploaded successfully and submitted for audit verification!');
+      toast.success(language === 'mr' ? 'बिल यशस्वीरित्या अपलोड झाले आणि ऑडिट पडताळणीसाठी सबमिट केले!' : language === 'hi' ? 'बिल सफलतापूर्वक अपलोड हुआ और ऑडिट सत्यापन के लिए प्रस्तुत किया गया!' : 'Bill uploaded successfully and submitted for audit verification!');
     } catch (err) {
       toast.error(err.response?.data?.error || 'Could not upload the bill, please try again.');
     } finally {

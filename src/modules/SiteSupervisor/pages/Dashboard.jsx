@@ -35,6 +35,7 @@ import {
 import { useWallet } from '../context/WalletContext';
 import { useLanguage } from '../context/LanguageContext';
 import { toast } from '../../../components/Toast';
+import Skeleton from '../../../components/ui/Skeleton';
 
 const Dashboard = () => {
   const navigate = useNavigate();
@@ -52,7 +53,8 @@ const Dashboard = () => {
     advancesList, // Added advancesList
     recordExpense,
     requestAdvance,
-    lastDeduction
+    lastDeduction,
+    loading
   } = useWallet();
   const { t, language } = useLanguage();
 
@@ -316,26 +318,32 @@ const Dashboard = () => {
       {/* Top Stat Cards Row (Full Width 100% Span) */}
       <div className="dashboard-kpi-grid-3">
         {/* Card 1: Available Wallet Balance */}
-        <div style={{
-          background: 'var(--surface-bg)',
-          borderRadius: '1.15rem',
-          border: '1px solid var(--border-color)',
-          padding: '1.15rem 1.25rem',
-          boxShadow: '0 4px 16px -2px var(--shadow-color)',
-          display: 'flex',
-          flexDirection: 'column',
-          justifyContent: 'space-between',
-          minHeight: '140px',
-          transition: 'transform 0.2s ease, box-shadow 0.2s ease'
-        }}>
+        <div 
+          onClick={() => navigate('/balance-settlement')}
+          style={{
+            background: 'var(--surface-bg)',
+            borderRadius: '1.15rem',
+            border: '1px solid var(--border-color)',
+            padding: '1.15rem 1.25rem',
+            boxShadow: '0 4px 16px -2px var(--shadow-color)',
+            display: 'flex',
+            flexDirection: 'column',
+            justifyContent: 'space-between',
+            minHeight: '140px',
+            cursor: 'pointer',
+            transition: 'transform 0.2s ease, box-shadow 0.2s ease'
+          }}
+          onMouseEnter={(e) => { e.currentTarget.style.transform = 'translateY(-2px)'; e.currentTarget.style.boxShadow = '0 6px 20px -2px var(--shadow-color)'; }}
+          onMouseLeave={(e) => { e.currentTarget.style.transform = 'none'; e.currentTarget.style.boxShadow = '0 4px 16px -2px var(--shadow-color)'; }}
+        >
           <span style={{ fontSize: '0.85rem', fontWeight: '600', color: 'var(--text-secondary)' }}>
             {t('availableBalance')}
           </span>
 
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', margin: '0.4rem 0' }}>
-            <div style={{ fontSize: '1.85rem', fontWeight: '800', color: '#10b981', lineHeight: 1 }}>
+            {loading ? <Skeleton width="100px" height="30px" /> : <div style={{ fontSize: '1.85rem', fontWeight: '800', color: '#10b981', lineHeight: 1 }}>
               ₹{localWalletBalance.toLocaleString()}
-            </div>
+            </div>}
             <div style={{
               width: '48px',
               height: '48px',
@@ -385,26 +393,32 @@ const Dashboard = () => {
         </div>
 
         {/* Card 2: Total Advance Fund / Site Advance */}
-        <div style={{
-          background: 'var(--surface-bg)',
-          borderRadius: '1.15rem',
-          border: '1px solid var(--border-color)',
-          padding: '1.15rem 1.25rem',
-          boxShadow: '0 4px 16px -2px var(--shadow-color)',
-          display: 'flex',
-          flexDirection: 'column',
-          justifyContent: 'space-between',
-          minHeight: '140px',
-          transition: 'transform 0.2s ease, box-shadow 0.2s ease'
-        }}>
+        <div 
+          onClick={() => navigate('/request-advance')}
+          style={{
+            background: 'var(--surface-bg)',
+            borderRadius: '1.15rem',
+            border: '1px solid var(--border-color)',
+            padding: '1.15rem 1.25rem',
+            boxShadow: '0 4px 16px -2px var(--shadow-color)',
+            display: 'flex',
+            flexDirection: 'column',
+            justifyContent: 'space-between',
+            minHeight: '140px',
+            cursor: 'pointer',
+            transition: 'transform 0.2s ease, box-shadow 0.2s ease'
+          }}
+          onMouseEnter={(e) => { e.currentTarget.style.transform = 'translateY(-2px)'; e.currentTarget.style.boxShadow = '0 6px 20px -2px var(--shadow-color)'; }}
+          onMouseLeave={(e) => { e.currentTarget.style.transform = 'none'; e.currentTarget.style.boxShadow = '0 4px 16px -2px var(--shadow-color)'; }}
+        >
           <span style={{ fontSize: '0.85rem', fontWeight: '600', color: 'var(--text-secondary)' }}>
             {language === 'mr' ? 'एकूण अ‍ॅडव्हान्स फंड' : language === 'hi' ? 'कुल एडवांस फंड' : 'Total Advance Fund'}
           </span>
 
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', margin: '0.4rem 0' }}>
-            <div style={{ fontSize: '1.85rem', fontWeight: '800', color: 'var(--text-primary)', lineHeight: 1 }}>
+            {loading ? <Skeleton width="100px" height="30px" /> : <div style={{ fontSize: '1.85rem', fontWeight: '800', color: 'var(--text-primary)', lineHeight: 1 }}>
               ₹{localTotalAdvance.toLocaleString()}
-            </div>
+            </div>}
             <div style={{
               width: '48px',
               height: '48px',
@@ -438,26 +452,32 @@ const Dashboard = () => {
         </div>
 
         {/* Card 3: Total Settled Expenses / Site Spent */}
-        <div style={{
-          background: 'var(--surface-bg)',
-          borderRadius: '1.15rem',
-          border: '1px solid var(--border-color)',
-          padding: '1.15rem 1.25rem',
-          boxShadow: '0 4px 16px -2px var(--shadow-color)',
-          display: 'flex',
-          flexDirection: 'column',
-          justifyContent: 'space-between',
-          minHeight: '140px',
-          transition: 'transform 0.2s ease, box-shadow 0.2s ease'
-        }}>
+        <div 
+          onClick={() => navigate('/daily-expenses')}
+          style={{
+            background: 'var(--surface-bg)',
+            borderRadius: '1.15rem',
+            border: '1px solid var(--border-color)',
+            padding: '1.15rem 1.25rem',
+            boxShadow: '0 4px 16px -2px var(--shadow-color)',
+            display: 'flex',
+            flexDirection: 'column',
+            justifyContent: 'space-between',
+            minHeight: '140px',
+            cursor: 'pointer',
+            transition: 'transform 0.2s ease, box-shadow 0.2s ease'
+          }}
+          onMouseEnter={(e) => { e.currentTarget.style.transform = 'translateY(-2px)'; e.currentTarget.style.boxShadow = '0 6px 20px -2px var(--shadow-color)'; }}
+          onMouseLeave={(e) => { e.currentTarget.style.transform = 'none'; e.currentTarget.style.boxShadow = '0 4px 16px -2px var(--shadow-color)'; }}
+        >
           <span style={{ fontSize: '0.85rem', fontWeight: '600', color: 'var(--text-secondary)' }}>
             {language === 'mr' ? 'साइटवरील खर्च' : language === 'hi' ? 'साइट पर खर्च' : 'Site Settled Spend'}
           </span>
 
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', margin: '0.4rem 0' }}>
-            <div style={{ fontSize: '1.85rem', fontWeight: '800', color: 'var(--text-primary)', lineHeight: 1 }}>
+            {loading ? <Skeleton width="100px" height="30px" /> : <div style={{ fontSize: '1.85rem', fontWeight: '800', color: 'var(--text-primary)', lineHeight: 1 }}>
               ₹{siteTodaySpend.toLocaleString()}
-            </div>
+            </div>}
             <div style={{
               width: '48px',
               height: '48px',
@@ -1312,7 +1332,7 @@ const Dashboard = () => {
             </div>
 
             <button 
-              onClick={() => { toast.success('Bills uploaded successfully!'); setActiveModal(null); }}
+              onClick={() => { toast.success(language === 'mr' ? 'बिल्स यशस्वीरित्या अपलोड झाले!' : language === 'hi' ? 'बिल सफलतापूर्वक अपलोड हो गए!' : 'Bills uploaded successfully!'); setActiveModal(null); }}
               style={{
                 width: '100%',
                 padding: '0.85rem',
