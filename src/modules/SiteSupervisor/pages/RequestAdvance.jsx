@@ -168,7 +168,7 @@ const RequestAdvance = () => {
 
   const handleExportPDF = () => {
     const headers = ['Req ID', 'Site Location', 'Purpose / Reason', 'Urgency', 'Date', 'Amount (Rs)', 'Status'];
-    const rows = currentHistory.map(req => [
+    const rows = filteredHistory.map(req => [
       req.displayId || req.id,
       req.site,
       req.note,
@@ -575,7 +575,8 @@ const RequestAdvance = () => {
             totalPages={totalPages}
             itemsPerPage={itemsPerPage}
             totalItems={filteredHistory.length}
-            onPageChange={setCurrentPage}
+            onPrev={handlePrevPage}
+            onNext={handleNextPage}
           />
         </div>
       </div>

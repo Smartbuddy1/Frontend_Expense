@@ -321,7 +321,8 @@ const AssignedProjects = () => {
             totalPages={totalPages}
             itemsPerPage={itemsPerPage}
             totalItems={filteredProjects.length}
-            onPageChange={setCurrentPage}
+            onPrev={handlePrevPage}
+            onNext={handleNextPage}
           />
         </div>
       </div>

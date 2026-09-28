@@ -808,7 +808,8 @@ const DailyExpenses = () => {
             totalPages={totalPages}
             itemsPerPage={itemsPerPage}
             totalItems={filteredExpenses.length}
-            onPageChange={setCurrentPage}
+            onPrev={handlePrevPage}
+            onNext={handleNextPage}
           />
         </div>
       </div>

@@ -409,7 +409,8 @@ const BalanceSettlement = () => {
             totalPages={totalPages}
             itemsPerPage={itemsPerPage}
             totalItems={filteredEntries.length}
-            onPageChange={setCurrentPage}
+            onPrev={handlePrevPage}
+            onNext={handleNextPage}
           />
         </div>
       </div>
