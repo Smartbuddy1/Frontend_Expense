@@ -56,11 +56,11 @@ const UploadBills = () => {
   const currentBills = filteredBills.slice((validCurrentPage - 1) * itemsPerPage, validCurrentPage * itemsPerPage);
 
   const handleNextPage = () => {
-    if (validCurrentPage < totalPages) setCurrentPage(validCurrentPage + 1);
+    setCurrentPage(prev => (prev < totalPages ? prev + 1 : prev));
   };
 
   const handlePrevPage = () => {
-    if (validCurrentPage > 1) setCurrentPage(validCurrentPage - 1);
+    setCurrentPage(prev => (prev > 1 ? prev - 1 : prev));
   };
 
   const handleFileChange = (e) => {
@@ -84,6 +84,10 @@ const UploadBills = () => {
   const handleUpload = async (e) => {
     e.preventDefault();
     if (!uploadTitle || !amount) return;
+    if (isNaN(amount) || parseFloat(amount) <= 0) {
+      toast.error(language === 'mr' ? 'कृपया योग्य रक्कम भरा!' : language === 'hi' ? 'कृपया सही राशि भरें!' : 'Please enter a valid positive amount!');
+      return;
+    }
     if (!receiptFile) {
       toast.error(language === 'mr' ? 'कृपया बिलाचा फोटो किंवा डॉक्युमेंट जोडा.' : language === 'hi' ? 'कृपया बिल का फोटो या दस्तावेज़ संलग्न करें।' : 'Please attach a bill photo or document.');
       return;
@@ -417,3 +421,4 @@ const UploadBills = () => {
 };
 
 export default UploadBills;
+

@@ -43,11 +43,11 @@ export const getCompanyLogoBase64 = () => {
         };
         resolve(dataUrl);
       } catch (err) {
-        resolve(logoImg || '/logo_new.png');
+        resolve(null);
       }
     };
     img.onerror = () => {
-      resolve(logoImg || '/logo_new.png');
+      resolve(null);
     };
     img.src = logoImg || '/logo_new.png';
   });
@@ -166,3 +166,4 @@ export const addPdfSignatures = (doc) => {
   doc.line(pageWidth - 70, signatureY, pageWidth - 20, signatureY);
   doc.text('Authorized Signatory', pageWidth - 45, signatureY + 4, { align: 'center' });
 };
+

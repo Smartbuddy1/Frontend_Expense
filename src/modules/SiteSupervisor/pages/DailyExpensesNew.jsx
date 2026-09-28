@@ -265,11 +265,11 @@ const DailyExpenses = () => {
   const currentExpenses = filteredExpenses.slice((validCurrentPage - 1) * itemsPerPage, validCurrentPage * itemsPerPage);
 
   const handleNextPage = () => {
-    if (validCurrentPage < totalPages) setCurrentPage(validCurrentPage + 1);
+    setCurrentPage(prev => (prev < totalPages ? prev + 1 : prev));
   };
 
   const handlePrevPage = () => {
-    if (validCurrentPage > 1) setCurrentPage(validCurrentPage - 1);
+    setCurrentPage(prev => (prev > 1 ? prev - 1 : prev));
   };
 
   const totalFilteredAmount = filteredExpenses.reduce((sum, item) => sum + (item.amount || 0), 0);
