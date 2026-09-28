@@ -66,7 +66,6 @@ const ExpenseVerificationTab = ({
       (exp.itemDescription || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
       (exp.supervisor || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
       (exp.vendorName || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
-      (exp.billNumber || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
       (exp.amount != null && exp.amount.toString().replace(/,/g, '').includes(searchQuery.replace(/,/g, '')));
 
     const matchesStatus = 

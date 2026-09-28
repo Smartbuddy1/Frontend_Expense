@@ -367,7 +367,7 @@ const UploadBills = () => {
           </div>
           
           {/* Pagination Controls */}
-          {totalPages > 0 && (
+          {totalPages > 1 && (
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: '1rem', justifyContent: 'space-between', alignItems: 'center', marginTop: '1.25rem', padding: '1rem 0 0 0', borderTop: '1px solid var(--border-color)' }}>
               <span style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
                 Showing {(validCurrentPage - 1) * itemsPerPage + 1} to {Math.min(validCurrentPage * itemsPerPage, filteredBills.length)} of {filteredBills.length} entries

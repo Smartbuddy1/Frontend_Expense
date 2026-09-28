@@ -2,7 +2,7 @@ import React from 'react';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 
 const Pagination = ({ currentPage, totalPages, onPrev, onNext, language = 'en' }) => {
-  // if (totalPages <= 1) return null; // Don't show pagination if there's only one page
+  if (totalPages <= 1) return null; // Don't show pagination if there's only one page
 
   return (
     <div style={{
@@ -21,6 +21,7 @@ const Pagination = ({ currentPage, totalPages, onPrev, onNext, language = 'en' }
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.85rem', flexWrap: 'wrap' }}>
         {/* Previous Button */}
         <button
+          type="button"
           onClick={onPrev}
           disabled={currentPage === 1}
           style={{
@@ -81,6 +82,7 @@ const Pagination = ({ currentPage, totalPages, onPrev, onNext, language = 'en' }
 
         {/* Next Button */}
         <button
+          type="button"
           onClick={onNext}
           disabled={currentPage === totalPages}
           style={{

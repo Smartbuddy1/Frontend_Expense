@@ -56,14 +56,14 @@ const OverviewTab = ({
   projects.forEach(p => {
     const sName = p.supervisor || 'Unassigned';
     if (!supervisorMap[sName]) {
-      supervisorMap[sName] = { name: sName, fullName: sName, Released: 0, Expenses: 0, WalletBalance: 0 };
+      supervisorMap[sName] = { name: sName, fullName: sName, Released: 0, Expenses: 0, PendingExpenses: 0, WalletBalance: 0 };
     }
   });
 
   advances.forEach(a => {
     if (a.status === 'Disbursed') {
       const sName = a.supervisor || 'Unassigned';
-      if (!supervisorMap[sName]) supervisorMap[sName] = { name: sName, fullName: sName, Released: 0, Expenses: 0, WalletBalance: 0 };
+      if (!supervisorMap[sName]) supervisorMap[sName] = { name: sName, fullName: sName, Released: 0, Expenses: 0, PendingExpenses: 0, WalletBalance: 0 };
       supervisorMap[sName].Released += (a.approvedAmount || a.requestedAmount || 0);
     }
   });
@@ -72,13 +72,19 @@ const OverviewTab = ({
     // Only include Approved and Paid equivalents for Accountant
     if (e.status === 'Pending Accounts Verification' || e.status === 'Accounts Verified & Paid') {
       const sName = e.supervisor || 'Unassigned';
-      if (!supervisorMap[sName]) supervisorMap[sName] = { name: sName, fullName: sName, Released: 0, Expenses: 0, WalletBalance: 0 };
-      supervisorMap[sName].Expenses += (e.amount || 0);
+      if (!supervisorMap[sName]) supervisorMap[sName] = { name: sName, fullName: sName, Released: 0, Expenses: 0, PendingExpenses: 0, WalletBalance: 0 };
+      
+      if (e.status === 'Accounts Verified & Paid') {
+        supervisorMap[sName].Expenses += (e.amount || 0);
+      }
+      if (e.status === 'Pending Accounts Verification') {
+        supervisorMap[sName].PendingExpenses += (e.amount || 0);
+      }
     }
   });
 
   Object.values(supervisorMap).forEach(s => {
-    s.WalletBalance = s.Released - s.Expenses;
+    s.WalletBalance = s.Released - s.Expenses - s.PendingExpenses;
   });
 
   const projectChartData = Object.values(supervisorMap).filter(s => s.Released > 0 || s.Expenses > 0);
