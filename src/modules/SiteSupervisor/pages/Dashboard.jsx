@@ -880,7 +880,7 @@ const Dashboard = () => {
                   {t('amountPaidLabel')} <span style={{ color: '#ef4444' }}>*</span>
                 </label>
                 <input
-                  type="number"
+                  type="number" min="1"
                   placeholder="e.g. 2400"
                   required
                   min="1"
@@ -1157,7 +1157,7 @@ const Dashboard = () => {
                   {t('reqAmountLabel')} <span style={{ color: '#ef4444' }}>*</span>
                 </label>
                 <input 
-                  type="number" 
+                  type="number" min="1" 
                   placeholder="e.g. 25000" 
                   required
                   min="1"

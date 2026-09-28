@@ -49,6 +49,38 @@ const UploadBills = () => {
     );
   });
 
+  const itemsPerPage = 5;
+  const [currentPage, setCurrentPage] = useState(1);
+  const totalPages = Math.ceil(filteredBills.length / itemsPerPage);
+  const validCurrentPage = Math.max(1, Math.min(currentPage, totalPages || 1));
+  const currentBills = filteredBills.slice((validCurrentPage - 1) * itemsPerPage, validCurrentPage * itemsPerPage);
+
+  const handleNextPage = () => {
+    if (validCurrentPage < totalPages) setCurrentPage(validCurrentPage + 1);
+  };
+
+  const handlePrevPage = () => {
+    if (validCurrentPage > 1) setCurrentPage(validCurrentPage - 1);
+  };
+
+  const handleFileChange = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      if (file.size > 5242880) {
+        toast.error('File must be smaller than 5MB!');
+        return;
+      }
+      const allowedTypes = ['application/pdf', 'image/jpeg', 'image/png', 'image/jpg'];
+      if (!allowedTypes.includes(file.type)) {
+        toast.error('Only PDF, JPG, PNG files allowed!');
+        return;
+      }
+      setReceiptFile(file);
+    } else {
+      setReceiptFile(null);
+    }
+  };
+
   const handleUpload = async (e) => {
     e.preventDefault();
     if (!uploadTitle || !amount) return;
@@ -195,7 +227,7 @@ const UploadBills = () => {
                 accept="image/*,.pdf"
                 style={{ display: 'none' }}
                 id="file-input-direct"
-                onChange={(e) => setReceiptFile(e.target.files[0] || null)}
+                onChange={handleFileChange}
               />
             </label>
 
@@ -250,7 +282,7 @@ const UploadBills = () => {
                 Bill Total Amount (₹)
               </label>
               <input
-                type="number"
+                type="number" min="1"
                 placeholder="e.g. 14500"
                 required
                 value={amount}
@@ -299,7 +331,7 @@ const UploadBills = () => {
                 No bills match your search criteria.
               </p>
             ) : (
-              filteredBills.map((bill) => (
+              currentBills.map((bill) => (
                 <div 
                   key={bill.id}
                   style={{
@@ -333,6 +365,51 @@ const UploadBills = () => {
               ))
             )}
           </div>
+          
+          {/* Pagination Controls */}
+          {totalPages > 0 && (
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '1rem', justifyContent: 'space-between', alignItems: 'center', marginTop: '1.25rem', padding: '1rem 0 0 0', borderTop: '1px solid var(--border-color)' }}>
+              <span style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
+                Showing {(validCurrentPage - 1) * itemsPerPage + 1} to {Math.min(validCurrentPage * itemsPerPage, filteredBills.length)} of {filteredBills.length} entries
+              </span>
+              <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
+                <button
+                  onClick={handlePrevPage}
+                  disabled={validCurrentPage === 1}
+                  style={{
+                    padding: '0.4rem 0.85rem',
+                    borderRadius: '0.5rem',
+                    border: '1px solid var(--border-color)',
+                    backgroundColor: validCurrentPage === 1 ? 'transparent' : 'var(--surface-bg)',
+                    color: validCurrentPage === 1 ? 'var(--text-secondary)' : 'var(--text-primary)',
+                    cursor: validCurrentPage === 1 ? 'not-allowed' : 'pointer',
+                    fontSize: '0.85rem',
+                    fontWeight: '600',
+                    opacity: validCurrentPage === 1 ? 0.5 : 1
+                  }}
+                >
+                  Previous
+                </button>
+                <button
+                  onClick={handleNextPage}
+                  disabled={validCurrentPage === totalPages}
+                  style={{
+                    padding: '0.4rem 0.85rem',
+                    borderRadius: '0.5rem',
+                    border: '1px solid var(--border-color)',
+                    backgroundColor: validCurrentPage === totalPages ? 'transparent' : 'var(--surface-bg)',
+                    color: validCurrentPage === totalPages ? 'var(--text-secondary)' : 'var(--text-primary)',
+                    cursor: validCurrentPage === totalPages ? 'not-allowed' : 'pointer',
+                    fontSize: '0.85rem',
+                    fontWeight: '600',
+                    opacity: validCurrentPage === totalPages ? 0.5 : 1
+                  }}
+                >
+                  Next
+                </button>
+              </div>
+            </div>
+          )}
         </div>
       </div>
     </div>

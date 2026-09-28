@@ -13,6 +13,7 @@ import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import { addPdfHeaderWithLogo, addPdfFooterWithLogo, addPdfSignatures } from '../../../Operations/utils/pdfHeaderHelper';
 import PrintFooter from '../PrintFooter';
+import Pagination from '../../../../components/ui/Pagination';
 
 const FinancialReportsTab = ({ 
   projects = [],
@@ -92,7 +93,7 @@ const FinancialReportsTab = ({
   });
 
   const filteredExpenses = expenses.filter(e => {
-    if (e.status === 'Pending Operations Approval' || e.status === 'Rejected') return false;
+    if (e.opsVerificationStatus !== 'Verified') return false;
     const q = searchQuery.toLowerCase();
     
     // Project Match
@@ -120,6 +121,34 @@ const FinancialReportsTab = ({
     return matchesProj && matchesSup && matchesSearch && matchesDate;
   });
 
+  const [currentExpensePage, setCurrentExpensePage] = useState(1);
+  const itemsPerPage = 10;
+  
+  const totalExpensePages = Math.ceil(filteredExpenses.length / itemsPerPage);
+  const validCurrentExpensePage = Math.max(1, Math.min(currentExpensePage, totalExpensePages || 1));
+  const currentExpenses = filteredExpenses.slice((validCurrentExpensePage - 1) * itemsPerPage, validCurrentExpensePage * itemsPerPage);
+
+  const handleNextExpensePage = () => {
+    if (validCurrentExpensePage < totalExpensePages) setCurrentExpensePage(validCurrentExpensePage + 1);
+  };
+
+  const handlePrevExpensePage = () => {
+    if (validCurrentExpensePage > 1) setCurrentExpensePage(validCurrentExpensePage - 1);
+  };
+
+  const [currentPaymentPage, setCurrentPaymentPage] = useState(1);
+  const totalPaymentPages = Math.ceil(filteredPayments.length / itemsPerPage);
+  const validCurrentPaymentPage = Math.max(1, Math.min(currentPaymentPage, totalPaymentPages || 1));
+  const currentPayments = filteredPayments.slice((validCurrentPaymentPage - 1) * itemsPerPage, validCurrentPaymentPage * itemsPerPage);
+
+  const handleNextPaymentPage = () => {
+    if (validCurrentPaymentPage < totalPaymentPages) setCurrentPaymentPage(validCurrentPaymentPage + 1);
+  };
+
+  const handlePrevPaymentPage = () => {
+    if (validCurrentPaymentPage > 1) setCurrentPaymentPage(validCurrentPaymentPage - 1);
+  };
+
   const handlePrint = () => {
     window.print();
   };
@@ -134,15 +163,21 @@ const FinancialReportsTab = ({
         `Generated on: ${new Date().toLocaleString('en-GB')}`
       );
 
-      const headers = [['ID', 'Project & Site', 'Supervisor', 'Category', 'Vendor', 'Amount (INR)']];
-      const data = filteredExpenses.map(e => [
-        e.id?.slice(0, 8)?.toUpperCase(),
-        e.siteName ? `${e.projectName || '—'} - ${e.siteName}` : (e.projectName || '—'),
-        e.supervisor || '—',
-        e.category || '—',
-        e.vendorName || '—',
-        e.amount
-      ]);
+      const headers = [['ID', 'Project & Site', 'Supervisor', 'Category', 'Vendor', 'Amount (INR)', 'Ops Verification', 'Accounts Status']];
+      const data = filteredExpenses.map(e => {
+        const isApproved = e.status === 'Accounts Verified & Paid';
+        const isRejected = e.status === 'Rejected' || e.accountsRejected;
+        return [
+          e.id?.slice(0, 8)?.toUpperCase(),
+          e.siteName ? `${e.projectName || '—'} - ${e.siteName}` : (e.projectName || '—'),
+          e.supervisor || '—',
+          e.category || '—',
+          e.vendorName || '—',
+          e.amount,
+          e.opsVerificationStatus || 'Pending',
+          isApproved ? 'Approved' : isRejected ? 'Rejected' : 'Pending'
+        ];
+      });
 
       autoTable(doc, {
         startY: 28,
@@ -210,15 +245,19 @@ const FinancialReportsTab = ({
   const handleExportCSV = () => {
     let rows = [];
     if (reportMode === 'EXPENSE_VERIFICATION') {
-      rows.push(['ID', 'Project & Site', 'Supervisor', 'Category', 'Vendor', 'Amount']);
+      rows.push(['ID', 'Project & Site', 'Supervisor', 'Category', 'Vendor', 'Amount', 'Ops Verification', 'Accounts Status']);
       filteredExpenses.forEach(e => {
+        const isApproved = e.status === 'Accounts Verified & Paid';
+        const isRejected = e.status === 'Rejected' || e.accountsRejected;
         rows.push([
           e.id?.slice(0, 8)?.toUpperCase(), 
           `${e.projectName || '—'} - ${e.siteName || ''}`.replace(/,/g, ';'), 
           (e.supervisor || '—').replace(/,/g, ';'), 
           (e.category || '—').replace(/,/g, ';'), 
           (e.vendorName || '—').replace(/,/g, ';'), 
-          e.amount
+          e.amount,
+          e.opsVerificationStatus || 'Pending',
+          isApproved ? 'Approved' : isRejected ? 'Rejected' : 'Pending'
         ]);
       });
     } else {
@@ -478,6 +517,7 @@ const FinancialReportsTab = ({
                 <input 
                   type="date" 
                   value={startDate} 
+                  max={endDate}
                   onChange={(e) => setStartDate(e.target.value)}
                   style={{
                     width: '100%',
@@ -502,6 +542,7 @@ const FinancialReportsTab = ({
                 <input 
                   type="date" 
                   value={endDate} 
+                  min={startDate}
                   onChange={(e) => setEndDate(e.target.value)}
                   style={{
                     width: '100%',
@@ -615,12 +656,14 @@ const FinancialReportsTab = ({
                   <th style={{ padding: '0.9rem 1.25rem', fontWeight: '700' }}>Category</th>
                   <th style={{ padding: '0.9rem 1.25rem', fontWeight: '700' }}>Vendor</th>
                   <th style={{ padding: '0.9rem 1.25rem', fontWeight: '700', textAlign: 'right' }}>Amount</th>
+                  <th style={{ padding: '0.9rem 1.25rem', fontWeight: '700', textAlign: 'center' }}>Ops Verification</th>
+                  <th style={{ padding: '0.9rem 1.25rem', fontWeight: '700', textAlign: 'center' }}>Accounts Status</th>
                   <th style={{ padding: '0.9rem 1.25rem', fontWeight: '700', textAlign: 'center' }}>View Bills</th>
                 </tr>
               </thead>
               <tbody>
-                {filteredExpenses.length > 0 ? (
-                  filteredExpenses
+                {currentExpenses.length > 0 ? (
+                  currentExpenses
                     .map(e => (
                       <tr key={e.id} style={{ borderBottom: '1px solid var(--border-color)' }} className="table-row-hover">
                         <td style={{ padding: '0.9rem 1.25rem' }}>
@@ -646,6 +689,33 @@ const FinancialReportsTab = ({
                         </td>
                         <td style={{ padding: '0.9rem 1.25rem', textAlign: 'right', fontWeight: '800', color: '#10b981', fontFamily: 'monospace' }}>
                           {formatINR(e.amount)}
+                        </td>
+                        <td style={{ padding: '0.9rem 1.25rem', textAlign: 'center' }}>
+                          <span style={{
+                            padding: '0.25rem 0.6rem', borderRadius: '12px', fontSize: '0.72rem', fontWeight: '700',
+                            backgroundColor: e.opsVerificationStatus === 'Verified' ? 'rgba(16, 185, 129, 0.1)' :
+                                             e.opsVerificationStatus === 'Rejected' ? 'rgba(239, 68, 68, 0.1)' :
+                                             'rgba(245, 158, 11, 0.1)',
+                            color: e.opsVerificationStatus === 'Verified' ? '#10b981' :
+                                   e.opsVerificationStatus === 'Rejected' ? '#ef4444' :
+                                   '#f59e0b',
+                          }}>
+                            {e.opsVerificationStatus || 'Pending'}
+                          </span>
+                        </td>
+                        <td style={{ padding: '0.9rem 1.25rem', textAlign: 'center' }}>
+                          <span style={{
+                            padding: '0.25rem 0.6rem', borderRadius: '12px', fontSize: '0.72rem', fontWeight: '700',
+                            backgroundColor: e.status === 'Accounts Verified & Paid' ? 'var(--badge-success-bg, #dcfce7)' :
+                                             (e.status === 'Rejected' || e.accountsRejected) ? 'var(--badge-danger-bg, #fee2e2)' :
+                                             'var(--badge-warning-bg, #fef3c7)',
+                            color: e.status === 'Accounts Verified & Paid' ? 'var(--badge-success-text, #15803d)' :
+                                   (e.status === 'Rejected' || e.accountsRejected) ? 'var(--badge-danger-text, #991b1b)' :
+                                   'var(--badge-warning-text, #b45309)',
+                          }}>
+                            {e.status === 'Accounts Verified & Paid' ? 'Approved' :
+                             (e.status === 'Rejected' || e.accountsRejected) ? 'Rejected' : 'Pending'}
+                          </span>
                         </td>
                         <td style={{ padding: '0.9rem 1.25rem', textAlign: 'center' }}>
                           {e.billUrl ? (
@@ -675,6 +745,18 @@ const FinancialReportsTab = ({
               </tbody>
             </table>
           </div>
+          
+          {/* Pagination Control */}
+          {totalExpensePages > 0 && (
+            <div className="no-print" style={{ padding: '1rem', borderTop: '1px solid var(--border-color)' }}>
+              <Pagination 
+                currentPage={validCurrentExpensePage}
+                totalPages={totalExpensePages}
+                onNext={handleNextExpensePage}
+                onPrev={handlePrevExpensePage}
+              />
+            </div>
+          )}
         </div>
       ) : (
         /* ADVANCED PAYOUT TABLE (existing) */
@@ -714,8 +796,8 @@ const FinancialReportsTab = ({
                 </tr>
               </thead>
               <tbody>
-                {filteredPayments.length > 0 ? (
-                  filteredPayments.map(p => (
+                {currentPayments.length > 0 ? (
+                  currentPayments.map(p => (
                     <tr key={p.id} style={{ borderBottom: '1px solid var(--border-color)' }} className="table-row-hover">
                       <td style={{ padding: '0.9rem 1.25rem', fontWeight: '700', fontFamily: 'monospace', color: '#3b82f6', fontSize: '0.75rem' }}>
                         {p.id?.slice(0, 8)?.toUpperCase()}
@@ -741,7 +823,19 @@ const FinancialReportsTab = ({
               </tbody>
             </table>
           </div>
-        </div>
+        
+        {/* Pagination Control */}
+        {totalPaymentPages > 0 && (
+          <div className="no-print" style={{ padding: '1rem', borderTop: '1px solid var(--border-color)' }}>
+            <Pagination 
+              currentPage={validCurrentPaymentPage}
+              totalPages={totalPaymentPages}
+              onNext={handleNextPaymentPage}
+              onPrev={handlePrevPaymentPage}
+            />
+          </div>
+        )}
+      </div>
       )}
 
       <PrintFooter />

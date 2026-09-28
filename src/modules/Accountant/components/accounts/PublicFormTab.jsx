@@ -9,6 +9,7 @@ import autoTable from 'jspdf-autotable';
 import { addPdfHeaderWithLogo, addPdfFooterWithLogo, addPdfSignatures } from '../../../Operations/utils/pdfHeaderHelper';
 import axios from 'axios';
 import { toast } from '../../../../components/Toast';
+import Pagination from '../../../../components/ui/Pagination';
 
 const API = import.meta.env.VITE_API_BASE_URL;
 
@@ -66,16 +67,32 @@ const PublicFormTab = () => {
 
   const filtered = submissions.filter(s => {
     if (!s || typeof s !== 'object') return false;
-    const q = search.toLowerCase();
+    const q = search.toLowerCase().replace(/,/g, '');
     const matchSearch = !search ||
       (s.submitterName || '').toString().toLowerCase().includes(q) ||
       (s.id || '').toString().toLowerCase().includes(q) ||
       (s.site || '').toString().toLowerCase().includes(q) ||
-      (s.paidTo || '').toString().toLowerCase().includes(q);
+      (s.paidTo || '').toString().toLowerCase().includes(q) ||
+      (s.amount || '').toString().toLowerCase().replace(/,/g, '').includes(q);
     const matchStatus = filterStatus === 'All' || s.status === filterStatus;
     const matchCat = filterCategory === 'All' || s.category === filterCategory;
     return matchSearch && matchStatus && matchCat;
   });
+
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 10;
+  
+  const totalPages = Math.ceil(filtered.length / itemsPerPage);
+  const validCurrentPage = Math.max(1, Math.min(currentPage, totalPages || 1));
+  const currentSubmissions = filtered.slice((validCurrentPage - 1) * itemsPerPage, validCurrentPage * itemsPerPage);
+
+  const handleNextPage = () => {
+    if (validCurrentPage < totalPages) setCurrentPage(validCurrentPage + 1);
+  };
+
+  const handlePrevPage = () => {
+    if (validCurrentPage > 1) setCurrentPage(validCurrentPage - 1);
+  };
 
   const totalAmount = filtered.reduce((s, e) => s + (Number(e.amount) || 0), 0);
   const pendingCount = submissions.filter(e => e.status !== 'Approved').length;
@@ -317,10 +334,12 @@ const PublicFormTab = () => {
                 </tr>
               </thead>
               <tbody>
-                {filtered.map((entry, idx) => {
+                {currentSubmissions.map((entry, idx) => {
                   const name = String(entry.submitterName || '?');
                   const color = avatarColor(name);
                   const isApproved = entry.status === 'Approved';
+                  // Calculate absolute index for accurate numbering across pages
+                  const absoluteIdx = (validCurrentPage - 1) * itemsPerPage + idx + 1;
                   return (
                     <tr
                       key={entry.id || idx}
@@ -329,7 +348,7 @@ const PublicFormTab = () => {
                       onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
                     >
                       {/* # */}
-                      <td style={{ padding: '0.75rem', fontSize: '0.75rem', color: 'var(--text-secondary)', fontWeight: '600' }}>{idx + 1}</td>
+                      <td style={{ padding: '0.75rem', fontSize: '0.75rem', color: 'var(--text-secondary)', fontWeight: '600' }}>{absoluteIdx}</td>
 
                       {/* Voucher ID */}
                       <td style={{ padding: '0.75rem 1rem' }}>
@@ -430,7 +449,19 @@ const PublicFormTab = () => {
               </tbody>
             </table>
           </div>
-        </div>
+        
+        {/* Pagination Control */}
+        {totalPages > 0 && (
+          <div className="no-print" style={{ padding: '1rem', borderTop: '1px solid var(--border-color)' }}>
+            <Pagination 
+              currentPage={validCurrentPage}
+              totalPages={totalPages}
+              onNext={handleNextPage}
+              onPrev={handlePrevPage}
+            />
+          </div>
+        )}
+      </div>
       )}
 
       {/* ── Detail Modal ── */}

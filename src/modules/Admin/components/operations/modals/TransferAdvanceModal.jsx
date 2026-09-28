@@ -216,7 +216,7 @@ export const TransferAdvanceModal = ({
                 <div style={{ position: 'relative' }}>
                   <span style={{ position: 'absolute', left: '0.85rem', top: '50%', transform: 'translateY(-50%)', fontWeight: '800', color: 'var(--text-secondary, #64748b)' }}>₹</span>
                   <input
-                    type="number"
+                    type="number" min="1"
                     value={amount}
                     onChange={(e) => setAmount(e.target.value)}
                     placeholder="e.g. 25000"

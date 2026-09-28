@@ -19,6 +19,7 @@ const ReceiptViewerModal = ({ expense, onClose, onApprove, onReject }) => {
     }).format(val);
   };
   const isVerified = expense.status === 'Accounts Verified & Paid';
+  const isPending = expense.status === 'Pending Accounts Verification';
 
   return (
     <div style={{
@@ -136,48 +137,50 @@ const ReceiptViewerModal = ({ expense, onClose, onApprove, onReject }) => {
         </div>
 
         {/* Modal Footer */}
-        <div style={{
-          padding: '1rem 1.75rem',
-          borderTop: '1px solid var(--border-color)',
-          display: 'flex',
-          justifyContent: 'center',
-          gap: '1rem',
-          backgroundColor: 'var(--surface-bg)',
-          flexShrink: 0
-        }}>
-          <button
-            onClick={() => onApprove && onApprove(expense)}
-            style={{
-              padding: '0.85rem 2.5rem',
-              borderRadius: '10px',
-              backgroundColor: '#10b981',
-              color: '#ffffff',
-              border: 'none',
-              fontWeight: '700',
-              fontSize: '1rem',
-              cursor: 'pointer',
-              boxShadow: '0 4px 14px rgba(16, 185, 129, 0.35)'
-            }}
-          >
-            Approve
-          </button>
-          <button
-            onClick={() => onReject && onReject(expense)}
-            style={{
-              padding: '0.85rem 2.5rem',
-              borderRadius: '10px',
-              backgroundColor: '#ef4444',
-              color: '#ffffff',
-              border: 'none',
-              fontWeight: '700',
-              fontSize: '1rem',
-              cursor: 'pointer',
-              boxShadow: '0 4px 14px rgba(239, 68, 68, 0.35)'
-            }}
-          >
-            Reject
-          </button>
-        </div>
+        {isPending && (
+          <div style={{
+            padding: '1rem 1.75rem',
+            borderTop: '1px solid var(--border-color)',
+            display: 'flex',
+            justifyContent: 'center',
+            gap: '1rem',
+            backgroundColor: 'var(--surface-bg)',
+            flexShrink: 0
+          }}>
+            <button
+              onClick={() => onApprove && onApprove(expense)}
+              style={{
+                padding: '0.85rem 2.5rem',
+                borderRadius: '10px',
+                backgroundColor: '#10b981',
+                color: '#ffffff',
+                border: 'none',
+                fontWeight: '700',
+                fontSize: '1rem',
+                cursor: 'pointer',
+                boxShadow: '0 4px 14px rgba(16, 185, 129, 0.35)'
+              }}
+            >
+              Approve
+            </button>
+            <button
+              onClick={() => onReject && onReject(expense)}
+              style={{
+                padding: '0.85rem 2.5rem',
+                borderRadius: '10px',
+                backgroundColor: '#ef4444',
+                color: '#ffffff',
+                border: 'none',
+                fontWeight: '700',
+                fontSize: '1rem',
+                cursor: 'pointer',
+                boxShadow: '0 4px 14px rgba(239, 68, 68, 0.35)'
+              }}
+            >
+              Reject
+            </button>
+          </div>
+        )}
       </div>
     </div>
   );

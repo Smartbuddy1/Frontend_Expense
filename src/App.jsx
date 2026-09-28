@@ -6,8 +6,19 @@ import SupervisorApp from './modules/SiteSupervisor/App';
 import OperationsApp from './modules/Operations/App';
 import { Smartphone, Lock, Eye, EyeOff, Sun, Moon, AlertCircle, ArrowRight, FileText } from 'lucide-react';
 import logoImg from './modules/Admin/assets/logo.png';
-import { ToastContainer } from './components/Toast';
+import { ToastContainer, toast } from './components/Toast';
 
+axios.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    if (!error.response) {
+      toast.error('Unable to connect to the server. Please check your internet.');
+    } else if (error.response.status >= 500) {
+      toast.error('Server issue. Please try again later.');
+    }
+    return Promise.reject(error);
+  }
+);
 // Base path the app is deployed under (e.g. "/" locally, "/expense/" on
 // aaryainnovtech.com/expense/) — set at build time via `vite build --base`.
 const BASE = import.meta.env.BASE_URL.replace(/\/$/, '');

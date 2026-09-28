@@ -166,6 +166,15 @@ const PublicExpenseForm = () => {
   const handleFileChange = (e) => {
     const file = e.target.files[0];
     if (file) {
+      if (file.size > 5242880) {
+        toast.error(language === 'mr' ? 'फाईल 5MB पेक्षा लहान असावी!' : language === 'hi' ? 'फ़ाइल 5MB से छोटी होनी चाहिए!' : 'File must be smaller than 5MB!');
+        return;
+      }
+      const allowedTypes = ['application/pdf', 'image/jpeg', 'image/png', 'image/jpg'];
+      if (!allowedTypes.includes(file.type)) {
+        toast.error(language === 'mr' ? 'फक्त PDF, JPG, PNG फाईल्स चालतील!' : language === 'hi' ? 'केवल PDF, JPG, PNG फ़ाइलें अनुमत हैं!' : 'Only PDF, JPG, PNG files allowed!');
+        return;
+      }
       const preview = URL.createObjectURL(file);
       setFormData(prev => ({
         ...prev,
@@ -627,7 +636,7 @@ const PublicExpenseForm = () => {
                 <div className="pef-amount-input-wrap">
                   <span className="pef-rupee-symbol">₹</span>
                   <input
-                    type="number"
+                    type="number" min="1"
                     placeholder="e.g. 2400"
                     required
                     min="1"

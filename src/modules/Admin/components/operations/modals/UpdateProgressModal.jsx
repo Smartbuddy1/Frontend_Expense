@@ -295,7 +295,7 @@ const UpdateProgressModal = ({ isOpen, onClose, project, onUpdateProgress, super
                 <Users size={12} /> Active Workforce / Labor Count
               </label>
               <input
-                type="number"
+                type="number" min="1"
                 value={workforceCount}
                 onChange={(e) => setWorkforceCount(e.target.value)}
                 style={{

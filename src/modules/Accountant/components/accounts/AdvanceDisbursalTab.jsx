@@ -17,6 +17,7 @@ import autoTable from 'jspdf-autotable';
 import { addPdfHeaderWithLogo, addPdfFooterWithLogo, addPdfSignatures, escapeHtml } from '../../../Operations/utils/pdfHeaderHelper';
 import aiLogo from '../../assets/ai_logo.jpg';
 import PrintFooter from '../PrintFooter';
+import Pagination from '../../../../components/ui/Pagination';
 
 const AdvanceDisbursalTab = ({ 
   advances = [], 
@@ -56,6 +57,21 @@ const AdvanceDisbursalTab = ({
 
     return matchesSearch && matchesStatus;
   });
+
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 10;
+  
+  const totalPages = Math.ceil(filteredAdvances.length / itemsPerPage);
+  const validCurrentPage = Math.max(1, Math.min(currentPage, totalPages || 1));
+  const currentAdvances = filteredAdvances.slice((validCurrentPage - 1) * itemsPerPage, validCurrentPage * itemsPerPage);
+
+  const handleNextPage = () => {
+    if (validCurrentPage < totalPages) setCurrentPage(validCurrentPage + 1);
+  };
+
+  const handlePrevPage = () => {
+    if (validCurrentPage > 1) setCurrentPage(validCurrentPage - 1);
+  };
 
   const pendingCount = (advances || []).filter(a => a?.status === 'Pending Accounts Payment' || a?.status === 'Approved by Ops').length;
   const disbursedCount = (advances || []).filter(a => a?.status === 'Disbursed').length;
@@ -273,15 +289,17 @@ const AdvanceDisbursalTab = ({
               </tr>
             </thead>
             <tbody>
-              {filteredAdvances.length === 0 ? (
+              {currentAdvances.length === 0 ? (
                 <tr>
                   <td colSpan={8} style={{ padding: '3rem', textAlign: 'center', color: 'var(--text-secondary)' }}>
                     No site procurement or advance requests found.
                   </td>
                 </tr>
               ) : (
-                filteredAdvances.map((adv) => {
+                currentAdvances.map((adv) => {
                   const isPending = adv.status === 'Approved by Ops' || adv.status === 'Pending Accounts Payment';
+                  const isRejected = adv.status === 'Accounts Rejected' || adv.status === 'Rejected';
+                  const isDisbursed = adv.status === 'Disbursed';
 
                   return (
                     <tr 
@@ -351,6 +369,20 @@ const AdvanceDisbursalTab = ({
                           }}>
                             <Clock size={12} /> Ready for Disbursal
                           </span>
+                        ) : isRejected ? (
+                          <span style={{
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            gap: '0.3rem',
+                            fontSize: '0.75rem',
+                            fontWeight: '700',
+                            padding: '0.25rem 0.65rem',
+                            borderRadius: '20px',
+                            backgroundColor: 'rgba(239, 68, 68, 0.15)',
+                            color: '#ef4444'
+                          }}>
+                            <X size={12} /> Rejected
+                          </span>
                         ) : (
                           <span style={{
                             display: 'inline-flex',
@@ -363,32 +395,53 @@ const AdvanceDisbursalTab = ({
                             backgroundColor: 'rgba(16, 185, 129, 0.15)',
                             color: '#10b981'
                           }}>
-                            <CheckCircle2 size={12} /> Disbursed ({adv.paymentDetails?.paymentMode})
+                            <CheckCircle2 size={12} /> Disbursed {adv.paymentDetails?.paymentMode ? `(${adv.paymentDetails.paymentMode})` : ''}
                           </span>
                         )}
                       </td>
 
                       <td className="no-print" style={{ padding: '1rem', textAlign: 'right' }}>
                         {isPending && (
-                          <button
-                            onClick={() => onDisburseAdvance && onDisburseAdvance(adv)}
-                            style={{
-                              padding: '0.5rem 0.95rem',
-                              borderRadius: '8px',
-                              backgroundColor: '#8b5cf6',
-                              color: '#ffffff',
-                              border: 'none',
-                              fontSize: '0.78rem',
-                              fontWeight: '700',
-                              display: 'inline-flex',
-                              alignItems: 'center',
-                              gap: '0.4rem',
-                              cursor: 'pointer'
-                            }}
-                          >
-                            <Send size={14} />
-                            Disburse
-                          </button>
+                          <div style={{ display: 'flex', gap: '0.5rem', justifyContent: 'flex-end' }}>
+                            <button
+                              onClick={() => onRejectAdvance && onRejectAdvance(adv)}
+                              style={{
+                                padding: '0.5rem 0.95rem',
+                                borderRadius: '8px',
+                                backgroundColor: '#ef4444',
+                                color: '#ffffff',
+                                border: 'none',
+                                fontSize: '0.78rem',
+                                fontWeight: '700',
+                                display: 'inline-flex',
+                                alignItems: 'center',
+                                gap: '0.4rem',
+                                cursor: 'pointer'
+                              }}
+                            >
+                              <X size={14} />
+                              Reject
+                            </button>
+                            <button
+                              onClick={() => onDisburseAdvance && onDisburseAdvance(adv)}
+                              style={{
+                                padding: '0.5rem 0.95rem',
+                                borderRadius: '8px',
+                                backgroundColor: '#8b5cf6',
+                                color: '#ffffff',
+                                border: 'none',
+                                fontSize: '0.78rem',
+                                fontWeight: '700',
+                                display: 'inline-flex',
+                                alignItems: 'center',
+                                gap: '0.4rem',
+                                cursor: 'pointer'
+                              }}
+                            >
+                              <Send size={14} />
+                              Disburse
+                            </button>
+                          </div>
                         )}
                       </td>
                     </tr>
@@ -398,6 +451,18 @@ const AdvanceDisbursalTab = ({
             </tbody>
           </table>
         </div>
+        
+        {/* Pagination Control */}
+        {totalPages > 0 && (
+          <div className="no-print" style={{ padding: '1rem', borderTop: '1px solid var(--border-color)' }}>
+            <Pagination 
+              currentPage={validCurrentPage}
+              totalPages={totalPages}
+              onNext={handleNextPage}
+              onPrev={handlePrevPage}
+            />
+          </div>
+        )}
       </div>
 
       {/* Corporate Printable Footer with Signatures */}

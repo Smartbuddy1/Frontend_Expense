@@ -220,7 +220,7 @@ const RequestAdvanceModal = ({ isOpen, onClose, projects, onRefresh }) => {
                 Requested Amount (₹) *
               </label>
               <input
-                type="number"
+                type="number" min="1"
                 value={newReqForm.amount}
                 onChange={(e) => setNewReqForm(prev => ({ ...prev, amount: e.target.value }))}
                 placeholder="e.g. 25000"

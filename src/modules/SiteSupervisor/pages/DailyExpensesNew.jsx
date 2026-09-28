@@ -31,6 +31,7 @@ import { useWallet, sanitizeUrl } from '../context/WalletContext';
 import { useLanguage } from '../context/LanguageContext';
 import { exportToPDF } from '../utils/exportUtils';
 import { toast } from '../../../components/Toast';
+import Pagination from '../../../components/ui/Pagination';
 
 const DailyExpenses = () => {
   const { project, projects, defaultTargetProject, categories, walletBalance, expensesList, recordExpense, todaySpend, deleteExpense, updateExpense } = useWallet();
@@ -135,6 +136,15 @@ const DailyExpenses = () => {
   const handleFileChange = (e) => {
     const file = e.target.files[0];
     if (file) {
+      if (file.size > 5242880) {
+        toast.error(language === 'mr' ? 'फाईल 5MB पेक्षा लहान असावी!' : language === 'hi' ? 'फ़ाइल 5MB से छोटी होनी चाहिए!' : 'File must be smaller than 5MB!');
+        return;
+      }
+      const allowedTypes = ['application/pdf', 'image/jpeg', 'image/png', 'image/jpg'];
+      if (!allowedTypes.includes(file.type)) {
+        toast.error(language === 'mr' ? 'फक्त PDF, JPG, PNG फाईल्स चालतील!' : language === 'hi' ? 'केवल PDF, JPG, PNG फ़ाइलें अनुमत हैं!' : 'Only PDF, JPG, PNG files allowed!');
+        return;
+      }
       const preview = URL.createObjectURL(file);
       setFormData({
         ...formData,
@@ -247,6 +257,20 @@ const DailyExpenses = () => {
       (exp.amount || '').toString().includes(term)
     );
   });
+
+  const itemsPerPage = 10;
+  const [currentPage, setCurrentPage] = useState(1);
+  const totalPages = Math.ceil(filteredExpenses.length / itemsPerPage);
+  const validCurrentPage = Math.max(1, Math.min(currentPage, totalPages || 1));
+  const currentExpenses = filteredExpenses.slice((validCurrentPage - 1) * itemsPerPage, validCurrentPage * itemsPerPage);
+
+  const handleNextPage = () => {
+    if (validCurrentPage < totalPages) setCurrentPage(validCurrentPage + 1);
+  };
+
+  const handlePrevPage = () => {
+    if (validCurrentPage > 1) setCurrentPage(validCurrentPage - 1);
+  };
 
   const totalFilteredAmount = filteredExpenses.reduce((sum, item) => sum + (item.amount || 0), 0);
 
@@ -643,7 +667,7 @@ const DailyExpenses = () => {
                   </td>
                 </tr>
               ) : (
-                filteredExpenses.map((exp) => (
+                currentExpenses.map((exp) => (
                   <tr
                     key={exp.displayId || exp.id}
                     style={{
@@ -776,6 +800,17 @@ const DailyExpenses = () => {
             </tbody>
           </table>
         </div>
+        
+        {/* Pagination Controls */}
+        <div style={{ marginTop: '1.25rem', borderTop: '1px solid var(--border-color)', paddingTop: '1rem' }}>
+          <Pagination
+            currentPage={validCurrentPage}
+            totalPages={totalPages}
+            itemsPerPage={itemsPerPage}
+            totalItems={filteredExpenses.length}
+            onPageChange={setCurrentPage}
+          />
+        </div>
       </div>
 
       {/* Modal: Add Expense */}
@@ -889,7 +924,7 @@ const DailyExpenses = () => {
                   {t('amountPaidLabel')} <span style={{ color: '#ef4444' }}>*</span>
                 </label>
                 <input
-                  type="number"
+                  type="number" min="1"
                   placeholder="e.g. 2400"
                   required
                   min="1"
@@ -1264,7 +1299,7 @@ const DailyExpenses = () => {
               <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
                 <label style={{ fontSize: '0.85rem', fontWeight: '600', color: 'var(--text-secondary)' }}>{t('amountPaidLabel')}</label>
                 <input
-                  type="number"
+                  type="number" min="1"
                   placeholder="0.00"
                   value={editExpenseData.amount}
                   onChange={(e) => setEditExpenseData({ ...editExpenseData, amount: e.target.value })}

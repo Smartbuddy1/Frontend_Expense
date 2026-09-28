@@ -166,7 +166,7 @@ const AnalyticsTab = ({
   const totalBudget = filteredProjects.reduce((acc, p) => acc + (p.budget || 0), 0);
   const totalReleased = filteredProjects.reduce((acc, p) => acc + (p.fundsReleased || 0), 0);
   const totalExpenses = filteredExpenses
-    .filter(e => e.status === 'Accounts Verified & Paid' || e.status === 'Pending Accounts Verification')
+    .filter(e => e.status === 'Accounts Verified & Paid')
     .reduce((acc, e) => acc + (e.amount || 0), 0);
   const totalAdvancesDisbursed = filteredAdvances
     .filter(a => a.status === 'Disbursed')
@@ -198,7 +198,7 @@ const AnalyticsTab = ({
       const monthExpenses = filteredExpenses
         .filter(e => {
           const d = new Date(e.billDate || e.submittedAt || '');
-          return d.getMonth() === currentMonthIndex && d.getFullYear() === currentYear && (e.status === 'Accounts Verified & Paid' || e.status === 'Pending Accounts Verification');
+          return d.getMonth() === currentMonthIndex && d.getFullYear() === currentYear && e.status === 'Accounts Verified & Paid';
         })
         .reduce((acc, e) => acc + (e.amount || 0), 0);
 
@@ -245,7 +245,7 @@ const AnalyticsTab = ({
       .filter(a => a.supervisor === supName && a.status === 'Disbursed')
       .reduce((acc, a) => acc + (a.approvedAmount || 0), 0);
     const totalExp = filteredExpenses
-      .filter(e => e.supervisor === supName && (e.status === 'Accounts Verified & Paid' || e.status === 'Pending Accounts Verification'))
+      .filter(e => e.supervisor === supName && e.status === 'Accounts Verified & Paid')
       .reduce((acc, e) => acc + (e.amount || 0), 0);
 
     return {
@@ -323,7 +323,10 @@ const AnalyticsTab = ({
     await addPdfHeaderWithLogo(
       doc,
       'Executive Financial Analytics & Operational Charts Report',
-      `Generated on: ${new Date().toLocaleString('en-GB')} | Scope: ${selectedProject === 'ALL' ? 'All Installation Sites' : selectedProject} | Sanctioned BOQ: ${formatPDFINR(totalBudget)}`
+      [
+        `Generated on: ${new Date().toLocaleString('en-GB')}`,
+        `Scope: ${selectedProject === 'ALL' ? 'All Installation Sites' : selectedProject} | Sanctioned BOQ: ${formatPDFINR(totalBudget)}`
+      ]
     );
 
     if (chartsRef.current) {
@@ -576,6 +579,7 @@ const AnalyticsTab = ({
                 <input
                   type="date"
                   value={startDate}
+                  max={endDate}
                   onChange={(e) => setStartDate(e.target.value)}
                   style={{
                     width: '100%',
@@ -600,6 +604,7 @@ const AnalyticsTab = ({
                 <input
                   type="date"
                   value={endDate}
+                  min={startDate}
                   onChange={(e) => setEndDate(e.target.value)}
                   style={{
                     width: '100%',

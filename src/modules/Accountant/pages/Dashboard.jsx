@@ -591,9 +591,9 @@ const Dashboard = () => {
       {correctingItem && (
         <CorrectionReasonModal
           item={correctingItem}
-          type={correctingItem.purpose ? "Advance" : "Claim"}
+          type={correctingItem.requestedAmount !== undefined ? "Advance" : "Claim"}
           onClose={() => setCorrectingItem(null)}
-          onSubmit={(item, reason) => item.purpose ? handleRejectAdvance(item, reason) : handleRejectExpense(item, reason)}
+          onSubmit={(item, reason) => item.requestedAmount !== undefined ? handleRejectAdvance(item, reason) : handleRejectExpense(item, reason)}
         />
       )}
 

@@ -17,6 +17,7 @@ import {
 import { useWallet } from '../context/WalletContext';
 import { useLanguage } from '../context/LanguageContext';
 import { exportToPDF } from '../utils/exportUtils';
+import Pagination from '../../../components/ui/Pagination';
 
 const BalanceSettlement = () => {
   const { walletBalance, totalAdvance, expensesList } = useWallet();
@@ -79,7 +80,19 @@ const BalanceSettlement = () => {
     return matchesSearch && matchesSite && matchesCategory;
   });
 
+  const itemsPerPage = 10;
+  const [currentPage, setCurrentPage] = useState(1);
+  const totalPages = Math.ceil(filteredEntries.length / itemsPerPage);
+  const validCurrentPage = Math.max(1, Math.min(currentPage, totalPages || 1));
+  const currentEntries = filteredEntries.slice((validCurrentPage - 1) * itemsPerPage, validCurrentPage * itemsPerPage);
 
+  const handleNextPage = () => {
+    if (validCurrentPage < totalPages) setCurrentPage(validCurrentPage + 1);
+  };
+
+  const handlePrevPage = () => {
+    if (validCurrentPage > 1) setCurrentPage(validCurrentPage - 1);
+  };
 
   const handleExportPDF = () => {
     const headers = ['ID', 'Date', 'Project / Site', 'Details', 'Amount (Rs)', 'Balance (Rs)'];
@@ -341,7 +354,7 @@ const BalanceSettlement = () => {
                   </td>
                 </tr>
               ) : (
-                filteredEntries.map((row) => (
+                currentEntries.map((row) => (
                   <tr
                     key={row.id}
                     style={{
@@ -387,6 +400,17 @@ const BalanceSettlement = () => {
               )}
             </tbody>
           </table>
+        </div>
+        
+        {/* Pagination Controls */}
+        <div style={{ marginTop: '1.25rem', borderTop: '1px solid var(--border-color)', paddingTop: '1rem' }}>
+          <Pagination
+            currentPage={validCurrentPage}
+            totalPages={totalPages}
+            itemsPerPage={itemsPerPage}
+            totalItems={filteredEntries.length}
+            onPageChange={setCurrentPage}
+          />
         </div>
       </div>
     </div>

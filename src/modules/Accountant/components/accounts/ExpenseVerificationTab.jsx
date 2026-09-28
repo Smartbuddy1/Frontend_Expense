@@ -62,11 +62,12 @@ const ExpenseVerificationTab = ({
     }
 
     const matchesSearch = 
-      exp.id.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      (exp.id || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
       (exp.itemDescription || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
       (exp.supervisor || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
-      (exp.vendorName && exp.vendorName.toLowerCase().includes(searchQuery.toLowerCase())) ||
-      (exp.billNumber && exp.billNumber.toLowerCase().includes(searchQuery.toLowerCase()));
+      (exp.vendorName || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
+      (exp.billNumber || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
+      (exp.amount != null && exp.amount.toString().replace(/,/g, '').includes(searchQuery.replace(/,/g, '')));
 
     const matchesStatus = 
       statusFilter === 'ALL' ||
@@ -88,14 +89,15 @@ const ExpenseVerificationTab = ({
   const rejectedCount = expenses.filter(e => e.accountsRejected === true).length;
 
   const totalPages = Math.ceil(filteredExpenses.length / itemsPerPage);
-  const currentExpenses = filteredExpenses.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
+  const validCurrentPage = Math.max(1, Math.min(currentPage, totalPages || 1));
+  const currentExpenses = filteredExpenses.slice((validCurrentPage - 1) * itemsPerPage, validCurrentPage * itemsPerPage);
 
   const handleNextPage = () => {
-    if (currentPage < totalPages) setCurrentPage(prev => prev + 1);
+    if (validCurrentPage < totalPages) setCurrentPage(validCurrentPage + 1);
   };
 
   const handlePrevPage = () => {
-    if (currentPage > 1) setCurrentPage(prev => prev - 1);
+    if (validCurrentPage > 1) setCurrentPage(validCurrentPage - 1);
   };
 
   const handlePrint = () => {
@@ -139,7 +141,7 @@ const ExpenseVerificationTab = ({
       `Generated on: ${new Date().toLocaleString('en-GB')} | Total Verified/Pending Claims: ${filteredExpenses.length}`
     );
 
-    const headers = [['DATE', 'PROJECT', 'SUPERVISOR', 'VENDOR', 'AMOUNT', 'STATUS']];
+    const headers = [['INVOICE ID', 'DATE', 'PROJECT', 'SUPERVISOR', 'CATEGORY', 'PAYEE (VENDOR)', 'AMOUNT', 'OPS VERIFICATION', 'ACCOUNTS STATUS']];
     const data = filteredExpenses.map(e => {
       let dateStr = '';
       const rawDate = e.billDate || e.submittedAt;
@@ -150,13 +152,29 @@ const ExpenseVerificationTab = ({
           dateStr = rawDate.split('T')[0];
         }
       }
+      const approval = e.opsApproval || e.dineshApproval || e.operationsApproval;
+      const isOpsApproved = approval?.status === 'Approved' || (!approval?.status && approval?.approvedBy);
+      const isOpsRejected = approval?.status === 'Rejected';
+      let opsStatus = 'Pending';
+      if (isOpsApproved) opsStatus = 'Approved';
+      if (isOpsRejected) opsStatus = 'Rejected';
+      // If opsVerificationStatus field is available and Verified
+      if (e.opsVerificationStatus === 'Verified') opsStatus = 'Approved';
+
+      let accountsStatus = 'Pending';
+      if (e.status === 'Accounts Verified & Paid') accountsStatus = 'Verified';
+      if (e.status === 'Rejected' || e.accountsRejected) accountsStatus = 'Rejected';
+
       return [
+        (e.id || '').slice(0, 8).toUpperCase(),
         dateStr || '—',
         e.projectName,
         e.supervisor,
+        e.category || 'Uncategorized',
         e.vendorName || '-',
-        e.amount,
-        e.status === 'Accounts Verified & Paid' ? 'Verified' : 'Pending'
+        formatPDFINR(e.amount),
+        opsStatus,
+        accountsStatus
       ];
     });
 
@@ -419,7 +437,7 @@ const ExpenseVerificationTab = ({
           <Search size={16} strokeWidth={1.8} style={{ color: 'var(--text-secondary)', flexShrink: 0 }} />
           <input
             type="text"
-            placeholder="Search by Bill No, ID, Vendor, Supervisor..."
+            placeholder="Search by ID, Vendor, Supervisor, Amount..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             style={{
@@ -741,45 +759,44 @@ const ExpenseVerificationTab = ({
                           </button>
 
                           {isPending && (
-                            <>
-                              <button
-                                onClick={() => onQuickApprove(exp)}
-                                style={{
-                                  padding: '0.45rem 0.75rem',
-                                  borderRadius: '8px',
-                                  backgroundColor: '#10b981',
-                                  color: '#ffffff',
-                                  border: 'none',
-                                  fontSize: '0.75rem',
-                                  fontWeight: '700',
-                                  display: 'inline-flex',
-                                  alignItems: 'center',
-                                  gap: '0.3rem',
-                                  cursor: 'pointer'
-                                }}
-                                title="Accept Vendor Invoice"
-                              >
-                                <Check size={14} />
-                              </button>
-
-                              <button
-                                onClick={() => onRejectExpense(exp)}
-                                style={{
-                                  padding: '0.45rem 0.6rem',
-                                  borderRadius: '8px',
-                                  backgroundColor: 'rgba(239, 68, 68, 0.1)',
-                                  color: '#ef4444',
-                                  border: '1px solid rgba(239, 68, 68, 0.3)',
-                                  fontSize: '0.75rem',
-                                  display: 'inline-flex',
-                                  alignItems: 'center',
-                                  cursor: 'pointer'
-                                }}
-                                title="Reject Vendor Invoice"
-                              >
-                                <X size={14} />
-                              </button>
-                            </>
+                            <button
+                              onClick={() => onQuickApprove(exp)}
+                              style={{
+                                padding: '0.45rem 0.75rem',
+                                borderRadius: '8px',
+                                backgroundColor: '#10b981',
+                                color: '#ffffff',
+                                border: 'none',
+                                fontSize: '0.75rem',
+                                fontWeight: '700',
+                                display: 'inline-flex',
+                                alignItems: 'center',
+                                gap: '0.3rem',
+                                cursor: 'pointer'
+                              }}
+                              title="Accept Vendor Invoice"
+                            >
+                              <Check size={14} />
+                            </button>
+                          )}
+                          {isPending && (
+                            <button
+                              onClick={() => onRejectExpense(exp)}
+                              style={{
+                                padding: '0.45rem 0.6rem',
+                                borderRadius: '8px',
+                                backgroundColor: 'rgba(239, 68, 68, 0.1)',
+                                color: '#ef4444',
+                                border: '1px solid rgba(239, 68, 68, 0.3)',
+                                fontSize: '0.75rem',
+                                display: 'inline-flex',
+                                alignItems: 'center',
+                                cursor: 'pointer'
+                              }}
+                              title="Reject Vendor Invoice"
+                            >
+                              <X size={14} />
+                            </button>
                           )}
                         </div>
                       </td>
@@ -792,10 +809,10 @@ const ExpenseVerificationTab = ({
         </div>
         
         {/* Pagination Control */}
-        {totalPages > 1 && (
+        {totalPages > 0 && (
           <div className="no-print" style={{ padding: '1rem', borderTop: '1px solid var(--border-color)' }}>
             <Pagination 
-              currentPage={currentPage}
+              currentPage={validCurrentPage}
               totalPages={totalPages}
               onNext={handleNextPage}
               onPrev={handlePrevPage}

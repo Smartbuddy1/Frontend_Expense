@@ -13,6 +13,7 @@ import autoTable from 'jspdf-autotable';
 import { addPdfHeaderWithLogo, addPdfFooterWithLogo, addPdfSignatures, escapeHtml } from '../../../Operations/utils/pdfHeaderHelper';
 import aiLogo from '../../assets/ai_logo.jpg';
 import PrintFooter from '../PrintFooter';
+import Pagination from '../../../../components/ui/Pagination';
 
 const PaymentLedgerTab = ({ payments, onRecordNewPayment }) => {
   const [searchQuery, setSearchQuery] = useState('');
@@ -46,6 +47,21 @@ const PaymentLedgerTab = ({ payments, onRecordNewPayment }) => {
 
     return matchesSearch && matchesType && matchesMode;
   });
+
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 10;
+  
+  const totalPages = Math.ceil(filteredPayments.length / itemsPerPage);
+  const validCurrentPage = Math.max(1, Math.min(currentPage, totalPages || 1));
+  const currentPayments = filteredPayments.slice((validCurrentPage - 1) * itemsPerPage, validCurrentPage * itemsPerPage);
+
+  const handleNextPage = () => {
+    if (validCurrentPage < totalPages) setCurrentPage(validCurrentPage + 1);
+  };
+
+  const handlePrevPage = () => {
+    if (validCurrentPage > 1) setCurrentPage(validCurrentPage - 1);
+  };
 
   const totalPaymentsAmount = filteredPayments.reduce((acc, p) => acc + (p.amount || 0), 0);
 
@@ -256,14 +272,14 @@ const PaymentLedgerTab = ({ payments, onRecordNewPayment }) => {
               </tr>
             </thead>
             <tbody>
-              {filteredPayments.length === 0 ? (
+              {currentPayments.length === 0 ? (
                 <tr>
                   <td colSpan={7} style={{ padding: '3rem', textAlign: 'center', color: 'var(--text-secondary)' }}>
                     No payment transactions found in ledger.
                   </td>
                 </tr>
               ) : (
-                filteredPayments.map((p) => (
+                currentPayments.map((p) => (
                   <tr key={p.id} style={{ borderBottom: '1px solid var(--border-color)' }}>
                     <td style={{ padding: '1rem', whiteSpace: 'nowrap' }}>
                       <div style={{ fontWeight: '700', color: 'var(--text-primary)', fontFamily: 'monospace' }}>
@@ -336,6 +352,18 @@ const PaymentLedgerTab = ({ payments, onRecordNewPayment }) => {
             </tbody>
           </table>
         </div>
+        
+        {/* Pagination Control */}
+        {totalPages > 0 && (
+          <div className="no-print" style={{ padding: '1rem', borderTop: '1px solid var(--border-color)' }}>
+            <Pagination 
+              currentPage={validCurrentPage}
+              totalPages={totalPages}
+              onNext={handleNextPage}
+              onPrev={handlePrevPage}
+            />
+          </div>
+        )}
       </div>
 
       {/* Corporate Printable Footer with Signatures */}

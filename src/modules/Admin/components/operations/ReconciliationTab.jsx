@@ -1356,7 +1356,7 @@ const ReconciliationTab = ({
                   Amount (₹):
                 </label>
                 <input
-                  type="number"
+                  type="number" min="1"
                   placeholder="e.g. 25000"
                   value={floatForm.amount}
                   onChange={(e) => setFloatForm({ ...floatForm, amount: e.target.value })}

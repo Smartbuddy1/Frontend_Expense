@@ -233,7 +233,7 @@ const SubmitExpenseModal = ({ isOpen, onClose, onSubmit, projects = [], supervis
                 {language === 'mr' ? 'रक्कम (INR ₹) *' : 'Amount (INR ₹) *'}
               </label>
               <input
-                type="number"
+                type="number" min="1"
                 required
                 placeholder="e.g. 14500"
                 value={formData.amount}

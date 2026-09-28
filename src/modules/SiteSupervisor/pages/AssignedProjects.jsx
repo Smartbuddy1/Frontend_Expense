@@ -16,6 +16,7 @@ import { useLanguage } from '../context/LanguageContext';
 import { useWallet } from '../context/WalletContext';
 import { exportToPDF } from '../utils/exportUtils';
 import { toast } from '../../../components/Toast';
+import Pagination from '../../../components/ui/Pagination';
 
 const AssignedProjects = () => {
   const { t, language } = useLanguage();
@@ -43,16 +44,25 @@ const AssignedProjects = () => {
       p.name.toLowerCase().includes(term)
     );
   });
+  const itemsPerPage = 10;
+  const [currentPage, setCurrentPage] = useState(1);
+  const totalPages = Math.ceil(filteredProjects.length / itemsPerPage);
+  const validCurrentPage = Math.max(1, Math.min(currentPage, totalPages || 1));
+  const currentProjects = filteredProjects.slice((validCurrentPage - 1) * itemsPerPage, validCurrentPage * itemsPerPage);
 
+  const handleNextPage = () => {
+    if (validCurrentPage < totalPages) setCurrentPage(validCurrentPage + 1);
+  };
 
+  const handlePrevPage = () => {
+    if (validCurrentPage > 1) setCurrentPage(validCurrentPage - 1);
+  };
 
   const handleExportPDF = () => {
-    const headers = ['Project ID', 'Project Name', 'Location', 'Status'];
+    const headers = ['Project ID', 'Project Name'];
     const rows = filteredProjects.map(p => [
       p.id,
-      p.name,
-      p.location,
-      p.status
+      p.name
     ]);
     exportToPDF({
       fileName: 'Assigned_Projects_Report',
@@ -190,104 +200,129 @@ const AssignedProjects = () => {
         )}
       </div>
 
-      {/* Complete Project Info Table */}
-      <div style={{
-        background: 'var(--surface-bg)',
-        borderRadius: '1.15rem',
-        border: '1px solid var(--border-color)',
-        padding: '1.25rem',
-        boxShadow: '0 4px 15px -2px var(--shadow-color)',
-        width: '100%',
-        boxSizing: 'border-box'
-      }}>
-        {/* Table Header */}
+      {/* Projects Grid Container */}
+      <div style={{ width: '100%', boxSizing: 'border-box' }}>
+        {/* Header */}
         <div style={{
           display: 'flex',
           justifyContent: 'space-between',
           alignItems: 'center',
-          marginBottom: '1.1rem',
+          marginBottom: '1.25rem',
           flexWrap: 'wrap',
           gap: '0.75rem'
         }}>
           <h2 style={{ fontSize: '1.15rem', fontWeight: '800', color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: '0.5rem', margin: 0 }}>
-            <FileText size={18} color="#3b82f6" />
-            {language === 'mr' ? 'सर्व प्रोजेक्ट्सची माहिती' : language === 'hi' ? 'सभी प्रोजेक्ट्स की जानकारी' : 'All Assigned Projects Information'}
+            <Building2 size={20} color="#3b82f6" />
+            {language === 'mr' ? 'सर्व प्रोजेक्ट्सची माहिती' : language === 'hi' ? 'सभी प्रोजेक्ट्स की जानकारी' : 'Assigned Sites & Projects'}
           </h2>
           <span style={{
             fontSize: '0.8rem',
-            fontWeight: '700',
+            fontWeight: '800',
             color: '#3b82f6',
             backgroundColor: 'rgba(59, 130, 246, 0.12)',
-            padding: '0.3rem 0.75rem',
-            borderRadius: '9999px',
-            border: '1px solid rgba(59, 130, 246, 0.2)'
+            padding: '0.35rem 0.85rem',
+            borderRadius: '2rem',
+            border: '1px solid rgba(59, 130, 246, 0.25)',
+            boxShadow: '0 2px 4px rgba(59, 130, 246, 0.05)'
           }}>
-            {filteredProjects.length} {language === 'mr' ? 'प्रोजेक्ट्स' : language === 'hi' ? 'प्रोजेक्ट्स' : 'Projects'}
+            {filteredProjects.length} {language === 'mr' ? 'प्रोजेक्ट्स' : language === 'hi' ? 'प्रोजेक्ट्स' : 'Projects Active'}
           </span>
         </div>
 
-        <div className="table-responsive" style={{ overflowX: 'auto', WebkitOverflowScrolling: 'touch', width: '100%' }}>
-          <table className="premium-table" style={{ width: '100%', minWidth: '650px', borderCollapse: 'collapse', textAlign: 'left', fontSize: '0.9rem' }}>
-            <thead>
-              <tr style={{ borderBottom: '2px solid var(--border-color)', color: 'var(--text-secondary)', backgroundColor: 'var(--card-bg)' }}>
-                <th style={{ padding: '0.85rem 1rem', fontWeight: '700' }}>Project ID</th>
-                <th style={{ padding: '0.85rem 1rem', fontWeight: '700' }}>Project & Site Name</th>
-                <th style={{ padding: '0.85rem 1rem', fontWeight: '700', textAlign: 'center' }}>Details</th>
-              </tr>
-            </thead>
-            <tbody>
-              {filteredProjects.length === 0 ? (
-                <tr>
-                  <td colSpan="3" style={{ padding: '2rem', textAlign: 'center', color: 'var(--text-secondary)' }}>
-                    {language === 'mr' ? 'कोणताही जुळणारा प्रोजेक्ट सापडला नाही.' : language === 'hi' ? 'कोई मिलता-जुलता प्रोजेक्ट नहीं मिला।' : 'No matching projects found.'}
-                  </td>
-                </tr>
-              ) : (
-                filteredProjects.map((proj) => (
-                  <tr
-                    key={proj.id}
-                    style={{
-                      borderBottom: '1px solid var(--border-color)',
-                      transition: 'background-color 0.15s ease'
-                    }}
-                    onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'var(--card-bg)'}
-                    onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
-                  >
-                    <td data-label="PROJECT ID" style={{ padding: '0.9rem 1rem', fontWeight: '700', color: '#3b82f6', whiteSpace: 'nowrap' }}>
-                      {proj.id}
-                    </td>
-                    <td data-label="PROJECT & SITE" style={{ padding: '0.9rem 1rem' }}>
-                      <div style={{ fontWeight: '700', color: 'var(--text-primary)', fontSize: '0.95rem' }}>
-                        {proj.name}
-                      </div>
-                    </td>
+        {/* CSS Grid of Cards */}
+        <div style={{
+          display: 'grid',
+          gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))',
+          gap: '1.25rem',
+          width: '100%'
+        }}>
+          {filteredProjects.length === 0 ? (
+            <div style={{ gridColumn: '1 / -1', padding: '3rem', textAlign: 'center', color: 'var(--text-secondary)', background: 'var(--surface-bg)', borderRadius: '1rem', border: '1px dashed var(--border-color)' }}>
+              {language === 'mr' ? 'कोणताही जुळणारा प्रोजेक्ट सापडला नाही.' : language === 'hi' ? 'कोई मिलता-जुलता प्रोजेक्ट नहीं मिला।' : 'No matching projects found.'}
+            </div>
+          ) : (
+            currentProjects.map((proj) => (
+              <div
+                key={proj.id}
+                style={{
+                  background: 'var(--surface-bg)',
+                  borderRadius: '1.15rem',
+                  border: '1px solid var(--border-color)',
+                  padding: '1.4rem',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: '1.1rem',
+                  transition: 'all 0.25s cubic-bezier(0.4, 0, 0.2, 1)',
+                  boxShadow: '0 4px 12px -2px rgba(0,0,0,0.03)',
+                  cursor: 'pointer',
+                  position: 'relative',
+                  overflow: 'hidden'
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.transform = 'translateY(-4px)';
+                  e.currentTarget.style.boxShadow = '0 12px 24px -4px rgba(0,0,0,0.08)';
+                  e.currentTarget.style.borderColor = 'rgba(59, 130, 246, 0.5)';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.transform = 'translateY(0)';
+                  e.currentTarget.style.boxShadow = '0 4px 12px -2px rgba(0,0,0,0.03)';
+                  e.currentTarget.style.borderColor = 'var(--border-color)';
+                }}
+                onClick={() => setSelectedProjectModal(proj)}
+              >
+                {/* Subtle top border accent */}
+                <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: '4px', background: 'linear-gradient(90deg, #3b82f6, #8b5cf6)' }} />
 
+                {/* Card Header: ID */}
+                <div style={{ display: 'flex', alignItems: 'flex-start', marginTop: '0.2rem' }}>
+                  <div style={{
+                    fontSize: '0.75rem',
+                    fontWeight: '800',
+                    color: '#3b82f6',
+                    backgroundColor: 'rgba(59, 130, 246, 0.12)',
+                    padding: '0.25rem 0.65rem',
+                    borderRadius: '0.5rem',
+                    letterSpacing: '0.03em',
+                    border: '1px solid rgba(59, 130, 246, 0.2)'
+                  }}>
+                    {proj.id}
+                  </div>
+                </div>
 
-                    <td data-label="DETAILS" style={{ padding: '0.9rem 1rem', textAlign: 'center', whiteSpace: 'nowrap' }}>
-                      <button
-                        onClick={() => setSelectedProjectModal(proj)}
-                        style={{
-                          padding: '0.35rem 0.75rem',
-                          borderRadius: '0.5rem',
-                          border: '1px solid rgba(59, 130, 246, 0.3)',
-                          backgroundColor: 'rgba(59, 130, 246, 0.1)',
-                          color: '#3b82f6',
-                          fontSize: '0.775rem',
-                          fontWeight: '700',
-                          cursor: 'pointer',
-                          display: 'inline-flex',
-                          alignItems: 'center',
-                          gap: '0.3rem'
-                        }}
-                      >
-                        <Eye size={13} /> View
-                      </button>
-                    </td>
-                  </tr>
-                ))
-              )}
-            </tbody>
-          </table>
+                {/* Project Name & Location */}
+                <div>
+                  <h3 style={{ fontSize: '1.25rem', fontWeight: '800', color: 'var(--text-primary)', margin: '0 0 0.5rem 0', lineHeight: '1.3' }}>
+                    {proj.name}
+                  </h3>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', color: 'var(--text-secondary)', fontSize: '0.875rem' }}>
+                    <MapPin size={15} color="#64748b" />
+                    <span style={{ fontWeight: '500' }}>{proj.location}</span>
+                  </div>
+                </div>
+
+                {/* Quick Info / Divider */}
+                <div style={{ height: '1px', background: 'var(--border-color)', margin: '0.25rem 0' }} />
+
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', color: 'var(--text-secondary)' }}>
+                    <HardHat size={16} color="#94a3b8" />
+                    <span style={{ fontSize: '0.8rem', fontWeight: '700', color: '#64748b' }}>Assigned to You</span>
+                  </div>
+                </div>
+              </div>
+            ))
+          )}
+        </div>
+        
+        {/* Pagination Controls */}
+        <div style={{ marginTop: '1.25rem', borderTop: '1px solid var(--border-color)', paddingTop: '1rem' }}>
+          <Pagination
+            currentPage={validCurrentPage}
+            totalPages={totalPages}
+            itemsPerPage={itemsPerPage}
+            totalItems={filteredProjects.length}
+            onPageChange={setCurrentPage}
+          />
         </div>
       </div>
 

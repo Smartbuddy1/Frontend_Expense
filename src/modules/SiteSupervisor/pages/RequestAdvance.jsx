@@ -23,6 +23,7 @@ import { useWallet } from '../context/WalletContext';
 import { useLanguage } from '../context/LanguageContext';
 import { exportToPDF } from '../utils/exportUtils';
 import { toast } from '../../../components/Toast';
+import Pagination from '../../../components/ui/Pagination';
 
 const RequestAdvance = () => {
   const { requestAdvance, walletBalance, totalAdvance, advancesList, projects, defaultTargetProject, deleteAdvance, updateAdvance } = useWallet();
@@ -147,29 +148,44 @@ const RequestAdvance = () => {
     return matchesSearch && matchesSite;
   });
 
-  const totalRequisitionAmount = history.reduce((sum, item) => sum + item.amount, 0);
+  const itemsPerPage = 10;
+  const [currentPage, setCurrentPage] = useState(1);
+  const totalPages = Math.ceil(filteredHistory.length / itemsPerPage);
+  const validCurrentPage = Math.max(1, Math.min(currentPage, totalPages || 1));
+  const currentHistory = filteredHistory.slice((validCurrentPage - 1) * itemsPerPage, validCurrentPage * itemsPerPage);
+
+  const handleNextPage = () => {
+    if (validCurrentPage < totalPages) setCurrentPage(validCurrentPage + 1);
+  };
+
+  const handlePrevPage = () => {
+    if (validCurrentPage > 1) setCurrentPage(validCurrentPage - 1);
+  };
+
+
+  const totalRequisitionAmount = currentHistory.reduce((sum, item) => sum + item.amount, 0);
 
 
   const handleExportPDF = () => {
-    const headers = ['Req ID', 'Site Location', 'Date', 'Amount (Rs)', 'Urgency', 'Purpose / Reason', 'Status'];
-    const rows = filteredHistory.map(req => [
+    const headers = ['Req ID', 'Site Location', 'Purpose / Reason', 'Urgency', 'Date', 'Amount (Rs)', 'Status'];
+    const rows = currentHistory.map(req => [
       req.displayId || req.id,
       req.site,
+      req.note,
+      req.urgency || 'Standard',
       req.date,
       `Rs. ${req.amount.toLocaleString()}`,
-      req.urgency,
-      req.note,
       req.status
     ]);
     exportToPDF({
       fileName: 'Advance_Requisitions_Report',
       title: 'Site Advance Fund Requisitions Report',
-      subtitle: 'Official log of field cash requests, urgent material advance allocations, and approval status.',
+      subtitle: `Page ${validCurrentPage} of ${totalPages} - Official log of field cash requests.`,
       headers,
       rows,
       meta: [
-        { label: 'Total Requisitioned', value: `Rs. ${totalRequisitionAmount.toLocaleString()}` },
-        { label: 'Total Requests', value: `${history.length} Requisitions` },
+        { label: 'Total Requisitioned (This Page)', value: `Rs. ${totalRequisitionAmount.toLocaleString()}` },
+        { label: 'Total Requests (This Page)', value: `${currentHistory.length} Requisitions` },
         { label: 'Wallet Balance', value: `Rs. ${walletBalance.toLocaleString()}` }
       ]
     });
@@ -430,7 +446,7 @@ const RequestAdvance = () => {
                   </td>
                 </tr>
               ) : (
-                filteredHistory.map((item) => (
+                currentHistory.map((item) => (
                   <tr
                     key={item.displayId || item.id}
                     style={{
@@ -551,6 +567,17 @@ const RequestAdvance = () => {
             </tbody>
           </table>
         </div>
+        
+        {/* Pagination Controls */}
+        <div style={{ marginTop: '1.25rem', borderTop: '1px solid var(--border-color)', paddingTop: '1rem' }}>
+          <Pagination
+            currentPage={validCurrentPage}
+            totalPages={totalPages}
+            itemsPerPage={itemsPerPage}
+            totalItems={filteredHistory.length}
+            onPageChange={setCurrentPage}
+          />
+        </div>
       </div>
 
       {/* New Fund Requisition Modal (Popup Dialog) */}
@@ -633,7 +660,7 @@ const RequestAdvance = () => {
                   {t('reqAmountLabel')} <span style={{ color: '#ef4444' }}>*</span>
                 </label>
                 <input
-                  type="number"
+                  type="number" min="1"
                   placeholder="e.g. 25000"
                   required
                   min="1"
@@ -746,7 +773,7 @@ const RequestAdvance = () => {
                   {t('reqAmountLabel')} <span style={{ color: '#ef4444' }}>*</span>
                 </label>
                 <input
-                  type="number"
+                  type="number" min="1"
                   placeholder="e.g. 25000"
                   required
                   min="1"

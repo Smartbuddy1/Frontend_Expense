@@ -7,6 +7,7 @@ import toast, { Toaster } from 'react-hot-toast';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import { addPdfHeaderWithLogo, addPdfFooterWithLogo, addPdfSignatures, getCompanyLogoBase64, escapeHtml } from '../../../Operations/utils/pdfHeaderHelper';
+import Pagination from '../../../../components/ui/Pagination';
 
 const SupervisorWalletFundsTab = ({
   projects = [],
@@ -61,10 +62,32 @@ const SupervisorWalletFundsTab = ({
         amount: a.requestedAmount || a.approvedAmount || a.amount || 0,
         rowType: 'disbursed',
         sortKey: new Date(a.disbursedAt || a.updatedAt || 0).getTime(),
+        remarks: a.remarks || a.accountsRemark || '',
       }))
       .sort((a, b) => b.sortKey - a.sortKey);
 
-    return [...pending, ...disbursed];
+    const rejected = advances
+      .filter(a => a.status === 'Rejected')
+      .map(a => ({
+        id: a.id,
+        displayId: a.id ? `REQ-${a.id.slice(0, 6).toUpperCase()}` : '—',
+        supervisor: a.supervisor || '—',
+        supervisorId: a.supervisorId,
+        site: a.siteName || a.projectName || '—',
+        purpose: a.purpose || '—',
+        urgency: a.urgency || 'Regular',
+        date: a.date
+          ? new Date(a.date).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })
+          : '—',
+        disbursedAt: a.updatedAt ? new Date(a.updatedAt).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }) : '—',
+        amount: a.requestedAmount || a.approvedAmount || a.amount || 0,
+        rowType: 'rejected',
+        sortKey: new Date(a.updatedAt || 0).getTime(),
+        remarks: a.remarks || a.accountsRemark || '',
+      }))
+      .sort((a, b) => b.sortKey - a.sortKey);
+
+    return [...pending, ...disbursed, ...rejected];
   }, [advances]);
 
   // ── Wallet balance per supervisor ─────────────────────────────────────────
@@ -113,6 +136,7 @@ const SupervisorWalletFundsTab = ({
 
   const pendingCount = allRows.filter(r => r.rowType === 'pending').length;
   const disbursedCount = allRows.filter(r => r.rowType === 'disbursed').length;
+  const rejectedCount = allRows.filter(r => r.rowType === 'rejected').length;
   const pendingTotal = allRows.filter(r => r.rowType === 'pending').reduce((s, r) => s + r.amount, 0);
 
   // ── Export CSV ─────────────────────────────────────────────────────────────
@@ -130,7 +154,7 @@ const SupervisorWalletFundsTab = ({
           `"${req.date}"`,
           `"${req.disbursedAt || '—'}"`,
           req.amount,
-          `"${req.rowType === 'pending' ? 'Ops Approved - Pending Disbursal' : 'Disbursed'}"`,
+          `"${req.rowType === 'pending' ? 'Ops Approved - Pending Disbursal' : req.rowType === 'disbursed' ? 'Disbursed' : 'Rejected'}"`,
         ])
       ];
       const csv = 'data:text/csv;charset=utf-8,\uFEFF' + rows.map(r => r.join(',')).join('\n');
@@ -158,7 +182,7 @@ const SupervisorWalletFundsTab = ({
             r.displayId, r.supervisor, r.site, r.purpose, r.urgency, r.date,
             `Rs. ${bal.toLocaleString('en-IN')}`,
             `Rs. ${(r.amount || 0).toLocaleString('en-IN')}`,
-            r.rowType === 'pending' ? 'Pending Disbursal' : 'Disbursed'
+            r.rowType === 'pending' ? 'Pending Disbursal' : r.rowType === 'disbursed' ? 'Disbursed' : 'Rejected'
           ];
         }),
         theme: 'grid',
@@ -202,8 +226,8 @@ const SupervisorWalletFundsTab = ({
           <td style="text-align:right;font-weight:800;">&#8377;${(r.amount || 0).toLocaleString('en-IN')}</td>
           <td style="text-align:center;">
             <span style="padding:2px 8px;border-radius:9999px;font-weight:800;font-size:9px;
-              background:${isPending ? '#fef9c3' : '#dcfce7'};color:${isPending ? '#a16207' : '#15803d'};">
-              ${isPending ? 'Pending Disbursal' : 'Disbursed'}
+              background:${isPending ? '#fef9c3' : r.rowType === 'disbursed' ? '#dcfce7' : '#ffe4e6'};color:${isPending ? '#a16207' : r.rowType === 'disbursed' ? '#15803d' : '#e11d48'};">
+              ${isPending ? 'Pending Disbursal' : r.rowType === 'disbursed' ? 'Disbursed' : 'Rejected'}
             </span>
           </td>
         </tr>`;
@@ -356,6 +380,43 @@ const SupervisorWalletFundsTab = ({
             </div>
           </div>
         </div>
+
+        {/* Rejected Card */}
+        <div
+          onClick={() => setStatusFilter('REJECTED')}
+          style={{
+            flex: '1 1 200px', display: 'flex', alignItems: 'center', gap: '1.25rem',
+            padding: '1.25rem 1.5rem', borderRadius: '16px',
+            backgroundColor: 'var(--card-bg, #ffffff)',
+            border: statusFilter === 'REJECTED' ? '2px solid #e11d48' : '1px solid var(--border-color, #e2e8f0)',
+            boxShadow: '0 4px 15px rgba(0,0,0,0.03)',
+            position: 'relative', overflow: 'hidden', cursor: 'pointer', transition: 'all 0.2s ease'
+          }}>
+          <div style={{
+            position: 'absolute', top: 0, left: 0, width: '4px', height: '100%',
+            backgroundColor: '#e11d48'
+          }} />
+          <div style={{
+            width: '48px', height: '48px', borderRadius: '14px',
+            backgroundColor: '#ffe4e6', display: 'flex', alignItems: 'center', justifyContent: 'center',
+            boxShadow: '0 2px 5px rgba(225,29,72,0.2)'
+          }}>
+            <X size={24} color="#be123c" />
+          </div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.2rem' }}>
+            <div style={{ fontSize: '0.9rem', color: 'var(--text-secondary, #64748b)', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+              Rejected
+            </div>
+            <div style={{ display: 'flex', alignItems: 'baseline', gap: '0.5rem' }}>
+              <span style={{ fontSize: '1.75rem', fontWeight: '900', color: 'var(--text-primary, #0f172a)', lineHeight: '1' }}>
+                {rejectedCount}
+              </span>
+              <span style={{ fontSize: '0.9rem', color: '#be123c', fontWeight: '700' }}>
+                records
+              </span>
+            </div>
+          </div>
+        </div>
       </div>
 
       {/* Action bar: Search + export buttons */}
@@ -455,36 +516,36 @@ const SupervisorWalletFundsTab = ({
                             <div style={{
                               display: 'flex', alignItems: 'center', gap: '0.6rem',
                               padding: '0.6rem 0.75rem',
-                              backgroundColor: '#f0fdf4',
-                              borderTop: '2px solid #86efac',
-                              borderBottom: '1px solid #bbf7d0'
+                              backgroundColor: 'var(--success-bg, rgba(16, 185, 129, 0.1))',
+                              borderTop: '2px solid var(--success-border, rgba(16, 185, 129, 0.3))',
+                              borderBottom: '1px solid var(--success-border, rgba(16, 185, 129, 0.2))'
                             }}>
-                              <CheckCircle2 size={14} color="#15803d" />
-                              <span style={{ fontSize: '0.78rem', fontWeight: '800', color: '#15803d', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                              <CheckCircle2 size={14} style={{ color: 'var(--status-success-text, #10b981)' }} />
+                              <span style={{ fontSize: '0.78rem', fontWeight: '800', color: 'var(--status-success-text, #10b981)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
                                 Disbursed History
                               </span>
                             </div>
                           </td>
                         </tr>
                       )}
-                      <tr
+                        <tr
                         style={{
-                          borderBottom: idx === arr.length - 1 ? 'none' : `1px solid ${isPending ? 'var(--border-color,#f1f5f9)' : '#f0fdf4'}`,
-                          backgroundColor: isPending ? 'transparent' : 'rgba(240,253,244,0.35)',
+                          borderBottom: idx === arr.length - 1 ? 'none' : `1px solid ${isPending ? 'var(--border-color,#f1f5f9)' : req.rowType === 'rejected' ? 'var(--danger-border, rgba(225, 29, 72, 0.15))' : 'var(--success-border, rgba(16, 185, 129, 0.15))'}`,
+                          backgroundColor: isPending ? 'transparent' : req.rowType === 'rejected' ? 'var(--danger-bg, rgba(225, 29, 72, 0.05))' : 'var(--success-bg, rgba(16, 185, 129, 0.05))',
                           transition: 'background-color 0.15s ease'
                         }}
-                        onMouseEnter={e => e.currentTarget.style.backgroundColor = isPending ? 'var(--table-hover,rgba(241,245,249,0.5))' : 'rgba(220,252,231,0.5)'}
-                        onMouseLeave={e => e.currentTarget.style.backgroundColor = isPending ? 'transparent' : 'rgba(240,253,244,0.35)'}
+                        onMouseEnter={e => e.currentTarget.style.backgroundColor = isPending ? 'var(--table-hover,rgba(241,245,249,0.5))' : req.rowType === 'rejected' ? 'var(--danger-hover, rgba(225, 29, 72, 0.1))' : 'var(--success-hover, rgba(16, 185, 129, 0.1))'}
+                        onMouseLeave={e => e.currentTarget.style.backgroundColor = isPending ? 'transparent' : req.rowType === 'rejected' ? 'var(--danger-bg, rgba(225, 29, 72, 0.05))' : 'var(--success-bg, rgba(16, 185, 129, 0.05))'}
                       >
                         {/* REQ ID */}
                         <td style={{ padding: '0.75rem 0.75rem', verticalAlign: 'middle', whiteSpace: 'nowrap' }}>
-                          <strong style={{ color: '#059669', fontSize: '0.9rem', fontWeight: '800' }}>{req.displayId}</strong>
+                          <strong style={{ color: 'var(--status-success-text, #10b981)', fontSize: '0.9rem', fontWeight: '800' }}>{req.displayId}</strong>
                         </td>
 
                         {/* SUPERVISOR */}
                         <td style={{ padding: '0.75rem 0.75rem', verticalAlign: 'middle', whiteSpace: 'nowrap' }}>
                           <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
-                            <div style={{ width: '30px', height: '30px', borderRadius: '50%', backgroundColor: isPending ? '#eff6ff' : '#dcfce7', color: isPending ? '#2563eb' : '#15803d', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: '800', fontSize: '0.82rem', border: `1px solid ${isPending ? '#bfdbfe' : '#86efac'}`, flexShrink: 0 }}>
+                            <div style={{ width: '30px', height: '30px', borderRadius: '50%', backgroundColor: isPending ? 'var(--avatar-pending-bg, #eff6ff)' : 'var(--avatar-success-bg, rgba(16, 185, 129, 0.15))', color: isPending ? 'var(--avatar-pending-text, #3b82f6)' : 'var(--status-success-text, #10b981)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: '800', fontSize: '0.82rem', border: `1px solid ${isPending ? 'var(--avatar-pending-border, #bfdbfe)' : 'var(--avatar-success-border, rgba(16, 185, 129, 0.3))'}`, flexShrink: 0 }}>
                               {(req.supervisor || 'S').charAt(0)}
                             </div>
                             <strong style={{ color: 'var(--text-primary,#0f172a)', fontSize: '0.9rem' }}>{req.supervisor}</strong>
@@ -494,7 +555,7 @@ const SupervisorWalletFundsTab = ({
                         {/* SITE */}
                         <td style={{ padding: '0.75rem 0.75rem', verticalAlign: 'middle', whiteSpace: 'nowrap' }}>
                           <div style={{ display: 'flex', alignItems: 'center', gap: '0.45rem' }}>
-                            <MapPin size={14} style={{ color: isPending ? '#2563eb' : '#059669', flexShrink: 0 }} />
+                            <MapPin size={14} style={{ color: isPending ? 'var(--avatar-pending-text, #3b82f6)' : 'var(--status-success-text, #10b981)', flexShrink: 0 }} />
                             <strong style={{ color: 'var(--text-primary,#0f172a)', fontSize: '0.9rem' }}>{req.site}</strong>
                           </div>
                         </td>
@@ -527,7 +588,7 @@ const SupervisorWalletFundsTab = ({
 
                         {/* AMOUNT */}
                         <td style={{ padding: '0.75rem 0.75rem', verticalAlign: 'middle', whiteSpace: 'nowrap', textAlign: 'right' }}>
-                          <span style={{ fontSize: '1rem', fontWeight: '900', color: isPending ? 'var(--text-primary,#0f172a)' : '#059669' }}>
+                          <span style={{ fontSize: '1rem', fontWeight: '900', color: isPending ? 'var(--text-primary,#0f172a)' : 'var(--status-success-text, #10b981)' }}>
                             &#8377;{(Number(req.amount) || 0).toLocaleString('en-IN')}
                           </span>
                         </td>
@@ -560,10 +621,21 @@ const SupervisorWalletFundsTab = ({
                                 </button>
                               </div>
                             </div>
-                          ) : (
+                          ) : req.rowType === 'disbursed' ? (
                             <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.35rem', padding: '0.3rem 0.75rem', borderRadius: '9999px', backgroundColor: '#dcfce7', color: '#15803d', border: '1px solid #86efac', fontSize: '0.75rem', fontWeight: '800' }}>
                               <CheckCircle2 size={12} strokeWidth={2.5} /> Disbursed
                             </span>
+                          ) : (
+                            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.3rem' }}>
+                              <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.35rem', padding: '0.3rem 0.75rem', borderRadius: '9999px', backgroundColor: '#ffe4e6', color: '#e11d48', border: '1px solid #fecdd3', fontSize: '0.75rem', fontWeight: '800' }}>
+                                <X size={12} strokeWidth={2.5} /> Rejected
+                              </span>
+                              {req.remarks && (
+                                <span style={{ fontSize: '0.7rem', color: '#64748b', maxWidth: '120px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={req.remarks}>
+                                  {req.remarks}
+                                </span>
+                              )}
+                            </div>
                           )}
                         </td>
                       </tr>
@@ -577,17 +649,14 @@ const SupervisorWalletFundsTab = ({
       </div>
 
       {/* Pagination */}
-      {totalPages > 1 && (
-        <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '0.75rem' }}>
-          <button onClick={() => setCurrentPage(p => Math.max(1, p - 1))} disabled={safePage === 1}
-            style={{ padding: '0.45rem 0.9rem', borderRadius: '8px', border: '1.5px solid var(--border-color,#cbd5e1)', backgroundColor: 'var(--card-bg,#fff)', color: 'var(--text-primary)', fontWeight: '700', cursor: safePage === 1 ? 'not-allowed' : 'pointer', opacity: safePage === 1 ? 0.4 : 1 }}>
-            &larr; Prev
-          </button>
-          <span style={{ fontSize: '0.88rem', color: 'var(--text-secondary)', fontWeight: '600' }}>Page {safePage} of {totalPages}</span>
-          <button onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))} disabled={safePage === totalPages}
-            style={{ padding: '0.45rem 0.9rem', borderRadius: '8px', border: '1.5px solid var(--border-color,#cbd5e1)', backgroundColor: 'var(--card-bg,#fff)', color: 'var(--text-primary)', fontWeight: '700', cursor: safePage === totalPages ? 'not-allowed' : 'pointer', opacity: safePage === totalPages ? 0.4 : 1 }}>
-            Next &rarr;
-          </button>
+      {totalPages > 0 && (
+        <div className="no-print" style={{ padding: '1rem', borderTop: '1px solid var(--border-color, #e8ecf2)' }}>
+          <Pagination 
+            currentPage={safePage}
+            totalPages={totalPages}
+            onNext={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+            onPrev={() => setCurrentPage(p => Math.max(1, p - 1))}
+          />
         </div>
       )}
     </div>
