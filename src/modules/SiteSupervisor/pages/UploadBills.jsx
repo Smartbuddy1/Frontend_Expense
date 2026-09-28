@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { UploadCloud, FileText, Image, CheckCircle2, Clock, Trash2, Eye, ShieldCheck, Sparkles, Search, X } from 'lucide-react';
 import { useWallet } from '../context/WalletContext';
+import { useLanguage } from '../context/LanguageContext';
 import { toast } from '../../../components/Toast';
 
 // Infers a rough file-type label from the receipt's name so the archive still
@@ -15,6 +16,7 @@ const inferFileType = (receiptName) => {
 
 const UploadBills = () => {
   const { expensesList, recordExpense } = useWallet();
+  const { language } = useLanguage();
 
   // A "bill" here is just any wallet expense that has a receipt attached —
   // shared with Daily Expenses / Balance Settlement instead of a separate list.
