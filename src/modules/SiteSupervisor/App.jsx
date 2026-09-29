@@ -11,14 +11,17 @@ import DailyExpenses from './pages/DailyExpensesNew';
 import BalanceSettlement from './pages/BalanceSettlement';
 import PublicExpenseForm from './pages/PublicExpenseForm';
 
-// Optional: Protected Route Wrapper if you want to keep authentication logic
 const ProtectedRoute = ({ children }) => {
   const { user, loading } = useAuth();
   
-  if (loading) return <div className="flex h-screen items-center justify-center">Loading...</div>;
-  if (!user || user.role !== 'site_supervisor') {
-    window.location.href = import.meta.env.BASE_URL;
-    return null;
+  React.useEffect(() => {
+    if (!loading && (!user || user.role !== 'site_supervisor')) {
+      window.location.href = import.meta.env.BASE_URL;
+    }
+  }, [user, loading]);
+
+  if (loading || !user || user.role !== 'site_supervisor') {
+    return <div className="flex h-screen items-center justify-center">Loading...</div>;
   }
 
   return children;
