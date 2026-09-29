@@ -102,7 +102,7 @@ const Dashboard = () => {
     if (categories && categories.length > 0 && !expenseForm.category) {
       setExpenseForm(prev => ({ ...prev, category: categories[0].name }));
     }
-  }, [defaultTargetProject, categories]);
+  }, [defaultTargetProject, categories, expenseForm.category]);
 
   const handleExpenseFileChange = (e) => {
     const file = e.target.files[0];
@@ -900,7 +900,7 @@ const Dashboard = () => {
                   {t('amountPaidLabel')} <span style={{ color: '#ef4444' }}>*</span>
                 </label>
                 <input
-                  type="number" min="1"
+                  type="number"
                   placeholder="e.g. 2400"
                   required
                   min="1"
@@ -1177,7 +1177,7 @@ const Dashboard = () => {
                   {t('reqAmountLabel')} <span style={{ color: '#ef4444' }}>*</span>
                 </label>
                 <input 
-                  type="number" min="1" 
+                  type="number" 
                   placeholder="e.g. 25000" 
                   required
                   min="1"
