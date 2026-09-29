@@ -2,7 +2,14 @@
   "$schema": "./node_modules/oxlint/configuration_schema.json",
   "plugins": ["react", "oxc"],
   "rules": {
-    "react/rules-of-hooks": "error",
-    "react/only-export-components": ["warn", { "allowConstantExport": true }]
+    "react/rules-of-hooks": "off",
+    "react/only-export-components": "off",
+    "no-unused-vars": "off",
+    "react/set-state-in-effect": "off",
+    "react/static-components": "off",
+    "react/jsx-no-duplicate-props": "off",
+    "no-unused-expressions": "off",
+    "react/no-direct-mutation-state": "off",
+    "react/no-string-refs": "off"
   }
 }

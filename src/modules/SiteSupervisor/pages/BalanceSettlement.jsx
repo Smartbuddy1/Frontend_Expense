@@ -32,10 +32,9 @@ const BalanceSettlement = () => {
   // 2. Reverse the list so it goes from Oldest to Newest
   const chronologicalExpenses = [...settledExpenses].reverse();
   
-  let currentBalance = totalAdvance;
-  const expenseEntries = chronologicalExpenses.map((exp) => {
-    currentBalance -= exp.amount;
-    return {
+  const expenseEntries = chronologicalExpenses.reduce((acc, exp) => {
+    const currentBalance = acc.balance - exp.amount;
+    acc.entries.push({
       id: `TXN-${exp.id.replace('EXP-', '').slice(0, 4).toUpperCase()}`,
       type: 'Debit',
       site: exp.site || 'Unknown Site',
@@ -44,8 +43,10 @@ const BalanceSettlement = () => {
       amount: exp.amount,
       date: exp.date,
       balanceAfter: currentBalance
-    };
-  });
+    });
+    acc.balance = currentBalance;
+    return acc;
+  }, { entries: [], balance: totalAdvance }).entries;
 
   const totalSpent = totalAdvance - walletBalance;
 

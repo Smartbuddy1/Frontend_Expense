@@ -102,11 +102,6 @@ const PublicExpenseForm = () => {
     { value: 'Other', labelEn: 'Other', labelMr: 'इतर', labelHi: 'अन्य', emoji: '📌' }
   ];
 
-  // Auto-fetch GPS Location on component mount
-  useEffect(() => {
-    fetchCurrentLocation();
-  }, []);
-
   const fetchCurrentLocation = () => {
     if (!navigator.geolocation) {
       setFormData(prev => ({
@@ -162,6 +157,11 @@ const PublicExpenseForm = () => {
       { enableHighAccuracy: true, timeout: 12000, maximumAge: 10000 }
     );
   };
+
+  // Auto-fetch GPS Location on component mount
+  useEffect(() => {
+    fetchCurrentLocation();
+  }, []);
 
   const handleFileChange = (e) => {
     const file = e.target.files[0];

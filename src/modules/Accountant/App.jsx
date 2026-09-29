@@ -14,8 +14,13 @@ const ProtectedRoute = ({ children }) => {
   const { user, loading } = useAuth();
 
   if (loading) return <div className="flex h-screen items-center justify-center">Loading...</div>;
+  React.useEffect(() => {
+    if (!loading && (!user || user.role !== 'accountant')) {
+      window.location.href = import.meta.env.BASE_URL;
+    }
+  }, [user, loading]);
+
   if (!user || user.role !== 'accountant') {
-    window.location.href = import.meta.env.BASE_URL;
     return null;
   }
 

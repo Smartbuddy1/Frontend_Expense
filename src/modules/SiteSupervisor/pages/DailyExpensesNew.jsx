@@ -38,14 +38,6 @@ const DailyExpenses = () => {
   const { t, language } = useLanguage();
   const location = useLocation();
 
-  useEffect(() => {
-    if (location.state?.openModal) {
-      setIsAddModalOpen(true);
-      // Clear the state so it doesn't reopen on refresh
-      window.history.replaceState({}, document.title);
-    }
-  }, [location.state]);
-
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('All');
   const [selectedSite, setSelectedSite] = useState('All');
@@ -56,6 +48,14 @@ const DailyExpenses = () => {
 
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [editExpenseData, setEditExpenseData] = useState(null);
+
+  useEffect(() => {
+    if (location.state?.openModal) {
+      setIsAddModalOpen(true);
+      // Clear the state so it doesn't reopen on refresh
+      window.history.replaceState({}, document.title);
+    }
+  }, [location.state]);
 
   const handleEditClick = (expense) => {
     setEditExpenseData({

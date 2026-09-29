@@ -7,24 +7,25 @@ const ProjectDetailModal = ({ isOpen, onClose, project, supervisors = [], teamMe
   const [photos, setPhotos] = useState([]);
   const [loadingPhotos, setLoadingPhotos] = useState(false);
 
+  const fetchPhotos = async () => {
+    setLoadingPhotos(true);
+    try {
+      const baseURL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000';
+      const response = await axios.get(`${baseURL}/projects/${project.id}/photos`);
+      setPhotos(response.data.photos || []);
+    } catch (err) {
+      console.error('Error fetching photos:', err);
+    } finally {
+      setLoadingPhotos(false);
+    }
+  };
+
   useEffect(() => {
     if (isOpen && project && activeTab === 'photos') {
       fetchPhotos();
     }
   }, [isOpen, project, activeTab]);
 
-  const fetchPhotos = async () => {
-    setLoadingPhotos(true);
-    try {
-      const baseURL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000';
-      const response = await axios.get(`${baseURL}/projects/${project.id}/photos`);
-      setPhotos(response.data);
-    } catch (err) {
-      console.error("Error fetching photos:", err);
-    } finally {
-      setLoadingPhotos(false);
-    }
-  };
 
   if (!isOpen || !project) return null;
 

@@ -30,14 +30,15 @@ const RequestAdvance = () => {
   const { t, language } = useLanguage();
   const location = useLocation();
 
+
+  const [isModalOpen, setIsModalOpen] = useState(false);
+
   useEffect(() => {
     if (location.state?.openModal) {
       setIsModalOpen(true);
       window.history.replaceState({}, document.title);
     }
   }, [location.state]);
-
-  const [isModalOpen, setIsModalOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [filterSite, setFilterSite] = useState('');
   const [submitting, setSubmitting] = useState(false);
@@ -848,3 +849,10 @@ const RequestAdvance = () => {
 
 export default RequestAdvance;
 
+
+  useEffect(() => {
+    if (location.state?.openModal) {
+      setIsModalOpen(true);
+      window.history.replaceState({}, document.title);
+    }
+  }, [location.state]);

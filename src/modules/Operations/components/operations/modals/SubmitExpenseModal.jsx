@@ -4,7 +4,7 @@ import { useLanguage } from '../../../context/LanguageContext';
 
 const SubmitExpenseModal = ({ isOpen, onClose, onSubmit, projects = [], supervisors = [] }) => {
   const { language } = useLanguage();
-  const [formData, setFormData] = useState({
+  const [formData, setFormData] = useState(() => ({
     projectId: projects[0]?.id || '',
     category: 'Material Purchase',
     title: '',
@@ -13,7 +13,7 @@ const SubmitExpenseModal = ({ isOpen, onClose, onSubmit, projects = [], supervis
     vendor: '',
     invoiceNumber: `VCH-${Math.floor(1000 + Math.random() * 9000)}`,
     notes: '',
-  });
+  }));
 
   if (!isOpen) return null;
 

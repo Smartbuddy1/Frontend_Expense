@@ -32,7 +32,7 @@ const RecordPaymentModal = ({
   const [paymentMode, setPaymentMode] = useState('UPI');
   const [payingAccount, setPayingAccount] = useState(COMPANY_BANK_ACCOUNTS[0]?.id || '');
   const [amount, setAmount] = useState(item?.approvedAmount || item?.amount || item?.difference || 0);
-  const [refNumber, setRefNumber] = useState(`UTR/${new Date().getFullYear()}${Math.floor(100000 + Math.random() * 900000)}`);
+  const [refNumber, setRefNumber] = useState(() => `UTR/${new Date().getFullYear()}${Math.floor(100000 + Math.random() * 900000)}`);
   const [paymentDate, setPaymentDate] = useState(new Date().toISOString().split('T')[0]);
   const [recipientName, setRecipientName] = useState(item?.supervisor || item?.vendorName || '');
   const [notes, setNotes] = useState(`Disbursal for ${item?.displayId || item?.id || ''} - ${item?.projectName || ''}`);
