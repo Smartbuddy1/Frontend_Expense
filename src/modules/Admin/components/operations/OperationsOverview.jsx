@@ -916,7 +916,7 @@ const OperationsOverview = ({
         {/* Card 1: Total Operational Head */}
         <StatCard
           title="Total Operational Head"
-          value={String(operationalHeads.length || 0)}
+          value={String(operationalHeads.length ?? 0)}
           badgeText="Active Head"
           badgeType="positive"
           icon={ShieldCheck}
@@ -927,7 +927,7 @@ const OperationsOverview = ({
         {/* Card 2: Total Projects */}
         <StatCard
           title="Total Projects"
-          value={String(projects.length || 3)}
+          value={String(projects.length ?? 0)}
           badgeText="Ongoing Sites"
           badgeType="positive"
           icon={HardHat}
@@ -938,7 +938,7 @@ const OperationsOverview = ({
         {/* Card 3: Total Supervisors */}
         <StatCard
           title="Total Supervisors"
-          value={String(supervisors.length || 4)}
+          value={String(supervisors.length ?? 0)}
           badgeText="Active on Site"
           badgeType="positive"
           icon={Users}
@@ -949,7 +949,7 @@ const OperationsOverview = ({
         {/* Card 4: Total Accountants */}
         <StatCard
           title="Total Accountants"
-          value={String(accountants.length || 2)}
+          value={String(accountants.length ?? 0)}
           badgeText="Finance & Bills"
           badgeType="positive"
           icon={Briefcase}
