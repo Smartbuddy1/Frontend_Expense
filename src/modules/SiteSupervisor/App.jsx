@@ -1,4 +1,4 @@
-import React from 'react';
+import React , { useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { WalletProvider } from './context/WalletContext';
@@ -14,7 +14,7 @@ import PublicExpenseForm from './pages/PublicExpenseForm';
 const ProtectedRoute = ({ children }) => {
   const { user, loading } = useAuth();
   
-  React.useEffect(() => {
+  useEffect(() => {
     if (!loading && (!user || user.role !== 'site_supervisor')) {
       window.location.href = import.meta.env.BASE_URL;
     }

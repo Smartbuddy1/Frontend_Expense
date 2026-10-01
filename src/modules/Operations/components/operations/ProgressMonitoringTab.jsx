@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect,  useState } from 'react';
 import { 
   TrendingUp, Activity, CheckCircle2, AlertTriangle, 
   Clock, Calendar, Users, Camera, MapPin, 
@@ -40,7 +40,7 @@ const ProgressMonitoringTab = ({
   const projectItemsPerPage = 5;
   const logItemsPerPage = 10;
 
-  React.useEffect(() => {
+  useEffect(() => {
     setCurrentProjectPage(1);
     setCurrentLogPage(1);
   }, [selectedProjectId, searchQuery]);

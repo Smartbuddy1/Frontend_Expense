@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect,  useState } from 'react';
 import {
   Users, UserCheck, ShieldCheck, HardHat, Phone,
   Mail, MapPin, Building2, Search, CheckCircle2,
@@ -44,7 +44,7 @@ const TeamAssignmentTab = ({
   });
 
   // Reset to first page when search changes
-  React.useEffect(() => {
+  useEffect(() => {
     setCurrentPage(1);
   }, [searchQuery]);
 

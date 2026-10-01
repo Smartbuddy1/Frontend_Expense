@@ -80,7 +80,7 @@ const RequestAdvance = () => {
   const [amount, setAmount] = useState('');
   const [projectId, setProjectId] = useState(defaultTargetProject ? defaultTargetProject.id : '');
 
-  React.useEffect(() => {
+  useEffect(() => {
     if (defaultTargetProject) {
       setProjectId(defaultTargetProject.id);
     }

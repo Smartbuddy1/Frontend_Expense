@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useCallback,  useState, useEffect } from 'react';
 import {
   Globe, FileText, CheckCircle2, Clock, Eye, Trash2,
   RefreshCw, Search, ExternalLink, ClipboardList,
@@ -16,7 +16,7 @@ const PublicFormTab = () => {
   const [filterCategory, setFilterCategory] = useState('All');
   const [viewEntry, setViewEntry] = useState(null);
 
-  const load = React.useCallback(async () => {
+  const load = useCallback(async () => {
     try {
       const token = localStorage.getItem('expense_token');
       const res = await axios.get(`${API}/public-forms`, {

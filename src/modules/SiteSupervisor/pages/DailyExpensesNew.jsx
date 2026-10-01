@@ -120,7 +120,7 @@ const DailyExpenses = () => {
     receiptFile: null
   });
 
-  React.useEffect(() => {
+  useEffect(() => {
     if (defaultTargetProject) {
       setFormData(prev => ({ ...prev, projectId: defaultTargetProject.id }));
     }

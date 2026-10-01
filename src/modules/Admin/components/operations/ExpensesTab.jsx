@@ -29,7 +29,7 @@ const ExpensesTab = ({
   const { language } = useLanguage();
   const [activeSubView, setActiveSubView] = useState(activeTab === 'accountant' ? 'accountants' : 'bills'); // 'bills' | 'accountants'
 
-  React.useEffect(() => {
+  useEffect(() => {
     if (activeTab === 'accountant') {
       setActiveSubView('accountants');
     } else if (activeTab === 'expenses') {

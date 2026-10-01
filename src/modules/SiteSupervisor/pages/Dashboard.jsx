@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect,  useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { 
   Briefcase, 
@@ -94,7 +94,7 @@ const Dashboard = () => {
   // Default both forms' target project whenever it changes (e.g. dashboard
   // switched to a different project, or projects finished loading) — the
   // supervisor can still pick a different one from the modal's own dropdown.
-  React.useEffect(() => {
+  useEffect(() => {
     if (defaultTargetProject) {
       setExpenseForm(prev => ({ ...prev, projectId: defaultTargetProject.id }));
       setAdvanceForm(prev => ({ ...prev, projectId: defaultTargetProject.id }));
