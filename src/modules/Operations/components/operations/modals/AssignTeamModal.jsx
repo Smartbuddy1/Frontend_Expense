@@ -322,7 +322,6 @@ const AssignTeamModal = ({ isOpen, onClose, onAssign, project, projects = [], su
                 padding: '0.75rem 1rem',
                 borderRadius: '12px',
                 border: '1.5px solid var(--border-color, #2563eb)',
-                backgroundColor: 'var(--input-bg, #eff6ff)',
                 fontSize: '0.92rem',
                 fontWeight: '800',
                 color: 'var(--text-primary, #1d4ed8)',

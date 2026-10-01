@@ -473,7 +473,6 @@ const CreateOrganizationModal = ({
                       border: '1.5px solid var(--border-color, #cbd5e1)',
                       fontSize: '0.96rem',
                       backgroundColor: 'var(--input-bg, #ffffff)',
-                      backgroundColor: 'var(--input-bg, #ffffff)',
                       outline: 'none',
                       boxSizing: 'border-box'
                     }}
@@ -496,7 +495,6 @@ const CreateOrganizationModal = ({
                       borderRadius: '10px',
                       border: '1.5px solid var(--border-color, #cbd5e1)',
                       fontSize: '0.96rem',
-                      backgroundColor: 'var(--input-bg, #ffffff)',
                       backgroundColor: 'var(--input-bg, #ffffff)',
                       outline: 'none',
                       boxSizing: 'border-box'

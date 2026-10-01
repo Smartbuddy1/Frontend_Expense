@@ -24,7 +24,7 @@ const ProjectDetailModal = ({ isOpen, onClose, project, supervisors = [], teamMe
     if (isOpen && project && activeTab === 'photos') {
       fetchPhotos();
     }
-  }, [isOpen, project, activeTab]);
+  }, [isOpen, project, activeTab, fetchPhotos]);
 
 
   if (!isOpen || !project) return null;

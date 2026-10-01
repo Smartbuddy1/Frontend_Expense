@@ -45,7 +45,7 @@ const CreateSupervisorModal = ({ isOpen, onClose, onCreateSupervisor, editingSup
         assignedProjects: []
       });
     }
-  }, [editingSupervisor, isOpen]);
+  }, [editingSupervisor, isOpen, projects]);
 
   if (!isOpen) return null;
 

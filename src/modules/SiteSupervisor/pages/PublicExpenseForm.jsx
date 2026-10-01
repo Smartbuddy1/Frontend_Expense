@@ -161,7 +161,7 @@ const PublicExpenseForm = () => {
   // Auto-fetch GPS Location on component mount
   useEffect(() => {
     fetchCurrentLocation();
-  }, []);
+  }, [fetchCurrentLocation]);
 
   const handleFileChange = (e) => {
     const file = e.target.files[0];

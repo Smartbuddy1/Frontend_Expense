@@ -54,7 +54,7 @@ const AnalyticsTab = ({
   const [filterType, setFilterType] = useState('FY'); // 'FY' or 'DATE_RANGE'
   const [selectedProject, setSelectedProject] = useState('ALL');
   const [selectedSupervisor, setSelectedSupervisor] = useState('ALL');
-  const [financialYear, setFinancialYear] = useState('CURRENT_FY');
+  const [financialYear, setFinancialYear] = useState('ALL');
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
 

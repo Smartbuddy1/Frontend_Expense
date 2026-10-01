@@ -12,7 +12,7 @@ const PrintTemplate = ({
   const currentDate = new Date();
   const dateStr = currentDate.toLocaleDateString();
   const timeStr = currentDate.toLocaleTimeString();
-  const reportId = React.useMemo(() => `RPT-${Math.floor(Math.random() * 100000000)}`, []);
+  const reportId = React.useMemo(() => `RPT-${Math.floor(Date.now() * 100000000)}`, []);
 
   const Header = () => (
     <div className="print-header-content" style={{ display: 'flex', flexDirection: 'column', width: '100%', marginBottom: '20px', fontFamily: "'Cambria', Georgia, serif" }}>

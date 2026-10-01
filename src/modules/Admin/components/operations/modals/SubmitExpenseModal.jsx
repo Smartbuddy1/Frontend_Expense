@@ -156,7 +156,6 @@ const SubmitExpenseModal = ({ isOpen, onClose, onSubmit, projects = [], supervis
                   fontSize: '0.88rem',
                   color: 'var(--text-primary, #0f172a)',
                   backgroundColor: 'var(--input-bg, #ffffff)',
-                  backgroundColor: 'var(--input-bg, #ffffff)',
                   outline: 'none',
                   boxSizing: 'border-box'
                 }}
@@ -185,7 +184,6 @@ const SubmitExpenseModal = ({ isOpen, onClose, onSubmit, projects = [], supervis
                   backgroundColor: 'var(--card-bg, #ffffff)',
                   fontSize: '0.88rem',
                   color: 'var(--text-primary, #0f172a)',
-                  backgroundColor: 'var(--input-bg, #ffffff)',
                   backgroundColor: 'var(--input-bg, #ffffff)',
                   outline: 'none',
                   boxSizing: 'border-box'
@@ -219,7 +217,6 @@ const SubmitExpenseModal = ({ isOpen, onClose, onSubmit, projects = [], supervis
                 fontSize: '0.88rem',
                 color: 'var(--text-primary, #0f172a)',
                 backgroundColor: 'var(--input-bg, #ffffff)',
-                backgroundColor: 'var(--input-bg, #ffffff)',
                 outline: 'none',
                 boxSizing: 'border-box'
               }}
@@ -246,7 +243,6 @@ const SubmitExpenseModal = ({ isOpen, onClose, onSubmit, projects = [], supervis
                   fontSize: '0.88rem',
                   color: 'var(--text-primary, #0f172a)',
                   backgroundColor: 'var(--input-bg, #ffffff)',
-                  backgroundColor: 'var(--input-bg, #ffffff)',
                   outline: 'none',
                   boxSizing: 'border-box'
                 }}
@@ -270,7 +266,6 @@ const SubmitExpenseModal = ({ isOpen, onClose, onSubmit, projects = [], supervis
                   border: '1px solid var(--border-color, #cbd5e1)',
                   fontSize: '0.88rem',
                   color: 'var(--text-primary, #0f172a)',
-                  backgroundColor: 'var(--input-bg, #ffffff)',
                   backgroundColor: 'var(--input-bg, #ffffff)',
                   outline: 'none',
                   boxSizing: 'border-box'
@@ -299,7 +294,6 @@ const SubmitExpenseModal = ({ isOpen, onClose, onSubmit, projects = [], supervis
                   fontSize: '0.88rem',
                   color: 'var(--text-primary, #0f172a)',
                   backgroundColor: 'var(--input-bg, #ffffff)',
-                  backgroundColor: 'var(--input-bg, #ffffff)',
                   outline: 'none',
                   boxSizing: 'border-box'
                 }}
@@ -322,7 +316,6 @@ const SubmitExpenseModal = ({ isOpen, onClose, onSubmit, projects = [], supervis
                   border: '1px solid var(--border-color, #cbd5e1)',
                   fontSize: '0.88rem',
                   color: 'var(--text-primary, #0f172a)',
-                  backgroundColor: 'var(--input-bg, #ffffff)',
                   backgroundColor: 'var(--input-bg, #ffffff)',
                   outline: 'none',
                   boxSizing: 'border-box'
@@ -348,7 +341,6 @@ const SubmitExpenseModal = ({ isOpen, onClose, onSubmit, projects = [], supervis
                 border: '1px solid var(--border-color, #cbd5e1)',
                 fontSize: '0.88rem',
                 color: 'var(--text-primary, #0f172a)',
-                backgroundColor: 'var(--input-bg, #ffffff)',
                 backgroundColor: 'var(--input-bg, #ffffff)',
                 outline: 'none',
                 resize: 'none',

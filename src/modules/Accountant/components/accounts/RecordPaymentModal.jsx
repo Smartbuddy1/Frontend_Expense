@@ -207,7 +207,7 @@ const RecordPaymentModal = ({
                   ₹
                 </span>
                 <input
-                  type="number" min="1"
+                  type="number"
                   min="1"
                   step="1"
                   value={amount}
