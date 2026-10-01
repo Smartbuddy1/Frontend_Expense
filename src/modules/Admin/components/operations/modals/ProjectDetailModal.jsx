@@ -219,7 +219,7 @@ const ProjectDetailModal = ({ isOpen, onClose, project, supervisors = [], teamMe
             <div style={{ padding: '0.85rem 1rem', borderRadius: '14px', backgroundColor: 'var(--bg-color, #f8fafc)', border: '1px solid var(--border-color, #e2e8f0)' }}>
               <div style={{ fontSize: '0.72rem', fontWeight: '800', color: 'var(--text-secondary, #64748b)', textTransform: 'uppercase' }}>Assigned Crew</div>
               <div style={{ fontSize: '1.35rem', fontWeight: '900', color: 'var(--text-primary, #0f172a)', marginTop: '0.15rem' }}>
-                {assignedMembers.length || project.teamCount || 8} Members
+                {assignedMembers.length || project.teamCount || 0} Members
               </div>
             </div>
           </div>

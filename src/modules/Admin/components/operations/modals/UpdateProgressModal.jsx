@@ -17,7 +17,7 @@ const UpdateProgressModal = ({ isOpen, onClose, project, onUpdateProgress, super
       setHealth(project.health || 'On Track');
       setMilestones(project.milestones || []);
       setLogSummary('');
-      setWorkforceCount(project.teamCount * 3 || 25);
+      setWorkforceCount(project.teamCount * 3 || 0);
       setIssuesReported('');
     }
   }, [project, isOpen]);
@@ -64,8 +64,8 @@ const UpdateProgressModal = ({ isOpen, onClose, project, onUpdateProgress, super
       currentOverallProgress: Number(progress),
       statusTag: health,
       workSummary: summaryText,
-      laborCount: Number(workforceCount) || 8,
-      workforceCount: Number(workforceCount) || 8,
+      laborCount: Number(workforceCount) || 0,
+      workforceCount: Number(workforceCount) || 0,
       issues: issuesReported || 'None',
       issuesReported: issuesReported || 'None',
       status: 'Active',

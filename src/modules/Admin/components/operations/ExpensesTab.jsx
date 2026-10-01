@@ -718,7 +718,7 @@ const ExpensesTab = ({
           </div>
           <div>
             <div style={{ fontSize: '1.85rem', fontWeight: '800', color: 'var(--text-primary, #0f172a)', lineHeight: 1.1 }}>
-              {projects.length || 3}
+              {projects.length || 0}
             </div>
             <div style={{ fontSize: '0.88rem', fontWeight: '600', color: 'var(--text-secondary, #64748b)', marginTop: '0.2rem' }}>
               Active Sites

@@ -79,7 +79,7 @@ const ProjectsTab = ({
         p.location,
         p.supervisorName,
         p.supervisorPhone,
-        p.teamCount || 8,
+        p.teamCount || 0,
         p.startDate,
         p.status,
         p.description || p.remarks || '-'

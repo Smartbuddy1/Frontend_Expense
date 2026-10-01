@@ -16,7 +16,7 @@ const UpdateProgressModal = ({ isOpen, onClose, project, onUpdateProgress, super
       setHealth(project.health || 'On Track');
       setMilestones(project.milestones || []);
       setLogSummary('');
-      setWorkforceCount(project.teamCount * 3 || 25);
+      setWorkforceCount(project.teamCount * 3 || 0);
       setIssuesReported('');
     }
   }, [project, isOpen]);

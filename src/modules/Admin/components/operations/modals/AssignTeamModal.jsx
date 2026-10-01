@@ -31,13 +31,13 @@ const AssignTeamModal = ({ isOpen, onClose, onAssign, project, projects = [], su
           setSelectedProjectId(supervisorProjects[0].id);
           setSelectedProjectIds(supervisorProjects.map(p => p.id));
           setProjectMode(supervisorProjects.length > 1 ? 'multiple' : 'single');
-          setTeamCount(supervisorProjects[0].teamCount || 8);
+          setTeamCount(supervisorProjects[0].teamCount || 0);
         } else {
           const firstProj = projects[0];
           setSelectedProjectId(firstProj?.id || '');
           setSelectedProjectIds(firstProj ? [firstProj.id] : []);
           setProjectMode('single');
-          setTeamCount(firstProj?.teamCount || 8);
+          setTeamCount(firstProj?.teamCount || 0);
         }
       }
     }
@@ -48,7 +48,7 @@ const AssignTeamModal = ({ isOpen, onClose, onAssign, project, projects = [], su
     setSelectedProjectId(projId);
     const chosen = projects.find(p => p.id === projId);
     if (chosen) {
-      setTeamCount(chosen.teamCount || 8);
+      setTeamCount(chosen.teamCount || 0);
     }
   };
 
@@ -95,7 +95,7 @@ const AssignTeamModal = ({ isOpen, onClose, onAssign, project, projects = [], su
       supervisorName: resolvedSupName,
       supervisorPhone: resolvedSupPhone,
       assignedTeam: activeProject?.assignedTeam || [],
-      teamCount: Number(teamCount) || 8,
+      teamCount: Number(teamCount) || 0,
       notes: '',
     });
     onClose();

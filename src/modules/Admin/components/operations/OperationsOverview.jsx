@@ -715,10 +715,10 @@ export const BudgetDistributionPieChart = ({ expenses = [], projects = [] }) => 
 
   // If no expenses, use standard operational project allocation
   const pieData = [
-    { name: language === 'mr' ? 'साहित्य खरेदी (Material)' : 'Material Purchase', value: categoryTotals['Material'] || 72500, color: '#2563eb' },
-    { name: language === 'mr' ? 'मजुरी खर्च (Labor)' : 'Labor & Wages', value: categoryTotals['Labor'] || 48000, color: '#10b981' },
-    { name: language === 'mr' ? 'वाहतूक / प्रवास (Transport)' : 'Transport & Freight', value: categoryTotals['Transport'] || 32000, color: '#f59e0b' },
-    { name: language === 'mr' ? 'मशिनरी / इतर (Equipment)' : 'Equipment & Tools', value: categoryTotals['Equipment'] || 30800, color: '#e11d48' },
+    { name: language === 'mr' ? 'साहित्य खरेदी (Material)' : 'Material Purchase', value: categoryTotals['Material'] || 0, color: '#2563eb' },
+    { name: language === 'mr' ? 'मजुरी खर्च (Labor)' : 'Labor & Wages', value: categoryTotals['Labor'] || 0, color: '#10b981' },
+    { name: language === 'mr' ? 'वाहतूक / प्रवास (Transport)' : 'Transport & Freight', value: categoryTotals['Transport'] || 0, color: '#f59e0b' },
+    { name: language === 'mr' ? 'मशिनरी / इतर (Equipment)' : 'Equipment & Tools', value: categoryTotals['Equipment'] || 0, color: '#e11d48' },
   ];
 
   const totalExpenseVal = pieData.reduce((acc, item) => acc + item.value, 0);
