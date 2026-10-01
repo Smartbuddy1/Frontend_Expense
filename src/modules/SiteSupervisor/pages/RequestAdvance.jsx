@@ -848,11 +848,4 @@ const RequestAdvance = () => {
 };
 
 export default RequestAdvance;
-
-
-  useEffect(() => {
-    if (location.state?.openModal) {
-      setIsModalOpen(true);
-      window.history.replaceState({}, document.title);
-    }
-  }, [location.state]);
+
