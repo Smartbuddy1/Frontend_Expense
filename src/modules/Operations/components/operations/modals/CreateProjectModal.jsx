@@ -1,22 +1,14 @@
 import React, { useState, useEffect } from 'react';
-import { X, Building2, UserCheck, Calendar, DollarSign, MapPin, Tag, FileText, CheckCircle2, Phone, Mail } from 'lucide-react';
+import { X, Building2, UserCheck, Calendar, DollarSign, MapPin, Tag, FileText, CheckCircle2, Phone, Mail, Users } from 'lucide-react';
 import { useLanguage } from '../../../context/LanguageContext';
 
 const CreateProjectModal = ({ isOpen, onClose, onSave, editingProject, supervisors = [] }) => {
   const { language } = useLanguage();
-  const [formData, setFormData] = useState(editingProject || {
+  const [selectedSupervisorIds, setSelectedSupervisorIds] = useState([]);
+  const [formData, setFormData] = useState({
     name: '',
     code: '',
     location: '',
-    phone: '',
-    email: '',
-    password: '',
-    category: 'Commercial',
-    budget: '',
-    startDate: '',
-    endDate: '',
-    supervisorId: '',
-    teamCount: 8,
     description: '',
     status: 'In Progress',
     health: 'On Track',
@@ -28,39 +20,32 @@ const CreateProjectModal = ({ isOpen, onClose, onSave, editingProject, superviso
         name: editingProject.name || '',
         code: editingProject.id || '',
         location: editingProject.location || '',
-        phone: editingProject.phone || editingProject.clientPhone || '',
-        email: editingProject.email || editingProject.clientEmail || '',
-        password: editingProject.password || '',
-        category: editingProject.category || 'Infrastructure & Civil',
-        budget: editingProject.budget || '',
-        startDate: editingProject.startDate || '',
-        endDate: editingProject.endDate || '',
-        teamCount: editingProject.teamCount || 0,
         description: editingProject.description || '',
         status: editingProject.status || 'In Progress',
         health: editingProject.health || 'On Track',
       });
+      setSelectedSupervisorIds(editingProject.supervisorIds || []);
     } else {
       setFormData({
         name: '',
         code: `PRJ-SGM-${Math.floor(Math.random() * 90) + 10}`,
         location: '',
-        phone: '',
-        email: '',
-        password: '',
-        category: 'Infrastructure & Civil',
-        budget: '',
-        startDate: new Date().toISOString().split('T')[0],
-        endDate: '',
-        teamCount: 8,
         description: '',
         status: 'In Progress',
         health: 'On Track',
       });
+      setSelectedSupervisorIds([]);
     }
-  }, [editingProject, isOpen, supervisors]);
+  }, [editingProject, isOpen]);
+
+  const toggleSupervisor = (supId) => {
+    setSelectedSupervisorIds(prev =>
+      prev.includes(supId) ? prev.filter(id => id !== supId) : [...prev, supId]
+    );
+  };
 
   if (!isOpen) return null;
+
   const handleSubmit = (e) => {
     e.preventDefault();
     if (!formData.name?.trim() || !formData.description?.trim()) {
@@ -72,9 +57,6 @@ const CreateProjectModal = ({ isOpen, onClose, onSave, editingProject, superviso
       id: editingProject ? editingProject.id : formData.code,
       name: formData.name,
       location: formData.location || 'Maharashtra, India',
-      phone: editingProject?.phone || '',
-      email: editingProject?.email || '',
-      password: formData.password || '',
       category: editingProject?.category || 'E-Toilet Installation',
       budget: editingProject?.budget || 0,
       spent: editingProject ? editingProject.spent : 0,
@@ -83,18 +65,17 @@ const CreateProjectModal = ({ isOpen, onClose, onSave, editingProject, superviso
       status: formData.status,
       health: formData.health || 'On Track',
       progress: editingProject ? editingProject.progress : 0,
-      supervisorId: editingProject?.supervisorId || null,
-      supervisorIds: editingProject?.supervisorIds || [],
-      supervisorName: editingProject?.supervisorName || 'Unassigned',
-      supervisorPhone: editingProject?.supervisorPhone || '',
-      teamCount: formData.teamCount,
+      supervisorIds: selectedSupervisorIds,
+      supervisors: supervisors.filter(s => selectedSupervisorIds.includes(s.id)),
+      supervisorName: supervisors.filter(s => selectedSupervisorIds.includes(s.id)).map(s => s.name).join(', ') || 'Unassigned',
+      supervisorPhone: supervisors.find(s => selectedSupervisorIds[0] === s.id)?.phone || '',
       description: formData.description,
       milestones: editingProject?.milestones || [
         { id: 'M1', title: 'Site Mobilization & Survey', status: 'Completed', targetDate: '' },
         { id: 'M2', title: 'Civil & Foundation Works', status: 'In Progress', targetDate: '' },
         { id: 'M3', title: 'Structural Setup', status: 'Pending', targetDate: '' },
       ],
-      assignedTeam: editingProject?.assignedTeam || ['TECH-01', 'TECH-02'],
+      assignedTeam: editingProject?.assignedTeam || [],
     };
 
     onSave(projectPayload);
@@ -267,6 +248,52 @@ const CreateProjectModal = ({ isOpen, onClose, onSave, editingProject, superviso
                 boxSizing: 'border-box'
               }}
             />
+          </div>
+
+          {/* Assign Supervisors — Multi-select */}
+          <div>
+            <label style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', fontSize: '0.78rem', fontWeight: '800', color: 'var(--text-secondary, #475569)', textTransform: 'uppercase', marginBottom: '0.5rem' }}>
+              <Users size={13} /> Assign Supervisors
+            </label>
+            {supervisors.length === 0 ? (
+              <p style={{ fontSize: '0.82rem', color: '#94a3b8', fontStyle: 'italic' }}>No supervisors available. Create a supervisor first.</p>
+            ) : (
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem' }}>
+                {supervisors.map(sup => {
+                  const isSelected = selectedSupervisorIds.includes(sup.id);
+                  return (
+                    <button
+                      key={sup.id}
+                      type="button"
+                      onClick={() => toggleSupervisor(sup.id)}
+                      style={{
+                        padding: '0.4rem 0.9rem',
+                        borderRadius: '20px',
+                        border: `2px solid ${isSelected ? '#4f46e5' : 'var(--border-color, #cbd5e1)'}`,
+                        backgroundColor: isSelected ? '#eef2ff' : 'var(--card-bg, #ffffff)',
+                        color: isSelected ? '#4f46e5' : 'var(--text-secondary, #475569)',
+                        fontSize: '0.82rem',
+                        fontWeight: isSelected ? '700' : '500',
+                        cursor: 'pointer',
+                        transition: 'all 0.15s ease',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '0.3rem',
+                      }}
+                    >
+                      {isSelected && <CheckCircle2 size={12} />}
+                      {sup.name}
+                      <span style={{ fontSize: '0.72rem', opacity: 0.7 }}>({sup.phone || sup.mobile})</span>
+                    </button>
+                  );
+                })}
+              </div>
+            )}
+            {selectedSupervisorIds.length > 0 && (
+              <p style={{ fontSize: '0.78rem', color: '#4f46e5', marginTop: '0.4rem', fontWeight: '600' }}>
+                ✓ {selectedSupervisorIds.length} supervisor{selectedSupervisorIds.length > 1 ? 's' : ''} selected
+              </p>
+            )}
           </div>
 
           {/* Footer Buttons */}

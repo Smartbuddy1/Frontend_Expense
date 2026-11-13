@@ -150,11 +150,30 @@ const ProjectsTab = ({
 
                 {/* Card Body: Supervisor & Details */}
                 <div style={{ marginTop: '0.85rem' }}>
-                  <p style={{ margin: 0, fontSize: '0.88rem', color: 'var(--text-secondary, #64748b)', lineHeight: 1.4 }}>
-                    <span style={{ color: 'var(--text-secondary, #64748b)', fontWeight: '500' }}>Supervisor: </span>
-                    <strong style={{ color: 'var(--text-primary, #0f172a)', fontWeight: '800' }}>{project.supervisorName || 'Rohit Sharma'}</strong>
+                  <p style={{ margin: 0, fontSize: '0.78rem', color: 'var(--text-secondary, #64748b)', fontWeight: '600', textTransform: 'uppercase', marginBottom: '0.4rem' }}>
+                    Supervisors
                   </p>
-                  <p style={{ margin: '0.45rem 0 0 0', fontSize: '0.84rem', color: 'var(--text-secondary, #64748b)', lineHeight: 1.4 }}>
+                  {(project.supervisors && project.supervisors.length > 0) ? (
+                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.3rem' }}>
+                      {project.supervisors.map(s => (
+                        <span key={s.id} style={{
+                          display: 'inline-flex', alignItems: 'center', gap: '0.25rem',
+                          padding: '0.2rem 0.6rem', borderRadius: '12px',
+                          backgroundColor: '#eef2ff', color: '#4f46e5',
+                          fontSize: '0.78rem', fontWeight: '700', border: '1px solid #c7d2fe'
+                        }}>
+                          👤 {s.name}
+                        </span>
+                      ))}
+                    </div>
+                  ) : (
+                    <span style={{ fontSize: '0.82rem', color: '#94a3b8', fontStyle: 'italic' }}>
+                      {project.supervisorName && project.supervisorName !== 'Unassigned'
+                        ? project.supervisorName
+                        : 'No supervisor assigned'}
+                    </span>
+                  )}
+                  <p style={{ margin: '0.5rem 0 0 0', fontSize: '0.84rem', color: 'var(--text-secondary, #64748b)', lineHeight: 1.4 }}>
                     {project.description || (language === 'mr' ? 'काही टिप्पणी नाही.' : 'No remark provided.')}
                   </p>
                 </div>
