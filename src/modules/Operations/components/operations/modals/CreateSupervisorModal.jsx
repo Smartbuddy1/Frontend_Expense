@@ -20,7 +20,11 @@ const CreateSupervisorModal = ({ isOpen, onClose, onCreateSupervisor, editingSup
       const firstName = parts[0] || '';
       const surname = parts.slice(1).join(' ') || '';
 
-      const currentlyAssigned = projects.filter(p => String(p.supervisorId) === String(editingSupervisor.id)).map(p => String(p.id));
+      const currentlyAssigned = projects.filter(p => 
+        String(p.supervisorId) === String(editingSupervisor.id) ||
+        (p.supervisorIds && p.supervisorIds.includes(editingSupervisor.id)) ||
+        (p.supervisors && p.supervisors.some(s => String(s.id) === String(editingSupervisor.id)))
+      ).map(p => String(p.id));
 
       setFormData({
         id: editingSupervisor.id,

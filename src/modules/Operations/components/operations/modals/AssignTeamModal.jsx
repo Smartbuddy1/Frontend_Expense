@@ -25,7 +25,12 @@ const AssignTeamModal = ({ isOpen, onClose, onAssign, project, projects = [], su
         setSelectedSupervisorId(targetSupId);
         
         // Find all projects currently assigned to this supervisor
-        const supervisorProjects = projects.filter(p => p.supervisorId === targetSupId || (p.supervisorName && project.supervisorName && p.supervisorName.toLowerCase() === project.supervisorName.toLowerCase()));
+        const supervisorProjects = projects.filter(p => 
+          (p.supervisorIds && p.supervisorIds.includes(targetSupId)) ||
+          (p.supervisors && p.supervisors.some(s => s.id === targetSupId)) ||
+          p.supervisorId === targetSupId || 
+          (p.supervisorName && project.supervisorName && p.supervisorName.toLowerCase() === project.supervisorName.toLowerCase())
+        );
         
         if (supervisorProjects.length > 0) {
           setSelectedProjectId(supervisorProjects[0].id);

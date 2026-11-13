@@ -269,7 +269,11 @@ const OperationsDashboard = () => {
         }
         await axios.patch(`${API}/users/${supData.id}`, payload);
         
-        const previouslyAssigned = projects.filter(p => String(p.supervisorId) === String(supData.id)).map(p => String(p.id));
+        const previouslyAssigned = projects.filter(p => 
+          (p.supervisorIds && p.supervisorIds.includes(supData.id)) ||
+          (p.supervisors && p.supervisors.some(s => s.id === supData.id)) ||
+          String(p.supervisorId) === String(supData.id)
+        ).map(p => String(p.id));
         const assignedProjectsStrs = (supData.assignedProjects || []).map(String);
         
         const toAdd = assignedProjectsStrs.filter(pid => !previouslyAssigned.includes(pid));
@@ -279,7 +283,7 @@ const OperationsDashboard = () => {
           await axios.patch(`${API}/projects/${pid}`, { supervisorId: supData.id });
         }
         for (const pid of toRemove) {
-          await axios.patch(`${API}/projects/${pid}`, { supervisorId: 'UNASSIGN' });
+          await axios.patch(`${API}/projects/${pid}`, { removeSupervisorId: supData.id });
         }
         
         toast.success(`Supervisor "${fullName}" updated successfully!`);

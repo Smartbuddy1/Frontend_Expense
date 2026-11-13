@@ -69,6 +69,8 @@ const TeamAssignmentTab = ({
         ['SR NO', 'Supervisor Name', 'Phone', 'Email', 'Specialization', 'Assigned Project', 'Location', 'Status'],
         ...filteredSupervisors.map((sup, idx) => {
           const assignedProject = projects.find(p => 
+            (p.supervisorIds && p.supervisorIds.includes(sup.id)) ||
+            (p.supervisors && p.supervisors.some(s => s.id === sup.id)) ||
             p.supervisor_id === sup.id || 
             (p.supervisorId && sup.id && p.supervisorId === sup.id) ||
             (p.assignees && Array.isArray(p.assignees) && p.assignees.some(a => a.id === sup.id))
@@ -117,6 +119,8 @@ const TeamAssignmentTab = ({
       // Prepare table data
       const tableData = filteredSupervisors.map((sup, idx) => {
         const assignedProjects = projects.filter(p => 
+          (p.supervisorIds && p.supervisorIds.includes(sup.id)) ||
+          (p.supervisors && p.supervisors.some(s => s.id === sup.id)) ||
           (p.supervisorId && sup.id && p.supervisorId === sup.id) ||
           (p.supervisor_id && sup.id && p.supervisor_id === sup.id) ||
           (p.supervisorName && sup.name && p.supervisorName.trim().toLowerCase() === sup.name.trim().toLowerCase()) ||
@@ -179,6 +183,8 @@ const TeamAssignmentTab = ({
   const generateSupervisorsPrintHtml = () => {
     const rows = filteredSupervisors.map((sup, idx) => {
       const assignedProjects = projects.filter(p => 
+        (p.supervisorIds && p.supervisorIds.includes(sup.id)) ||
+        (p.supervisors && p.supervisors.some(s => s.id === sup.id)) ||
         (p.supervisorId && sup.id && p.supervisorId === sup.id) ||
         (p.supervisor_id && sup.id && p.supervisor_id === sup.id) ||
         (p.supervisorName && sup.name && p.supervisorName.trim().toLowerCase() === sup.name.trim().toLowerCase()) ||
@@ -515,6 +521,8 @@ const TeamAssignmentTab = ({
               ) : (
                 paginatedSupervisors.map((sup, idx) => {
                   const assignedProjects = projects.filter(p => 
+                    (p.supervisorIds && p.supervisorIds.includes(sup.id)) ||
+                    (p.supervisors && p.supervisors.some(s => s.id === sup.id)) ||
                     (p.supervisorId && sup.id && p.supervisorId === sup.id) ||
                     (p.supervisor_id && sup.id && p.supervisor_id === sup.id) ||
                     (p.supervisorName && sup.name && p.supervisorName.trim().toLowerCase() === sup.name.trim().toLowerCase()) ||

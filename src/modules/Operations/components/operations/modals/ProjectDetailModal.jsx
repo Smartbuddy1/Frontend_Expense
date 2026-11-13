@@ -142,16 +142,34 @@ const ProjectDetailModal = ({ isOpen, onClose, project, supervisors = [], teamMe
                       Change <ArrowUpRight size={13} />
                     </button>
                   </div>
-                  <div className="flex items-center gap-2.5 sm:gap-3 p-2.5 sm:p-3 rounded-lg bg-slate-50 dark:bg-slate-800/80 min-w-0">
-                    <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-blue-600 text-white flex items-center justify-center font-bold text-xs sm:text-sm shrink-0">
-                      {project.supervisorName?.charAt(0) || 'S'}
-                    </div>
-                    <div className="min-w-0 flex-1">
-                      <h5 className="text-xs sm:text-sm font-bold text-slate-900 dark:text-white truncate">{project.supervisorName}</h5>
-                      <p className="text-[11px] sm:text-xs text-slate-500 flex items-center gap-1 mt-0.5 truncate">
-                        <Phone size={11} className="shrink-0" /> <span className="truncate">{project.supervisorPhone}</span>
-                      </p>
-                    </div>
+                  <div className="space-y-2">
+                    {project.supervisors && project.supervisors.length > 0 ? (
+                      project.supervisors.map(sup => (
+                        <div key={sup.id} className="flex items-center gap-2.5 sm:gap-3 p-2 sm:p-2.5 rounded-lg bg-slate-50 dark:bg-slate-800/80 min-w-0">
+                          <div className="w-8 h-8 rounded-xl bg-blue-600 text-white flex items-center justify-center font-bold text-xs shrink-0">
+                            {sup.name?.charAt(0) || 'S'}
+                          </div>
+                          <div className="min-w-0 flex-1">
+                            <h5 className="text-xs sm:text-sm font-bold text-slate-900 dark:text-white truncate">{sup.name}</h5>
+                            <p className="text-[11px] text-slate-500 flex items-center gap-1 mt-0.5 truncate">
+                              <Phone size={11} className="shrink-0" /> <span className="truncate">{sup.phone || sup.mobile}</span>
+                            </p>
+                          </div>
+                        </div>
+                      ))
+                    ) : (
+                      <div className="flex items-center gap-2.5 sm:gap-3 p-2.5 sm:p-3 rounded-lg bg-slate-50 dark:bg-slate-800/80 min-w-0">
+                        <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-blue-600 text-white flex items-center justify-center font-bold text-xs sm:text-sm shrink-0">
+                          {project.supervisorName?.charAt(0) || 'S'}
+                        </div>
+                        <div className="min-w-0 flex-1">
+                          <h5 className="text-xs sm:text-sm font-bold text-slate-900 dark:text-white truncate">{project.supervisorName || 'Unassigned'}</h5>
+                          <p className="text-[11px] sm:text-xs text-slate-500 flex items-center gap-1 mt-0.5 truncate">
+                            <Phone size={11} className="shrink-0" /> <span className="truncate">{project.supervisorPhone || 'No contact'}</span>
+                          </p>
+                        </div>
+                      </div>
+                    )}
                   </div>
                 </div>
 
