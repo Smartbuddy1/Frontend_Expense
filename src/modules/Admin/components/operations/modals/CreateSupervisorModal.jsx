@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { X, UserPlus, Phone, Mail, Briefcase, IndianRupee, User, Edit3, Lock, Eye, EyeOff } from 'lucide-react';
+import { X, UserPlus, Phone, Mail, Briefcase, IndianRupee, User, Edit3, Lock, Eye, EyeOff, AlertCircle, CheckCircle2 } from 'lucide-react';
 
 const CreateSupervisorModal = ({ isOpen, onClose, onCreateSupervisor, editingSupervisor = null, projects = [] }) => {
   const [showPassword, setShowPassword] = useState(false);
+  const [formError, setFormError] = useState('');
   const [formData, setFormData] = useState({
     firstName: '',
     surname: '',
@@ -15,20 +16,25 @@ const CreateSupervisorModal = ({ isOpen, onClose, onCreateSupervisor, editingSup
   });
 
   useEffect(() => {
+    setFormError('');
     if (editingSupervisor) {
       const parts = (editingSupervisor.name || '').trim().split(' ');
       const firstName = parts[0] || '';
       const surname = parts.slice(1).join(' ') || '';
 
-      const currentlyAssigned = projects.filter(p => String(p.supervisorId) === String(editingSupervisor.id)).map(p => String(p.id));
+      const currentlyAssigned = projects.filter(p => 
+        String(p.supervisorId) === String(editingSupervisor.id) ||
+        (p.supervisorIds && p.supervisorIds.includes(editingSupervisor.id)) ||
+        (p.supervisors && p.supervisors.some(s => String(s.id) === String(editingSupervisor.id)))
+      ).map(p => String(p.id));
 
       setFormData({
         id: editingSupervisor.id,
         firstName,
         surname,
-        phone: editingSupervisor.phone || '',
+        phone: editingSupervisor.phone || editingSupervisor.mobile || '',
         email: editingSupervisor.email || '',
-        password: editingSupervisor.password || '',
+        password: '',
         specialization: editingSupervisor.specialization || 'Site Operations & Field Lead',
         experience: editingSupervisor.experience || '5+ Years',
         assignedProjects: currentlyAssigned
@@ -49,9 +55,38 @@ const CreateSupervisorModal = ({ isOpen, onClose, onCreateSupervisor, editingSup
 
   if (!isOpen) return null;
 
+  const isEdit = Boolean(editingSupervisor);
+  const cleanPhone = (formData.phone || '').replace(/\D/g, '').slice(0, 10);
+  const isPhoneValid = /^[6-9]\d{9}$/.test(cleanPhone);
+  const isPasswordValid = isEdit 
+    ? (!formData.password || formData.password.length >= 6) 
+    : (Boolean(formData.password) && formData.password.length >= 6);
+
   const handleSubmit = (e) => {
     e.preventDefault();
+    setFormError('');
+
     if (!formData.firstName.trim()) {
+      setFormError('First Name is required.');
+      return;
+    }
+
+    if (!isPhoneValid) {
+      if (!/^[6-9]/.test(cleanPhone)) {
+        setFormError('Mobile Number must start with 6, 7, 8, or 9.');
+      } else {
+        setFormError(`Mobile Number must be exactly 10 digits (currently ${cleanPhone.length}/10).`);
+      }
+      return;
+    }
+
+    if (!isEdit && (!formData.password || formData.password.length < 6)) {
+      setFormError(`Password is required and must be at least 6 characters long (currently ${formData.password?.length || 0}/6).`);
+      return;
+    }
+
+    if (isEdit && formData.password && formData.password.length < 6) {
+      setFormError('New password must be at least 6 characters long.');
       return;
     }
 
@@ -59,13 +94,12 @@ const CreateSupervisorModal = ({ isOpen, onClose, onCreateSupervisor, editingSup
 
     onCreateSupervisor({
       ...formData,
+      phone: cleanPhone,
       name: fullName
     });
 
     onClose();
   };
-
-  const isEdit = Boolean(editingSupervisor);
 
   return (
     <div style={{
@@ -149,6 +183,25 @@ const CreateSupervisorModal = ({ isOpen, onClose, onCreateSupervisor, editingSup
         {/* Modal Body Form */}
         <form onSubmit={handleSubmit} style={{ padding: '1.5rem', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '1.15rem' }}>
           
+          {/* Validation Error Banner */}
+          {formError && (
+            <div style={{
+              backgroundColor: '#fef2f2',
+              borderLeft: '4px solid #ef4444',
+              color: '#ef4444',
+              padding: '0.65rem 0.9rem',
+              borderRadius: '0 8px 8px 0',
+              fontSize: '0.84rem',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '0.5rem',
+              fontWeight: '600'
+            }}>
+              <AlertCircle size={17} style={{ flexShrink: 0 }} />
+              <span>{formError}</span>
+            </div>
+          )}
+
           {/* Name & Surname (2 Columns) */}
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '1rem' }}>
             <div>
@@ -204,26 +257,33 @@ const CreateSupervisorModal = ({ isOpen, onClose, onCreateSupervisor, editingSup
           {/* Contact Phone & Email (2 Cols) */}
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '1rem' }}>
             <div>
-              <label style={{ display: 'block', fontSize: '0.82rem', fontWeight: '800', color: 'var(--text-primary, #334155)', marginBottom: '0.4rem' }}>
-                <Phone size={13} style={{ display: 'inline', marginRight: '4px', color: '#2563eb' }} />
-                Mobile Number (Login ID) *
-              </label>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.4rem' }}>
+                <label style={{ fontSize: '0.82rem', fontWeight: '800', color: 'var(--text-primary, #334155)', margin: 0 }}>
+                  <Phone size={13} style={{ display: 'inline', marginRight: '4px', color: '#2563eb' }} />
+                  Mobile Number (Login ID) *
+                </label>
+                <span style={{ fontSize: '0.72rem', color: isPhoneValid ? '#10b981' : (cleanPhone.length > 0 ? '#f59e0b' : '#94a3b8'), fontWeight: '700' }}>
+                  {cleanPhone.length}/10
+                </span>
+              </div>
               <input
                 type="tel"
+                inputMode="numeric"
                 required
                 maxLength="10"
-                pattern="\d{10}"
-                placeholder="e.g. 9876543210 (used to login)"
+                pattern="[6-9][0-9]{9}"
+                placeholder="e.g. 9876543210 (10 digits)"
                 value={formData.phone}
                 onChange={(e) => {
                   const val = e.target.value.replace(/\D/g, '').slice(0, 10);
                   setFormData({ ...formData, phone: val });
+                  if (formError) setFormError('');
                 }}
                 style={{
                   width: '100%',
                   padding: '0.65rem 0.9rem',
                   borderRadius: '10px',
-                  border: '1.5px solid #cbd5e1',
+                  border: `1.5px solid ${isPhoneValid ? '#10b981' : (cleanPhone.length > 0 ? '#ef4444' : '#cbd5e1')}`,
                   fontSize: '0.9rem',
                   color: 'var(--text-primary, #0f172a)',
                   backgroundColor: 'var(--input-bg, #ffffff)',
@@ -231,6 +291,18 @@ const CreateSupervisorModal = ({ isOpen, onClose, onCreateSupervisor, editingSup
                   boxSizing: 'border-box'
                 }}
               />
+              {cleanPhone.length > 0 && !isPhoneValid && (
+                <p style={{ margin: '0.25rem 0 0 0', fontSize: '0.74rem', color: '#ef4444', fontWeight: '500' }}>
+                  {!/^[6-9]/.test(cleanPhone) 
+                    ? '⚠️ Must start with 6, 7, 8, or 9' 
+                    : `⚠️ Need ${10 - cleanPhone.length} more digit${10 - cleanPhone.length > 1 ? 's' : ''}`}
+                </p>
+              )}
+              {isPhoneValid && (
+                <p style={{ margin: '0.25rem 0 0 0', fontSize: '0.74rem', color: '#10b981', fontWeight: '500' }}>
+                  ✓ Valid 10-digit mobile number
+                </p>
+              )}
             </div>
 
             <div>
@@ -260,21 +332,30 @@ const CreateSupervisorModal = ({ isOpen, onClose, onCreateSupervisor, editingSup
 
           {/* Password / Access Key */}
           <div>
-            <label style={{ display: 'block', fontSize: '0.82rem', fontWeight: '800', color: 'var(--text-primary, #334155)', marginBottom: '0.4rem' }}>
-              <Lock size={13} style={{ display: 'inline', marginRight: '4px', color: '#2563eb' }} />
-              Password
-            </label>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.4rem' }}>
+              <label style={{ fontSize: '0.82rem', fontWeight: '800', color: 'var(--text-primary, #334155)', margin: 0 }}>
+                <Lock size={13} style={{ display: 'inline', marginRight: '4px', color: '#2563eb' }} />
+                Password {isEdit ? '(Leave blank to keep current)' : '*'}
+              </label>
+              <span style={{ fontSize: '0.72rem', color: isPasswordValid ? '#10b981' : (formData.password ? '#f59e0b' : '#94a3b8'), fontWeight: '700' }}>
+                {formData.password ? `${formData.password.length} chars (min 6)` : 'min 6 chars'}
+              </span>
+            </div>
             <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
               <input
                 type={showPassword ? 'text' : 'password'}
-                placeholder="Enter supervisor login password..."
+                required={!isEdit}
+                placeholder={isEdit ? "Enter new password or leave blank" : "Enter password (min 6 chars)"}
                 value={formData.password}
-                onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                onChange={(e) => {
+                  setFormData({ ...formData, password: e.target.value });
+                  if (formError) setFormError('');
+                }}
                 style={{
                   width: '100%',
                   padding: '0.65rem 2.5rem 0.65rem 0.9rem',
                   borderRadius: '10px',
-                  border: '1.5px solid #cbd5e1',
+                  border: `1.5px solid ${formData.password ? (formData.password.length >= 6 ? '#10b981' : '#ef4444') : '#cbd5e1'}`,
                   fontSize: '0.9rem',
                   color: 'var(--text-primary, #0f172a)',
                   backgroundColor: 'var(--input-bg, #ffffff)',
@@ -302,6 +383,16 @@ const CreateSupervisorModal = ({ isOpen, onClose, onCreateSupervisor, editingSup
                 {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
               </button>
             </div>
+            {formData.password && formData.password.length < 6 && (
+              <p style={{ margin: '0.25rem 0 0 0', fontSize: '0.74rem', color: '#ef4444', fontWeight: '500' }}>
+                ⚠️ Password must be at least 6 characters (need ${6 - formData.password.length} more)
+              </p>
+            )}
+            {formData.password && formData.password.length >= 6 && (
+              <p style={{ margin: '0.25rem 0 0 0', fontSize: '0.74rem', color: '#10b981', fontWeight: '500' }}>
+                ✓ Password length valid
+              </p>
+            )}
           </div>
           {/* Assigned Projects */}
           {projects && projects.length > 0 && (

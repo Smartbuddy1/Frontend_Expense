@@ -27,9 +27,12 @@ const mapProject = (p) => ({
   status: STATUS_TO_DISPLAY[p.status] || 'In Progress',
   health: HEALTH_TO_DISPLAY[p.health] || 'On Track',
   progress: p.progress || 0,
-  supervisorId: p.supervisorId || '',
-  supervisorName: p.supervisor?.name || 'Unassigned',
-  supervisorPhone: p.supervisor?.mobile || '',
+  // Many-to-many supervisors
+  supervisors: (p.supervisors || []).map(s => ({ id: s.id, name: s.name, phone: s.mobile })),
+  supervisorIds: (p.supervisors || []).map(s => s.id),
+  supervisorId: (p.supervisors || [])[0]?.id || p.supervisorId || '',
+  supervisorName: (p.supervisors || []).map(s => s.name).join(', ') || p.supervisor?.name || 'Unassigned',
+  supervisorPhone: (p.supervisors || [])[0]?.mobile || p.supervisor?.mobile || '',
   teamCount: (p.teamAssignments || []).length,
   description: p.description || '',
   milestones: (p.milestones || []).map(m => ({ id: m.id, title: m.title, status: m.status, targetDate: m.targetDate || '' })),
@@ -78,6 +81,7 @@ const mapOrganization = (o) => ({
 
 const mapOperationalHead = (h) => ({
   id: h.id,
+  userId: h.userId || null,
   name: h.name,
   phone: h.phone || '',
   email: h.email || '',
@@ -89,6 +93,7 @@ const EXPENSE_STATUS_TO_DISPLAY = {
   submitted: 'Pending',
   ops_approved: 'Approved',
   ops_rejected: 'Rejected',
+  accounts_rejected: 'Accounts Rejected',
   accounts_paid: 'Paid',
 };
 const sanitizeUrl = (url) => {
@@ -294,11 +299,15 @@ const OperationsDashboard = () => {
     try {
       if (accData.id) {
         // Edit mode
-        await axios.patch(`${API}/users/${accData.id}`, {
+        const payload = {
           name: accData.name,
           mobile: mobile.length >= 10 ? mobile : undefined,
           email: accData.email || undefined,
-        });
+        };
+        if (accData.password && accData.password.trim().length >= 6) {
+          payload.password = accData.password.trim();
+        }
+        await axios.patch(`${API}/users/${accData.id}`, payload);
         toast.success(`Accountant "${accData.name}" updated!`);
       } else {
         // Create mode
@@ -378,7 +387,7 @@ const OperationsDashboard = () => {
         projectId: advData.projectId,
         supervisorId: advData.supervisorId,
         amount: advData.amount,
-        purpose: advData.purpose || 'Direct transfer by Admin',
+        purpose: advData.purpose || advData.notes || 'Direct site float advance by Admin',
       });
       toast.success(`₹${Number(advData.amount).toLocaleString('en-IN')} Advance transferred to ${advData.supervisorName}'s account!`);
       await fetchCore();
@@ -395,13 +404,21 @@ const OperationsDashboard = () => {
     try {
       if (supData.id) {
         // Edit mode
-        await axios.patch(`${API}/users/${supData.id}`, {
+        const payload = {
           name: fullName,
           mobile: mobile.length >= 10 ? mobile : undefined,
           email: supData.email || undefined,
-        });
+        };
+        if (supData.password && supData.password.trim().length >= 6) {
+          payload.password = supData.password.trim();
+        }
+        await axios.patch(`${API}/users/${supData.id}`, payload);
 
-        const previouslyAssigned = projects.filter(p => String(p.supervisorId) === String(supData.id)).map(p => String(p.id));
+        const previouslyAssigned = projects.filter(p => 
+          (p.supervisorIds && p.supervisorIds.includes(supData.id)) ||
+          (p.supervisors && p.supervisors.some(s => s.id === supData.id)) ||
+          String(p.supervisorId) === String(supData.id)
+        ).map(p => String(p.id));
         const assignedProjectsStrs = (supData.assignedProjects || []).map(String);
         
         const toAdd = assignedProjectsStrs.filter(pid => !previouslyAssigned.includes(pid));
@@ -411,7 +428,7 @@ const OperationsDashboard = () => {
           await axios.patch(`${API}/projects/${pid}`, { supervisorId: supData.id });
         }
         for (const pid of toRemove) {
-          await axios.patch(`${API}/projects/${pid}`, { supervisorId: 'UNASSIGN' });
+          await axios.patch(`${API}/projects/${pid}`, { removeSupervisorId: supData.id });
         }
         
         toast.success(`Supervisor "${fullName}" updated!`);
@@ -509,12 +526,30 @@ const OperationsDashboard = () => {
           department: headData.role || undefined,
         });
         // Also update user record if userId is linked
-        if (headData.userId) {
-          await axios.patch(`${API}/users/${headData.userId}`, {
+        let targetUserId = headData.userId || operationalHeads.find(h => h.id === headData.id)?.userId;
+        if (!targetUserId && mobile.length >= 10) {
+          try {
+            const { data: usersData } = await axios.get(`${API}/users`, { params: { role: 'operations' } });
+            const matchedUser = (usersData.users || []).find(u => u.mobile === mobile);
+            if (matchedUser) {
+              targetUserId = matchedUser.id;
+              await axios.patch(`${API}/operational-heads/${headData.id}`, { userId: matchedUser.id });
+            }
+          } catch (e) {
+            console.error('Could not find linked user by mobile:', e);
+          }
+        }
+
+        if (targetUserId) {
+          const payload = {
             name: headData.name,
             mobile: mobile.length >= 10 ? mobile : undefined,
             email: headData.email || undefined,
-          });
+          };
+          if (headData.password && headData.password.trim().length >= 6) {
+            payload.password = headData.password.trim();
+          }
+          await axios.patch(`${API}/users/${targetUserId}`, payload);
         }
         toast.success(`Operational Head "${headData.name}" updated!`);
       } else {
@@ -587,6 +622,7 @@ const OperationsDashboard = () => {
         site: projectData.location,
         organizationId,
         supervisorId: projectData.supervisorId || undefined,
+        supervisorIds: projectData.supervisorIds || (projectData.supervisorId ? [projectData.supervisorId] : undefined),
         budget: Number(projectData.budget) || undefined,
         category: projectData.category,
         description: projectData.description,

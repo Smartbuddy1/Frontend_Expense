@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { X, Building2, UserCheck, Calendar, DollarSign, MapPin, Tag, FileText, CheckCircle2, Phone, Mail } from 'lucide-react';
+import { X, Building2, UserCheck, Calendar, DollarSign, MapPin, Tag, FileText, CheckCircle2, Phone, Mail, Users } from 'lucide-react';
 import { useLanguage } from '../../../context/LanguageContext';
 
 const CreateProjectModal = ({ isOpen, onClose, onSave, editingProject, supervisors = [] }) => {
   const { language } = useLanguage();
+  const [selectedSupervisorIds, setSelectedSupervisorIds] = useState([]);
   const [formData, setFormData] = useState(editingProject || {
     name: '',
     code: '',
@@ -24,6 +25,7 @@ const CreateProjectModal = ({ isOpen, onClose, onSave, editingProject, superviso
 
   useEffect(() => {
     if (editingProject) {
+      setSelectedSupervisorIds(editingProject.supervisorIds || (editingProject.supervisorId ? [editingProject.supervisorId] : []));
       setFormData({
         name: editingProject.name || '',
         code: editingProject.id || '',
@@ -41,6 +43,7 @@ const CreateProjectModal = ({ isOpen, onClose, onSave, editingProject, superviso
         health: editingProject.health || 'On Track',
       });
     } else {
+      setSelectedSupervisorIds([]);
       setFormData({
         name: '',
         code: `PRJ-SGM-${Math.floor(Math.random() * 90) + 10}`,
@@ -59,6 +62,12 @@ const CreateProjectModal = ({ isOpen, onClose, onSave, editingProject, superviso
       });
     }
   }, [editingProject, isOpen, supervisors]);
+
+    const toggleSupervisor = (supId) => {
+    setSelectedSupervisorIds(prev =>
+      prev.includes(supId) ? prev.filter(id => id !== supId) : [...prev, supId]
+    );
+  };
 
   if (!isOpen) return null;
   const handleSubmit = (e) => {
@@ -83,10 +92,11 @@ const CreateProjectModal = ({ isOpen, onClose, onSave, editingProject, superviso
       status: formData.status,
       health: formData.health || 'On Track',
       progress: editingProject ? editingProject.progress : 0,
-      supervisorId: editingProject?.supervisorId || null,
-      supervisorIds: editingProject?.supervisorIds || [],
-      supervisorName: editingProject?.supervisorName || 'Unassigned',
-      supervisorPhone: editingProject?.supervisorPhone || '',
+      supervisorId: selectedSupervisorIds[0] || null,
+      supervisorIds: selectedSupervisorIds,
+      supervisors: supervisors.filter(s => selectedSupervisorIds.includes(s.id)),
+      supervisorName: supervisors.filter(s => selectedSupervisorIds.includes(s.id)).map(s => s.name).join(', ') || 'Unassigned',
+      supervisorPhone: supervisors.find(s => selectedSupervisorIds[0] === s.id)?.phone || '',
       teamCount: formData.teamCount,
       description: formData.description,
       milestones: editingProject?.milestones || [
@@ -270,6 +280,55 @@ const CreateProjectModal = ({ isOpen, onClose, onSave, editingProject, superviso
                 boxSizing: 'border-box'
               }}
             />
+          </div>
+
+          
+          {/* Assign Supervisors — Multi-select */}
+          <div>
+            <label style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', fontSize: '0.78rem', fontWeight: '800', color: 'var(--text-secondary, #475569)', textTransform: 'uppercase', marginBottom: '0.5rem' }}>
+              <Users size={13} /> {language === 'mr' ? 'सुपरवायझर नियुक्त करा' : 'Assign Supervisors'}
+            </label>
+            {supervisors.length === 0 ? (
+              <p style={{ fontSize: '0.82rem', color: '#94a3b8', fontStyle: 'italic' }}>
+                {language === 'mr' ? 'कोणतेही सुपरवायझर उपलब्ध नाहीत.' : 'No supervisors available. Create a supervisor first.'}
+              </p>
+            ) : (
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem' }}>
+                {supervisors.map(sup => {
+                  const isSelected = selectedSupervisorIds.includes(sup.id);
+                  return (
+                    <button
+                      key={sup.id}
+                      type="button"
+                      onClick={() => toggleSupervisor(sup.id)}
+                      style={{
+                        padding: '0.4rem 0.9rem',
+                        borderRadius: '20px',
+                        border: `2px solid ${isSelected ? '#4f46e5' : 'var(--border-color, #cbd5e1)'}`,
+                        backgroundColor: isSelected ? '#eef2ff' : 'var(--card-bg, #ffffff)',
+                        color: isSelected ? '#4f46e5' : 'var(--text-secondary, #475569)',
+                        fontSize: '0.82rem',
+                        fontWeight: isSelected ? '700' : '500',
+                        cursor: 'pointer',
+                        transition: 'all 0.15s ease',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '0.3rem',
+                      }}
+                    >
+                      {isSelected && <CheckCircle2 size={12} />}
+                      {sup.name}
+                      <span style={{ fontSize: '0.72rem', opacity: 0.7 }}>({sup.phone || sup.mobile})</span>
+                    </button>
+                  );
+                })}
+              </div>
+            )}
+            {selectedSupervisorIds.length > 0 && (
+              <p style={{ fontSize: '0.78rem', color: '#4f46e5', marginTop: '0.4rem', fontWeight: '600' }}>
+                ✓ {selectedSupervisorIds.length} {language === 'mr' ? 'सुपरवायझर निवडले' : 'supervisor(s) selected'}
+              </p>
+            )}
           </div>
 
           {/* Footer Buttons */}

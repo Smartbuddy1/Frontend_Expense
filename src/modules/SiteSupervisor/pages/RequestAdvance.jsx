@@ -81,10 +81,12 @@ const RequestAdvance = () => {
   const [projectId, setProjectId] = useState(defaultTargetProject ? defaultTargetProject.id : '');
 
   useEffect(() => {
-    if (defaultTargetProject) {
+    if (defaultTargetProject?.id) {
       setProjectId(defaultTargetProject.id);
+    } else if (projects.length > 0 && !projectId) {
+      setProjectId(projects[0].id);
     }
-  }, [defaultTargetProject]);
+  }, [defaultTargetProject, projects, projectId]);
   const [purpose, setPurpose] = useState('');
   const [urgency, setUrgency] = useState('Immediate (Same Day)');
 

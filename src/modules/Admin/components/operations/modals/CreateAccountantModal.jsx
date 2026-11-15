@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { X, User, Phone, Mail, Lock, Briefcase, Building, ShieldCheck } from 'lucide-react';
+import { X, User, Phone, Mail, Lock, Briefcase, Building, ShieldCheck, AlertCircle, CheckCircle2 } from 'lucide-react';
 
 const CreateAccountantModal = ({ 
   isOpen, 
@@ -7,6 +7,7 @@ const CreateAccountantModal = ({
   onSave, 
   editingAccountant = null 
 }) => {
+  const [formError, setFormError] = useState('');
   const [formData, setFormData] = useState({
     name: '',
     phone: '',
@@ -18,13 +19,14 @@ const CreateAccountantModal = ({
   });
 
   useEffect(() => {
+    setFormError('');
     if (editingAccountant) {
       setFormData({
         id: editingAccountant.id,
         name: editingAccountant.name || '',
-        phone: editingAccountant.phone || '',
+        phone: editingAccountant.phone || editingAccountant.mobile || '',
         email: editingAccountant.email || '',
-        password: editingAccountant.password || '••••••••',
+        password: '',
         role: editingAccountant.role || 'Senior Accountant & Auditor',
         branch: editingAccountant.branch || 'Head Office - Pune',
         status: editingAccountant.status || 'Active'
@@ -44,16 +46,44 @@ const CreateAccountantModal = ({
 
   if (!isOpen) return null;
 
+  const isEdit = Boolean(editingAccountant);
+  const cleanPhone = (formData.phone || '').replace(/\D/g, '').slice(0, 10);
+  const isPhoneValid = /^[6-9]\d{9}$/.test(cleanPhone);
+  const isPasswordValid = isEdit 
+    ? (!formData.password || formData.password.length >= 6) 
+    : (Boolean(formData.password) && formData.password.length >= 6);
+
   const handleSubmit = (e) => {
     e.preventDefault();
+    setFormError('');
+
     if (!formData.name.trim() || !formData.email.trim()) {
-      alert('Please fill in required fields: Accountant Name and Email Address.');
+      setFormError('Accountant Name and Email Address are required.');
+      return;
+    }
+
+    if (!isPhoneValid) {
+      if (!/^[6-9]/.test(cleanPhone)) {
+        setFormError('Mobile Number must start with 6, 7, 8, or 9.');
+      } else {
+        setFormError(`Mobile Number must be exactly 10 digits (currently ${cleanPhone.length}/10).`);
+      }
+      return;
+    }
+
+    if (!isEdit && (!formData.password || formData.password.length < 6)) {
+      setFormError(`Password is required and must be at least 6 characters long (currently ${formData.password?.length || 0}/6).`);
+      return;
+    }
+
+    if (isEdit && formData.password && formData.password.length < 6) {
+      setFormError('New password must be at least 6 characters long.');
       return;
     }
 
     const payload = {
       name: formData.name.trim(),
-      phone: formData.phone.trim() || '+91 98220 77889',
+      phone: cleanPhone,
       email: formData.email.trim(),
       password: formData.password,
       role: formData.role,
@@ -132,6 +162,25 @@ const CreateAccountantModal = ({
         {/* Form Body */}
         <form onSubmit={handleSubmit} style={{ padding: '1.85rem', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '1.35rem' }}>
           
+          {/* Validation Error Banner */}
+          {formError && (
+            <div style={{
+              backgroundColor: '#fef2f2',
+              borderLeft: '4px solid #ef4444',
+              color: '#ef4444',
+              padding: '0.65rem 0.9rem',
+              borderRadius: '0 8px 8px 0',
+              fontSize: '0.84rem',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '0.5rem',
+              fontWeight: '600'
+            }}>
+              <AlertCircle size={17} style={{ flexShrink: 0 }} />
+              <span>{formError}</span>
+            </div>
+          )}
+
           {/* Row 1: Full Name * & Phone * */}
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '1.1rem' }}>
             <div>
@@ -143,7 +192,10 @@ const CreateAccountantModal = ({
                 required
                 placeholder="e.g. Ramesh Kulkarni"
                 value={formData.name}
-                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                onChange={(e) => {
+                  setFormData({ ...formData, name: e.target.value });
+                  if (formError) setFormError('');
+                }}
                 style={{
                   width: '100%',
                   padding: '0.78rem 1.05rem',
@@ -151,7 +203,6 @@ const CreateAccountantModal = ({
                   border: '1.5px solid var(--border-color, #cbd5e1)',
                   fontSize: '0.96rem',
                   color: 'var(--text-primary, #0f172a)',
-                  backgroundColor: 'var(--input-bg, #ffffff)',
                   backgroundColor: 'var(--input-bg, #ffffff)',
                   outline: 'none',
                   boxSizing: 'border-box'
@@ -160,28 +211,51 @@ const CreateAccountantModal = ({
             </div>
 
             <div>
-              <label style={{ display: 'block', fontSize: '0.94rem', fontWeight: '700', color: 'var(--text-primary, #1e293b)', marginBottom: '0.45rem' }}>
-                Mobile Number (Login ID) *
-              </label>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.45rem' }}>
+                <label style={{ fontSize: '0.94rem', fontWeight: '700', color: 'var(--text-primary, #1e293b)', margin: 0 }}>
+                  Mobile Number (Login ID) *
+                </label>
+                <span style={{ fontSize: '0.75rem', color: isPhoneValid ? '#10b981' : (cleanPhone.length > 0 ? '#f59e0b' : '#94a3b8'), fontWeight: '700' }}>
+                  {cleanPhone.length}/10
+                </span>
+              </div>
               <input
                 type="tel"
+                inputMode="numeric"
                 required
-                placeholder="e.g. 9359604384 (used to login)"
+                maxLength="10"
+                pattern="[6-9][0-9]{9}"
+                placeholder="e.g. 9876543210 (10 digits)"
                 value={formData.phone}
-                onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                onChange={(e) => {
+                  const val = e.target.value.replace(/\D/g, '').slice(0, 10);
+                  setFormData({ ...formData, phone: val });
+                  if (formError) setFormError('');
+                }}
                 style={{
                   width: '100%',
                   padding: '0.78rem 1.05rem',
                   borderRadius: '11px',
-                  border: '1.5px solid var(--border-color, #cbd5e1)',
+                  border: `1.5px solid ${isPhoneValid ? '#10b981' : (cleanPhone.length > 0 ? '#ef4444' : 'var(--border-color, #cbd5e1)')}`,
                   fontSize: '0.96rem',
                   color: 'var(--text-primary, #0f172a)',
-                  backgroundColor: 'var(--input-bg, #ffffff)',
                   backgroundColor: 'var(--input-bg, #ffffff)',
                   outline: 'none',
                   boxSizing: 'border-box'
                 }}
               />
+              {cleanPhone.length > 0 && !isPhoneValid && (
+                <p style={{ margin: '0.25rem 0 0 0', fontSize: '0.75rem', color: '#ef4444', fontWeight: '500' }}>
+                  {!/^[6-9]/.test(cleanPhone) 
+                    ? '⚠️ Must start with 6, 7, 8, or 9' 
+                    : `⚠️ Need ${10 - cleanPhone.length} more digit${10 - cleanPhone.length > 1 ? 's' : ''}`}
+                </p>
+              )}
+              {isPhoneValid && (
+                <p style={{ margin: '0.25rem 0 0 0', fontSize: '0.75rem', color: '#10b981', fontWeight: '500' }}>
+                  ✓ Valid 10-digit mobile number
+                </p>
+              )}
             </div>
           </div>
 
@@ -196,7 +270,10 @@ const CreateAccountantModal = ({
                 required
                 placeholder="e.g. accounts@aaryainnovtech.com"
                 value={formData.email}
-                onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                onChange={(e) => {
+                  setFormData({ ...formData, email: e.target.value });
+                  if (formError) setFormError('');
+                }}
                 style={{
                   width: '100%',
                   padding: '0.78rem 1.05rem',
@@ -204,7 +281,6 @@ const CreateAccountantModal = ({
                   border: '1.5px solid var(--border-color, #cbd5e1)',
                   fontSize: '0.96rem',
                   color: 'var(--text-primary, #0f172a)',
-                  backgroundColor: 'var(--input-bg, #ffffff)',
                   backgroundColor: 'var(--input-bg, #ffffff)',
                   outline: 'none',
                   boxSizing: 'border-box'
@@ -213,28 +289,45 @@ const CreateAccountantModal = ({
             </div>
 
             <div>
-              <label style={{ display: 'block', fontSize: '0.94rem', fontWeight: '700', color: 'var(--text-primary, #1e293b)', marginBottom: '0.45rem' }}>
-                Password *
-              </label>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.45rem' }}>
+                <label style={{ fontSize: '0.94rem', fontWeight: '700', color: 'var(--text-primary, #1e293b)', margin: 0 }}>
+                  Password {isEdit ? '(Leave blank to keep current)' : '*'}
+                </label>
+                <span style={{ fontSize: '0.75rem', color: isPasswordValid ? '#10b981' : (formData.password ? '#f59e0b' : '#94a3b8'), fontWeight: '700' }}>
+                  {formData.password ? `${formData.password.length} chars (min 6)` : 'min 6 chars'}
+                </span>
+              </div>
               <input
                 type="password"
-                required={!editingAccountant}
-                placeholder="••••••••"
+                required={!isEdit}
+                placeholder={isEdit ? "Enter new password or leave blank" : "Enter password (min 6 chars)"}
                 value={formData.password}
-                onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                onChange={(e) => {
+                  setFormData({ ...formData, password: e.target.value });
+                  if (formError) setFormError('');
+                }}
                 style={{
                   width: '100%',
                   padding: '0.78rem 1.05rem',
                   borderRadius: '11px',
-                  border: '1.5px solid var(--border-color, #cbd5e1)',
+                  border: `1.5px solid ${formData.password ? (formData.password.length >= 6 ? '#10b981' : '#ef4444') : 'var(--border-color, #cbd5e1)'}`,
                   fontSize: '0.96rem',
                   color: 'var(--text-primary, #0f172a)',
-                  backgroundColor: 'var(--input-bg, #ffffff)',
                   backgroundColor: 'var(--input-bg, #ffffff)',
                   outline: 'none',
                   boxSizing: 'border-box'
                 }}
               />
+              {formData.password && formData.password.length < 6 && (
+                <p style={{ margin: '0.25rem 0 0 0', fontSize: '0.75rem', color: '#ef4444', fontWeight: '500' }}>
+                  ⚠️ Password must be at least 6 characters (need ${6 - formData.password.length} more)
+                </p>
+              )}
+              {formData.password && formData.password.length >= 6 && (
+                <p style={{ margin: '0.25rem 0 0 0', fontSize: '0.75rem', color: '#10b981', fontWeight: '500' }}>
+                  ✓ Password length valid
+                </p>
+              )}
             </div>
           </div>
 

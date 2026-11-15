@@ -16,7 +16,10 @@ const RequestAdvanceModal = ({ isOpen, onClose, projects, onRefresh }) => {
     notes: ''
   });
 
-  const supervisorProjects = useMemo(() => projects.filter(p => p.supervisorId), [projects]);
+  const supervisorProjects = useMemo(() => {
+    const withSup = projects.filter(p => p.supervisorId || (p.supervisors && p.supervisors.length > 0) || (p.supervisorIds && p.supervisorIds.length > 0));
+    return withSup.length > 0 ? withSup : projects;
+  }, [projects]);
 
   if (!isOpen) return null;
 
@@ -130,10 +133,17 @@ const RequestAdvanceModal = ({ isOpen, onClose, projects, onRefresh }) => {
                 boxSizing: 'border-box'
               }}
             >
-              <option value="">-- Select Supervisor --</option>
-              {supervisorProjects.map(p => (
-                <option key={p.id} value={p.id}>{p.supervisorName} ({p.name})</option>
-              ))}
+              <option value="">-- Select Project / Supervisor --</option>
+              {supervisorProjects.map(p => {
+                const supName = p.supervisorName && p.supervisorName !== 'Unassigned'
+                  ? p.supervisorName
+                  : ((p.supervisors || []).map(s => s.name).join(', ') || 'Supervisor');
+                return (
+                  <option key={p.id} value={p.id}>
+                    {p.name} {supName ? `— ${supName}` : ''}
+                  </option>
+                );
+              })}
             </select>
           </div>
 

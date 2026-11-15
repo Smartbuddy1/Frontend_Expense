@@ -4,7 +4,7 @@ import AdminApp from './modules/Admin/App';
 import AccountantApp from './modules/Accountant/App';
 import SupervisorApp from './modules/SiteSupervisor/App';
 import OperationsApp from './modules/Operations/App';
-import { Smartphone, Lock, Eye, EyeOff, Sun, Moon, AlertCircle, ArrowRight, FileText } from 'lucide-react';
+import { Smartphone, Lock, Eye, EyeOff, Sun, Moon, AlertCircle, ArrowRight, FileText, CheckCircle2 } from 'lucide-react';
 import logoImg from './modules/Admin/assets/logo.png';
 import { ToastContainer, toast } from './components/Toast';
 
@@ -37,6 +37,7 @@ function GlobalLogin() {
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [touched, setTouched] = useState({ username: false, password: false });
 
   const [theme, setTheme] = useState(localStorage.getItem('theme') || 'light');
 
@@ -45,9 +46,45 @@ function GlobalLogin() {
     localStorage.setItem('theme', theme);
   }, [theme]);
 
+  // Validation rules
+  const isMobileValid = /^[6-9]\d{9}$/.test(username);
+  const isPasswordValid = password.length >= 6;
+
+  const handleMobileChange = (e) => {
+    const cleaned = e.target.value.replace(/\D/g, '').slice(0, 10);
+    setUsername(cleaned);
+    if (error) setError('');
+  };
+
+  const handlePasswordChange = (e) => {
+    setPassword(e.target.value);
+    if (error) setError('');
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
+
+    if (!username) {
+      setError('Please enter your 10-digit mobile number.');
+      setTouched({ username: true, password: true });
+      return;
+    }
+    if (!isMobileValid) {
+      if (!/^[6-9]/.test(username)) {
+        setError('Mobile number must start with 6, 7, 8, or 9.');
+      } else {
+        setError(`Mobile number must be exactly 10 digits (currently ${username.length}/10).`);
+      }
+      setTouched(prev => ({ ...prev, username: true }));
+      return;
+    }
+    if (!password || !isPasswordValid) {
+      setError(`Password must be at least 6 characters long (currently ${password.length}/6).`);
+      setTouched(prev => ({ ...prev, password: true }));
+      return;
+    }
+
     setLoading(true);
 
     try {
@@ -116,33 +153,90 @@ function GlobalLogin() {
           )}
           
           <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1.15rem' }}>
+            {/* Mobile Number Field */}
             <div className="form-group" style={{ marginBottom: 0 }}>
-              <label className="form-label" style={{ fontWeight: '600', fontSize: '0.85rem', color: 'var(--text-primary)', marginBottom: '0.4rem' }}>Mobile Number</label>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.4rem' }}>
+                <label className="form-label" style={{ fontWeight: '600', fontSize: '0.85rem', color: 'var(--text-primary)', margin: 0 }}>
+                  Mobile Number (Login ID) *
+                </label>
+                <span style={{ fontSize: '0.75rem', color: isMobileValid ? '#10b981' : (username.length > 0 ? '#f59e0b' : 'var(--text-secondary)'), fontWeight: '600' }}>
+                  {username.length}/10 digits
+                </span>
+              </div>
               <div className="input-with-icon" style={{ position: 'relative' }}>
-                <Smartphone size={18} className="input-icon" style={{ position: 'absolute', left: '1rem', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-secondary)' }} />
+                <Smartphone size={18} className="input-icon" style={{ position: 'absolute', left: '1rem', top: '50%', transform: 'translateY(-50%)', color: isMobileValid ? '#10b981' : 'var(--text-secondary)' }} />
                 <input
-                  type="text"
+                  type="tel"
+                  inputMode="numeric"
+                  maxLength="10"
+                  pattern="[6-9][0-9]{9}"
                   className="form-input"
-                  style={{ paddingLeft: '2.75rem', height: '3.25rem', fontSize: '1rem', backgroundColor: 'var(--surface-bg)' }}
-                  placeholder="e.g. 9999999999"
+                  style={{
+                    paddingLeft: '2.75rem',
+                    paddingRight: isMobileValid ? '2.5rem' : '1rem',
+                    height: '3.25rem',
+                    fontSize: '1rem',
+                    backgroundColor: 'var(--surface-bg)',
+                    borderColor: isMobileValid 
+                      ? '#10b981' 
+                      : (touched.username && username.length > 0 ? '#ef4444' : 'var(--border-color)'),
+                    transition: 'border-color 0.2s ease',
+                  }}
+                  placeholder="e.g. 9876543210"
                   value={username}
-                  onChange={(e) => setUsername(e.target.value)}
+                  onChange={handleMobileChange}
+                  onBlur={() => setTouched(prev => ({ ...prev, username: true }))}
                   required
                 />
+                {isMobileValid && (
+                  <CheckCircle2 size={18} style={{ position: 'absolute', right: '1rem', top: '50%', transform: 'translateY(-50%)', color: '#10b981' }} />
+                )}
               </div>
+              {/* Helper / Validation message */}
+              {username.length > 0 && !isMobileValid && (
+                <p style={{ margin: '0.35rem 0 0 0.2rem', fontSize: '0.75rem', color: '#ef4444', fontWeight: '500' }}>
+                  {!/^[6-9]/.test(username) 
+                    ? '⚠️ Number must start with 6, 7, 8, or 9' 
+                    : `⚠️ Enter ${10 - username.length} more digit${10 - username.length > 1 ? 's' : ''} (exactly 10 digits required)`}
+                </p>
+              )}
+              {isMobileValid && (
+                <p style={{ margin: '0.35rem 0 0 0.2rem', fontSize: '0.75rem', color: '#10b981', fontWeight: '500' }}>
+                  ✓ Valid 10-digit mobile number
+                </p>
+              )}
             </div>
 
+            {/* Password Field */}
             <div className="form-group" style={{ marginBottom: 0 }}>
-              <label className="form-label" style={{ fontWeight: '600', fontSize: '0.85rem', color: 'var(--text-primary)', marginBottom: '0.4rem' }}>Password</label>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.4rem' }}>
+                <label className="form-label" style={{ fontWeight: '600', fontSize: '0.85rem', color: 'var(--text-primary)', margin: 0 }}>
+                  Password *
+                </label>
+                <span style={{ fontSize: '0.75rem', color: isPasswordValid ? '#10b981' : (password.length > 0 ? '#f59e0b' : 'var(--text-secondary)'), fontWeight: '600' }}>
+                  {password.length > 0 ? `${password.length} chars (min 6)` : 'min 6 chars'}
+                </span>
+              </div>
               <div className="input-with-icon" style={{ position: 'relative' }}>
-                <Lock size={18} className="input-icon" style={{ position: 'absolute', left: '1rem', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-secondary)' }} />
+                <Lock size={18} className="input-icon" style={{ position: 'absolute', left: '1rem', top: '50%', transform: 'translateY(-50%)', color: isPasswordValid ? '#10b981' : 'var(--text-secondary)' }} />
                 <input
                   type={showPassword ? 'text' : 'password'}
                   className="form-input"
-                  style={{ paddingLeft: '2.75rem', height: '3.25rem', fontSize: '1rem', backgroundColor: 'var(--surface-bg)' }}
-                  placeholder="Password"
+                  style={{
+                    paddingLeft: '2.75rem',
+                    paddingRight: '2.75rem',
+                    height: '3.25rem',
+                    fontSize: '1rem',
+                    backgroundColor: 'var(--surface-bg)',
+                    borderColor: isPasswordValid 
+                      ? '#10b981' 
+                      : (touched.password && password.length > 0 ? '#ef4444' : 'var(--border-color)'),
+                    transition: 'border-color 0.2s ease',
+                  }}
+                  placeholder="Enter your password (min 6 chars)"
                   value={password}
-                  onChange={(e) => setPassword(e.target.value)}
+                  onChange={handlePasswordChange}
+                  onBlur={() => setTouched(prev => ({ ...prev, password: true }))}
                   required
                 />
                 <button
@@ -153,12 +247,33 @@ function GlobalLogin() {
                   {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
                 </button>
               </div>
+              {/* Password Helper / Validation message */}
+              {password.length > 0 && !isPasswordValid && (
+                <p style={{ margin: '0.35rem 0 0 0.2rem', fontSize: '0.75rem', color: '#ef4444', fontWeight: '500' }}>
+                  ⚠️ Password must be at least 6 characters (need {6 - password.length} more)
+                </p>
+              )}
+              {isPasswordValid && (
+                <p style={{ margin: '0.35rem 0 0 0.2rem', fontSize: '0.75rem', color: '#10b981', fontWeight: '500' }}>
+                  ✓ Password format valid
+                </p>
+              )}
             </div>
 
             <button 
               type="submit" 
               className="btn btn-primary btn-block"
-              style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', height: '3.25rem', fontSize: '1rem', marginTop: '0.5rem' }}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: '8px',
+                height: '3.25rem',
+                fontSize: '1rem',
+                marginTop: '0.5rem',
+                opacity: (!isMobileValid || !isPasswordValid) && (username.length > 0 || password.length > 0) ? 0.7 : 1,
+                cursor: loading ? 'not-allowed' : 'pointer'
+              }}
               disabled={loading}
             >
               {loading ? (

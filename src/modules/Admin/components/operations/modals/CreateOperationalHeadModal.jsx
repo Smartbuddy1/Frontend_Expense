@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { X, ShieldCheck, User, Phone, Mail, Lock, Briefcase } from 'lucide-react';
+import { X, ShieldCheck, User, Phone, Mail, Lock, Briefcase, AlertCircle, CheckCircle2 } from 'lucide-react';
 import toast from 'react-hot-toast';
 
 const CreateOperationalHeadModal = ({
@@ -8,6 +8,7 @@ const CreateOperationalHeadModal = ({
   onSave,
   editingHead = null
 }) => {
+  const [formError, setFormError] = useState('');
   const [formData, setFormData] = useState({
     name: '',
     phone: '',
@@ -17,13 +18,15 @@ const CreateOperationalHeadModal = ({
   });
 
   useEffect(() => {
+    setFormError('');
     if (editingHead) {
       setFormData({
         id: editingHead.id,
+        userId: editingHead.userId || null,
         name: editingHead.name || '',
         phone: editingHead.phone || '',
         email: editingHead.email || '',
-        password: editingHead.password || '••••••••',
+        password: '',
         role: editingHead.role || 'Vice President & Operational Head',
         department: editingHead.department || 'Industrial Telemetry & Operations',
         employeeId: editingHead.employeeId || 'EMP-OPS-001',
@@ -45,16 +48,46 @@ const CreateOperationalHeadModal = ({
 
   if (!isOpen) return null;
 
+  const isEdit = Boolean(editingHead);
+  const cleanPhone = (formData.phone || '').replace(/\D/g, '').slice(0, 10);
+  const isPhoneValid = /^[6-9]\d{9}$/.test(cleanPhone);
+  const isPasswordValid = isEdit
+    ? (!formData.password || formData.password.length >= 6)
+    : (Boolean(formData.password) && formData.password.length >= 6);
+
   const handleSubmit = (e) => {
     e.preventDefault();
+    setFormError('');
+
     if (!formData.name.trim()) {
-      toast.error('Please enter Full Name');
+      setFormError('Please enter Full Name.');
+      return;
+    }
+
+    if (!isPhoneValid) {
+      if (!/^[6-9]/.test(cleanPhone)) {
+        setFormError('Mobile Number must start with 6, 7, 8, or 9.');
+      } else {
+        setFormError(`Mobile Number must be exactly 10 digits (currently ${cleanPhone.length}/10).`);
+      }
+      return;
+    }
+
+    if (!isEdit && (!formData.password || formData.password.length < 6)) {
+      setFormError(`Password is required and must be at least 6 characters long (currently ${formData.password?.length || 0}/6).`);
+      return;
+    }
+
+    if (isEdit && formData.password && formData.password.length < 6) {
+      setFormError('New password must be at least 6 characters long.');
       return;
     }
 
     const headToSave = {
       ...formData,
       id: editingHead ? editingHead.id : `OPH-${Date.now().toString().slice(-4)}`,
+      userId: editingHead?.userId || formData.userId || null,
+      phone: cleanPhone,
       employeeId: editingHead ? editingHead.employeeId : `EMP-OPS-${Math.floor(100 + Math.random() * 900)}`,
       department: editingHead?.department || 'Industrial Telemetry & Operations',
       location: editingHead?.location || 'Head Office - Pune, Maharashtra',
@@ -66,8 +99,6 @@ const CreateOperationalHeadModal = ({
     onSave(headToSave);
     onClose();
   };
-
-  const isEdit = Boolean(editingHead);
 
   return (
     <div style={{
@@ -148,6 +179,23 @@ const CreateOperationalHeadModal = ({
         {/* Modal Form Body - ONLY 5 FIELDS: Name, Phone, Mail, Pass, Role */}
         <form onSubmit={handleSubmit} style={{ padding: '1.5rem', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '1.15rem' }}>
           
+          {formError && (
+            <div style={{
+              padding: '0.75rem 1rem',
+              backgroundColor: 'rgba(239, 68, 68, 0.12)',
+              border: '1px solid #ef4444',
+              borderRadius: '10px',
+              color: '#dc2626',
+              fontSize: '0.85rem',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '0.6rem'
+            }}>
+              <AlertCircle size={16} style={{ flexShrink: 0 }} />
+              <span>{formError}</span>
+            </div>
+          )}
+
           {/* 1. Full Name */}
           <div>
             <label style={{ display: 'block', fontSize: '0.86rem', fontWeight: '700', color: 'var(--text-primary, #334155)', marginBottom: '0.35rem' }}>
@@ -160,14 +208,16 @@ const CreateOperationalHeadModal = ({
                 required
                 placeholder="e.g. Dinesh Sonawane"
                 value={formData.name}
-                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                onChange={(e) => {
+                  setFormData({ ...formData, name: e.target.value });
+                  if (formError) setFormError('');
+                }}
                 style={{
                   width: '100%',
                   padding: '0.7rem 0.85rem 0.7rem 2.4rem',
                   borderRadius: '10px',
                   border: '1.5px solid var(--border-color, #cbd5e1)',
                   fontSize: '0.92rem',
-                  backgroundColor: 'var(--input-bg, #ffffff)',
                   backgroundColor: 'var(--input-bg, #ffffff)',
                   outline: 'none',
                   boxSizing: 'border-box'
@@ -178,30 +228,52 @@ const CreateOperationalHeadModal = ({
 
           {/* 2. Official Phone */}
           <div>
-            <label style={{ display: 'block', fontSize: '0.86rem', fontWeight: '700', color: 'var(--text-primary, #334155)', marginBottom: '0.35rem' }}>
-              Mobile Number (Login ID) <span style={{ color: '#ef4444' }}>*</span>
-            </label>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.35rem' }}>
+              <label style={{ fontSize: '0.86rem', fontWeight: '700', color: 'var(--text-primary, #334155)', margin: 0 }}>
+                Mobile Number (Login ID) <span style={{ color: '#ef4444' }}>*</span>
+              </label>
+              <span style={{ fontSize: '0.75rem', color: isPhoneValid ? '#10b981' : (cleanPhone.length > 0 ? '#f59e0b' : '#94a3b8'), fontWeight: '700' }}>
+                {cleanPhone.length}/10
+              </span>
+            </div>
             <div style={{ position: 'relative' }}>
               <Phone size={16} style={{ position: 'absolute', left: '0.85rem', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted, #94a3b8)' }} />
               <input
-                type="text"
+                type="tel"
+                inputMode="numeric"
                 required
-                placeholder="e.g. 9359604384 (used to login)"
+                maxLength="10"
+                placeholder="e.g. 9359604384 (10 digits)"
                 value={formData.phone}
-                onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                onChange={(e) => {
+                  const val = e.target.value.replace(/\D/g, '').slice(0, 10);
+                  setFormData({ ...formData, phone: val });
+                  if (formError) setFormError('');
+                }}
                 style={{
                   width: '100%',
                   padding: '0.7rem 0.85rem 0.7rem 2.4rem',
                   borderRadius: '10px',
-                  border: '1.5px solid var(--border-color, #cbd5e1)',
+                  border: `1.5px solid ${isPhoneValid ? '#10b981' : (cleanPhone.length > 0 ? '#ef4444' : 'var(--border-color, #cbd5e1)')}`,
                   fontSize: '0.92rem',
-                  backgroundColor: 'var(--input-bg, #ffffff)',
                   backgroundColor: 'var(--input-bg, #ffffff)',
                   outline: 'none',
                   boxSizing: 'border-box'
                 }}
               />
             </div>
+            {cleanPhone.length > 0 && !isPhoneValid && (
+              <p style={{ margin: '0.25rem 0 0 0', fontSize: '0.75rem', color: '#ef4444', fontWeight: '500' }}>
+                {!/^[6-9]/.test(cleanPhone) 
+                  ? '⚠️ Must start with 6, 7, 8, or 9' 
+                  : `⚠️ Need ${10 - cleanPhone.length} more digit${10 - cleanPhone.length > 1 ? 's' : ''}`}
+              </p>
+            )}
+            {isPhoneValid && (
+              <p style={{ margin: '0.25rem 0 0 0', fontSize: '0.75rem', color: '#10b981', fontWeight: '500' }}>
+                ✓ Valid 10-digit mobile number
+              </p>
+            )}
           </div>
 
           {/* 3. Official Email */}
@@ -216,14 +288,16 @@ const CreateOperationalHeadModal = ({
                 required
                 placeholder="e.g. dinesh.s@aaryainnovtech.com"
                 value={formData.email}
-                onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                onChange={(e) => {
+                  setFormData({ ...formData, email: e.target.value });
+                  if (formError) setFormError('');
+                }}
                 style={{
                   width: '100%',
                   padding: '0.7rem 0.85rem 0.7rem 2.4rem',
                   borderRadius: '10px',
                   border: '1.5px solid var(--border-color, #cbd5e1)',
                   fontSize: '0.92rem',
-                  backgroundColor: 'var(--input-bg, #ffffff)',
                   backgroundColor: 'var(--input-bg, #ffffff)',
                   outline: 'none',
                   boxSizing: 'border-box'
@@ -234,30 +308,47 @@ const CreateOperationalHeadModal = ({
 
           {/* 4. Password */}
           <div>
-            <label style={{ display: 'block', fontSize: '0.86rem', fontWeight: '700', color: 'var(--text-primary, #334155)', marginBottom: '0.35rem' }}>
-              Password <span style={{ color: '#ef4444' }}>*</span>
-            </label>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.35rem' }}>
+              <label style={{ fontSize: '0.86rem', fontWeight: '700', color: 'var(--text-primary, #334155)', margin: 0 }}>
+                Password {isEdit ? '(Leave blank to keep unchanged)' : <span style={{ color: '#ef4444' }}>*</span>}
+              </label>
+              <span style={{ fontSize: '0.75rem', color: isPasswordValid ? '#10b981' : (formData.password ? '#f59e0b' : '#94a3b8'), fontWeight: '700' }}>
+                {formData.password ? `${formData.password.length} chars (min 6)` : 'min 6 chars'}
+              </span>
+            </div>
             <div style={{ position: 'relative' }}>
               <Lock size={16} style={{ position: 'absolute', left: '0.85rem', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted, #94a3b8)' }} />
               <input
                 type="password"
                 required={!isEdit}
-                placeholder="••••••••"
+                placeholder={isEdit ? 'Leave blank to keep current' : '•••••••• (min 6 characters)'}
                 value={formData.password}
-                onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                onChange={(e) => {
+                  setFormData({ ...formData, password: e.target.value });
+                  if (formError) setFormError('');
+                }}
                 style={{
                   width: '100%',
                   padding: '0.7rem 0.85rem 0.7rem 2.4rem',
                   borderRadius: '10px',
-                  border: '1.5px solid var(--border-color, #cbd5e1)',
+                  border: `1.5px solid ${formData.password ? (formData.password.length >= 6 ? '#10b981' : '#ef4444') : 'var(--border-color, #cbd5e1)'}`,
                   fontSize: '0.92rem',
-                  backgroundColor: 'var(--input-bg, #ffffff)',
                   backgroundColor: 'var(--input-bg, #ffffff)',
                   outline: 'none',
                   boxSizing: 'border-box'
                 }}
               />
             </div>
+            {formData.password && formData.password.length < 6 && (
+              <p style={{ margin: '0.25rem 0 0 0', fontSize: '0.75rem', color: '#ef4444', fontWeight: '500' }}>
+                ⚠️ Needs at least 6 characters (currently {formData.password.length}/6)
+              </p>
+            )}
+            {formData.password && formData.password.length >= 6 && (
+              <p style={{ margin: '0.25rem 0 0 0', fontSize: '0.75rem', color: '#10b981', fontWeight: '500' }}>
+                ✓ Strong password length ({formData.password.length} characters)
+              </p>
+            )}
           </div>
 
 

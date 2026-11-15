@@ -236,7 +236,7 @@ const ProjectDetailModal = ({ isOpen, onClose, project, supervisors = [], teamMe
           <div style={{ padding: '1rem', borderRadius: '14px', border: '1px solid var(--border-color, #e2e8f0)', backgroundColor: 'var(--card-bg, #ffffff)' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.65rem' }}>
               <span style={{ fontSize: '0.75rem', fontWeight: '800', color: 'var(--text-secondary, #64748b)', textTransform: 'uppercase', display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
-                <ShieldCheck size={14} color="#16a34a" /> Site Supervisor
+                <ShieldCheck size={14} color="#16a34a" /> Site Supervisor{project.supervisors && project.supervisors.length > 1 ? `s (${project.supervisors.length})` : ''}
               </span>
               {onOpenAssign && (
                 <button
@@ -244,21 +244,39 @@ const ProjectDetailModal = ({ isOpen, onClose, project, supervisors = [], teamMe
                   onClick={() => { onClose(); onOpenAssign(project); }}
                   style={{ background: 'none', border: 'none', color: '#2563eb', fontWeight: '800', fontSize: '0.76rem', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.2rem' }}
                 >
-                  Change <ArrowUpRight size={13} />
+                  Assign / Change <ArrowUpRight size={13} />
                 </button>
               )}
             </div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', padding: '0.65rem 0.85rem', borderRadius: '10px', backgroundColor: 'var(--bg-color, #f8fafc)' }}>
-              <div style={{ width: '36px', height: '36px', borderRadius: '10px', backgroundColor: '#2563eb', color: '#ffffff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: '800', fontSize: '0.9rem' }}>
-                {project.supervisorName?.charAt(0) || 'S'}
+            {project.supervisors && project.supervisors.length > 0 ? (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                {project.supervisors.map((sup, idx) => (
+                  <div key={sup.id || idx} style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', padding: '0.65rem 0.85rem', borderRadius: '10px', backgroundColor: 'var(--bg-color, #f8fafc)' }}>
+                    <div style={{ width: '36px', height: '36px', borderRadius: '10px', backgroundColor: '#2563eb', color: '#ffffff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: '800', fontSize: '0.9rem', flexShrink: 0 }}>
+                      {sup.name?.charAt(0) || 'S'}
+                    </div>
+                    <div>
+                      <div style={{ fontSize: '0.88rem', fontWeight: '800', color: 'var(--text-primary, #0f172a)' }}>{sup.name}</div>
+                      <div style={{ fontSize: '0.76rem', color: 'var(--text-secondary, #64748b)', display: 'flex', alignItems: 'center', gap: '0.3rem', marginTop: '0.1rem' }}>
+                        <Phone size={11} /> <span>{sup.phone || sup.mobile || '+91 98220 00000'}</span>
+                      </div>
+                    </div>
+                  </div>
+                ))}
               </div>
-              <div>
-                <div style={{ fontSize: '0.88rem', fontWeight: '800', color: 'var(--text-primary, #0f172a)' }}>{project.supervisorName || 'Unassigned'}</div>
-                <div style={{ fontSize: '0.76rem', color: 'var(--text-secondary, #64748b)', display: 'flex', alignItems: 'center', gap: '0.3rem', marginTop: '0.1rem' }}>
-                  <Phone size={11} /> <span>{project.supervisorPhone || '+91 98220 00000'}</span>
+            ) : (
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', padding: '0.65rem 0.85rem', borderRadius: '10px', backgroundColor: 'var(--bg-color, #f8fafc)' }}>
+                <div style={{ width: '36px', height: '36px', borderRadius: '10px', backgroundColor: '#2563eb', color: '#ffffff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: '800', fontSize: '0.9rem' }}>
+                  {project.supervisorName?.charAt(0) || 'S'}
+                </div>
+                <div>
+                  <div style={{ fontSize: '0.88rem', fontWeight: '800', color: 'var(--text-primary, #0f172a)' }}>{project.supervisorName || 'Unassigned'}</div>
+                  <div style={{ fontSize: '0.76rem', color: 'var(--text-secondary, #64748b)', display: 'flex', alignItems: 'center', gap: '0.3rem', marginTop: '0.1rem' }}>
+                    <Phone size={11} /> <span>{project.supervisorPhone || '+91 98220 00000'}</span>
+                  </div>
                 </div>
               </div>
-            </div>
+            )}
           </div>
 
           {/* Milestones Stepper */}
