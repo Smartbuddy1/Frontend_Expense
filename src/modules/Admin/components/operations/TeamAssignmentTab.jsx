@@ -59,6 +59,8 @@ const TeamAssignmentTab = ({
         ['SR NO', 'Supervisor Name', 'Phone', 'Email', 'Specialization', 'Assigned Project', 'Location', 'Team Count', 'Status'],
         ...filteredSupervisors.map((sup, idx) => {
           const assignedProject = projects.find(p => 
+            (p.supervisorIds && p.supervisorIds.includes(sup.id)) ||
+            (p.supervisors && p.supervisors.some(s => s.id === sup.id)) ||
             (p.supervisorId && sup.id && p.supervisorId === sup.id) ||
             (p.supervisorName && sup.name && p.supervisorName.trim().toLowerCase() === sup.name.trim().toLowerCase()) ||
             (sup.activeProjects && sup.activeProjects.some(ap => ap === p.id || ap === p.code || ap === p.name))
@@ -107,6 +109,8 @@ const TeamAssignmentTab = ({
       // Prepare table data
       const tableData = filteredSupervisors.map((sup, idx) => {
         const assignedProject = projects.find(p => 
+          (p.supervisorIds && p.supervisorIds.includes(sup.id)) ||
+          (p.supervisors && p.supervisors.some(s => s.id === sup.id)) ||
           (p.supervisorId && sup.id && p.supervisorId === sup.id) ||
           (p.supervisorName && sup.name && p.supervisorName.trim().toLowerCase() === sup.name.trim().toLowerCase()) ||
           (sup.activeProjects && sup.activeProjects.some(ap => ap === p.id || ap === p.code || ap === p.name))
@@ -174,6 +178,8 @@ const TeamAssignmentTab = ({
     const resolvedLogo = logoSrc || `${window.location.origin}/logo_new.png`;
     const rows = filteredSupervisors.map((sup, idx) => {
       const assignedProject = projects.find(p => 
+        (p.supervisorIds && p.supervisorIds.includes(sup.id)) ||
+        (p.supervisors && p.supervisors.some(s => s.id === sup.id)) ||
         (p.supervisorId && sup.id && p.supervisorId === sup.id) ||
         (p.supervisorName && sup.name && p.supervisorName.trim().toLowerCase() === sup.name.trim().toLowerCase()) ||
         (sup.activeProjects && sup.activeProjects.some(ap => ap === p.id || ap === p.code || ap === p.name))
@@ -462,6 +468,8 @@ const TeamAssignmentTab = ({
                 currentSupervisors.map((sup, index) => {
                   const idx = startIndex + index;
                   const assignedProjects = projects.filter(p => 
+                    (p.supervisorIds && p.supervisorIds.includes(sup.id)) ||
+                    (p.supervisors && p.supervisors.some(s => s.id === sup.id)) ||
                     (p.supervisorId && sup.id && p.supervisorId === sup.id) ||
                     (p.supervisor_id && sup.id && p.supervisor_id === sup.id) ||
                     (p.supervisorName && sup.name && p.supervisorName.trim().toLowerCase() === sup.name.trim().toLowerCase()) ||
