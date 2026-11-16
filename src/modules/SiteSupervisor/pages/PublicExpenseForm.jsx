@@ -636,7 +636,7 @@ const PublicExpenseForm = () => {
                 <div className="pef-amount-input-wrap">
                   <span className="pef-rupee-symbol">₹</span>
                   <input
-                    type="number" min="1"
+                    type="number"
                     placeholder="e.g. 2400"
                     required
                     min="1"

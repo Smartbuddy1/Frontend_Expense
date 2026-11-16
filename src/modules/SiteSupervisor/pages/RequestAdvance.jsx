@@ -661,7 +661,7 @@ const RequestAdvance = () => {
                   {t('reqAmountLabel')} <span style={{ color: '#ef4444' }}>*</span>
                 </label>
                 <input
-                  type="number" min="1"
+                  type="number"
                   placeholder="e.g. 25000"
                   required
                   min="1"
@@ -775,7 +775,7 @@ const RequestAdvance = () => {
                   {t('reqAmountLabel')} <span style={{ color: '#ef4444' }}>*</span>
                 </label>
                 <input
-                  type="number" min="1"
+                  type="number"
                   placeholder="e.g. 25000"
                   required
                   min="1"

@@ -927,7 +927,7 @@ const DailyExpenses = () => {
                   {t('amountPaidLabel')} <span style={{ color: '#ef4444' }}>*</span>
                 </label>
                 <input
-                  type="number" min="1"
+                  type="number"
                   placeholder="e.g. 2400"
                   required
                   min="1"
@@ -1304,7 +1304,7 @@ const DailyExpenses = () => {
               <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
                 <label style={{ fontSize: '0.85rem', fontWeight: '600', color: 'var(--text-secondary)' }}>{t('amountPaidLabel')}</label>
                 <input
-                  type="number" min="1"
+                  type="number"
                   placeholder="0.00"
                   value={editExpenseData.amount}
                   onChange={(e) => setEditExpenseData({ ...editExpenseData, amount: e.target.value })}
