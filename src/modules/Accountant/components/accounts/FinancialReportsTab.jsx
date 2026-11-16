@@ -29,6 +29,22 @@ const FinancialReportsTab = ({
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
 
+  const todayStr = (() => {
+    const d = new Date();
+    const pad = n => String(n).padStart(2, '0');
+    return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+  })();
+
+  const effectiveEndDate = endDate && endDate < todayStr ? endDate : todayStr;
+
+  const formatItemDate = (rawDate) => {
+    if (!rawDate) return '';
+    const d = new Date(rawDate);
+    if (isNaN(d.getTime())) return '';
+    const pad = n => String(n).padStart(2, '0');
+    return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+  };
+
   const formatINR = (val) => {
     return new Intl.NumberFormat('en-IN', {
       style: 'currency',
@@ -46,14 +62,38 @@ const FinancialReportsTab = ({
     });
   };
 
+  const getProjectSupervisors = (p) => {
+    if (Array.isArray(p.supervisors) && p.supervisors.length > 0) {
+      return p.supervisors
+        .map(s => (typeof s === 'string' ? s : s.name))
+        .filter(name => name && name !== 'Unassigned' && name !== 'Unknown');
+    }
+    if (p.supervisor && typeof p.supervisor === 'string') {
+      return p.supervisor
+        .split(',')
+        .map(s => s.trim())
+        .filter(s => s && s !== 'Unassigned' && s !== 'Unknown');
+    }
+    return [];
+  };
+
+  const extractUniqueSupervisors = (projList) => {
+    const sups = new Set();
+    (projList || []).forEach(p => {
+      getProjectSupervisors(p).forEach(name => sups.add(name));
+    });
+    return Array.from(sups).sort();
+  };
+
   const availableSupervisors = selectedProject === 'ALL'
-    ? [...new Set(projects.map(p => p.supervisor).filter(Boolean))]
-    : [...new Set(projects.filter(p => p.id === selectedProject).map(p => p.supervisor).filter(Boolean))];
+    ? extractUniqueSupervisors(projects)
+    : extractUniqueSupervisors(projects.filter(p => p.id === selectedProject));
 
   const handleProjectChange = (projId) => {
     setSelectedProject(projId);
     if (projId !== 'ALL') {
-      const projSupervisors = projects.filter(p => p.id === projId).map(p => p.supervisor);
+      const proj = projects.find(p => p.id === projId);
+      const projSupervisors = proj ? getProjectSupervisors(proj) : [];
       if (!projSupervisors.includes(selectedSupervisor)) {
         setSelectedSupervisor('ALL');
       }
@@ -71,8 +111,8 @@ const FinancialReportsTab = ({
     
     // Supervisor Match (Look up the actual supervisor from the project)
     const projectForPayment = projects.find(proj => proj.id === p.projectId);
-    const actualSupervisor = projectForPayment?.supervisor || 'Unknown';
-    const matchesSup = selectedSupervisor === 'ALL' || actualSupervisor === selectedSupervisor;
+    const projSupervisors = projectForPayment ? getProjectSupervisors(projectForPayment) : [];
+    const matchesSup = selectedSupervisor === 'ALL' || projSupervisors.includes(selectedSupervisor) || p.paidTo === selectedSupervisor;
 
     // Search Query Match
     const matchesSearch = 
@@ -84,10 +124,11 @@ const FinancialReportsTab = ({
       (p.amount && p.amount.toString().includes(q));
 
     // Date Match
+    const pDate = formatItemDate(p.date);
     const matchesDate = 
-      filterType === 'FY' ||
-      ((!startDate || (p.date || '') >= startDate) &&
-      (!endDate || (p.date || '') <= endDate));
+      filterType === 'FY'
+        ? (!pDate || pDate <= todayStr)
+        : ((!startDate || pDate >= startDate) && (!pDate || pDate <= effectiveEndDate));
 
     return matchesProj && matchesSup && matchesSearch && matchesDate;
   });
@@ -113,10 +154,11 @@ const FinancialReportsTab = ({
       (e.amount && e.amount.toString().includes(q));
 
     // Date Match (use billDate for expense)
+    const eDate = formatItemDate(e.billDate);
     const matchesDate = 
-      filterType === 'FY' ||
-      ((!startDate || (e.billDate || '') >= startDate) &&
-      (!endDate || (e.billDate || '') <= endDate));
+      filterType === 'FY'
+        ? (!eDate || eDate <= todayStr)
+        : ((!startDate || eDate >= startDate) && (!eDate || eDate <= effectiveEndDate));
 
     return matchesProj && matchesSup && matchesSearch && matchesDate;
   });
@@ -517,8 +559,12 @@ const FinancialReportsTab = ({
                 <input 
                   type="date" 
                   value={startDate} 
-                  max={endDate}
-                  onChange={(e) => setStartDate(e.target.value)}
+                  max={endDate && endDate < todayStr ? endDate : todayStr}
+                  onChange={(e) => {
+                    const val = e.target.value;
+                    if (val && val > todayStr) return;
+                    setStartDate(val);
+                  }}
                   style={{
                     width: '100%',
                     padding: '0.63rem 0.85rem',
@@ -542,8 +588,13 @@ const FinancialReportsTab = ({
                 <input 
                   type="date" 
                   value={endDate} 
-                  min={startDate}
-                  onChange={(e) => setEndDate(e.target.value)}
+                  min={startDate || undefined}
+                  max={todayStr}
+                  onChange={(e) => {
+                    const val = e.target.value;
+                    if (val && val > todayStr) return;
+                    setEndDate(val);
+                  }}
                   style={{
                     width: '100%',
                     padding: '0.63rem 0.85rem',

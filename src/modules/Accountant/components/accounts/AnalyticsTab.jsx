@@ -58,6 +58,12 @@ const AnalyticsTab = ({
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
 
+  const todayStr = (() => {
+    const d = new Date();
+    const pad = n => String(n).padStart(2, '0');
+    return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+  })();
+
   const formatINR = (val) => {
     return new Intl.NumberFormat('en-IN', {
       style: 'currency',
@@ -71,18 +77,42 @@ const AnalyticsTab = ({
     return `Rs. ${Number(val).toLocaleString('en-IN')}`;
   };
 
+  const getProjectSupervisors = (p) => {
+    if (Array.isArray(p.supervisors) && p.supervisors.length > 0) {
+      return p.supervisors
+        .map(s => (typeof s === 'string' ? s : s.name))
+        .filter(name => name && name !== 'Unassigned' && name !== 'Unknown');
+    }
+    if (p.supervisor && typeof p.supervisor === 'string') {
+      return p.supervisor
+        .split(',')
+        .map(s => s.trim())
+        .filter(s => s && s !== 'Unassigned' && s !== 'Unknown');
+    }
+    return [];
+  };
+
+  const extractUniqueSupervisors = (projList) => {
+    const sups = new Set();
+    (projList || []).forEach(p => {
+      getProjectSupervisors(p).forEach(name => sups.add(name));
+    });
+    return Array.from(sups).sort();
+  };
+
   // Get master list of all unique supervisors across all projects (Fixed baseline for X-axis)
-  const allMasterSupervisors = [...new Set(projects.map(p => p.supervisor).filter(Boolean))];
+  const allMasterSupervisors = extractUniqueSupervisors(projects);
 
   // Cascading supervisors list based on selected project
   const availableSupervisors = selectedProject === 'ALL'
     ? allMasterSupervisors
-    : [...new Set(projects.filter(p => p.id === selectedProject).map(p => p.supervisor).filter(Boolean))];
+    : extractUniqueSupervisors(projects.filter(p => p.id === selectedProject));
 
   const handleProjectChange = (projId) => {
     setSelectedProject(projId);
     if (projId !== 'ALL') {
-      const projSupervisors = projects.filter(p => p.id === projId).map(p => p.supervisor);
+      const proj = projects.find(p => p.id === projId);
+      const projSupervisors = proj ? getProjectSupervisors(proj) : [];
       if (selectedSupervisor !== 'ALL' && !projSupervisors.includes(selectedSupervisor)) {
         setSelectedSupervisor('ALL');
       }
@@ -93,7 +123,8 @@ const AnalyticsTab = ({
     setSelectedSupervisor(supName);
     if (supName !== 'ALL' && selectedProject !== 'ALL') {
       const proj = projects.find(p => p.id === selectedProject);
-      if (proj && proj.supervisor !== supName) {
+      const projSupervisors = proj ? getProjectSupervisors(proj) : [];
+      if (proj && !projSupervisors.includes(supName)) {
         setSelectedProject('ALL');
       }
     }
@@ -103,11 +134,14 @@ const AnalyticsTab = ({
   // Date range resolver — turns filter state into [from, to] Date objects
   // ──────────────────────────────────────────────────────────────
   const getDateRange = () => {
+    const todayEnd = new Date();
+    todayEnd.setHours(23, 59, 59, 999);
+
     if (filterType === 'DATE_RANGE') {
-      return {
-        from: startDate ? new Date(startDate) : null,
-        to: endDate ? new Date(endDate + 'T23:59:59') : null
-      };
+      const from = startDate ? new Date(`${startDate}T00:00:00`) : null;
+      let to = endDate ? new Date(`${endDate}T23:59:59`) : todayEnd;
+      if (to > todayEnd) to = todayEnd;
+      return { from, to };
     }
     // Financial Year mode
     const now = new Date();
@@ -118,18 +152,18 @@ const AnalyticsTab = ({
 
     if (financialYear === 'CURRENT_FY') {
       return {
-        from: new Date(`${fyStartYear}-04-01`),
-        to: new Date(`${fyStartYear + 1}-03-31T23:59:59`)
+        from: new Date(`${fyStartYear}-04-01T00:00:00`),
+        to: todayEnd
       };
     }
     if (financialYear === 'PREV_FY') {
       return {
-        from: new Date(`${fyStartYear - 1}-04-01`),
+        from: new Date(`${fyStartYear - 1}-04-01T00:00:00`),
         to: new Date(`${fyStartYear}-03-31T23:59:59`)
       };
     }
-    // 'ALL' — no date restriction
-    return { from: null, to: null };
+    // 'ALL' — no date restriction, but upper limit is todayEnd
+    return { from: null, to: todayEnd };
   };
 
   const { from: dateFrom, to: dateTo } = getDateRange();
@@ -137,6 +171,7 @@ const AnalyticsTab = ({
   const inDateRange = (dateStr) => {
     if (!dateStr) return true;
     const d = new Date(dateStr);
+    if (isNaN(d.getTime())) return true;
     if (dateFrom && d < dateFrom) return false;
     if (dateTo && d > dateTo) return false;
     return true;
@@ -145,21 +180,30 @@ const AnalyticsTab = ({
   // Filter projects by selection
   const filteredProjects = projects.filter(p => {
     const matchesProject = selectedProject === 'ALL' || p.id === selectedProject;
-    const matchesSupervisor = selectedSupervisor === 'ALL' || p.supervisor === selectedSupervisor;
+    const projSupervisors = getProjectSupervisors(p);
+    const matchesSupervisor = selectedSupervisor === 'ALL' || projSupervisors.includes(selectedSupervisor);
     return matchesProject && matchesSupervisor;
   });
   const activeProjectIds = new Set(filteredProjects.map(p => p.id));
 
-  // Filtered expenses & payments — now also apply date filter
+  // Filtered expenses & payments — now also apply date and supervisor filter
   const filteredExpenses = expenses.filter(e =>
-    activeProjectIds.has(e.projectId) && inDateRange(e.billDate || e.submittedAt)
+    activeProjectIds.has(e.projectId) &&
+    (selectedSupervisor === 'ALL' || e.supervisor === selectedSupervisor) &&
+    inDateRange(e.billDate || e.submittedAt)
   );
   const filteredAdvances = advances.filter(a =>
-    activeProjectIds.has(a.projectId) && inDateRange(a.requestDate || a.date)
+    activeProjectIds.has(a.projectId) &&
+    (selectedSupervisor === 'ALL' || a.supervisor === selectedSupervisor) &&
+    inDateRange(a.requestDate || a.date)
   );
-  const filteredPayments = payments.filter(p =>
-    activeProjectIds.has(p.projectId) && inDateRange(p.date)
-  );
+  const filteredPayments = payments.filter(p => {
+    if (!activeProjectIds.has(p.projectId) || !inDateRange(p.date)) return false;
+    if (selectedSupervisor === 'ALL') return true;
+    const projectForPayment = projects.find(proj => proj.id === p.projectId);
+    const projSupervisors = projectForPayment ? getProjectSupervisors(projectForPayment) : [];
+    return projSupervisors.includes(selectedSupervisor) || p.paidTo === selectedSupervisor;
+  });
 
   // High level KPIs — budget/released are project-level (not date-filtered),
   // but expenses use the date-filtered set
@@ -231,7 +275,7 @@ const AnalyticsTab = ({
 
   // Chart 2: Supervisor Disbursal vs Claim Efficiency (Fixed positions on X-axis, unselected items hidden with null so position never shifts)
   const supervisorData = allMasterSupervisors.map(supName => {
-    const isIncluded = filteredProjects.some(p => p.supervisor === supName);
+    const isIncluded = filteredProjects.some(p => getProjectSupervisors(p).includes(supName));
     if (!isIncluded) {
       return {
         name: supName,
@@ -579,8 +623,12 @@ const AnalyticsTab = ({
                 <input
                   type="date"
                   value={startDate}
-                  max={endDate}
-                  onChange={(e) => setStartDate(e.target.value)}
+                  max={endDate && endDate < todayStr ? endDate : todayStr}
+                  onChange={(e) => {
+                    const val = e.target.value;
+                    if (val && val > todayStr) return;
+                    setStartDate(val);
+                  }}
                   style={{
                     width: '100%',
                     padding: '0.58rem 0.75rem',
@@ -604,8 +652,13 @@ const AnalyticsTab = ({
                 <input
                   type="date"
                   value={endDate}
-                  min={startDate}
-                  onChange={(e) => setEndDate(e.target.value)}
+                  min={startDate || undefined}
+                  max={todayStr}
+                  onChange={(e) => {
+                    const val = e.target.value;
+                    if (val && val > todayStr) return;
+                    setEndDate(val);
+                  }}
                   style={{
                     width: '100%',
                     padding: '0.58rem 0.75rem',

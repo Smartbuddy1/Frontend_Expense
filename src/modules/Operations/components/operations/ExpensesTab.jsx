@@ -1470,81 +1470,23 @@ const ExpensesTab = ({
               <strong style={{ color: 'var(--text-primary, #0f172a)', fontSize: '1rem' }}>₹{inspectModalClaim.amount?.toLocaleString('en-IN')}</strong>
             </div>
 
-            <div style={{ display: 'flex', gap: '0.6rem' }}>
-              {inspectModalClaim.status !== 'Approved' && inspectModalClaim.status !== 'Paid' && inspectModalClaim.status !== 'Rejected' && (
-                <>
-                  <button
-                    onClick={() => {
-                      const claimId = inspectModalClaim.id;
-                      if (onApproveExpense) {
-                        onApproveExpense(claimId, 'Approved and forwarded to Accounts');
-                      }
-                      setInspectModalClaim(null);
-                    }}
-                    style={{
-                      flex: 1.4,
-                      padding: '0.65rem',
-                      borderRadius: '10px',
-                      border: 'none',
-                      background: 'linear-gradient(135deg, #6366f1 0%, #4f46e5 100%)',
-                      color: '#ffffff',
-                      fontWeight: '800',
-                      fontSize: '0.85rem',
-                      cursor: 'pointer',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      gap: '0.4rem',
-                      boxShadow: '0 2px 8px rgba(99, 102, 241, 0.3)'
-                    }}
-                  >
-                    <CheckCircle2 size={15} />
-                    <span>+ Approve & Forward</span>
-                  </button>
-
-                  <button
-                    onClick={() => {
-                      const claimId = inspectModalClaim.id;
-                      if (onRejectExpense) {
-                        onRejectExpense(claimId, 'Claim rejected from bill review');
-                      }
-                      setInspectModalClaim(null);
-                    }}
-                    style={{
-                      flex: 0.9,
-                      padding: '0.65rem',
-                      borderRadius: '10px',
-                      backgroundColor: 'rgba(239, 68, 68, 0.08)',
-                      border: '1px solid rgba(239, 68, 68, 0.3)',
-                      color: '#ef4444',
-                      fontWeight: '800',
-                      fontSize: '0.85rem',
-                      cursor: 'pointer',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      gap: '0.35rem'
-                    }}
-                  >
-                    <X size={14} />
-                    <span>Reject</span>
-                  </button>
-                </>
-              )}
-
+            <div style={{ display: 'flex', gap: '0.6rem', marginTop: '0.25rem' }}>
               <button
                 onClick={() => setInspectModalClaim(null)}
                 style={{
-                  flex: 0.8,
-                  padding: '0.65rem',
+                  width: '100%',
+                  padding: '0.7rem 1rem',
                   borderRadius: '10px',
                   backgroundColor: 'var(--input-bg, #f1f5f9)',
                   border: '1px solid var(--border-color, #cbd5e1)',
                   color: 'var(--text-primary, #475569)',
                   fontWeight: '700',
-                  fontSize: '0.85rem',
-                  cursor: 'pointer'
+                  fontSize: '0.875rem',
+                  cursor: 'pointer',
+                  transition: 'all 0.2s ease'
                 }}
+                onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'var(--table-hover, #e2e8f0)'}
+                onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'var(--input-bg, #f1f5f9)'}
               >
                 Close
               </button>

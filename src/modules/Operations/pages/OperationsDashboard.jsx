@@ -345,7 +345,7 @@ const OperationsDashboard = () => {
         await axios.patch(`${API}/projects/${editingProject.id}`, payload);
         toast.success(`Project "${projectData.name}" updated successfully!`);
       } else {
-        await axios.post(`${API}/projects`, { ...payload, code: projectData.id });
+        await axios.post(`${API}/projects`, { ...payload, code: projectData.code || projectData.id });
         toast.success(`Project "${projectData.name}" launched successfully!`);
       }
       await fetchCore();
@@ -636,6 +636,7 @@ const OperationsDashboard = () => {
         isOpen={isRequestAdvanceOpen}
         onClose={() => setIsRequestAdvanceOpen(false)}
         projects={projects}
+        supervisors={supervisors}
         onRefresh={fetchCore}
       />
 

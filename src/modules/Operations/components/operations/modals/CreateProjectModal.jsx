@@ -18,7 +18,7 @@ const CreateProjectModal = ({ isOpen, onClose, onSave, editingProject, superviso
     if (editingProject) {
       setFormData({
         name: editingProject.name || '',
-        code: editingProject.id || '',
+        code: editingProject.code || editingProject.id || '',
         location: editingProject.location || '',
         description: editingProject.description || '',
         status: editingProject.status || 'In Progress',
@@ -55,6 +55,7 @@ const CreateProjectModal = ({ isOpen, onClose, onSave, editingProject, superviso
 
     const projectPayload = {
       id: editingProject ? editingProject.id : formData.code,
+      code: formData.code,
       name: formData.name,
       location: formData.location || 'Maharashtra, India',
       category: editingProject?.category || 'E-Toilet Installation',

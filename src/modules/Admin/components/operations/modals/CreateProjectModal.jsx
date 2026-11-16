@@ -28,7 +28,7 @@ const CreateProjectModal = ({ isOpen, onClose, onSave, editingProject, superviso
       setSelectedSupervisorIds(editingProject.supervisorIds || (editingProject.supervisorId ? [editingProject.supervisorId] : []));
       setFormData({
         name: editingProject.name || '',
-        code: editingProject.id || '',
+        code: editingProject.code || editingProject.id || '',
         location: editingProject.location || '',
         phone: editingProject.phone || editingProject.clientPhone || '',
         email: editingProject.email || editingProject.clientEmail || '',

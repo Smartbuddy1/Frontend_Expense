@@ -49,7 +49,7 @@ export const WalletProvider = ({ children }) => {
     amount: Number(e.amount),
     date: new Date(e.createdAt).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }),
     time: new Date(e.createdAt).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' }),
-    status: (e.status === 'ops_rejected' || e.status === 'accounts_rejected') ? 'Rejected' : e.status === 'submitted' ? 'Pending' : 'Approved',
+    status: ['ops_rejected', 'accounts_rejected', 'rejected'].includes(e.status) ? 'Rejected' : e.status === 'submitted' ? 'Pending' : 'Approved',
     paidTo: e.vendorName || 'Local Vendor',
     receiptName: e.receiptUrl ? e.receiptUrl.split('/').pop() : null,
     receiptUrl: sanitizeUrl(e.receiptUrl),

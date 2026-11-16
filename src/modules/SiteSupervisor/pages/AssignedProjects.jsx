@@ -34,7 +34,6 @@ const AssignedProjects = () => {
   }));
 
   const [searchTerm, setSearchTerm] = useState('');
-  const [selectedProjectModal, setSelectedProjectModal] = useState(null);
 
   const filteredProjects = projects.filter(p => {
     const term = searchTerm.toLowerCase().trim();
@@ -254,21 +253,19 @@ const AssignedProjects = () => {
                   gap: '1.1rem',
                   transition: 'all 0.25s cubic-bezier(0.4, 0, 0.2, 1)',
                   boxShadow: '0 4px 12px -2px rgba(0,0,0,0.03)',
-                  cursor: 'pointer',
                   position: 'relative',
                   overflow: 'hidden'
                 }}
                 onMouseEnter={(e) => {
-                  e.currentTarget.style.transform = 'translateY(-4px)';
-                  e.currentTarget.style.boxShadow = '0 12px 24px -4px rgba(0,0,0,0.08)';
-                  e.currentTarget.style.borderColor = 'rgba(59, 130, 246, 0.5)';
+                  e.currentTarget.style.transform = 'translateY(-2px)';
+                  e.currentTarget.style.boxShadow = '0 8px 20px -4px rgba(0,0,0,0.06)';
+                  e.currentTarget.style.borderColor = 'rgba(59, 130, 246, 0.4)';
                 }}
                 onMouseLeave={(e) => {
                   e.currentTarget.style.transform = 'translateY(0)';
                   e.currentTarget.style.boxShadow = '0 4px 12px -2px rgba(0,0,0,0.03)';
                   e.currentTarget.style.borderColor = 'var(--border-color)';
                 }}
-                onClick={() => setSelectedProjectModal(proj)}
               >
                 {/* Subtle top border accent */}
                 <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: '4px', background: 'linear-gradient(90deg, #3b82f6, #8b5cf6)' }} />
@@ -326,83 +323,6 @@ const AssignedProjects = () => {
           />
         </div>
       </div>
-
-      {/* Project Details Modal */}
-      {selectedProjectModal && (
-        <div style={{
-          position: 'fixed',
-          inset: 0,
-          backgroundColor: 'rgba(0, 0, 0, 0.6)',
-          backdropFilter: 'blur(4px)',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          zIndex: 1000,
-          padding: '1rem'
-        }}
-          onClick={() => setSelectedProjectModal(null)}
-        >
-          <div
-            style={{
-              backgroundColor: 'var(--surface-bg)',
-              borderRadius: '1.25rem',
-              width: '100%',
-              maxWidth: '500px',
-              padding: '1.75rem',
-              boxShadow: '0 20px 40px rgba(0,0,0,0.3)',
-              border: '1px solid var(--border-color)'
-            }}
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                <Building2 color="#3b82f6" />
-                <h3 style={{ fontSize: '1.2rem', fontWeight: '800', color: 'var(--text-primary)', margin: 0 }}>
-                  {selectedProjectModal.name}
-                </h3>
-              </div>
-              <button
-                onClick={() => setSelectedProjectModal(null)}
-                style={{ background: 'transparent', border: 'none', fontSize: '1.4rem', color: 'var(--text-secondary)', cursor: 'pointer' }}
-              >
-                ✕
-              </button>
-            </div>
-
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.85rem' }}>
-              <div style={{ background: 'var(--card-bg)', padding: '0.85rem 1rem', borderRadius: '0.75rem', border: '1px solid var(--border-color)' }}>
-                <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', fontWeight: '700', textTransform: 'uppercase' }}>Scope & Description</span>
-                <p style={{ fontSize: '0.9rem', color: 'var(--text-primary)', marginTop: '0.25rem', lineHeight: '1.4' }}>
-                  {selectedProjectModal.description}
-                </p>
-              </div>
-
-
-
-              <button
-                onClick={() => {
-                  toast.info(`Downloading Work Order & Blueprint PDF for ${selectedProjectModal.name}...`);
-                  setSelectedProjectModal(null);
-                }}
-                style={{
-                  width: '100%',
-                  padding: '0.75rem',
-                  borderRadius: '0.65rem',
-                  background: 'linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)',
-                  color: 'white',
-                  border: 'none',
-                  fontWeight: '700',
-                  fontSize: '0.875rem',
-                  cursor: 'pointer',
-                  marginTop: '0.5rem'
-                }}
-              >
-                Download Work Order Blueprint
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 };

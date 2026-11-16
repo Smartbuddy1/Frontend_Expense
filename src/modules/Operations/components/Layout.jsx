@@ -388,18 +388,18 @@ const Layout = () => {
                 <User size={20} strokeWidth={2.2} />
               </div>
 
-              {/* Exact Matching Admin Profile Dropdown Modal Card */}
+              {/* Exact Matching Admin Profile Dropdown Modal Card (Generously Sized) */}
               {isProfileOpen && (
                 <div
                   onClick={(e) => e.stopPropagation()}
                   style={{
                     position: 'absolute',
                     right: 0,
-                    top: 'calc(100% + 10px)',
-                    width: '270px',
-                    borderRadius: '20px',
+                    top: 'calc(100% + 12px)',
+                    width: '380px',
+                    borderRadius: '24px',
                     overflow: 'hidden',
-                    boxShadow: '0 20px 40px -8px rgba(0, 0, 0, 0.4), 0 0 0 1px rgba(0,0,0,0.1)',
+                    boxShadow: '0 25px 60px -10px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(255,255,255,0.08)',
                     zIndex: 1000,
                     animation: 'fadeInUp 0.2s cubic-bezier(0.16, 1, 0.3, 1)'
                   }}
@@ -408,7 +408,7 @@ const Layout = () => {
                   <div style={{
                     backgroundColor: '#3b82f6',
                     background: 'linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)',
-                    padding: '1.75rem 1rem 1.25rem 1rem',
+                    padding: '2.25rem 1.5rem 1.85rem 1.5rem',
                     display: 'flex',
                     flexDirection: 'column',
                     alignItems: 'center',
@@ -417,40 +417,41 @@ const Layout = () => {
                   }}>
                     {/* Big Avatar Circle */}
                     <div style={{
-                      width: '58px',
-                      height: '58px',
+                      width: '80px',
+                      height: '80px',
                       borderRadius: '50%',
-                      backgroundColor: 'rgba(255, 255, 255, 0.25)',
+                      backgroundColor: 'rgba(255, 255, 255, 0.22)',
                       display: 'flex',
                       alignItems: 'center',
                       justifyContent: 'center',
-                      marginBottom: '0.65rem',
-                      border: '2px solid rgba(255, 255, 255, 0.4)',
-                      backdropFilter: 'blur(4px)'
+                      marginBottom: '0.9rem',
+                      border: '3px solid rgba(255, 255, 255, 0.5)',
+                      backdropFilter: 'blur(6px)'
                     }}>
-                      <User size={30} style={{ color: '#ffffff' }} />
+                      <User size={40} style={{ color: '#ffffff' }} />
                     </div>
 
                     <h3 style={{
-                      fontSize: '1.18rem',
+                      fontSize: '1.35rem',
                       fontWeight: '900',
                       color: '#ffffff',
-                      margin: '0 0 0.35rem 0',
-                      letterSpacing: '0.02em'
+                      margin: '0 0 0.45rem 0',
+                      letterSpacing: '0.02em',
+                      textAlign: 'center'
                     }}>
                       {user?.name || user?.fullName || user?.username || 'Operations Head'}
                     </h3>
 
                     <span style={{
-                      fontSize: '0.72rem',
+                      fontSize: '0.84rem',
                       fontWeight: '800',
-                      letterSpacing: '0.06em',
-                      padding: '0.2rem 0.75rem',
+                      letterSpacing: '0.08em',
+                      padding: '0.3rem 1.15rem',
                       borderRadius: '9999px',
                       backgroundColor: 'rgba(255, 255, 255, 0.22)',
                       color: '#ffffff',
                       textTransform: 'uppercase',
-                      border: '1px solid rgba(255, 255, 255, 0.3)'
+                      border: '1px solid rgba(255, 255, 255, 0.35)'
                     }}>
                       {user?.role ? user.role.replace(/_/g, ' ') : 'OPERATIONS HEAD'}
                     </span>
@@ -459,88 +460,120 @@ const Layout = () => {
                   {/* 2. Bottom Dark Navy Content Card */}
                   <div style={{
                     backgroundColor: '#111827',
-                    padding: '1.15rem 1rem 1rem 1rem',
+                    padding: '1.6rem 1.35rem',
                     display: 'flex',
                     flexDirection: 'column',
-                    gap: '0.75rem'
+                    gap: '1rem'
                   }}>
                     {/* Section Title */}
                     <span style={{
-                      fontSize: '0.72rem',
+                      fontSize: '0.82rem',
                       fontWeight: '800',
                       color: '#9ca3af',
-                      letterSpacing: '0.06em',
+                      letterSpacing: '0.09em',
                       textTransform: 'uppercase',
-                      display: 'block'
+                      display: 'block',
+                      marginBottom: '0.15rem'
                     }}>
-                      ACCOUNT & PROJECT DETAILS
+                      ACCOUNT DETAILS
                     </span>
 
-                    {/* Box 1: Project / Company */}
+                    {/* Box 1: User Mobile / ID */}
                     <div style={{
                       backgroundColor: '#1f2937',
-                      borderRadius: '12px',
-                      padding: '0.65rem 0.85rem',
+                      borderRadius: '16px',
+                      padding: '1rem 1.15rem',
                       display: 'flex',
                       alignItems: 'center',
-                      gap: '0.75rem',
+                      gap: '1rem',
                       border: '1px solid #374151'
                     }}>
                       <div style={{
-                        width: '34px',
-                        height: '34px',
+                        width: '46px',
+                        height: '46px',
                         borderRadius: '50%',
-                        backgroundColor: '#4c1d95',
-                        color: '#c084fc',
+                        backgroundColor: 'rgba(59, 130, 246, 0.22)',
+                        color: '#60a5fa',
                         display: 'flex',
                         alignItems: 'center',
                         justifyContent: 'center',
                         flexShrink: 0
                       }}>
-                        <Folder size={16} />
+                        <Phone size={22} />
                       </div>
                       <div style={{ minWidth: 0 }}>
-                        <span style={{ fontSize: '0.92rem', fontWeight: '800', color: '#ffffff', display: 'block', lineHeight: 1.2 }}>
-                          ASEMS Operations
+                        <span style={{ fontSize: '1.15rem', fontWeight: '800', color: '#ffffff', display: 'block', lineHeight: 1.2 }}>
+                          {user?.mobile || user?.phone || 'N/A'}
                         </span>
-                        <span style={{ fontSize: '0.72rem', color: '#9ca3af', display: 'block', marginTop: '0.1rem' }}>
-                          Aarya Innovtech Pvt. Ltd.
+                        <span style={{ fontSize: '0.84rem', color: '#9ca3af', display: 'block', marginTop: '0.2rem' }}>
+                          User ID / Mobile
                         </span>
                       </div>
                     </div>
 
-                    {/* Box 3: Security Level / Admin Access */}
+                    {/* Box 2: Security Level / Operations Access */}
                     <div style={{
                       backgroundColor: '#1f2937',
-                      borderRadius: '12px',
-                      padding: '0.65rem 0.85rem',
+                      borderRadius: '16px',
+                      padding: '1rem 1.15rem',
                       display: 'flex',
                       alignItems: 'center',
-                      gap: '0.75rem',
+                      gap: '1rem',
                       border: '1px solid #374151'
                     }}>
                       <div style={{
-                        width: '34px',
-                        height: '34px',
+                        width: '46px',
+                        height: '46px',
                         borderRadius: '50%',
-                        backgroundColor: '#064e3b',
+                        backgroundColor: 'rgba(16, 185, 129, 0.2)',
                         color: '#34d399',
                         display: 'flex',
                         alignItems: 'center',
                         justifyContent: 'center',
                         flexShrink: 0
                       }}>
-                        <Shield size={16} />
+                        <Shield size={22} />
                       </div>
                       <div style={{ minWidth: 0 }}>
-                        <span style={{ fontSize: '0.92rem', fontWeight: '800', color: '#ffffff', display: 'block', lineHeight: 1.2 }}>
-                          Admin Access
+                        <span style={{ fontSize: '1.15rem', fontWeight: '800', color: '#ffffff', display: 'block', lineHeight: 1.2 }}>
+                          {user?.role ? `${user.role.charAt(0).toUpperCase() + user.role.slice(1).replace(/_/g, ' ')} Access` : 'Operations Access'}
                         </span>
-                        <span style={{ fontSize: '0.72rem', color: '#9ca3af', display: 'block', marginTop: '0.1rem' }}>
+                        <span style={{ fontSize: '0.84rem', color: '#9ca3af', display: 'block', marginTop: '0.2rem' }}>
                           Security Level
                         </span>
                       </div>
                     </div>
+                  </div>
+
+                  {/* Bottom Logout Section */}
+                  <div style={{
+                    backgroundColor: '#0f172a',
+                    padding: '1.25rem 1.15rem',
+                    borderTop: '1px solid #1f2937',
+                    display: 'flex',
+                    justifyContent: 'center'
+                  }}>
+                    <button
+                      onClick={(e) => { e.stopPropagation(); handleLogout(); }}
+                      style={{
+                        background: 'transparent',
+                        border: 'none',
+                        color: '#ef4444',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '0.65rem',
+                        fontSize: '1.12rem',
+                        fontWeight: '800',
+                        cursor: 'pointer',
+                        padding: '0.5rem 1rem',
+                        borderRadius: '10px',
+                        transition: 'all 0.15s ease'
+                      }}
+                      onMouseEnter={(e) => { e.currentTarget.style.opacity = '0.8'; e.currentTarget.style.transform = 'scale(1.02)'; }}
+                      onMouseLeave={(e) => { e.currentTarget.style.opacity = '1'; e.currentTarget.style.transform = 'scale(1)'; }}
+                    >
+                      <LogOut size={22} /> Secure Logout
+                    </button>
                   </div>
                 </div>
               )}

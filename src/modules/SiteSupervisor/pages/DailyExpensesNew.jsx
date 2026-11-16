@@ -1,5 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { useLocation } from 'react-router-dom';
+import { createPortal } from 'react-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import {
   ReceiptText,
   Plus,
@@ -37,12 +38,14 @@ const DailyExpenses = () => {
   const { project, projects, defaultTargetProject, categories, walletBalance, expensesList, recordExpense, todaySpend, deleteExpense, updateExpense } = useWallet();
   const { t, language } = useLanguage();
   const location = useLocation();
+  const navigate = useNavigate();
 
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('All');
   const [selectedSite, setSelectedSite] = useState('All');
   const [selectedDate, setSelectedDate] = useState('');
-  const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+  const isInitialOpen = Boolean(location.state?.openModal || new URLSearchParams(location.search).get('openModal') === 'true' || new URLSearchParams(location.search).get('action') === 'add');
+  const [isAddModalOpen, setIsAddModalOpen] = useState(() => isInitialOpen);
   const [viewReceiptModal, setViewReceiptModal] = useState(null);
   const [submitting, setSubmitting] = useState(false);
 
@@ -50,12 +53,11 @@ const DailyExpenses = () => {
   const [editExpenseData, setEditExpenseData] = useState(null);
 
   useEffect(() => {
-    if (location.state?.openModal) {
+    if (location.state?.openModal || new URLSearchParams(location.search).get('openModal') === 'true' || new URLSearchParams(location.search).get('action') === 'add') {
       setIsAddModalOpen(true);
-      // Clear the state so it doesn't reopen on refresh
-      window.history.replaceState({}, document.title);
+      navigate(location.pathname, { replace: true, state: {} });
     }
-  }, [location.state]);
+  }, [location.state, location.search, location.pathname, navigate]);
 
   const handleEditClick = (expense) => {
     setEditExpenseData({
@@ -815,7 +817,7 @@ const DailyExpenses = () => {
       </div>
 
       {/* Modal: Add Expense */}
-      {isAddModalOpen && (
+      {isAddModalOpen && createPortal(
         <div style={{
           position: 'fixed',
           inset: 0,
@@ -824,7 +826,7 @@ const DailyExpenses = () => {
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
-          zIndex: 1000,
+          zIndex: 99999,
           padding: '1rem'
         }}
           onClick={() => setIsAddModalOpen(false)}
@@ -1117,11 +1119,12 @@ const DailyExpenses = () => {
               </button>
             </form>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
 
       {/* Modal: View Receipt */}
-      {viewReceiptModal && (
+      {viewReceiptModal && createPortal(
         <div style={{
           position: 'fixed',
           inset: 0,
@@ -1130,7 +1133,7 @@ const DailyExpenses = () => {
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
-          zIndex: 1000,
+          zIndex: 99999,
           padding: '1rem'
         }}
           onClick={() => setViewReceiptModal(null)}
@@ -1228,12 +1231,13 @@ const DailyExpenses = () => {
               {viewReceiptModal.receiptUrl ? 'Open / Download Receipt File' : 'Download Verified Receipt File'}
             </a>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
 
       {/* Modal: Edit Expense */}
-      {isEditModalOpen && editExpenseData && (
-        <div style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(0, 0, 0, 0.7)', backdropFilter: 'blur(4px)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000, padding: '1rem' }}>
+      {isEditModalOpen && editExpenseData && createPortal(
+        <div style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(0, 0, 0, 0.7)', backdropFilter: 'blur(4px)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 99999, padding: '1rem' }}>
           <div style={{ backgroundColor: 'var(--surface-bg)', borderRadius: '1.25rem', width: '100%', maxWidth: '500px', padding: '1.5rem', boxShadow: '0 20px 40px rgba(0,0,0,0.3)', border: '1px solid var(--border-color)', maxHeight: '90vh', overflowY: 'auto' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
@@ -1429,7 +1433,8 @@ const DailyExpenses = () => {
               </button>
             </form>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
     </div>
   );

@@ -1,20 +1,16 @@
 import React, { useState, useEffect } from 'react';
-import { useLocation } from 'react-router-dom';
+import { createPortal } from 'react-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import {
   Banknote,
   Send,
   Clock,
   CheckCircle2,
-  AlertCircle,
   History,
-  DollarSign,
-  Sparkles,
   Plus,
   Search,
   MapPin,
-  FileSpreadsheet,
   FileDown,
-  Printer,
   X,
   Edit2,
   Trash2
@@ -26,19 +22,20 @@ import { toast } from '../../../components/Toast';
 import Pagination from '../../../components/ui/Pagination';
 
 const RequestAdvance = () => {
-  const { requestAdvance, walletBalance, totalAdvance, advancesList, projects, defaultTargetProject, deleteAdvance, updateAdvance } = useWallet();
+  const { requestAdvance, walletBalance, advancesList, projects, defaultTargetProject, deleteAdvance, updateAdvance } = useWallet();
   const { t, language } = useLanguage();
   const location = useLocation();
+  const navigate = useNavigate();
 
-
-  const [isModalOpen, setIsModalOpen] = useState(false);
+  const isInitialOpen = Boolean(location.state?.openModal || new URLSearchParams(location.search).get('openModal') === 'true' || new URLSearchParams(location.search).get('action') === 'add');
+  const [isModalOpen, setIsModalOpen] = useState(() => isInitialOpen);
 
   useEffect(() => {
-    if (location.state?.openModal) {
+    if (location.state?.openModal || new URLSearchParams(location.search).get('openModal') === 'true' || new URLSearchParams(location.search).get('action') === 'add') {
       setIsModalOpen(true);
-      window.history.replaceState({}, document.title);
+      navigate(location.pathname, { replace: true, state: {} });
     }
-  }, [location.state]);
+  }, [location.state, location.search, location.pathname, navigate]);
   const [searchTerm, setSearchTerm] = useState('');
   const [filterSite, setFilterSite] = useState('');
   const [submitting, setSubmitting] = useState(false);
@@ -585,7 +582,7 @@ const RequestAdvance = () => {
       </div>
 
       {/* New Fund Requisition Modal (Popup Dialog) */}
-      {isModalOpen && (
+      {isModalOpen && createPortal(
         <div
           style={{
             position: 'fixed',
@@ -595,7 +592,7 @@ const RequestAdvance = () => {
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            zIndex: 1000,
+            zIndex: 99999,
             padding: '1rem'
           }}
           onClick={() => setIsModalOpen(false)}
@@ -731,12 +728,13 @@ const RequestAdvance = () => {
               </button>
             </form>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
 
       {/* Modal: Edit Advance */}
-      {isEditModalOpen && editAdvanceData && (
-        <div style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(0, 0, 0, 0.7)', backdropFilter: 'blur(4px)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000, padding: '1rem' }}>
+      {isEditModalOpen && editAdvanceData && createPortal(
+        <div style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(0, 0, 0, 0.7)', backdropFilter: 'blur(4px)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 99999, padding: '1rem' }}>
           <div style={{ backgroundColor: 'var(--surface-bg)', borderRadius: '1.25rem', width: '100%', maxWidth: '450px', padding: '1.5rem', boxShadow: '0 20px 40px rgba(0,0,0,0.3)', border: '1px solid var(--border-color)', position: 'relative' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
@@ -843,7 +841,8 @@ const RequestAdvance = () => {
               </button>
             </form>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
     </div>
   );

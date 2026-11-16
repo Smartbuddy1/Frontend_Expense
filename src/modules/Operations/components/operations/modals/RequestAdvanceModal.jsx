@@ -5,8 +5,35 @@ import toast from 'react-hot-toast';
 
 const API = import.meta.env.VITE_API_BASE_URL;
 
-const RequestAdvanceModal = ({ isOpen, onClose, projects, onRefresh }) => {
+const RequestAdvanceModal = ({ isOpen, onClose, projects = [], supervisors = [], onRefresh }) => {
+  // Extract all distinct site supervisors from both `supervisors` prop and `projects`
+  const allSupervisors = useMemo(() => {
+    const map = new Map();
+    (supervisors || []).forEach(s => {
+      if (s && s.id) {
+        map.set(String(s.id), {
+          id: String(s.id),
+          name: s.name,
+          phone: s.phone || s.mobile || ''
+        });
+      }
+    });
+    (projects || []).forEach(p => {
+      (p.supervisors || []).forEach(s => {
+        if (s && s.id && !map.has(String(s.id))) {
+          map.set(String(s.id), {
+            id: String(s.id),
+            name: s.name,
+            phone: s.phone || s.mobile || ''
+          });
+        }
+      });
+    });
+    return Array.from(map.values()).sort((a, b) => (a.name || '').localeCompare(b.name || ''));
+  }, [supervisors, projects]);
+
   const [newReqForm, setNewReqForm] = useState({
+    supervisorId: '',
     projectId: '',
     site: '',
     purpose: '',
@@ -16,15 +43,32 @@ const RequestAdvanceModal = ({ isOpen, onClose, projects, onRefresh }) => {
     notes: ''
   });
 
-  const supervisorProjects = useMemo(() => {
-    const withSup = projects.filter(p => p.supervisorId || (p.supervisors && p.supervisors.length > 0) || (p.supervisorIds && p.supervisorIds.length > 0));
-    return withSup.length > 0 ? withSup : projects;
-  }, [projects]);
+  // Projects assigned to the selected supervisor (or all projects if none selected)
+  const availableProjectsForSupervisor = useMemo(() => {
+    if (!newReqForm.supervisorId) {
+      return projects;
+    }
+    const supIdStr = String(newReqForm.supervisorId);
+    const assigned = projects.filter(p =>
+      (p.supervisorIds && p.supervisorIds.map(String).includes(supIdStr)) ||
+      (p.supervisors && p.supervisors.some(s => String(s.id) === supIdStr)) ||
+      String(p.supervisorId) === supIdStr
+    );
+    return assigned.length > 0 ? assigned : projects;
+  }, [projects, newReqForm.supervisorId]);
 
   if (!isOpen) return null;
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    if (!newReqForm.supervisorId) {
+      toast.error('Please select a site supervisor.');
+      return;
+    }
+    if (!newReqForm.projectId) {
+      toast.error('Please select a project / site.');
+      return;
+    }
     if (!newReqForm.purpose.trim()) {
       toast.error('Please enter the purpose or reason for the advance.');
       return;
@@ -33,19 +77,16 @@ const RequestAdvanceModal = ({ isOpen, onClose, projects, onRefresh }) => {
       toast.error('Please enter a valid amount.');
       return;
     }
-    if (!newReqForm.projectId) {
-      toast.error('Please select a supervisor / site.');
-      return;
-    }
 
     try {
       await axios.post(`${API}/advances`, {
         projectId: newReqForm.projectId,
+        supervisorId: newReqForm.supervisorId,
         amount: Number(newReqForm.amount),
         purpose: newReqForm.purpose,
         urgency: newReqForm.urgency
       });
-      setNewReqForm({ projectId: '', site: '', purpose: '', urgency: 'Immediate', amount: '', notes: '' });
+      setNewReqForm({ supervisorId: '', projectId: '', site: '', purpose: '', urgency: 'Regular', amount: '', notes: '' });
       toast.success('Advance requisition submitted for approval!');
       if (onRefresh) onRefresh();
       onClose();
@@ -111,15 +152,29 @@ const RequestAdvanceModal = ({ isOpen, onClose, projects, onRefresh }) => {
           {/* Supervisor Selection */}
           <div>
             <label style={{ display: 'block', fontSize: '0.84rem', fontWeight: '700', color: 'var(--text-secondary, #475569)', marginBottom: '0.35rem' }}>
-              Supervisor Name *
+              Site Supervisor Name *
             </label>
             <select
-              value={newReqForm.projectId}
+              value={newReqForm.supervisorId}
               onChange={(e) => {
-                const projectId = e.target.value;
-                const proj = supervisorProjects.find(p => p.id === projectId);
-                setNewReqForm(prev => ({ ...prev, projectId, site: proj?.location || proj?.name || '' }));
+                const supId = e.target.value;
+                const supProjects = projects.filter(p =>
+                  (p.supervisorIds && p.supervisorIds.map(String).includes(String(supId))) ||
+                  (p.supervisors && p.supervisors.some(s => String(s.id) === String(supId))) ||
+                  String(p.supervisorId) === String(supId)
+                );
+                const autoProj = supProjects.length === 1 ? supProjects[0] : null;
+                const isValidExisting = supProjects.some(p => p.id === newReqForm.projectId);
+                const chosenProj = autoProj || (isValidExisting ? projects.find(p => p.id === newReqForm.projectId) : null);
+
+                setNewReqForm(prev => ({
+                  ...prev,
+                  supervisorId: supId,
+                  projectId: chosenProj ? chosenProj.id : '',
+                  site: chosenProj ? (chosenProj.location || chosenProj.name) : ''
+                }));
               }}
+              required
               style={{
                 width: '100%',
                 padding: '0.65rem 0.85rem',
@@ -133,30 +188,74 @@ const RequestAdvanceModal = ({ isOpen, onClose, projects, onRefresh }) => {
                 boxSizing: 'border-box'
               }}
             >
-              <option value="">-- Select Project / Supervisor --</option>
-              {supervisorProjects.map(p => {
-                const supName = p.supervisorName && p.supervisorName !== 'Unassigned'
-                  ? p.supervisorName
-                  : ((p.supervisors || []).map(s => s.name).join(', ') || 'Supervisor');
-                return (
-                  <option key={p.id} value={p.id}>
-                    {p.name} {supName ? `— ${supName}` : ''}
-                  </option>
-                );
-              })}
+              <option value="">-- Select Site Supervisor --</option>
+              {allSupervisors.map(s => (
+                <option key={s.id} value={s.id}>
+                  {s.name} {s.phone ? `(${s.phone})` : ''}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          {/* Project / Site Selection */}
+          <div>
+            <label style={{ display: 'block', fontSize: '0.84rem', fontWeight: '700', color: 'var(--text-secondary, #475569)', marginBottom: '0.35rem' }}>
+              Project Name *
+            </label>
+            <select
+              value={newReqForm.projectId}
+              onChange={(e) => {
+                const projId = e.target.value;
+                const proj = projects.find(p => p.id === projId);
+                setNewReqForm(prev => {
+                  let supId = prev.supervisorId;
+                  if (!supId && proj) {
+                    const firstSup = (proj.supervisors && proj.supervisors[0]) || (proj.supervisorIds && proj.supervisorIds[0]);
+                    if (firstSup) {
+                      supId = typeof firstSup === 'object' ? firstSup.id : String(firstSup);
+                    }
+                  }
+                  return {
+                    ...prev,
+                    projectId: projId,
+                    supervisorId: supId,
+                    site: proj?.location || proj?.name || ''
+                  };
+                });
+              }}
+              required
+              style={{
+                width: '100%',
+                padding: '0.65rem 0.85rem',
+                borderRadius: '10px',
+                backgroundColor: 'var(--input-bg, #f8fafc)',
+                border: '1.5px solid var(--border-color, #cbd5e1)',
+                color: 'var(--text-primary, #0f172a)',
+                fontSize: '0.9rem',
+                fontWeight: '600',
+                outline: 'none',
+                boxSizing: 'border-box'
+              }}
+            >
+              <option value="">-- Select Project --</option>
+              {availableProjectsForSupervisor.map(p => (
+                <option key={p.id} value={p.id}>
+                  {p.name} {p.location ? `— ${p.location}` : ''}
+                </option>
+              ))}
             </select>
           </div>
 
           {/* Site Location */}
           <div>
             <label style={{ display: 'block', fontSize: '0.84rem', fontWeight: '700', color: 'var(--text-secondary, #475569)', marginBottom: '0.35rem' }}>
-              Site Location & Project *
+              Site Location *
             </label>
             <input
               type="text"
               value={newReqForm.site}
               onChange={(e) => setNewReqForm(prev => ({ ...prev, site: e.target.value }))}
-              placeholder="Enter site / project name..."
+              placeholder="e.g. Khopoli, Pen..."
               required
               style={{
                 width: '100%',

@@ -59,12 +59,16 @@ const ADVANCE_STATUS_TO_DISPLAY = {
 const mapProjectForAccounts = (p) => {
   const budget = Number(p.budget) || 0;
   const fundsReleased = Number(p.fundsReleased) || 0;
+  const supervisorsList = (p.supervisors && p.supervisors.length > 0)
+    ? p.supervisors
+    : (p.supervisor ? [p.supervisor] : []);
   return {
     id: p.id,
     name: p.name,
     site: p.site || p.location || '',
     toilets: p.toiletsCount || 0,
-    supervisor: (p.supervisors || []).map(s => s.name).join(', ') || p.supervisor?.name || 'Unassigned',
+    supervisor: supervisorsList.map(s => s.name).join(', ') || 'Unassigned',
+    supervisors: supervisorsList,
     supervisorMobile: (p.supervisors || [])[0]?.mobile || p.supervisor?.mobile || '',
     budget,
     fundsReleased,
@@ -171,7 +175,7 @@ const TAB_METADATA = {
     prefix: 'Welcome to',
     highlight: 'Dashboard',
     title: 'Dashboard',
-    subtitle: 'Hello Admin, here is your system overview.',
+    subtitle: 'Hello Accountant, here is your system overview.',
     icon: ShieldCheck,
     color: 'var(--badge-info-text)'
   },
@@ -494,7 +498,7 @@ const Dashboard = () => {
                 fontWeight: '500'
               }}>
                 {activeTab === 'overview'
-                  ? `Hello ${user?.name || user?.role || 'Admin'}, here is your system overview.`
+                  ? 'Hello Accountant, here is your system overview.'
                   : currentMeta.subtitle
                 }
               </p>

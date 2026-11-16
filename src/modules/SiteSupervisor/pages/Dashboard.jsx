@@ -1,4 +1,5 @@
-import React, { useEffect,  useState } from 'react';
+import React, { useEffect, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { useNavigate } from 'react-router-dom';
 import { 
   Briefcase, 
@@ -791,7 +792,7 @@ const Dashboard = () => {
       </div>
 
       {/* Modal: Add Daily Expense */}
-      {activeModal === 'expense' && (
+      {activeModal === 'expense' && createPortal(
         <div style={{
           position: 'fixed',
           inset: 0,
@@ -800,7 +801,7 @@ const Dashboard = () => {
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
-          zIndex: 1000,
+          zIndex: 99999,
           padding: '1rem'
         }}
         onClick={() => setActiveModal(null)}
@@ -1090,11 +1091,12 @@ const Dashboard = () => {
               </button>
             </form>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
 
       {/* Modal: Request Advance */}
-      {activeModal === 'advance' && (
+      {activeModal === 'advance' && createPortal(
         <div style={{
           position: 'fixed',
           inset: 0,
@@ -1103,7 +1105,7 @@ const Dashboard = () => {
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
-          zIndex: 1000,
+          zIndex: 99999,
           padding: '1rem'
         }}
         onClick={() => setActiveModal(null)}
@@ -1271,11 +1273,12 @@ const Dashboard = () => {
               </button>
             </form>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
 
       {/* Modal: Upload Bills/Receipts */}
-      {activeModal === 'bill' && (
+      {activeModal === 'bill' && createPortal(
         <div style={{
           position: 'fixed',
           inset: 0,
@@ -1284,7 +1287,7 @@ const Dashboard = () => {
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
-          zIndex: 1000,
+          zIndex: 99999,
           padding: '1rem'
         }}
         onClick={() => setActiveModal(null)}
@@ -1348,10 +1351,11 @@ const Dashboard = () => {
               Confirm & Submit Voucher
             </button>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
       {/* View Receipt Modal */}
-      {viewReceiptModal && (
+      {viewReceiptModal && createPortal(
         <div style={{
           position: 'fixed',
           inset: 0,
@@ -1360,7 +1364,7 @@ const Dashboard = () => {
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
-          zIndex: 1000,
+          zIndex: 99999,
           padding: '1rem'
         }}
           onClick={() => setViewReceiptModal(null)}
@@ -1430,7 +1434,8 @@ const Dashboard = () => {
               {language === 'mr' ? 'बंद करा' : language === 'hi' ? 'बंद करें' : 'Close'}
             </button>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
     </div>
   );
