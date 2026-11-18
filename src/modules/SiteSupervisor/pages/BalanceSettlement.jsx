@@ -26,8 +26,8 @@ const BalanceSettlement = () => {
   const [filterSite, setFilterSite] = useState('');
   const [filterCategory, setFilterCategory] = useState('');
 
-  // 1. Only include Approved expenses in the passbook statement
-  const settledExpenses = expensesList.filter(exp => exp.status === 'Approved');
+  // 1. Only include Approved and Paid expenses in the passbook statement
+  const settledExpenses = expensesList.filter(exp => exp.status === 'Approved' || exp.status === 'Paid');
   
   // 2. Reverse the list so it goes from Oldest to Newest
   const chronologicalExpenses = [...settledExpenses].reverse();

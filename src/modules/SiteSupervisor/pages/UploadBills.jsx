@@ -29,7 +29,7 @@ const UploadBills = () => {
       amount: exp.amount,
       date: exp.date,
       type: inferFileType(exp.receiptName),
-      status: exp.status === 'Approved' ? 'Verified' : exp.status === 'Rejected' ? 'Rejected' : 'Under Review',
+      status: (exp.status === 'Approved' || exp.status === 'Paid') ? 'Verified' : exp.status === 'Rejected' ? 'Rejected' : 'Under Review',
     }));
 
   const [searchTerm, setSearchTerm] = useState('');

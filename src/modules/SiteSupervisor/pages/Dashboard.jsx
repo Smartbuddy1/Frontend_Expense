@@ -33,6 +33,7 @@ import {
   X,
   XCircle
 } from 'lucide-react';
+import { formatSubCategoryDisplay } from '../../../utils/expenseCategories';
 import { useWallet } from '../context/WalletContext';
 import { useLanguage } from '../context/LanguageContext';
 import { toast } from '../../../components/Toast';
@@ -729,7 +730,22 @@ const Dashboard = () => {
                       {exp.displayId || exp.id}
                     </td>
                     <td data-label="CATEGORY" style={{ padding: '0.85rem 1rem', fontWeight: '600', color: 'var(--text-primary)', whiteSpace: 'nowrap' }}>
-                      {exp.category}
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '0.2rem' }}>
+                        <span>{exp.category}</span>
+                        {formatSubCategoryDisplay(exp.category, exp.subCategory) && (
+                          <span style={{
+                            fontSize: '0.72rem',
+                            fontWeight: '700',
+                            color: '#2563eb',
+                            backgroundColor: 'rgba(37, 99, 235, 0.1)',
+                            padding: '0.12rem 0.45rem',
+                            borderRadius: '5px',
+                            width: 'fit-content'
+                          }}>
+                            {formatSubCategoryDisplay(exp.category, exp.subCategory)}
+                          </span>
+                        )}
+                      </div>
                     </td>
                     <td data-label="SITE" style={{ padding: '0.85rem 1rem', color: 'var(--text-secondary)', whiteSpace: 'nowrap' }}>
                       {exp.site}
@@ -744,20 +760,42 @@ const Dashboard = () => {
                       ₹{exp.amount.toLocaleString()}
                     </td>
                     <td data-label="STATUS" style={{ padding: '0.85rem 1rem', whiteSpace: 'nowrap' }}>
-                      <span style={{
-                        display: 'inline-flex',
-                        alignItems: 'center',
-                        gap: '0.3rem',
-                        padding: '0.25rem 0.65rem',
-                        borderRadius: '1rem',
-                        fontSize: '0.75rem',
-                        fontWeight: '700',
-                        backgroundColor: exp.status === 'Approved' ? 'rgba(16, 185, 129, 0.15)' : exp.status === 'Rejected' ? 'rgba(239, 68, 68, 0.15)' : 'rgba(245, 158, 11, 0.15)',
-                        color: exp.status === 'Approved' ? '#10b981' : exp.status === 'Rejected' ? '#ef4444' : '#f59e0b'
-                      }}>
-                        {exp.status === 'Approved' ? <CheckCircle2 size={12} /> : exp.status === 'Rejected' ? <XCircle size={12} /> : <Clock size={12} />}
-                        {exp.status === 'Approved' ? t('approved') : exp.status === 'Rejected' ? (language === 'mr' ? 'नाकारले' : language === 'hi' ? 'अस्वीकृत' : 'Rejected') : t('pending')}
-                      </span>
+                      <div style={{ display: 'inline-flex', flexDirection: 'column', gap: '3px' }}>
+                        <span style={{
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          gap: '0.3rem',
+                          padding: '0.25rem 0.65rem',
+                          borderRadius: '1rem',
+                          fontSize: '0.75rem',
+                          fontWeight: '700',
+                          backgroundColor: (exp.status === 'Approved' || exp.status === 'Paid') ? 'rgba(16, 185, 129, 0.15)' : exp.status === 'Rejected' ? 'rgba(239, 68, 68, 0.15)' : 'rgba(245, 158, 11, 0.15)',
+                          color: (exp.status === 'Approved' || exp.status === 'Paid') ? '#10b981' : exp.status === 'Rejected' ? '#ef4444' : '#f59e0b',
+                          width: 'fit-content'
+                        }}>
+                          {(exp.status === 'Approved' || exp.status === 'Paid') ? <CheckCircle2 size={12} /> : exp.status === 'Rejected' ? <XCircle size={12} /> : <Clock size={12} />}
+                          {exp.status === 'Paid' ? (language === 'mr' ? 'पैसे मिळाले (Paid)' : 'Paid') : exp.status === 'Approved' ? t('approved') : exp.status === 'Rejected' ? (language === 'mr' ? 'नाकारले' : language === 'hi' ? 'अस्वीकृत' : 'Rejected') : t('pending')}
+                        </span>
+                        {exp.status === 'Paid' && exp.paidByName ? (
+                          <span style={{
+                            fontSize: '0.7rem',
+                            fontWeight: '700',
+                            color: '#0284c7',
+                            paddingLeft: '0.2rem'
+                          }}>
+                            Paid by: {exp.paidByName}
+                          </span>
+                        ) : (exp.status === 'Approved' && exp.opsApprovedByName) ? (
+                          <span style={{
+                            fontSize: '0.7rem',
+                            fontWeight: '700',
+                            color: '#059669',
+                            paddingLeft: '0.2rem'
+                          }}>
+                            Ops: {exp.opsApprovedByName}
+                          </span>
+                        ) : null}
+                      </div>
                     </td>
                     <td data-label="RECEIPT" style={{ padding: '0.85rem 1rem', textAlign: 'center', whiteSpace: 'nowrap' }}>
                       {exp.receipt ? (
