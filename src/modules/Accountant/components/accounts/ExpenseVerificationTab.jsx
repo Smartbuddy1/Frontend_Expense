@@ -18,6 +18,7 @@ import {
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import { addPdfHeaderWithLogo, addPdfFooterWithLogo, addPdfSignatures, escapeHtml } from '../../../Operations/utils/pdfHeaderHelper';
+import { formatSubCategoryDisplay } from '../../../../utils/expenseCategories';
 import aiLogo from '../../assets/ai_logo.jpg';
 import PrintFooter from '../PrintFooter';
 import Pagination from '../../../../components/ui/Pagination';
@@ -63,6 +64,8 @@ const ExpenseVerificationTab = ({
 
     const matchesSearch = 
       (exp.id || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
+      (exp.category || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
+      (exp.subCategory || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
       (exp.itemDescription || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
       (exp.supervisor || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
       (exp.vendorName || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -108,9 +111,10 @@ const ExpenseVerificationTab = ({
       ['Expense ID', 'Category', 'Project', 'Supervisor', 'Vendor Name', 'Bill No', 'Amount (INR)', 'GST Included', 'Status']
     ];
     filteredExpenses.forEach(e => {
+      const subDisplay = formatSubCategoryDisplay(e.category, e.subCategory);
       rows.push([
         `"${e.id?.slice(0, 8)?.toUpperCase() || ''}"`,
-        e.category,
+        subDisplay ? `${e.category} (${subDisplay})` : e.category,
         e.projectName,
         e.supervisor,
         e.vendorName || 'N/A',
@@ -598,17 +602,34 @@ const ExpenseVerificationTab = ({
                       </td>
 
                       <td style={{ padding: '1rem', maxWidth: '240px' }}>
-                        <span style={{
-                          fontSize: '0.72rem',
-                          fontWeight: '700',
-                          padding: '0.2rem 0.55rem',
-                          borderRadius: '6px',
-                          backgroundColor: 'rgba(59, 130, 246, 0.12)',
-                          color: '#3b82f6',
-                          display: 'inline-block'
-                        }}>
-                          {exp.category}
-                        </span>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
+                          <span style={{
+                            fontSize: '0.72rem',
+                            fontWeight: '700',
+                            padding: '0.2rem 0.55rem',
+                            borderRadius: '6px',
+                            backgroundColor: 'rgba(59, 130, 246, 0.12)',
+                            color: '#3b82f6',
+                            display: 'inline-block',
+                            width: 'fit-content'
+                          }}>
+                            {exp.category}
+                          </span>
+                          {formatSubCategoryDisplay(exp.category, exp.subCategory) && (
+                            <span style={{
+                              fontSize: '0.72rem',
+                              fontWeight: '700',
+                              padding: '0.15rem 0.5rem',
+                              borderRadius: '6px',
+                              backgroundColor: 'rgba(16, 185, 129, 0.12)',
+                              color: '#10b981',
+                              display: 'inline-block',
+                              width: 'fit-content'
+                            }}>
+                              {formatSubCategoryDisplay(exp.category, exp.subCategory)}
+                            </span>
+                          )}
+                        </div>
                       </td>
 
                       <td style={{ padding: '1rem' }}>
@@ -649,22 +670,38 @@ const ExpenseVerificationTab = ({
                           }
 
                           if (isApproved) {
-                            const rawName = approval?.approvedBy || 'Operations';
+                            const rawName = approval?.approvedBy || '';
                             const cleanName = rawName.replace(/\s*\([^)]*\)/g, '').trim();
                             return (
-                              <div style={{
-                                display: 'inline-flex',
-                                alignItems: 'center',
-                                gap: '0.3rem',
-                                fontSize: '0.72rem',
-                                fontWeight: '700',
-                                color: '#10b981',
-                                backgroundColor: 'rgba(16, 185, 129, 0.1)',
-                                padding: '0.2rem 0.55rem',
-                                borderRadius: '20px'
-                              }}>
-                                <ShieldCheck size={13} />
-                                {cleanName} Approved
+                              <div style={{ display: 'inline-flex', flexDirection: 'column', gap: '3px' }}>
+                                <div
+                                  style={{
+                                    display: 'inline-flex',
+                                    alignItems: 'center',
+                                    gap: '0.3rem',
+                                    fontSize: '0.72rem',
+                                    fontWeight: '700',
+                                    color: '#10b981',
+                                    backgroundColor: 'rgba(16, 185, 129, 0.1)',
+                                    padding: '0.2rem 0.55rem',
+                                    borderRadius: '20px',
+                                    width: 'fit-content'
+                                  }}
+                                >
+                                  <ShieldCheck size={13} />
+                                  Approved
+                                </div>
+                                {cleanName && cleanName !== 'Operations' && (
+                                  <span style={{
+                                    fontSize: '0.7rem',
+                                    fontWeight: '700',
+                                    color: '#059669',
+                                    paddingLeft: '0.2rem',
+                                    whiteSpace: 'nowrap'
+                                  }}>
+                                    By: {cleanName}
+                                  </span>
+                                )}
                               </div>
                             );
                           }

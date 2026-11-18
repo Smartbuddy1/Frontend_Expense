@@ -7,6 +7,7 @@ import {
 } from 'lucide-react';
 import { ResponsiveContainer, PieChart, Pie, Cell, Tooltip, Legend, BarChart, Bar, XAxis, YAxis, CartesianGrid } from 'recharts';
 import { useLanguage } from '../../context/LanguageContext';
+import { formatSubCategoryDisplay } from '../../../../utils/expenseCategories';
 import './operations-dashboard.css';
 
 /* ==========================================================================
@@ -534,9 +535,25 @@ export const RecentActivityFeed = ({ expenses = [], onApproveExpense, onRejectEx
 
                   {/* CATEGORY */}
                   <td style={{ padding: '0.85rem 1rem', verticalAlign: 'middle' }}>
-                    <span style={{ color: 'var(--text-secondary, #475569)', fontWeight: '700', fontSize: '0.85rem', textTransform: 'uppercase' }}>
-                      {exp.category || 'Material'}
-                    </span>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.2rem' }}>
+                      <span style={{ color: 'var(--text-secondary, #475569)', fontWeight: '700', fontSize: '0.85rem', textTransform: 'uppercase' }}>
+                        {exp.category || 'Material'}
+                      </span>
+                      {formatSubCategoryDisplay(exp.category, exp.subCategory) && (
+                        <span style={{
+                          display: 'inline-block',
+                          fontSize: '0.72rem',
+                          fontWeight: '700',
+                          color: '#2563eb',
+                          backgroundColor: 'rgba(37, 99, 235, 0.1)',
+                          padding: '0.12rem 0.45rem',
+                          borderRadius: '5px',
+                          width: 'fit-content'
+                        }}>
+                          {formatSubCategoryDisplay(exp.category, exp.subCategory)}
+                        </span>
+                      )}
+                    </div>
                   </td>
 
                   {/* SUPERVISOR */}

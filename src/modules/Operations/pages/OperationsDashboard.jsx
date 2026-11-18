@@ -80,6 +80,8 @@ const sanitizeUrl = (url) => {
 
 const mapExpense = (e) => {
   const created = new Date(e.createdAt);
+  const subMatch = (e.description || '').match(/^\[(.*?)\]/);
+  const subCat = e.subCategory || (subMatch ? subMatch[1].trim() : null);
   return {
     id: e.id,
     voucherNo: `EXP-${e.id.slice(0, 4).toUpperCase()}`,
@@ -91,6 +93,7 @@ const mapExpense = (e) => {
     supervisorName: e.submittedBy?.name || 'Unknown',
     submittedBy: e.submittedBy?.name || 'Unknown',
     category: e.category?.name || 'Uncategorized',
+    subCategory: subCat,
     description: e.description,
     title: e.description,
     vendorName: e.vendorName || '',
@@ -101,6 +104,9 @@ const mapExpense = (e) => {
     accountsRejected: e.status === 'accounts_rejected',
     billPhotoUrl: sanitizeUrl(e.receiptUrl),
     reviewNotes: e.opsRemarks || '',
+    paidByName: e.paidBy?.name || '',
+    paidAt: e.paidAt ? new Date(e.paidAt).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }) : null,
+    paymentRef: e.paymentRef || '',
   };
 };
 

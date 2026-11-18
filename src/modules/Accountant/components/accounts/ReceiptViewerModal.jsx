@@ -9,6 +9,7 @@ import {
   FileText, 
   ShieldCheck 
 } from 'lucide-react';
+import { formatSubCategoryDisplay } from '../../../../utils/expenseCategories';
 
 const ReceiptViewerModal = ({ expense, onClose, onApprove, onReject }) => {
   const formatINR = (val) => {
@@ -73,9 +74,15 @@ const ReceiptViewerModal = ({ expense, onClose, onApprove, onReject }) => {
               <h2 style={{ fontSize: '1.15rem', fontWeight: '800', color: 'var(--text-primary)', margin: 0 }}>
                 Vendor Invoice Verification #{expense.id}
               </h2>
-              <p style={{ fontSize: '0.78rem', color: 'var(--text-secondary)', margin: '0.1rem 0 0' }}>
-                {expense.projectName} • Indented by {expense.supervisor} (Site In-Charge)
-              </p>
+              {(() => {
+                const subDisp = formatSubCategoryDisplay(expense.category, expense.subCategory);
+                return (
+                  <p style={{ fontSize: '0.78rem', color: 'var(--text-secondary)', margin: '0.1rem 0 0' }}>
+                    {expense.projectName} • <strong style={{ color: 'var(--text-primary)' }}>{expense.category}</strong>{subDisp ? ` (${subDisp})` : ''} • Indented by {expense.supervisor} (Site In-Charge)
+                    {expense.opsApproval?.approvedBy && expense.opsApproval?.approvedBy !== 'Operations' && ` • Ops Approved by: ${expense.opsApproval.approvedBy}`}
+                  </p>
+                );
+              })()}
             </div>
           </div>
 

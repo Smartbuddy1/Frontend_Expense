@@ -250,19 +250,26 @@ const Layout = () => {
               </span>
             </div>
           </div>
-          <button onClick={handleLogout} className="logout-btn" title="Logout" style={{
-            background: 'rgba(239, 68, 68, 0.1)',
-            border: 'none',
-            color: '#ef4444',
-            cursor: 'pointer',
-            padding: '0.45rem',
-            borderRadius: '8px',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            transition: 'all 0.2s ease',
-            flexShrink: 0
-          }} onMouseEnter={(e) => { e.currentTarget.style.background = 'rgba(239, 68, 68, 0.2)'; e.currentTarget.style.transform = 'scale(1.05)' }} onMouseLeave={(e) => { e.currentTarget.style.background = 'rgba(239, 68, 68, 0.1)'; e.currentTarget.style.transform = 'scale(1)' }}>
+          <button 
+            onClick={handleLogout} 
+            className="logout-btn" 
+            title="Logout" 
+            style={{
+              background: 'rgba(255, 255, 255, 0.06)',
+              color: '#94a3b8',
+              border: 'none',
+              cursor: 'pointer',
+              padding: '0.45rem',
+              borderRadius: '0.5rem',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              transition: 'all 0.2s ease',
+              flexShrink: 0
+            }} 
+            onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = '#ef4444'; e.currentTarget.style.color = '#ffffff'; }} 
+            onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.06)'; e.currentTarget.style.color = '#94a3b8'; }}
+          >
             <LogOut size={18} />
           </button>
         </div>

@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { X, CheckCircle2, XCircle, FileText, IndianRupee, Calendar, User, Building, AlertTriangle, ExternalLink } from 'lucide-react';
+import { formatSubCategoryDisplay } from '../../../../../utils/expenseCategories';
 
 const ExpenseApprovalModal = ({ isOpen, onClose, expense, onApprove, onReject }) => {
   const [reviewNote, setReviewNote] = useState('');
@@ -72,6 +73,11 @@ const ExpenseApprovalModal = ({ isOpen, onClose, expense, onApprove, onReject })
             <div className="flex flex-row sm:flex-col items-center sm:items-end justify-between gap-2 shrink-0">
               <span className="text-[11px] sm:text-xs px-2.5 sm:px-3 py-1 rounded-full bg-slate-800 border border-slate-700 text-slate-300 font-medium">
                 <span className="text-amber-400 font-bold">{expense.category}</span>
+                {formatSubCategoryDisplay(expense.category, expense.subCategory) && (
+                  <span className="text-blue-400 font-bold ml-1.5">
+                    ({formatSubCategoryDisplay(expense.category, expense.subCategory)})
+                  </span>
+                )}
               </span>
               <p className="text-[10px] sm:text-xs text-slate-400 flex items-center gap-1">
                 <Calendar size={12} /> {expense.date}

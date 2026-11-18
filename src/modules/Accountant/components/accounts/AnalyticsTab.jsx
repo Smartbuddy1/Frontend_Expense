@@ -52,8 +52,8 @@ const AnalyticsTab = ({
 }) => {
   const chartsRef = useRef(null);
   const [filterType, setFilterType] = useState('FY'); // 'FY' or 'DATE_RANGE'
-  const [selectedProject, setSelectedProject] = useState('ALL');
-  const [selectedSupervisor, setSelectedSupervisor] = useState('ALL');
+  const [selectedProject, setSelectedProject] = useState('');
+  const [selectedSupervisor, setSelectedSupervisor] = useState('');
   const [financialYear, setFinancialYear] = useState('ALL');
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
@@ -104,28 +104,28 @@ const AnalyticsTab = ({
   const allMasterSupervisors = extractUniqueSupervisors(projects);
 
   // Cascading supervisors list based on selected project
-  const availableSupervisors = selectedProject === 'ALL'
+  const availableSupervisors = (!selectedProject || selectedProject === 'ALL')
     ? allMasterSupervisors
     : extractUniqueSupervisors(projects.filter(p => p.id === selectedProject));
 
   const handleProjectChange = (projId) => {
     setSelectedProject(projId);
-    if (projId !== 'ALL') {
+    if (projId && projId !== 'ALL') {
       const proj = projects.find(p => p.id === projId);
       const projSupervisors = proj ? getProjectSupervisors(proj) : [];
-      if (selectedSupervisor !== 'ALL' && !projSupervisors.includes(selectedSupervisor)) {
-        setSelectedSupervisor('ALL');
+      if (selectedSupervisor && selectedSupervisor !== 'ALL' && !projSupervisors.includes(selectedSupervisor)) {
+        setSelectedSupervisor('');
       }
     }
   };
 
   const handleSupervisorChange = (supName) => {
     setSelectedSupervisor(supName);
-    if (supName !== 'ALL' && selectedProject !== 'ALL') {
+    if (supName && supName !== 'ALL' && selectedProject && selectedProject !== 'ALL') {
       const proj = projects.find(p => p.id === selectedProject);
       const projSupervisors = proj ? getProjectSupervisors(proj) : [];
       if (proj && !projSupervisors.includes(supName)) {
-        setSelectedProject('ALL');
+        setSelectedProject('');
       }
     }
   };
@@ -177,29 +177,31 @@ const AnalyticsTab = ({
     return true;
   };
 
+  const hasFilterSelected = Boolean(selectedProject || selectedSupervisor);
+
   // Filter projects by selection
-  const filteredProjects = projects.filter(p => {
-    const matchesProject = selectedProject === 'ALL' || p.id === selectedProject;
+  const filteredProjects = !hasFilterSelected ? [] : projects.filter(p => {
+    const matchesProject = !selectedProject || selectedProject === 'ALL' || p.id === selectedProject;
     const projSupervisors = getProjectSupervisors(p);
-    const matchesSupervisor = selectedSupervisor === 'ALL' || projSupervisors.includes(selectedSupervisor);
+    const matchesSupervisor = !selectedSupervisor || selectedSupervisor === 'ALL' || projSupervisors.includes(selectedSupervisor);
     return matchesProject && matchesSupervisor;
   });
   const activeProjectIds = new Set(filteredProjects.map(p => p.id));
 
   // Filtered expenses & payments — now also apply date and supervisor filter
-  const filteredExpenses = expenses.filter(e =>
+  const filteredExpenses = !hasFilterSelected ? [] : expenses.filter(e =>
     activeProjectIds.has(e.projectId) &&
-    (selectedSupervisor === 'ALL' || e.supervisor === selectedSupervisor) &&
+    (!selectedSupervisor || selectedSupervisor === 'ALL' || e.supervisor === selectedSupervisor) &&
     inDateRange(e.billDate || e.submittedAt)
   );
-  const filteredAdvances = advances.filter(a =>
+  const filteredAdvances = !hasFilterSelected ? [] : advances.filter(a =>
     activeProjectIds.has(a.projectId) &&
-    (selectedSupervisor === 'ALL' || a.supervisor === selectedSupervisor) &&
+    (!selectedSupervisor || selectedSupervisor === 'ALL' || a.supervisor === selectedSupervisor) &&
     inDateRange(a.requestDate || a.date)
   );
-  const filteredPayments = payments.filter(p => {
+  const filteredPayments = !hasFilterSelected ? [] : payments.filter(p => {
     if (!activeProjectIds.has(p.projectId) || !inDateRange(p.date)) return false;
-    if (selectedSupervisor === 'ALL') return true;
+    if (!selectedSupervisor || selectedSupervisor === 'ALL') return true;
     const projectForPayment = projects.find(proj => proj.id === p.projectId);
     const projSupervisors = projectForPayment ? getProjectSupervisors(projectForPayment) : [];
     return projSupervisors.includes(selectedSupervisor) || p.paidTo === selectedSupervisor;
@@ -274,7 +276,14 @@ const AnalyticsTab = ({
   const monthlyFlowData = generateMonthlyData();
 
   // Chart 2: Supervisor Disbursal vs Claim Efficiency (Fixed positions on X-axis, unselected items hidden with null so position never shifts)
-  const supervisorData = allMasterSupervisors.map(supName => {
+  const supervisorData = !hasFilterSelected ? [] : allMasterSupervisors.map(supName => {
+    if (selectedSupervisor && selectedSupervisor !== 'ALL' && supName !== selectedSupervisor) {
+      return {
+        name: supName,
+        advance: null,
+        expenses: null
+      };
+    }
     const isIncluded = filteredProjects.some(p => getProjectSupervisors(p).includes(supName));
     if (!isIncluded) {
       return {
@@ -362,14 +371,20 @@ const AnalyticsTab = ({
 
   // PDF Export Handler
   const handleExportPDF = async () => {
+    if (!hasFilterSelected) return;
     const doc = new jsPDF('portrait');
+
+    const projectObj = projects.find(p => p.id === selectedProject);
+    const scopeLabel = selectedProject === 'ALL'
+      ? 'All Installation Sites'
+      : (projectObj ? projectObj.name : (selectedSupervisor ? `Supervisor: ${selectedSupervisor}` : 'All Installation Sites'));
 
     await addPdfHeaderWithLogo(
       doc,
       'Executive Financial Analytics & Operational Charts Report',
       [
         `Generated on: ${new Date().toLocaleString('en-GB')}`,
-        `Scope: ${selectedProject === 'ALL' ? 'All Installation Sites' : selectedProject} | Sanctioned BOQ: ${formatPDFINR(totalBudget)}`
+        `Scope: ${scopeLabel} | Sanctioned BOQ: ${formatPDFINR(totalBudget)}`
       ]
     );
 
@@ -452,23 +467,25 @@ const AnalyticsTab = ({
         {/* PDF Button */}
         <button
           onClick={handleExportPDF}
+          disabled={!hasFilterSelected}
           style={{
             padding: '0.55rem 1.15rem',
             borderRadius: '12px',
             backgroundColor: 'var(--surface-bg)',
-            color: '#dc2626',
-            border: '1.5px solid #dc2626',
+            color: !hasFilterSelected ? 'var(--text-secondary)' : '#dc2626',
+            border: `1.5px solid ${!hasFilterSelected ? 'var(--border-color)' : '#dc2626'}`,
             fontWeight: '600',
             fontSize: '0.86rem',
             display: 'inline-flex',
             alignItems: 'center',
             gap: '0.45rem',
-            cursor: 'pointer',
+            cursor: !hasFilterSelected ? 'not-allowed' : 'pointer',
+            opacity: !hasFilterSelected ? 0.6 : 1,
             boxShadow: '0 1px 4px rgba(0,0,0,0.03)',
             transition: 'all 0.15s ease'
           }}
         >
-          <Download size={17} color="#dc2626" />
+          <Download size={17} color={!hasFilterSelected ? 'var(--text-secondary)' : '#dc2626'} />
           PDF
         </button>
       </div>
@@ -547,7 +564,8 @@ const AnalyticsTab = ({
                 textOverflow: 'ellipsis'
               }}
             >
-              <option value="ALL">-- Select Project --</option>
+              <option value="">-- Select Project --</option>
+              <option value="ALL">All Projects</option>
               {projects.map(p => (
                 <option key={p.id} value={p.id}>{p.name} ({p.site})</option>
               ))}
@@ -577,7 +595,8 @@ const AnalyticsTab = ({
                 textOverflow: 'ellipsis'
               }}
             >
-              <option value="ALL">{selectedProject === 'ALL' ? '-- All Site Supervisors --' : '-- All Project Supervisors --'}</option>
+              <option value="">-- Select Site Supervisor --</option>
+              <option value="ALL">{selectedProject && selectedProject !== 'ALL' ? 'All Project Supervisors' : 'All Site Supervisors'}</option>
               {availableSupervisors.map(sup => (
                 <option key={sup} value={sup}>{sup}</option>
               ))}
@@ -689,129 +708,169 @@ const AnalyticsTab = ({
           gap: '1.75rem',
           width: '100%'
         }}>
-        {/* Chart 1: Cumulative Cash Flow & Monthly Velocity */}
-        <div style={{
-          backgroundColor: 'var(--surface-bg)',
-          borderRadius: '16px',
-          padding: '1.4rem 1.5rem',
-          border: '1px solid var(--border-color)',
-          boxShadow: '0 4px 20px rgba(0,0,0,0.03)',
-          width: '100%',
-          boxSizing: 'border-box'
-        }}>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1.2rem' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-              <BarChart3 size={20} color="#3b82f6" />
-              <h3 style={{ fontSize: '1.02rem', fontWeight: '800', color: 'var(--text-primary)', margin: 0 }}>
-                Cumulative Cashflow & Expenditure Velocity
-              </h3>
+        {!hasFilterSelected ? (
+          <div style={{
+            backgroundColor: 'var(--surface-bg)',
+            borderRadius: '16px',
+            padding: '3.5rem 1.5rem',
+            border: '1.5px solid var(--border-color)',
+            boxShadow: '0 4px 20px rgba(0,0,0,0.03)',
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: '0.75rem',
+            textAlign: 'center',
+            width: '100%',
+            boxSizing: 'border-box'
+          }}>
+            <div style={{
+              width: '52px',
+              height: '52px',
+              borderRadius: '14px',
+              backgroundColor: 'rgba(59, 130, 246, 0.1)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              color: '#3b82f6',
+              marginBottom: '0.25rem'
+            }}>
+              <BarChart3 size={26} />
             </div>
-            <span style={{ fontSize: '0.74rem', fontWeight: '700', color: '#3b82f6', backgroundColor: 'rgba(59, 130, 246, 0.1)', padding: '0.25rem 0.65rem', borderRadius: '10px' }}>
-              Monthly Run-Rate
-            </span>
+            <h3 style={{ fontSize: '1.05rem', fontWeight: '800', color: 'var(--text-primary)', margin: 0 }}>
+              Please select a Project or Site Supervisor
+            </h3>
+            <p style={{ fontSize: '0.84rem', color: 'var(--text-secondary)', maxWidth: '420px', margin: 0, lineHeight: 1.5 }}>
+              Choose a project or supervisor from the filter dropdown above to view visual cashflow analytics and run-rate charts.
+            </p>
           </div>
+        ) : (
+          <>
+            {/* Chart 1: Cumulative Cash Flow & Monthly Velocity */}
+            <div style={{
+              backgroundColor: 'var(--surface-bg)',
+              borderRadius: '16px',
+              padding: '1.4rem 1.5rem',
+              border: '1px solid var(--border-color)',
+              boxShadow: '0 4px 20px rgba(0,0,0,0.03)',
+              width: '100%',
+              boxSizing: 'border-box'
+            }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1.2rem' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                  <BarChart3 size={20} color="#3b82f6" />
+                  <h3 style={{ fontSize: '1.02rem', fontWeight: '800', color: 'var(--text-primary)', margin: 0 }}>
+                    Cumulative Cashflow & Expenditure Velocity
+                  </h3>
+                </div>
+                <span style={{ fontSize: '0.74rem', fontWeight: '700', color: '#3b82f6', backgroundColor: 'rgba(59, 130, 246, 0.1)', padding: '0.25rem 0.65rem', borderRadius: '10px' }}>
+                  Monthly Run-Rate
+                </span>
+              </div>
 
-          <div style={{ height: '360px', width: '100%' }}>
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={monthlyFlowData} maxBarSize={32} barGap={4} margin={{ top: 15, right: 10, left: -10, bottom: 10 }}>
-                <CartesianGrid strokeDasharray="3 3" vertical={false} opacity={0.3} />
-                <Legend verticalAlign="top" align="right" iconType="circle" wrapperStyle={{ fontSize: '11.5px', paddingBottom: '14px' }} />
-                <XAxis
-                  dataKey="month"
-                  stroke="var(--text-secondary)"
-                  fontSize={11}
-                  fontWeight={600}
-                  tick={{ dy: 6 }}
-                  tickLine={false}
-                />
-                <YAxis stroke="var(--text-secondary)" fontSize={11} tickFormatter={(v) => `₹${v / 1000}k`} tickLine={false} />
-                <Tooltip
-                  formatter={(val) => (val !== null && val !== undefined) ? formatINR(val) : '— (Pending)'}
-                  labelFormatter={(label, items) => {
-                    const item = monthlyFlowData.find(m => m.month === label);
-                    return item?.fullMonth || label;
-                  }}
-                  contentStyle={{ backgroundColor: 'var(--surface-bg)', borderColor: 'var(--border-color)', borderRadius: '10px' }}
-                />
-                <Bar dataKey="Advances" name="Funds Disbursed" fill="#3b82f6" maxBarSize={32} radius={[4, 4, 0, 0]} isAnimationActive={false} />
-                <Bar dataKey="Expenses" name="Verified Expenses" fill="#10b981" maxBarSize={32} radius={[4, 4, 0, 0]} isAnimationActive={false} />
-              </BarChart>
-            </ResponsiveContainer>
-          </div>
-        </div>
-
-        {/* Chart 2: Supervisor Disbursal & Claim Efficiency */}
-        <div style={{
-          backgroundColor: 'var(--surface-bg)',
-          borderRadius: '16px',
-          padding: '1.4rem 1.5rem',
-          border: '1px solid var(--border-color)',
-          boxShadow: '0 4px 20px rgba(0,0,0,0.03)',
-          width: '100%',
-          boxSizing: 'border-box'
-        }}>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1.2rem' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-              <Users size={20} color="#06b6d4" />
-              <h3 style={{ fontSize: '1.02rem', fontWeight: '800', color: 'var(--text-primary)', margin: 0 }}>
-                Site Supervisor Advance vs Claims
-              </h3>
+              <div style={{ height: '360px', width: '100%' }}>
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart data={monthlyFlowData} maxBarSize={32} barGap={4} margin={{ top: 15, right: 10, left: -10, bottom: 10 }}>
+                    <CartesianGrid strokeDasharray="3 3" vertical={false} opacity={0.3} />
+                    <Legend verticalAlign="top" align="right" iconType="circle" wrapperStyle={{ fontSize: '11.5px', paddingBottom: '14px' }} />
+                    <XAxis
+                      dataKey="month"
+                      stroke="var(--text-secondary)"
+                      fontSize={11}
+                      fontWeight={600}
+                      tick={{ dy: 6 }}
+                      tickLine={false}
+                    />
+                    <YAxis stroke="var(--text-secondary)" fontSize={11} tickFormatter={(v) => `₹${v / 1000}k`} tickLine={false} />
+                    <Tooltip
+                      formatter={(val) => (val !== null && val !== undefined) ? formatINR(val) : '— (Pending)'}
+                      labelFormatter={(label, items) => {
+                        const item = monthlyFlowData.find(m => m.month === label);
+                        return item?.fullMonth || label;
+                      }}
+                      contentStyle={{ backgroundColor: 'var(--surface-bg)', borderColor: 'var(--border-color)', borderRadius: '10px' }}
+                    />
+                    <Bar dataKey="Advances" name="Funds Disbursed" fill="#3b82f6" maxBarSize={32} radius={[4, 4, 0, 0]} isAnimationActive={false} />
+                    <Bar dataKey="Expenses" name="Verified Expenses" fill="#10b981" maxBarSize={32} radius={[4, 4, 0, 0]} isAnimationActive={false} />
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
             </div>
-            <span style={{ fontSize: '0.74rem', fontWeight: '700', color: '#06b6d4', backgroundColor: 'rgba(6, 182, 212, 0.1)', padding: '0.25rem 0.65rem', borderRadius: '10px' }}>
-              Supervisor Ledger
-            </span>
-          </div>
 
-          <div style={{ height: '390px', width: '100%' }}>
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={supervisorData} maxBarSize={36} barGap={6} margin={{ top: 15, right: 10, left: -10, bottom: 25 }}>
-                <CartesianGrid strokeDasharray="3 3" vertical={false} opacity={0.3} />
-                <Legend verticalAlign="top" align="right" iconType="circle" wrapperStyle={{ fontSize: '11.5px', paddingBottom: '14px' }} />
-                <XAxis
-                  dataKey="name"
-                  tick={renderStraightTick}
-                  height={65}
-                  stroke="var(--text-secondary)"
-                  tickLine={false}
-                />
-                <YAxis stroke="var(--text-secondary)" fontSize={11} tickFormatter={(v) => `₹${v / 1000}k`} tickLine={false} />
-                <Tooltip
-                  content={({ active, payload, label }) => {
-                    if (active && payload && payload.length) {
-                      const validItems = payload.filter(p => p.value !== null && p.value !== undefined);
-                      if (validItems.length === 0) return null;
-                      return (
-                        <div style={{
-                          backgroundColor: 'var(--surface-bg)',
-                          border: '1.5px solid var(--border-color)',
-                          borderRadius: '12px',
-                          padding: '0.75rem 1rem',
-                          boxShadow: '0 4px 18px rgba(0,0,0,0.1)'
-                        }}>
-                          <p style={{ margin: '0 0 0.35rem 0', fontWeight: '800', fontSize: '0.88rem', color: 'var(--text-primary)' }}>
-                            {label}
-                          </p>
-                          {validItems.map((entry, idx) => (
-                            <p key={idx} style={{ margin: '0.2rem 0', fontSize: '0.82rem', color: entry.color, fontWeight: '700' }}>
-                              {entry.name}: {formatINR(entry.value)}
-                            </p>
-                          ))}
-                        </div>
-                      );
-                    }
-                    return null;
-                  }}
-                />
-                <Bar dataKey="advance" name="Advance Disbursed" fill="#06b6d4" maxBarSize={36} radius={[4, 4, 0, 0]} isAnimationActive={false} />
-                <Bar dataKey="expenses" name="Verified Expenses" fill="#10b981" maxBarSize={36} radius={[4, 4, 0, 0]} isAnimationActive={false} />
-              </BarChart>
-            </ResponsiveContainer>
-          </div>
-        </div>
+            {/* Chart 2: Supervisor Disbursal & Claim Efficiency */}
+            <div style={{
+              backgroundColor: 'var(--surface-bg)',
+              borderRadius: '16px',
+              padding: '1.4rem 1.5rem',
+              border: '1px solid var(--border-color)',
+              boxShadow: '0 4px 20px rgba(0,0,0,0.03)',
+              width: '100%',
+              boxSizing: 'border-box'
+            }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1.2rem' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                  <Users size={20} color="#06b6d4" />
+                  <h3 style={{ fontSize: '1.02rem', fontWeight: '800', color: 'var(--text-primary)', margin: 0 }}>
+                    Site Supervisor Advance vs Claims
+                  </h3>
+                </div>
+                <span style={{ fontSize: '0.74rem', fontWeight: '700', color: '#06b6d4', backgroundColor: 'rgba(6, 182, 212, 0.1)', padding: '0.25rem 0.65rem', borderRadius: '10px' }}>
+                  Supervisor Ledger
+                </span>
+              </div>
+
+              <div style={{ height: '390px', width: '100%' }}>
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart data={supervisorData} maxBarSize={36} barGap={6} margin={{ top: 15, right: 10, left: -10, bottom: 25 }}>
+                    <CartesianGrid strokeDasharray="3 3" vertical={false} opacity={0.3} />
+                    <Legend verticalAlign="top" align="right" iconType="circle" wrapperStyle={{ fontSize: '11.5px', paddingBottom: '14px' }} />
+                    <XAxis
+                      dataKey="name"
+                      tick={renderStraightTick}
+                      height={65}
+                      stroke="var(--text-secondary)"
+                      tickLine={false}
+                    />
+                    <YAxis stroke="var(--text-secondary)" fontSize={11} tickFormatter={(v) => `₹${v / 1000}k`} tickLine={false} />
+                    <Tooltip
+                      content={({ active, payload, label }) => {
+                        if (active && payload && payload.length) {
+                          const validItems = payload.filter(p => p.value !== null && p.value !== undefined);
+                          if (validItems.length === 0) return null;
+                          return (
+                            <div style={{
+                              backgroundColor: 'var(--surface-bg)',
+                              border: '1.5px solid var(--border-color)',
+                              borderRadius: '12px',
+                              padding: '0.75rem 1rem',
+                              boxShadow: '0 4px 18px rgba(0,0,0,0.1)'
+                            }}>
+                              <p style={{ margin: '0 0 0.35rem 0', fontWeight: '800', fontSize: '0.88rem', color: 'var(--text-primary)' }}>
+                                {label}
+                              </p>
+                              {validItems.map((entry, idx) => (
+                                <p key={idx} style={{ margin: '0.2rem 0', fontSize: '0.82rem', color: entry.color, fontWeight: '700' }}>
+                                  {entry.name}: {formatINR(entry.value)}
+                                </p>
+                              ))}
+                            </div>
+                          );
+                        }
+                        return null;
+                      }}
+                    />
+                    <Bar dataKey="advance" name="Advance Disbursed" fill="#06b6d4" maxBarSize={36} radius={[4, 4, 0, 0]} isAnimationActive={false} />
+                    <Bar dataKey="expenses" name="Verified Expenses" fill="#10b981" maxBarSize={36} radius={[4, 4, 0, 0]} isAnimationActive={false} />
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
+            </div>
+          </>
+        )}
       </div>
 
       {/* Corporate Printable Footer with Signatures */}
-      <PrintFooter />
+      {hasFilterSelected && <PrintFooter />}
     </div>
   );
 };

@@ -2,6 +2,7 @@ import React, { createContext, useState, useContext, useEffect, useCallback } fr
 import axios from 'axios';
 import { useAuth } from './AuthContext';
 import { toast } from '../../../components/Toast';
+import { extractSubCategory } from '../../../utils/expenseCategories';
 
 const WalletContext = createContext(null);
 
@@ -41,20 +42,33 @@ export const WalletProvider = ({ children }) => {
   // Maps a real backend expense/advance record to the shape the existing UI
   // expects. The site label always comes from the record's own embedded
   // project relation, so it's correct row-by-row even in "All Projects" view.
-  const toUiExpense = (e) => ({
-    id: e.id,
-    displayId: `VOU-${e.voucherNumber ? e.voucherNumber : e.id.slice(0, 4).toUpperCase()}`,
-    category: e.category?.name || 'Expense',
-    site: e.project?.name || e.project?.site || '',
-    amount: Number(e.amount),
-    date: new Date(e.createdAt).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }),
-    time: new Date(e.createdAt).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' }),
-    status: ['ops_rejected', 'accounts_rejected', 'rejected'].includes(e.status) ? 'Rejected' : e.status === 'submitted' ? 'Pending' : 'Approved',
-    paidTo: e.vendorName || 'Local Vendor',
-    receiptName: e.receiptUrl ? e.receiptUrl.split('/').pop() : null,
-    receiptUrl: sanitizeUrl(e.receiptUrl),
-    receipt: !!e.receiptUrl,
-  });
+  const toUiExpense = (e) => {
+    const remarkMatch = (e.description || '').match(/\|\s*Remark:\s*(.*)$/i);
+    const parsedRemark = remarkMatch ? remarkMatch[1].trim() : '';
+    return {
+      id: e.id,
+      displayId: `VOU-${e.voucherNumber ? e.voucherNumber : e.id.slice(0, 4).toUpperCase()}`,
+      category: e.category?.name || 'Expense',
+      subCategory: e.subCategory || extractSubCategory(e.description),
+      remark: e.remark || parsedRemark || '',
+      description: e.description || '',
+      site: e.project?.name || e.project?.site || '',
+      amount: Number(e.amount),
+      date: new Date(e.createdAt).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }),
+      time: new Date(e.createdAt).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' }),
+      status: ['ops_rejected', 'accounts_rejected', 'rejected'].includes(e.status) ? 'Rejected' : e.status === 'submitted' ? 'Pending' : (e.status === 'accounts_paid' ? 'Paid' : 'Approved'),
+      rawStatus: e.status,
+      opsApprovedByName: e.opsApprovedBy?.name || '',
+      opsApprovedAt: e.opsApprovedAt ? new Date(e.opsApprovedAt).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }) : null,
+      paidByName: e.paidBy?.name || '',
+      paidAt: e.paidAt ? new Date(e.paidAt).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }) : null,
+      paymentRef: e.paymentRef || '',
+      paidTo: e.vendorName || 'Local Vendor',
+      receiptName: e.receiptUrl ? e.receiptUrl.split('/').pop() : null,
+      receiptUrl: sanitizeUrl(e.receiptUrl),
+      receipt: !!e.receiptUrl,
+    };
+  };
 
   const toUiAdvance = (a) => ({
     id: a.id,
@@ -164,6 +178,9 @@ export const WalletProvider = ({ children }) => {
       id: `EXP-LOCAL-${Date.now()}`,
       displayId: `VOU-LOCAL-${Date.now().toString().slice(-4)}`,
       category: expenseData.category || 'Materials',
+      subCategory: expenseData.subCategory || extractSubCategory(expenseData.description) || null,
+      remark: expenseData.remark || '',
+      description: expenseData.description || '',
       site: expenseData.site || '',
       amount: parseFloat(expenseData.amount) || 0,
       date: 'Today',
@@ -190,11 +207,23 @@ export const WalletProvider = ({ children }) => {
 
     const matchedCategory = categories.find((c) => c.name === expenseData.category);
 
+    const subCat = expenseData.subCategory || extractSubCategory(expenseData.description);
+    const subCatPrefix = subCat ? `[${subCat}] ` : '';
+    const userRemark = (expenseData.remark || '').trim();
+    const remarkSuffix = userRemark ? ` | Remark: ${userRemark}` : '';
+    const desc = `${subCatPrefix}${expenseData.category || 'Expense'} — ${expenseData.paidTo || 'Local Vendor'}${remarkSuffix}`;
+
     const form = new FormData();
     form.append('projectId', targetProjectId);
-    form.append('description', `${expenseData.category || 'Expense'} — ${expenseData.paidTo || 'Local Vendor'}`);
+    form.append('description', desc);
     form.append('vendorName', expenseData.paidTo || 'Local Vendor');
     form.append('amount', parseFloat(expenseData.amount) || 0);
+    if (subCat) {
+      form.append('subCategory', subCat);
+    }
+    if (userRemark) {
+      form.append('remark', userRemark);
+    }
     if (matchedCategory) {
       form.append('categoryId', matchedCategory.id);
     }
@@ -242,9 +271,17 @@ export const WalletProvider = ({ children }) => {
   const updateExpense = async (id, expenseData) => {
     if (!user) return;
     const matchedCategory = categories.find((c) => c.name === expenseData.category);
+    const subCat = expenseData.subCategory || extractSubCategory(expenseData.description);
+    const subCatPrefix = subCat ? `[${subCat}] ` : '';
+    const userRemark = (expenseData.remark || '').trim();
+    const remarkSuffix = userRemark ? ` | Remark: ${userRemark}` : '';
+    const desc = `${subCatPrefix}${expenseData.category || 'Expense'} — ${expenseData.paidTo || 'Local Vendor'}${remarkSuffix}`;
+
     const form = new FormData();
     if (expenseData.projectId) form.append('projectId', expenseData.projectId);
-    if (expenseData.category || expenseData.paidTo) form.append('description', `${expenseData.category || 'Expense'} — ${expenseData.paidTo || 'Local Vendor'}`);
+    if (expenseData.category || expenseData.paidTo || expenseData.subCategory || expenseData.remark) form.append('description', desc);
+    if (subCat) form.append('subCategory', subCat);
+    if (userRemark) form.append('remark', userRemark);
     if (expenseData.paidTo) form.append('vendorName', expenseData.paidTo);
     if (expenseData.amount) form.append('amount', parseFloat(expenseData.amount) || 0);
     if (matchedCategory) form.append('categoryId', matchedCategory.id);

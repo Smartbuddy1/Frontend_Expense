@@ -82,15 +82,20 @@ const mapProjectForAccounts = (p) => {
   };
 };
 
-const mapExpenseForAccounts = (e) => ({
-  id: e.id,
-  projectId: e.projectId,
-  projectName: e.project?.name || 'Unknown Project',
-  siteName: e.project?.site || '',
-  supervisor: e.submittedBy?.name || 'Unknown',
-  supervisorId: e.submittedById || e.submittedBy?.id || null,
-  category: e.category?.name || 'Uncategorized',
-  itemDescription: e.description,
+const mapExpenseForAccounts = (e) => {
+  const subMatch = (e.description || '').match(/^\[(.*?)\]/);
+  const subCat = e.subCategory || (subMatch ? subMatch[1].trim() : null);
+  return {
+    id: e.id,
+    projectId: e.projectId,
+    projectName: e.project?.name || 'Unknown Project',
+    siteName: e.project?.site || '',
+    supervisor: e.submittedBy?.name || 'Unknown',
+    supervisorId: e.submittedById || e.submittedBy?.id || null,
+    category: e.category?.name || 'Uncategorized',
+    subCategory: subCat,
+    itemDescription: e.description,
+    description: e.description,
   vendorName: e.vendorName || '',
   billNumber: '',
   billDate: e.createdAt,
@@ -103,7 +108,8 @@ const mapExpenseForAccounts = (e) => ({
   accountsRejected: e.status === 'rejected' || e.status === 'accounts_rejected',
   urgency: 'Regular', // Expenses don't have urgency in schema, default to Regular
   submittedAt: e.createdAt,
-});
+  };
+};
 
 const mapAdvanceForAccounts = (a) => ({
   id: a.id,

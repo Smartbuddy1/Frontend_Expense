@@ -11,6 +11,7 @@ import autoTable from 'jspdf-autotable';
 import toast from 'react-hot-toast';
 import { useLanguage } from '../../context/LanguageContext';
 import { addPdfHeaderWithLogo, addPdfFooterWithLogo, addPdfSignatures, escapeHtml } from '../../utils/pdfHeaderHelper';
+import { formatSubCategoryDisplay } from '../../../../utils/expenseCategories';
 import Pagination from '../../../../components/ui/Pagination';
 import './operations-dashboard.css';
 
@@ -106,6 +107,7 @@ const ExpensesTab = ({
       idStr.toLowerCase().includes(term) ||
       voucherStr.toLowerCase().includes(term) ||
       categoryStr.toLowerCase().includes(term) ||
+      (e.subCategory || '').toLowerCase().includes(term) ||
       categoryDisplayStr.toLowerCase().includes(term) ||
       amountStr.includes(term) ||
       amountFormattedStr.includes(term)
@@ -140,18 +142,21 @@ const ExpensesTab = ({
   // 1-Click Excel CSV Exporter
   const handleExportCSV = () => {
     const headers = ['Expense ID', 'Date', 'Project Name', 'Voucher No', 'Category', 'Supervisor', 'Vendor', 'Amount (INR)', 'Status', 'Description'];
-    const rows = filteredExpenses.map(e => [
-      `"${e.voucherNo || e.id || ''}"`,
-      `"${e.date || ''}"`,
-      `"${(e.projectName || '').replace(/"/g, '""')}"`,
-      `"${e.voucherNo || ''}"`,
-      `"${e.category || ''}"`,
-      `"${e.supervisorName || ''}"`,
-      `"${(e.vendorName || '').replace(/"/g, '""')}"`,
-      `"${e.amount || 0}"`,
-      `"${e.status || ''}"`,
-      `"${(e.description || '').replace(/"/g, '""')}"`
-    ]);
+    const rows = filteredExpenses.map(e => {
+      const subDisp = formatSubCategoryDisplay(e.category, e.subCategory);
+      return [
+        `"${e.voucherNo || e.id || ''}"`,
+        `"${e.date || ''}"`,
+        `"${(e.projectName || '').replace(/"/g, '""')}"`,
+        `"${e.voucherNo || ''}"`,
+        `"${subDisp ? `${e.category || ''} (${subDisp})` : (e.category || '')}"`,
+        `"${e.supervisorName || ''}"`,
+        `"${(e.vendorName || '').replace(/"/g, '""')}"`,
+        `"${e.amount || 0}"`,
+        `"${e.status || ''}"`,
+        `"${(e.description || '').replace(/"/g, '""')}"`
+      ];
+    });
 
     const csvContent = 'data:text/csv;charset=utf-8,' + [headers.join(','), ...rows.map(r => r.join(','))].join('\n');
     const encodedUri = encodeURI(csvContent);
@@ -999,9 +1004,25 @@ const ExpensesTab = ({
 
                     {/* CATEGORY */}
                     <td style={{ padding: '1.15rem 1.25rem', verticalAlign: 'middle' }}>
-                      <span style={{ color: 'var(--text-secondary, #475569)', fontWeight: '700', fontSize: '0.85rem', textTransform: 'uppercase' }}>
-                        {exp.category || 'Material'}
-                      </span>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
+                        <span style={{ color: 'var(--text-secondary, #475569)', fontWeight: '700', fontSize: '0.85rem', textTransform: 'uppercase' }}>
+                          {exp.category || 'Material'}
+                        </span>
+                        {formatSubCategoryDisplay(exp.category, exp.subCategory) && (
+                          <span style={{
+                            display: 'inline-block',
+                            fontSize: '0.72rem',
+                            fontWeight: '700',
+                            color: '#2563eb',
+                            backgroundColor: 'rgba(37, 99, 235, 0.1)',
+                            padding: '0.15rem 0.5rem',
+                            borderRadius: '6px',
+                            width: 'fit-content'
+                          }}>
+                            {formatSubCategoryDisplay(exp.category, exp.subCategory)}
+                          </span>
+                        )}
+                      </div>
                     </td>
 
                     {/* SUPERVISOR */}
@@ -1116,27 +1137,39 @@ const ExpensesTab = ({
                             </button>
                           </>
                         ) : isApproved || isPaid ? (
-                          <span
-                            title={isPaid ? 'Payment Confirmed by Accounts' : 'Approved by Operations — Pending Accounts Verification'}
-                            style={{
-                              display: 'inline-flex',
-                              alignItems: 'center',
-                              gap: '4px',
-                              padding: '4px 10px',
-                              borderRadius: '20px',
-                              border: isPaid ? '1px solid #7dd3fc' : '1px solid #a7f3d0',
-                              backgroundColor: isPaid ? '#e0f2fe' : '#dcfce7',
-                              color: isPaid ? '#0284c7' : '#059669',
-                              fontSize: '0.72rem',
-                              fontWeight: '700',
-                              whiteSpace: 'nowrap',
-                              cursor: 'default',
-                              letterSpacing: '0.01em'
-                            }}
-                          >
-                            <CheckCircle2 size={13} />
-                            {isPaid ? '✓ Paid' : '✓ Approved'}
-                          </span>
+                          <div style={{ display: 'inline-flex', flexDirection: 'column', alignItems: 'center', gap: '3px' }}>
+                            <span
+                              title={isPaid ? (exp.paidByName ? `Payment Confirmed by ${exp.paidByName}` : 'Payment Confirmed by Accounts') : 'Approved by Operations — Pending Accounts Verification'}
+                              style={{
+                                display: 'inline-flex',
+                                alignItems: 'center',
+                                gap: '4px',
+                                padding: '4px 10px',
+                                borderRadius: '20px',
+                                border: isPaid ? '1px solid #7dd3fc' : '1px solid #a7f3d0',
+                                backgroundColor: isPaid ? '#e0f2fe' : '#dcfce7',
+                                color: isPaid ? '#0284c7' : '#059669',
+                                fontSize: '0.72rem',
+                                fontWeight: '700',
+                                whiteSpace: 'nowrap',
+                                cursor: 'default',
+                                letterSpacing: '0.01em'
+                              }}
+                            >
+                              <CheckCircle2 size={13} />
+                              {isPaid ? '✓ Paid' : '✓ Approved'}
+                            </span>
+                            {isPaid && exp.paidByName && (
+                              <span style={{
+                                fontSize: '0.68rem',
+                                fontWeight: '700',
+                                color: '#0284c7',
+                                whiteSpace: 'nowrap'
+                              }}>
+                                Paid by: {exp.paidByName}
+                              </span>
+                            )}
+                          </div>
                         ) : isAccountsRejected ? (
                           <span
                             title="Rejected by Accounts"

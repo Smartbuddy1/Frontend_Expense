@@ -33,6 +33,23 @@ import { useLanguage } from '../context/LanguageContext';
 import { exportToPDF } from '../utils/exportUtils';
 import { toast } from '../../../components/Toast';
 import Pagination from '../../../components/ui/Pagination';
+import { 
+  LABOUR_SUBCATEGORIES, 
+  TRANSPORT_SUBCATEGORIES, 
+  LODGING_SUBCATEGORIES,
+  PURCHASE_SUBCATEGORIES,
+  MISCELLANEOUS_SUBCATEGORIES,
+  TRAVEL_SUBCATEGORIES,
+  isLabourCategory, 
+  isTransportCategory, 
+  isLodgingCategory,
+  isPurchaseCategory,
+  isMiscellaneousCategory,
+  isTravelCategory,
+  isDailyAllowanceCategory,
+  extractSubCategory,
+  formatSubCategoryDisplay
+} from '../../../utils/expenseCategories';
 
 const DailyExpenses = () => {
   const { project, projects, defaultTargetProject, categories, walletBalance, expensesList, recordExpense, todaySpend, deleteExpense, updateExpense } = useWallet();
@@ -60,12 +77,22 @@ const DailyExpenses = () => {
   }, [location.state, location.search, location.pathname, navigate]);
 
   const handleEditClick = (expense) => {
+    const existingSubCat = expense.subCategory || extractSubCategory(expense.description) || '';
+    const daMatch = existingSubCat.match(/^(.*?)\s*\((\d+(?:\.\d+)?)\s*Days?\)$/i);
+    const daysOnlyMatch = existingSubCat.match(/^(\d+(?:\.\d+)?)\s*Days?$/i);
+    const remarkPersonMatch = (expense.remark || expense.description || '').match(/(?:For|Person):\s*([^|]+)/i);
+
     setEditExpenseData({
       id: expense.id,
       category: expense.category,
+      subCategory: existingSubCat,
+      allowancePerson: daMatch ? daMatch[1].trim() : (remarkPersonMatch ? remarkPersonMatch[1].trim() : (isDailyAllowanceCategory(expense.category) ? (expense.paidTo === 'Local Vendor' ? '' : expense.paidTo) : '')),
+      allowanceDays: daMatch ? daMatch[2].trim() : (daysOnlyMatch ? daysOnlyMatch[1].trim() : ''),
+      customSubCategory: '',
       projectId: projects.find(p => (p.name === expense.site || p.site === expense.site))?.id || defaultTargetProject?.id,
       amount: expense.amount,
       paidTo: expense.paidTo === 'Local Vendor' ? '' : expense.paidTo,
+      remark: expense.remark || '',
       description: '',
       receiptName: expense.receiptName || '',
       previewUrl: sanitizeUrl(expense.receiptUrl),
@@ -93,13 +120,58 @@ const DailyExpenses = () => {
       toast.error("Please fill all required fields!");
       return;
     }
+    const hasSubCat = isLabourCategory(editExpenseData.category) ||
+      isTransportCategory(editExpenseData.category) ||
+      isLodgingCategory(editExpenseData.category) ||
+      isPurchaseCategory(editExpenseData.category) ||
+      isMiscellaneousCategory(editExpenseData.category) ||
+      isTravelCategory(editExpenseData.category) ||
+      isDailyAllowanceCategory(editExpenseData.category);
+
+    if (hasSubCat) {
+      if (isDailyAllowanceCategory(editExpenseData.category)) {
+        if (!editExpenseData.allowanceDays || isNaN(editExpenseData.allowanceDays) || parseFloat(editExpenseData.allowanceDays) <= 0) {
+          toast.error('Please enter number of days!');
+          return;
+        }
+      } else if (!editExpenseData.subCategory || !editExpenseData.subCategory.trim()) {
+        toast.error('Please select a sub-category / work type!');
+        return;
+      }
+    }
+
+    let finalSubCat = '';
+    if (isDailyAllowanceCategory(editExpenseData.category)) {
+      const days = parseFloat(editExpenseData.allowanceDays);
+      const daysLabel = days === 1 ? '1 Day' : `${editExpenseData.allowanceDays} Days`;
+      finalSubCat = daysLabel;
+    } else if (editExpenseData.subCategory === 'Other' && editExpenseData.customSubCategory) {
+      finalSubCat = editExpenseData.customSubCategory.trim();
+    } else if (editExpenseData.subCategory === 'Other-Remark' && editExpenseData.customSubCategory) {
+      finalSubCat = `Other-Remark - ${editExpenseData.customSubCategory.trim()}`;
+    } else {
+      finalSubCat = (editExpenseData.subCategory || '').trim();
+    }
+
+    let fullEditRemark = (editExpenseData.remark || '').trim();
+    if (isDailyAllowanceCategory(editExpenseData.category) && editExpenseData.allowancePerson && editExpenseData.allowancePerson.trim()) {
+      const personText = `For: ${editExpenseData.allowancePerson.trim()}`;
+      if (!fullEditRemark.toLowerCase().includes(personText.toLowerCase())) {
+        fullEditRemark = fullEditRemark ? `${personText} | ${fullEditRemark}` : personText;
+      }
+    }
+
     if (!editExpenseData.receiptName && !editExpenseData.previewUrl) {
       toast.error(language === 'mr' ? 'कृपया बिलाचा फोटो किंवा डॉक्युमेंट पुरावा जोडा (Bill Proof अनिवार्य आहे)!' : language === 'hi' ? 'कृपया बिल की फोटो या डॉक्युमेंट प्रमाण जोड़ें (Bill Proof अनिवार्य है)!' : 'Please attach a bill photo or document proof (Mandatory)!');
       return;
     }
     setSubmitting(true);
     try {
-      await updateExpense(editExpenseData.id, editExpenseData);
+      await updateExpense(editExpenseData.id, {
+        ...editExpenseData,
+        subCategory: finalSubCat,
+        remark: fullEditRemark
+      });
       setIsEditModalOpen(false);
       setEditExpenseData(null);
       toast.success(language === 'mr' ? 'खर्च यशस्वीरित्या अपडेट झाला!' : language === 'hi' ? 'खर्च सफलतापूर्वक अपडेट हुआ!' : 'Expense updated successfully!');
@@ -113,9 +185,14 @@ const DailyExpenses = () => {
   // Form State
   const [formData, setFormData] = useState({
     category: '',
+    subCategory: '',
+    customSubCategory: '',
+    allowancePerson: '',
+    allowanceDays: '',
     projectId: defaultTargetProject ? defaultTargetProject.id : '',
     amount: '',
     paidTo: '',
+    remark: '',
     description: '',
     receiptName: '',
     previewUrl: null,
@@ -168,6 +245,39 @@ const DailyExpenses = () => {
       toast.error(language === 'mr' ? 'कृपया खर्चाचा प्रकार निवडा!' : language === 'hi' ? 'कृपया खर्च का प्रकार चुनें!' : 'Please select an Expense Category!');
       return;
     }
+    const hasSubCat = isLabourCategory(formData.category) ||
+      isTransportCategory(formData.category) ||
+      isLodgingCategory(formData.category) ||
+      isPurchaseCategory(formData.category) ||
+      isMiscellaneousCategory(formData.category) ||
+      isTravelCategory(formData.category) ||
+      isDailyAllowanceCategory(formData.category);
+
+    if (hasSubCat) {
+      if (isDailyAllowanceCategory(formData.category)) {
+        if (!formData.allowanceDays || isNaN(formData.allowanceDays) || parseFloat(formData.allowanceDays) <= 0) {
+          toast.error('Please enter number of days!');
+          return;
+        }
+      } else if (!formData.subCategory || !formData.subCategory.trim()) {
+        toast.error('Please select a sub-category / work type!');
+        return;
+      }
+    }
+
+    let finalSubCategory = '';
+    if (isDailyAllowanceCategory(formData.category)) {
+      const days = parseFloat(formData.allowanceDays);
+      const daysLabel = days === 1 ? '1 Day' : `${formData.allowanceDays} Days`;
+      finalSubCategory = daysLabel;
+    } else if (formData.subCategory === 'Other' && formData.customSubCategory) {
+      finalSubCategory = formData.customSubCategory.trim();
+    } else if (formData.subCategory === 'Other-Remark' && formData.customSubCategory) {
+      finalSubCategory = `Other-Remark - ${formData.customSubCategory.trim()}`;
+    } else {
+      finalSubCategory = (formData.subCategory || '').trim();
+    }
+
     if (!formData.amount || isNaN(formData.amount) || parseFloat(formData.amount) <= 0) {
       toast.error(language === 'mr' ? 'कृपया योग्य रक्कम भरा!' : language === 'hi' ? 'कृपया सही राशि भरें!' : 'Please enter a valid amount!');
       return;
@@ -183,11 +293,19 @@ const DailyExpenses = () => {
 
     setSubmitting(true);
     try {
+      let fullRemark = (formData.remark || '').trim();
+      if (isDailyAllowanceCategory(formData.category) && formData.allowancePerson && formData.allowancePerson.trim()) {
+        const personText = `For: ${formData.allowancePerson.trim()}`;
+        fullRemark = fullRemark ? `${personText} | ${fullRemark}` : personText;
+      }
+
       await recordExpense({
         category: formData.category,
+        subCategory: finalSubCategory,
         projectId: formData.projectId,
         amount: parseFloat(formData.amount),
         paidTo: formData.paidTo.trim(),
+        remark: fullRemark,
         receiptName: formData.receiptName,
         receiptUrl: formData.previewUrl || null,
         file: formData.receiptFile
@@ -195,9 +313,14 @@ const DailyExpenses = () => {
 
       setFormData({
         category: '',
+        subCategory: '',
+        customSubCategory: '',
+        allowancePerson: '',
+        allowanceDays: '',
         projectId: defaultTargetProject ? defaultTargetProject.id : '',
         amount: '',
         paidTo: '',
+        remark: '',
         description: '',
         receiptName: '',
         previewUrl: null,
@@ -250,6 +373,7 @@ const DailyExpenses = () => {
     return (
       (exp.id || '').toLowerCase().includes(term) ||
       (exp.category || '').toLowerCase().includes(term) ||
+      (exp.subCategory || '').toLowerCase().includes(term) ||
       (exp.site || '').toLowerCase().includes(term) ||
       (exp.paidTo || '').toLowerCase().includes(term) ||
       (exp.date || '').toLowerCase().includes(term) ||
@@ -282,7 +406,7 @@ const DailyExpenses = () => {
     const headers = ['Voucher ID', 'Category', 'Site Location', 'Vendor / Details', 'Date', 'Amount (Rs)', 'Status'];
     const rows = filteredExpenses.map((exp) => [
       exp.displayId || exp.id?.slice(0, 8)?.toUpperCase() || '—',
-      exp.category,
+      exp.subCategory ? `${exp.category} (${exp.subCategory})` : exp.category,
       exp.site,
       exp.paidTo || 'Local Vendor',
       exp.date,
@@ -684,6 +808,21 @@ const DailyExpenses = () => {
                     </td>
                     <td data-label="CATEGORY" style={{ padding: '0.85rem 1rem', fontWeight: '700', color: 'var(--text-primary)', whiteSpace: 'nowrap' }}>
                       {exp.category}
+                      {formatSubCategoryDisplay(exp.category, exp.subCategory) && (
+                        <span style={{
+                          display: 'block',
+                          fontSize: '0.75rem',
+                          fontWeight: '600',
+                          color: '#4f46e5',
+                          marginTop: '2px',
+                          background: 'rgba(99, 102, 241, 0.08)',
+                          padding: '1px 6px',
+                          borderRadius: '4px',
+                          width: 'fit-content'
+                        }}>
+                          {formatSubCategoryDisplay(exp.category, exp.subCategory)}
+                        </span>
+                      )}
                     </td>
                     <td data-label="SITE" style={{ padding: '0.85rem 1rem', color: 'var(--text-secondary)', whiteSpace: 'nowrap' }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
@@ -693,6 +832,11 @@ const DailyExpenses = () => {
                     </td>
                     <td data-label="VENDOR" style={{ padding: '0.85rem 1rem', color: 'var(--text-primary)', fontWeight: '600' }}>
                       {exp.paidTo || 'Local Vendor'}
+                      {exp.remark && (
+                        <span style={{ display: 'block', fontSize: '0.75rem', fontWeight: 'normal', color: 'var(--text-secondary)', marginTop: '2px' }}>
+                          Remark: {exp.remark}
+                        </span>
+                      )}
                     </td>
                     <td data-label="DATE" style={{ padding: '0.85rem 1rem', color: 'var(--text-secondary)', fontSize: '0.85rem', whiteSpace: 'nowrap' }}>
                       {exp.date}
@@ -701,20 +845,42 @@ const DailyExpenses = () => {
                       ₹{exp.amount.toLocaleString()}
                     </td>
                     <td data-label="STATUS" style={{ padding: '0.85rem 1rem', whiteSpace: 'nowrap' }}>
-                      <span style={{
-                        display: 'inline-flex',
-                        alignItems: 'center',
-                        gap: '0.3rem',
-                        padding: '0.25rem 0.65rem',
-                        borderRadius: '1rem',
-                        fontSize: '0.75rem',
-                        fontWeight: '700',
-                        backgroundColor: exp.status === 'Approved' ? 'rgba(16, 185, 129, 0.15)' : exp.status === 'Rejected' ? 'rgba(239, 68, 68, 0.15)' : 'rgba(245, 158, 11, 0.15)',
-                        color: exp.status === 'Approved' ? '#10b981' : exp.status === 'Rejected' ? '#ef4444' : '#f59e0b'
-                      }}>
-                        {exp.status === 'Approved' ? <CheckCircle2 size={12} /> : exp.status === 'Rejected' ? <XCircle size={12} /> : <Clock size={12} />}
-                        {exp.status === 'Approved' ? t('approved') : exp.status === 'Rejected' ? (language === 'mr' ? 'नाकारले' : language === 'hi' ? 'अस्वीकृत' : 'Rejected') : t('pending')}
-                      </span>
+                      <div style={{ display: 'inline-flex', flexDirection: 'column', gap: '3px' }}>
+                        <span style={{
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          gap: '0.3rem',
+                          padding: '0.25rem 0.65rem',
+                          borderRadius: '1rem',
+                          fontSize: '0.75rem',
+                          fontWeight: '700',
+                          backgroundColor: (exp.status === 'Approved' || exp.status === 'Paid') ? 'rgba(16, 185, 129, 0.15)' : exp.status === 'Rejected' ? 'rgba(239, 68, 68, 0.15)' : 'rgba(245, 158, 11, 0.15)',
+                          color: (exp.status === 'Approved' || exp.status === 'Paid') ? '#10b981' : exp.status === 'Rejected' ? '#ef4444' : '#f59e0b',
+                          width: 'fit-content'
+                        }}>
+                          {(exp.status === 'Approved' || exp.status === 'Paid') ? <CheckCircle2 size={12} /> : exp.status === 'Rejected' ? <XCircle size={12} /> : <Clock size={12} />}
+                          {exp.status === 'Paid' ? (language === 'mr' ? 'पैसे मिळाले (Paid)' : 'Paid') : exp.status === 'Approved' ? t('approved') : exp.status === 'Rejected' ? (language === 'mr' ? 'नाकारले' : language === 'hi' ? 'अस्वीकृत' : 'Rejected') : t('pending')}
+                        </span>
+                        {exp.status === 'Paid' && exp.paidByName ? (
+                          <span style={{
+                            fontSize: '0.7rem',
+                            fontWeight: '700',
+                            color: '#0284c7',
+                            paddingLeft: '0.2rem'
+                          }}>
+                            Paid by: {exp.paidByName}
+                          </span>
+                        ) : (exp.status === 'Approved' && exp.opsApprovedByName) ? (
+                          <span style={{
+                            fontSize: '0.7rem',
+                            fontWeight: '700',
+                            color: '#059669',
+                            paddingLeft: '0.2rem'
+                          }}>
+                            Ops: {exp.opsApprovedByName}
+                          </span>
+                        ) : null}
+                      </div>
                     </td>
                     <td data-label="RECEIPT" style={{ padding: '0.85rem 1rem', textAlign: 'center', whiteSpace: 'nowrap' }}>
                       {exp.receipt ? (
@@ -895,7 +1061,7 @@ const DailyExpenses = () => {
                 <select
                   required
                   value={formData.category}
-                  onChange={(e) => setFormData({ ...formData, category: e.target.value })}
+                  onChange={(e) => setFormData({ ...formData, category: e.target.value, subCategory: '', customSubCategory: '' })}
                   style={{
                     width: '100%',
                     padding: '0.75rem',
@@ -920,6 +1086,334 @@ const DailyExpenses = () => {
                   )}
                 </select>
               </div>
+
+              {/* Sub-Category Dropdown for Labour */}
+              {isLabourCategory(formData.category) && (
+                <div>
+                  <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: '700', marginBottom: '0.35rem', color: 'var(--text-primary)' }}>
+                    Labour Work Type <span style={{ color: '#ef4444' }}>*</span>
+                  </label>
+                  <select
+                    required
+                    value={formData.subCategory}
+                    onChange={(e) => setFormData({ ...formData, subCategory: e.target.value })}
+                    style={{
+                      width: '100%',
+                      padding: '0.75rem',
+                      borderRadius: '0.65rem',
+                      border: '1.5px solid #6366f1',
+                      backgroundColor: 'var(--card-bg)',
+                      color: 'var(--text-primary)',
+                      fontSize: '0.9rem',
+                      outline: 'none'
+                    }}
+                  >
+                    <option value="" disabled>-- Select Work Type --</option>
+                    {LABOUR_SUBCATEGORIES.map((sub) => (
+                      <option key={sub} value={sub}>{sub}</option>
+                    ))}
+                  </select>
+                  {formData.subCategory === 'Other' && (
+                    <input
+                      type="text"
+                      placeholder="Specify Labour Work"
+                      required
+                      value={formData.customSubCategory}
+                      onChange={(e) => setFormData({ ...formData, customSubCategory: e.target.value })}
+                      style={{
+                        width: '100%',
+                        marginTop: '0.5rem',
+                        padding: '0.75rem',
+                        borderRadius: '0.65rem',
+                        border: '1.5px solid var(--border-color)',
+                        backgroundColor: 'var(--card-bg)',
+                        color: 'var(--text-primary)',
+                        fontSize: '0.9rem',
+                        outline: 'none',
+                        boxSizing: 'border-box'
+                      }}
+                    />
+                  )}
+                </div>
+              )}
+
+              {/* Sub-Category Dropdown for Transport */}
+              {isTransportCategory(formData.category) && (
+                <div>
+                  <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: '700', marginBottom: '0.35rem', color: 'var(--text-primary)' }}>
+                    Transport Type <span style={{ color: '#ef4444' }}>*</span>
+                  </label>
+                  <select
+                    required
+                    value={formData.subCategory}
+                    onChange={(e) => setFormData({ ...formData, subCategory: e.target.value })}
+                    style={{
+                      width: '100%',
+                      padding: '0.75rem',
+                      borderRadius: '0.65rem',
+                      border: '1.5px solid #6366f1',
+                      backgroundColor: 'var(--card-bg)',
+                      color: 'var(--text-primary)',
+                      fontSize: '0.9rem',
+                      outline: 'none'
+                    }}
+                  >
+                    <option value="" disabled>-- Select Transport Type --</option>
+                    {TRANSPORT_SUBCATEGORIES.map((sub) => (
+                      <option key={sub} value={sub}>{sub}</option>
+                    ))}
+                  </select>
+                  {formData.subCategory === 'Other' && (
+                    <input
+                      type="text"
+                      placeholder="Specify Transport Detail"
+                      required
+                      value={formData.customSubCategory}
+                      onChange={(e) => setFormData({ ...formData, customSubCategory: e.target.value })}
+                      style={{
+                        width: '100%',
+                        marginTop: '0.5rem',
+                        padding: '0.75rem',
+                        borderRadius: '0.65rem',
+                        border: '1.5px solid var(--border-color)',
+                        backgroundColor: 'var(--card-bg)',
+                        color: 'var(--text-primary)',
+                        fontSize: '0.9rem',
+                        outline: 'none',
+                        boxSizing: 'border-box'
+                      }}
+                    />
+                  )}
+                </div>
+              )}
+
+              {/* Sub-Category Dropdown for Lodging & Boarding */}
+              {isLodgingCategory(formData.category) && (
+                <div>
+                  <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: '700', marginBottom: '0.35rem', color: 'var(--text-primary)' }}>
+                    Lodging & Boarding Type <span style={{ color: '#ef4444' }}>*</span>
+                  </label>
+                  <select
+                    required
+                    value={formData.subCategory}
+                    onChange={(e) => setFormData({ ...formData, subCategory: e.target.value })}
+                    style={{
+                      width: '100%',
+                      padding: '0.75rem',
+                      borderRadius: '0.65rem',
+                      border: '1.5px solid #6366f1',
+                      backgroundColor: 'var(--card-bg)',
+                      color: 'var(--text-primary)',
+                      fontSize: '0.9rem',
+                      outline: 'none'
+                    }}
+                  >
+                    <option value="" disabled>-- Select Lodging Type --</option>
+                    {LODGING_SUBCATEGORIES.map((sub) => (
+                      <option key={sub} value={sub}>{sub}</option>
+                    ))}
+                  </select>
+                  {formData.subCategory === 'Other' && (
+                    <input
+                      type="text"
+                      placeholder="Specify Lodging Detail"
+                      required
+                      value={formData.customSubCategory}
+                      onChange={(e) => setFormData({ ...formData, customSubCategory: e.target.value })}
+                      style={{
+                        width: '100%',
+                        marginTop: '0.5rem',
+                        padding: '0.75rem',
+                        borderRadius: '0.65rem',
+                        border: '1.5px solid var(--border-color)',
+                        backgroundColor: 'var(--card-bg)',
+                        color: 'var(--text-primary)',
+                        fontSize: '0.9rem',
+                        outline: 'none',
+                        boxSizing: 'border-box'
+                      }}
+                    />
+                  )}
+                </div>
+              )}
+
+              {/* Sub-Category Dropdown for Purchase / Materials */}
+              {isPurchaseCategory(formData.category) && (
+                <div>
+                  <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: '700', marginBottom: '0.35rem', color: 'var(--text-primary)' }}>
+                    Material / Purchase Type <span style={{ color: '#ef4444' }}>*</span>
+                  </label>
+                  <select
+                    required
+                    value={formData.subCategory}
+                    onChange={(e) => setFormData({ ...formData, subCategory: e.target.value })}
+                    style={{
+                      width: '100%',
+                      padding: '0.75rem',
+                      borderRadius: '0.65rem',
+                      border: '1.5px solid #6366f1',
+                      backgroundColor: 'var(--card-bg)',
+                      color: 'var(--text-primary)',
+                      fontSize: '0.9rem',
+                      outline: 'none'
+                    }}
+                  >
+                    <option value="" disabled>-- Select Material Type --</option>
+                    {PURCHASE_SUBCATEGORIES.map((sub) => (
+                      <option key={sub} value={sub}>{sub}</option>
+                    ))}
+                  </select>
+                  {formData.subCategory === 'Other' && (
+                    <input
+                      type="text"
+                      placeholder="Specify Material / Purchase Item"
+                      required
+                      value={formData.customSubCategory}
+                      onChange={(e) => setFormData({ ...formData, customSubCategory: e.target.value })}
+                      style={{
+                        width: '100%',
+                        marginTop: '0.5rem',
+                        padding: '0.75rem',
+                        borderRadius: '0.65rem',
+                        border: '1.5px solid var(--border-color)',
+                        backgroundColor: 'var(--card-bg)',
+                        color: 'var(--text-primary)',
+                        fontSize: '0.9rem',
+                        outline: 'none',
+                        boxSizing: 'border-box'
+                      }}
+                    />
+                  )}
+                </div>
+              )}
+
+              {/* Sub-Category Dropdown for Miscellaneous & Emergency */}
+              {isMiscellaneousCategory(formData.category) && (
+                <div>
+                  <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: '700', marginBottom: '0.35rem', color: 'var(--text-primary)' }}>
+                    Miscellaneous Detail / Remark <span style={{ color: '#ef4444' }}>*</span>
+                  </label>
+                  <select
+                    required
+                    value={formData.subCategory}
+                    onChange={(e) => setFormData({ ...formData, subCategory: e.target.value })}
+                    style={{
+                      width: '100%',
+                      padding: '0.75rem',
+                      borderRadius: '0.65rem',
+                      border: '1.5px solid #6366f1',
+                      backgroundColor: 'var(--card-bg)',
+                      color: 'var(--text-primary)',
+                      fontSize: '0.9rem',
+                      outline: 'none'
+                    }}
+                  >
+                    <option value="" disabled>-- Select Option --</option>
+                    {MISCELLANEOUS_SUBCATEGORIES.map((sub) => (
+                      <option key={sub} value={sub}>{sub}</option>
+                    ))}
+                  </select>
+                  {formData.subCategory === 'Other-Remark' && (
+                    <input
+                      type="text"
+                      placeholder="Enter Remark / Note (e.g. Pickup Diesel, Courier, etc.)"
+                      value={formData.customSubCategory}
+                      onChange={(e) => setFormData({ ...formData, customSubCategory: e.target.value })}
+                      style={{
+                        width: '100%',
+                        marginTop: '0.5rem',
+                        padding: '0.75rem',
+                        borderRadius: '0.65rem',
+                        border: '1.5px solid var(--border-color)',
+                        backgroundColor: 'var(--card-bg)',
+                        color: 'var(--text-primary)',
+                        fontSize: '0.9rem',
+                        outline: 'none',
+                        boxSizing: 'border-box'
+                      }}
+                    />
+                  )}
+                </div>
+              )}
+
+              {/* Sub-Category Dropdown for Travel & Conveyance */}
+              {isTravelCategory(formData.category) && (
+                <div>
+                  <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: '700', marginBottom: '0.35rem', color: 'var(--text-primary)' }}>
+                    Travel & Conveyance Type <span style={{ color: '#ef4444' }}>*</span>
+                  </label>
+                  <select
+                    required
+                    value={formData.subCategory}
+                    onChange={(e) => setFormData({ ...formData, subCategory: e.target.value })}
+                    style={{
+                      width: '100%',
+                      padding: '0.75rem',
+                      borderRadius: '0.65rem',
+                      border: '1.5px solid #6366f1',
+                      backgroundColor: 'var(--card-bg)',
+                      color: 'var(--text-primary)',
+                      fontSize: '0.9rem',
+                      outline: 'none'
+                    }}
+                  >
+                    <option value="" disabled>-- Select Travel Type --</option>
+                    {TRAVEL_SUBCATEGORIES.map((sub) => (
+                      <option key={sub} value={sub}>{sub}</option>
+                    ))}
+                  </select>
+                  {formData.subCategory === 'Other' && (
+                    <input
+                      type="text"
+                      placeholder="Specify Travel Detail"
+                      required
+                      value={formData.customSubCategory}
+                      onChange={(e) => setFormData({ ...formData, customSubCategory: e.target.value })}
+                      style={{
+                        width: '100%',
+                        marginTop: '0.5rem',
+                        padding: '0.75rem',
+                        borderRadius: '0.65rem',
+                        border: '1.5px solid var(--border-color)',
+                        backgroundColor: 'var(--card-bg)',
+                        color: 'var(--text-primary)',
+                        fontSize: '0.9rem',
+                        outline: 'none',
+                        boxSizing: 'border-box'
+                      }}
+                    />
+                  )}
+                </div>
+              )}
+
+              {/* Manual Input for Daily Allowance & Food: Number of Days */}
+              {isDailyAllowanceCategory(formData.category) && (
+                <div>
+                  <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: '700', marginBottom: '0.35rem', color: 'var(--text-primary)' }}>
+                    No. of Days <span style={{ color: '#ef4444' }}>*</span>
+                  </label>
+                  <input
+                    type="number"
+                    required
+                    min="0.5"
+                    step="0.5"
+                    placeholder="e.g. 4"
+                    value={formData.allowanceDays || ''}
+                    onChange={(e) => setFormData({ ...formData, allowanceDays: e.target.value })}
+                    style={{
+                      width: '100%',
+                      padding: '0.75rem',
+                      borderRadius: '0.65rem',
+                      border: '1.5px solid #6366f1',
+                      backgroundColor: 'var(--card-bg)',
+                      color: 'var(--text-primary)',
+                      fontSize: '0.9rem',
+                      outline: 'none',
+                      boxSizing: 'border-box'
+                    }}
+                  />
+                </div>
+              )}
 
               {/* Amount */}
               <div>
@@ -960,6 +1454,30 @@ const DailyExpenses = () => {
                   placeholder="e.g. Shree Sai Hardware / Auto Fare"
                   value={formData.paidTo}
                   onChange={(e) => setFormData({ ...formData, paidTo: e.target.value })}
+                  style={{
+                    width: '100%',
+                    padding: '0.75rem',
+                    borderRadius: '0.65rem',
+                    border: '1.5px solid var(--border-color)',
+                    backgroundColor: 'var(--card-bg)',
+                    color: 'var(--text-primary)',
+                    fontSize: '0.9rem',
+                    outline: 'none',
+                    boxSizing: 'border-box'
+                  }}
+                />
+              </div>
+
+              {/* Remark (Optional) */}
+              <div>
+                <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: '700', marginBottom: '0.35rem', color: 'var(--text-primary)' }}>
+                  Remark (Optional)
+                </label>
+                <input
+                  type="text"
+                  placeholder="e.g. Work details, purpose, or reason"
+                  value={formData.remark || ''}
+                  onChange={(e) => setFormData({ ...formData, remark: e.target.value })}
                   style={{
                     width: '100%',
                     padding: '0.75rem',
@@ -1199,6 +1717,8 @@ const DailyExpenses = () => {
               </p>
               <p style={{ color: 'var(--text-secondary)', fontSize: '0.8rem', marginTop: '0.25rem' }}>
                 Paid to: {viewReceiptModal.paidTo || 'Local Vendor'} • Amount: ₹{viewReceiptModal.amount.toLocaleString()}
+                {viewReceiptModal.opsApprovedByName && ` • Ops Approved by: ${viewReceiptModal.opsApprovedByName}`}
+                {viewReceiptModal.paidByName && ` • Paid by Accounts: ${viewReceiptModal.paidByName}`}
               </p>
             </div>
 
@@ -1277,7 +1797,7 @@ const DailyExpenses = () => {
                   <label style={{ fontSize: '0.85rem', fontWeight: '600', color: 'var(--text-secondary)' }}>{t('expenseCategory')}</label>
                   <select
                     value={editExpenseData.category}
-                    onChange={(e) => setEditExpenseData({ ...editExpenseData, category: e.target.value })}
+                    onChange={(e) => setEditExpenseData({ ...editExpenseData, category: e.target.value, subCategory: '', customSubCategory: '' })}
                     required
                     style={{ padding: '0.75rem', borderRadius: '0.65rem', border: '1px solid var(--border-color)', backgroundColor: 'var(--bg-color)', color: 'var(--text-primary)', fontSize: '0.9rem', outline: 'none' }}
                   >
@@ -1289,6 +1809,204 @@ const DailyExpenses = () => {
                 </div>
               </div>
 
+              {/* Sub-Category Dropdown for Labour (Edit) */}
+              {isLabourCategory(editExpenseData.category) && (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                  <label style={{ fontSize: '0.85rem', fontWeight: '600', color: 'var(--text-secondary)' }}>
+                    Labour Work Type <span style={{ color: '#ef4444' }}>*</span>
+                  </label>
+                  <select
+                    required
+                    value={editExpenseData.subCategory || ''}
+                    onChange={(e) => setEditExpenseData({ ...editExpenseData, subCategory: e.target.value })}
+                    style={{ padding: '0.75rem', borderRadius: '0.65rem', border: '1px solid #6366f1', backgroundColor: 'var(--bg-color)', color: 'var(--text-primary)', fontSize: '0.9rem', outline: 'none' }}
+                  >
+                    <option value="" disabled>-- Select Work Type --</option>
+                    {LABOUR_SUBCATEGORIES.map((sub) => (
+                      <option key={sub} value={sub}>{sub}</option>
+                    ))}
+                  </select>
+                  {editExpenseData.subCategory === 'Other' && (
+                    <input
+                      type="text"
+                      placeholder="Specify Labour Work"
+                      required
+                      value={editExpenseData.customSubCategory || ''}
+                      onChange={(e) => setEditExpenseData({ ...editExpenseData, customSubCategory: e.target.value })}
+                      style={{ padding: '0.75rem', borderRadius: '0.65rem', border: '1px solid var(--border-color)', backgroundColor: 'var(--bg-color)', color: 'var(--text-primary)', fontSize: '0.9rem', outline: 'none' }}
+                    />
+                  )}
+                </div>
+              )}
+
+              {/* Sub-Category Dropdown for Transport (Edit) */}
+              {isTransportCategory(editExpenseData.category) && (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                  <label style={{ fontSize: '0.85rem', fontWeight: '600', color: 'var(--text-secondary)' }}>
+                    Transport Type <span style={{ color: '#ef4444' }}>*</span>
+                  </label>
+                  <select
+                    required
+                    value={editExpenseData.subCategory || ''}
+                    onChange={(e) => setEditExpenseData({ ...editExpenseData, subCategory: e.target.value })}
+                    style={{ padding: '0.75rem', borderRadius: '0.65rem', border: '1px solid #6366f1', backgroundColor: 'var(--bg-color)', color: 'var(--text-primary)', fontSize: '0.9rem', outline: 'none' }}
+                  >
+                    <option value="" disabled>-- Select Transport Type --</option>
+                    {TRANSPORT_SUBCATEGORIES.map((sub) => (
+                      <option key={sub} value={sub}>{sub}</option>
+                    ))}
+                  </select>
+                  {editExpenseData.subCategory === 'Other' && (
+                    <input
+                      type="text"
+                      placeholder="Specify Transport Detail"
+                      required
+                      value={editExpenseData.customSubCategory || ''}
+                      onChange={(e) => setEditExpenseData({ ...editExpenseData, customSubCategory: e.target.value })}
+                      style={{ padding: '0.75rem', borderRadius: '0.65rem', border: '1px solid var(--border-color)', backgroundColor: 'var(--bg-color)', color: 'var(--text-primary)', fontSize: '0.9rem', outline: 'none' }}
+                    />
+                  )}
+                </div>
+              )}
+
+              {/* Sub-Category Dropdown for Lodging & Boarding (Edit) */}
+              {isLodgingCategory(editExpenseData.category) && (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                  <label style={{ fontSize: '0.85rem', fontWeight: '600', color: 'var(--text-secondary)' }}>
+                    Lodging & Boarding Type <span style={{ color: '#ef4444' }}>*</span>
+                  </label>
+                  <select
+                    required
+                    value={editExpenseData.subCategory || ''}
+                    onChange={(e) => setEditExpenseData({ ...editExpenseData, subCategory: e.target.value })}
+                    style={{ padding: '0.75rem', borderRadius: '0.65rem', border: '1px solid #6366f1', backgroundColor: 'var(--bg-color)', color: 'var(--text-primary)', fontSize: '0.9rem', outline: 'none' }}
+                  >
+                    <option value="" disabled>-- Select Lodging Type --</option>
+                    {LODGING_SUBCATEGORIES.map((sub) => (
+                      <option key={sub} value={sub}>{sub}</option>
+                    ))}
+                  </select>
+                  {editExpenseData.subCategory === 'Other' && (
+                    <input
+                      type="text"
+                      placeholder="Specify Lodging Detail"
+                      required
+                      value={editExpenseData.customSubCategory || ''}
+                      onChange={(e) => setEditExpenseData({ ...editExpenseData, customSubCategory: e.target.value })}
+                      style={{ padding: '0.75rem', borderRadius: '0.65rem', border: '1px solid var(--border-color)', backgroundColor: 'var(--bg-color)', color: 'var(--text-primary)', fontSize: '0.9rem', outline: 'none' }}
+                    />
+                  )}
+                </div>
+              )}
+
+              {/* Sub-Category Dropdown for Purchase / Materials (Edit) */}
+              {isPurchaseCategory(editExpenseData.category) && (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                  <label style={{ fontSize: '0.85rem', fontWeight: '600', color: 'var(--text-secondary)' }}>
+                    Material / Purchase Type <span style={{ color: '#ef4444' }}>*</span>
+                  </label>
+                  <select
+                    required
+                    value={editExpenseData.subCategory || ''}
+                    onChange={(e) => setEditExpenseData({ ...editExpenseData, subCategory: e.target.value })}
+                    style={{ padding: '0.75rem', borderRadius: '0.65rem', border: '1px solid #6366f1', backgroundColor: 'var(--bg-color)', color: 'var(--text-primary)', fontSize: '0.9rem', outline: 'none' }}
+                  >
+                    <option value="" disabled>-- Select Material Type --</option>
+                    {PURCHASE_SUBCATEGORIES.map((sub) => (
+                      <option key={sub} value={sub}>{sub}</option>
+                    ))}
+                  </select>
+                  {editExpenseData.subCategory === 'Other' && (
+                    <input
+                      type="text"
+                      placeholder="Specify Material / Purchase Item"
+                      required
+                      value={editExpenseData.customSubCategory || ''}
+                      onChange={(e) => setEditExpenseData({ ...editExpenseData, customSubCategory: e.target.value })}
+                      style={{ padding: '0.75rem', borderRadius: '0.65rem', border: '1px solid var(--border-color)', backgroundColor: 'var(--bg-color)', color: 'var(--text-primary)', fontSize: '0.9rem', outline: 'none' }}
+                    />
+                  )}
+                </div>
+              )}
+
+              {/* Sub-Category Dropdown for Miscellaneous & Emergency (Edit) */}
+              {isMiscellaneousCategory(editExpenseData.category) && (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                  <label style={{ fontSize: '0.85rem', fontWeight: '600', color: 'var(--text-secondary)' }}>
+                    Miscellaneous Detail / Remark <span style={{ color: '#ef4444' }}>*</span>
+                  </label>
+                  <select
+                    required
+                    value={editExpenseData.subCategory || ''}
+                    onChange={(e) => setEditExpenseData({ ...editExpenseData, subCategory: e.target.value })}
+                    style={{ padding: '0.75rem', borderRadius: '0.65rem', border: '1px solid #6366f1', backgroundColor: 'var(--bg-color)', color: 'var(--text-primary)', fontSize: '0.9rem', outline: 'none' }}
+                  >
+                    <option value="" disabled>-- Select Option --</option>
+                    {MISCELLANEOUS_SUBCATEGORIES.map((sub) => (
+                      <option key={sub} value={sub}>{sub}</option>
+                    ))}
+                  </select>
+                  {editExpenseData.subCategory === 'Other-Remark' && (
+                    <input
+                      type="text"
+                      placeholder="Enter Remark / Note"
+                      value={editExpenseData.customSubCategory || ''}
+                      onChange={(e) => setEditExpenseData({ ...editExpenseData, customSubCategory: e.target.value })}
+                      style={{ padding: '0.75rem', borderRadius: '0.65rem', border: '1px solid var(--border-color)', backgroundColor: 'var(--bg-color)', color: 'var(--text-primary)', fontSize: '0.9rem', outline: 'none' }}
+                    />
+                  )}
+                </div>
+              )}
+
+              {/* Sub-Category Dropdown for Travel & Conveyance (Edit) */}
+              {isTravelCategory(editExpenseData.category) && (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                  <label style={{ fontSize: '0.85rem', fontWeight: '600', color: 'var(--text-secondary)' }}>
+                    Travel & Conveyance Type <span style={{ color: '#ef4444' }}>*</span>
+                  </label>
+                  <select
+                    required
+                    value={editExpenseData.subCategory || ''}
+                    onChange={(e) => setEditExpenseData({ ...editExpenseData, subCategory: e.target.value })}
+                    style={{ padding: '0.75rem', borderRadius: '0.65rem', border: '1px solid #6366f1', backgroundColor: 'var(--bg-color)', color: 'var(--text-primary)', fontSize: '0.9rem', outline: 'none' }}
+                  >
+                    <option value="" disabled>-- Select Travel Type --</option>
+                    {TRAVEL_SUBCATEGORIES.map((sub) => (
+                      <option key={sub} value={sub}>{sub}</option>
+                    ))}
+                  </select>
+                  {editExpenseData.subCategory === 'Other' && (
+                    <input
+                      type="text"
+                      placeholder="Specify Travel Detail"
+                      required
+                      value={editExpenseData.customSubCategory || ''}
+                      onChange={(e) => setEditExpenseData({ ...editExpenseData, customSubCategory: e.target.value })}
+                      style={{ padding: '0.75rem', borderRadius: '0.65rem', border: '1px solid var(--border-color)', backgroundColor: 'var(--bg-color)', color: 'var(--text-primary)', fontSize: '0.9rem', outline: 'none' }}
+                    />
+                  )}
+                </div>
+              )}
+
+              {/* Manual Input for Daily Allowance & Food: Number of Days (Edit) */}
+              {isDailyAllowanceCategory(editExpenseData.category) && (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                  <label style={{ fontSize: '0.85rem', fontWeight: '600', color: 'var(--text-secondary)' }}>
+                    No. of Days <span style={{ color: '#ef4444' }}>*</span>
+                  </label>
+                  <input
+                    type="number"
+                    required
+                    min="0.5"
+                    step="0.5"
+                    placeholder="e.g. 4"
+                    value={editExpenseData.allowanceDays || ''}
+                    onChange={(e) => setEditExpenseData({ ...editExpenseData, allowanceDays: e.target.value })}
+                    style={{ padding: '0.75rem', borderRadius: '0.65rem', border: '1px solid #6366f1', backgroundColor: 'var(--bg-color)', color: 'var(--text-primary)', fontSize: '0.9rem', outline: 'none' }}
+                  />
+                </div>
+              )}
+
               <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
                 <label style={{ fontSize: '0.85rem', fontWeight: '600', color: 'var(--text-secondary)' }}>Paid To (Vendor Name)</label>
                 <input
@@ -1297,6 +2015,18 @@ const DailyExpenses = () => {
                   value={editExpenseData.paidTo}
                   onChange={(e) => setEditExpenseData({ ...editExpenseData, paidTo: e.target.value })}
                   required
+                  style={{ padding: '0.75rem', borderRadius: '0.65rem', border: '1px solid var(--border-color)', backgroundColor: 'var(--bg-color)', color: 'var(--text-primary)', fontSize: '0.9rem', outline: 'none' }}
+                />
+              </div>
+
+              {/* Remark (Optional) */}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                <label style={{ fontSize: '0.85rem', fontWeight: '600', color: 'var(--text-secondary)' }}>Remark (Optional)</label>
+                <input
+                  type="text"
+                  placeholder="e.g. Work details, purpose, or reason"
+                  value={editExpenseData.remark || ''}
+                  onChange={(e) => setEditExpenseData({ ...editExpenseData, remark: e.target.value })}
                   style={{ padding: '0.75rem', borderRadius: '0.65rem', border: '1px solid var(--border-color)', backgroundColor: 'var(--bg-color)', color: 'var(--text-primary)', fontSize: '0.9rem', outline: 'none' }}
                 />
               </div>

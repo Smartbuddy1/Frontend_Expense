@@ -12,6 +12,8 @@ import {
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import { addPdfHeaderWithLogo, addPdfFooterWithLogo, addPdfSignatures } from '../../../Operations/utils/pdfHeaderHelper';
+import { formatSubCategoryDisplay } from '../../../../utils/expenseCategories';
+import toast from 'react-hot-toast';
 import PrintFooter from '../PrintFooter';
 import Pagination from '../../../../components/ui/Pagination';
 
@@ -22,8 +24,8 @@ const FinancialReportsTab = ({
 }) => {
   const [reportMode, setReportMode] = useState('ADVANCED_PAYOUT'); // 'EXPENSE_VERIFICATION' or 'ADVANCED_PAYOUT'
   const [filterType, setFilterType] = useState('FY'); // 'FY' or 'DATE_RANGE'
-  const [selectedProject, setSelectedProject] = useState('ALL');
-  const [selectedSupervisor, setSelectedSupervisor] = useState('ALL');
+  const [selectedProject, setSelectedProject] = useState('');
+  const [selectedSupervisor, setSelectedSupervisor] = useState('');
   const [financialYear, setFinancialYear] = useState('CURRENT_FY');
   const [searchQuery, setSearchQuery] = useState('');
   const [startDate, setStartDate] = useState('');
@@ -85,34 +87,36 @@ const FinancialReportsTab = ({
     return Array.from(sups).sort();
   };
 
-  const availableSupervisors = selectedProject === 'ALL'
+  const availableSupervisors = (!selectedProject || selectedProject === 'ALL')
     ? extractUniqueSupervisors(projects)
     : extractUniqueSupervisors(projects.filter(p => p.id === selectedProject));
 
   const handleProjectChange = (projId) => {
     setSelectedProject(projId);
-    if (projId !== 'ALL') {
+    if (projId && projId !== 'ALL') {
       const proj = projects.find(p => p.id === projId);
       const projSupervisors = proj ? getProjectSupervisors(proj) : [];
-      if (!projSupervisors.includes(selectedSupervisor)) {
-        setSelectedSupervisor('ALL');
+      if (selectedSupervisor && selectedSupervisor !== 'ALL' && !projSupervisors.includes(selectedSupervisor)) {
+        setSelectedSupervisor('');
       }
     }
   };
 
-  const filteredPayments = payments.filter(p => {
+  const hasFilterSelected = Boolean(selectedProject || selectedSupervisor);
+
+  const filteredPayments = !hasFilterSelected ? [] : payments.filter(p => {
     // Only include advance disbursals (exclude expense reimbursements)
     if (p.type !== 'Site Advance Disbursal') return false;
 
     const q = searchQuery.toLowerCase();
     
     // Project Match
-    const matchesProj = selectedProject === 'ALL' || p.projectId === selectedProject;
+    const matchesProj = !selectedProject || selectedProject === 'ALL' || p.projectId === selectedProject;
     
     // Supervisor Match (Look up the actual supervisor from the project)
     const projectForPayment = projects.find(proj => proj.id === p.projectId);
     const projSupervisors = projectForPayment ? getProjectSupervisors(projectForPayment) : [];
-    const matchesSup = selectedSupervisor === 'ALL' || projSupervisors.includes(selectedSupervisor) || p.paidTo === selectedSupervisor;
+    const matchesSup = !selectedSupervisor || selectedSupervisor === 'ALL' || projSupervisors.includes(selectedSupervisor) || p.paidTo === selectedSupervisor;
 
     // Search Query Match
     const matchesSearch = 
@@ -133,15 +137,15 @@ const FinancialReportsTab = ({
     return matchesProj && matchesSup && matchesSearch && matchesDate;
   });
 
-  const filteredExpenses = expenses.filter(e => {
+  const filteredExpenses = !hasFilterSelected ? [] : expenses.filter(e => {
     if (e.opsVerificationStatus !== 'Verified') return false;
     const q = searchQuery.toLowerCase();
     
     // Project Match
-    const matchesProj = selectedProject === 'ALL' || e.projectId === selectedProject;
+    const matchesProj = !selectedProject || selectedProject === 'ALL' || e.projectId === selectedProject;
     
     // Supervisor Match
-    const matchesSup = selectedSupervisor === 'ALL' || e.supervisor === selectedSupervisor;
+    const matchesSup = !selectedSupervisor || selectedSupervisor === 'ALL' || e.supervisor === selectedSupervisor;
 
     // Search Query Match
     const matchesSearch = 
@@ -151,6 +155,7 @@ const FinancialReportsTab = ({
       (e.id && e.id.toLowerCase().includes(q)) ||
       (e.projectName && e.projectName.toLowerCase().includes(q)) ||
       (e.category && e.category.toLowerCase().includes(q)) ||
+      (e.subCategory && e.subCategory.toLowerCase().includes(q)) ||
       (e.amount && e.amount.toString().includes(q));
 
     // Date Match (use billDate for expense)
@@ -192,10 +197,23 @@ const FinancialReportsTab = ({
   };
 
   const handlePrint = () => {
+    if (!hasFilterSelected) {
+      toast.error('Please select a Project or Site Supervisor first!');
+      return;
+    }
     window.print();
   };
 
   const handleExportPDF = async () => {
+    if (!hasFilterSelected) {
+      toast.error('Please select a Project or Site Supervisor first!');
+      return;
+    }
+    const currentList = reportMode === 'EXPENSE_VERIFICATION' ? filteredExpenses : filteredPayments;
+    if (currentList.length === 0) {
+      toast.error('No records available to export.');
+      return;
+    }
     const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
 
     if (reportMode === 'EXPENSE_VERIFICATION') {
@@ -209,11 +227,12 @@ const FinancialReportsTab = ({
       const data = filteredExpenses.map(e => {
         const isApproved = e.status === 'Accounts Verified & Paid';
         const isRejected = e.status === 'Rejected' || e.accountsRejected;
+        const subDisp = formatSubCategoryDisplay(e.category, e.subCategory);
         return [
           e.id?.slice(0, 8)?.toUpperCase(),
           e.siteName ? `${e.projectName || '—'} - ${e.siteName}` : (e.projectName || '—'),
           e.supervisor || '—',
-          e.category || '—',
+          subDisp ? `${e.category || '—'} (${subDisp})` : (e.category || '—'),
           e.vendorName || '—',
           e.amount,
           e.opsVerificationStatus || 'Pending',
@@ -285,17 +304,27 @@ const FinancialReportsTab = ({
   };
 
   const handleExportCSV = () => {
+    if (!hasFilterSelected) {
+      toast.error('Please select a Project or Site Supervisor first!');
+      return;
+    }
+    const currentList = reportMode === 'EXPENSE_VERIFICATION' ? filteredExpenses : filteredPayments;
+    if (currentList.length === 0) {
+      toast.error('No records available to export.');
+      return;
+    }
     let rows = [];
     if (reportMode === 'EXPENSE_VERIFICATION') {
       rows.push(['ID', 'Project & Site', 'Supervisor', 'Category', 'Vendor', 'Amount', 'Ops Verification', 'Accounts Status']);
       filteredExpenses.forEach(e => {
         const isApproved = e.status === 'Accounts Verified & Paid';
         const isRejected = e.status === 'Rejected' || e.accountsRejected;
+        const subDisp = formatSubCategoryDisplay(e.category, e.subCategory);
         rows.push([
           e.id?.slice(0, 8)?.toUpperCase(), 
           `${e.projectName || '—'} - ${e.siteName || ''}`.replace(/,/g, ';'), 
           (e.supervisor || '—').replace(/,/g, ';'), 
-          (e.category || '—').replace(/,/g, ';'), 
+          (subDisp ? `${e.category || '—'} (${subDisp})` : (e.category || '—')).replace(/,/g, ';'), 
           (e.vendorName || '—').replace(/,/g, ';'), 
           e.amount,
           e.opsVerificationStatus || 'Pending',
@@ -442,7 +471,8 @@ const FinancialReportsTab = ({
                 textOverflow: 'ellipsis'
               }}
             >
-              <option value="ALL">-- Select Project --</option>
+              <option value="">-- Select Project --</option>
+              <option value="ALL">All Projects</option>
               {projects.map(p => (
                 <option key={p.id} value={p.id}>{p.name} ({p.site})</option>
               ))}
@@ -472,7 +502,8 @@ const FinancialReportsTab = ({
                 textOverflow: 'ellipsis'
               }}
             >
-              <option value="ALL">{selectedProject === 'ALL' ? '-- All Site Supervisors --' : '-- All Project Supervisors --'}</option>
+              <option value="">-- Select Site Supervisor --</option>
+              <option value="ALL">{selectedProject && selectedProject !== 'ALL' ? 'All Project Supervisors' : 'All Site Supervisors'}</option>
               {availableSupervisors.map(sup => (
                 <option key={sup} value={sup}>{sup}</option>
               ))}
@@ -615,7 +646,13 @@ const FinancialReportsTab = ({
           {/* Apply Filter Button (Visual match for Enterprise theme) */}
           <div style={{ minWidth: 0 }}>
             <button 
-              onClick={() => {}} 
+              onClick={() => {
+                if (!hasFilterSelected) {
+                  toast.error('Please select a Project or Site Supervisor first!');
+                } else {
+                  toast.success('Filter applied successfully');
+                }
+              }} 
               style={{
                 width: '100%',
                 padding: '0.65rem 0',
@@ -733,7 +770,12 @@ const FinancialReportsTab = ({
                           {e.supervisor || '—'}
                         </td>
                         <td style={{ padding: '0.9rem 1.25rem', color: 'var(--text-secondary)' }}>
-                          {e.category || '—'}
+                          <div style={{ fontWeight: '600', color: 'var(--text-primary)' }}>{e.category || '—'}</div>
+                          {formatSubCategoryDisplay(e.category, e.subCategory) && (
+                            <div style={{ fontSize: '0.74rem', color: '#2563eb', fontWeight: '700', marginTop: '0.1rem' }}>
+                              {formatSubCategoryDisplay(e.category, e.subCategory)}
+                            </div>
+                          )}
                         </td>
                         <td style={{ padding: '0.9rem 1.25rem', color: 'var(--text-secondary)' }}>
                           {e.vendorName || '—'}
@@ -791,7 +833,32 @@ const FinancialReportsTab = ({
                       </tr>
                     ))
                 ) : (
-                  <tr><td colSpan="7" style={{ padding: '2.5rem', textAlign: 'center', color: 'var(--text-secondary)' }}>No verified expense records found.</td></tr>
+                  <tr>
+                    <td colSpan="9" style={{ padding: '3.5rem 1rem', textAlign: 'center' }}>
+                      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '0.6rem' }}>
+                        <div style={{
+                          width: '46px',
+                          height: '46px',
+                          borderRadius: '12px',
+                          backgroundColor: 'rgba(99, 102, 241, 0.1)',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          color: '#6366f1'
+                        }}>
+                          <FileText size={22} />
+                        </div>
+                        <div style={{ fontWeight: '700', fontSize: '0.95rem', color: 'var(--text-primary)' }}>
+                          {!hasFilterSelected ? 'Please select a Project or Site Supervisor' : 'No verified expense records found.'}
+                        </div>
+                        {!hasFilterSelected && (
+                          <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', maxWidth: '380px' }}>
+                            Select a project or supervisor from the filter dropdown above to view and generate the financial report.
+                          </div>
+                        )}
+                      </div>
+                    </td>
+                  </tr>
                 )}
               </tbody>
             </table>
@@ -869,7 +936,32 @@ const FinancialReportsTab = ({
                     </tr>
                   ))
                 ) : (
-                  <tr><td colSpan="5" style={{ padding: '2.5rem', textAlign: 'center', color: 'var(--text-secondary)' }}>No live payment records found.</td></tr>
+                  <tr>
+                    <td colSpan="5" style={{ padding: '3.5rem 1rem', textAlign: 'center' }}>
+                      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '0.6rem' }}>
+                        <div style={{
+                          width: '46px',
+                          height: '46px',
+                          borderRadius: '12px',
+                          backgroundColor: 'rgba(99, 102, 241, 0.1)',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          color: '#6366f1'
+                        }}>
+                          <CreditCard size={22} />
+                        </div>
+                        <div style={{ fontWeight: '700', fontSize: '0.95rem', color: 'var(--text-primary)' }}>
+                          {!hasFilterSelected ? 'Please select a Project or Site Supervisor' : 'No live payment records found.'}
+                        </div>
+                        {!hasFilterSelected && (
+                          <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', maxWidth: '380px' }}>
+                            Select a project or supervisor from the filter dropdown above to view the advance payout records.
+                          </div>
+                        )}
+                      </div>
+                    </td>
+                  </tr>
                 )}
               </tbody>
             </table>

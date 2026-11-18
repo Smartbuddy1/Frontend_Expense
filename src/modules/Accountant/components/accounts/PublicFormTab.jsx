@@ -381,11 +381,26 @@ const PublicFormTab = () => {
 
                       {/* Category */}
                       <td style={{ padding: '0.75rem 1rem' }}>
-                        <span style={{
-                          background: 'rgba(99,102,241,0.1)', color: '#6366f1',
-                          padding: '0.2rem 0.6rem', borderRadius: '9999px',
-                          fontSize: '0.72rem', fontWeight: '700', whiteSpace: 'nowrap'
-                        }}>{entry.category || '—'}</span>
+                        {(() => {
+                          const subMatch = (entry.description || '').match(/^\[(.*?)\]/);
+                          const subCat = entry.subCategory || (subMatch ? subMatch[1] : null);
+                          return (
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.2rem' }}>
+                              <span style={{
+                                background: 'rgba(99,102,241,0.1)', color: '#6366f1',
+                                padding: '0.2rem 0.6rem', borderRadius: '9999px',
+                                fontSize: '0.72rem', fontWeight: '700', whiteSpace: 'nowrap', width: 'fit-content'
+                              }}>{entry.category || '—'}</span>
+                              {subCat && (
+                                <span style={{
+                                  background: 'rgba(37,99,235,0.1)', color: '#2563eb',
+                                  padding: '0.15rem 0.5rem', borderRadius: '6px',
+                                  fontSize: '0.7rem', fontWeight: '700', whiteSpace: 'nowrap', width: 'fit-content'
+                                }}>{subCat}</span>
+                              )}
+                            </div>
+                          );
+                        })()}
                       </td>
 
                       {/* Vendor */}
