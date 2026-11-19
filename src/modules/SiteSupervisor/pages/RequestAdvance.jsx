@@ -6,6 +6,7 @@ import {
   Send,
   Clock,
   CheckCircle2,
+  XCircle,
   History,
   Plus,
   Search,
@@ -489,21 +490,84 @@ const RequestAdvance = () => {
                     <td data-label="AMOUNT" style={{ padding: '0.9rem 1rem', fontWeight: '800', color: 'var(--text-primary)', fontSize: '1.05rem' }}>
                       ₹{item.amount.toLocaleString()}
                     </td>
-                    <td data-label="STATUS" style={{ padding: '0.9rem 1rem', textAlign: 'center' }}>
-                      <span style={{
-                        display: 'inline-flex',
-                        alignItems: 'center',
-                        gap: '0.3rem',
-                        padding: '0.25rem 0.65rem',
-                        borderRadius: '1rem',
-                        fontSize: '0.75rem',
-                        fontWeight: '700',
-                        backgroundColor: item.status === 'Approved' ? 'rgba(16, 185, 129, 0.15)' : 'rgba(245, 158, 11, 0.15)',
-                        color: item.status === 'Approved' ? '#10b981' : '#f59e0b'
-                      }}>
-                        {item.status === 'Approved' ? <CheckCircle2 size={12} /> : <Clock size={12} />}
-                        {item.status}
-                      </span>
+                    <td data-label="STATUS" style={{ padding: '0.9rem 1rem', whiteSpace: 'nowrap' }}>
+                      <div style={{ display: 'inline-flex', flexDirection: 'column', gap: '3px' }}>
+                        <span style={{
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          gap: '0.3rem',
+                          padding: '0.25rem 0.65rem',
+                          borderRadius: '1rem',
+                          fontSize: '0.75rem',
+                          fontWeight: '700',
+                          backgroundColor: item.status === 'Disbursed'
+                            ? 'rgba(2, 132, 199, 0.15)'
+                            : item.status === 'Approved'
+                            ? 'rgba(16, 185, 129, 0.15)'
+                            : item.status === 'Rejected'
+                            ? 'rgba(239, 68, 68, 0.15)'
+                            : 'rgba(245, 158, 11, 0.15)',
+                          color: item.status === 'Disbursed'
+                            ? '#0284c7'
+                            : item.status === 'Approved'
+                            ? '#10b981'
+                            : item.status === 'Rejected'
+                            ? '#ef4444'
+                            : '#f59e0b',
+                          width: 'fit-content'
+                        }}>
+                          {item.status === 'Disbursed' ? (
+                            <CheckCircle2 size={12} />
+                          ) : item.status === 'Approved' ? (
+                            <CheckCircle2 size={12} />
+                          ) : item.status === 'Rejected' ? (
+                            <XCircle size={12} />
+                          ) : (
+                            <Clock size={12} />
+                          )}
+                          {item.status === 'Disbursed'
+                            ? (language === 'mr' ? 'पैसे मिळाले (Disbursed)' : 'Disbursed')
+                            : item.status === 'Approved'
+                            ? t('approved')
+                            : item.status === 'Rejected'
+                            ? (language === 'mr' ? 'नाकारले' : language === 'hi' ? 'अस्वीकृत' : 'Rejected')
+                            : t('pending')}
+                        </span>
+                        {item.status === 'Disbursed' && item.disbursedByName ? (
+                          <span style={{
+                            fontSize: '0.7rem',
+                            fontWeight: '700',
+                            color: '#0284c7',
+                            paddingLeft: '0.2rem'
+                          }}>
+                            Accounts: {item.disbursedByName}
+                          </span>
+                        ) : item.status === 'Approved' && item.approvedByName ? (
+                          <span style={{
+                            fontSize: '0.7rem',
+                            fontWeight: '700',
+                            color: '#059669',
+                            paddingLeft: '0.2rem'
+                          }}>
+                            Ops: {item.approvedByName}
+                          </span>
+                        ) : item.status === 'Rejected' ? (
+                          <span style={{
+                            fontSize: '0.7rem',
+                            fontWeight: '700',
+                            color: '#dc2626',
+                            paddingLeft: '0.2rem'
+                          }}>
+                            {item.rejectedByName
+                              ? (item.rejectedByRole === 'accountant'
+                                  ? `Accounts: ${item.rejectedByName}`
+                                  : `Ops: ${item.rejectedByName}`)
+                              : (item.approvedByName
+                                  ? `Accounts: Harshal Gawali`
+                                  : 'By Operations')}
+                          </span>
+                        ) : null}
+                      </div>
                     </td>
                     <td data-label="ACTIONS" style={{ padding: '0.9rem 1rem', textAlign: 'center', whiteSpace: 'nowrap' }}>
                       <div style={{ display: 'flex', gap: '0.4rem', justifyContent: 'center' }}>

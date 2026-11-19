@@ -879,6 +879,17 @@ const DailyExpenses = () => {
                           }}>
                             Ops: {exp.opsApprovedByName}
                           </span>
+                        ) : exp.status === 'Rejected' ? (
+                          <span style={{
+                            fontSize: '0.7rem',
+                            fontWeight: '700',
+                            color: '#dc2626',
+                            paddingLeft: '0.2rem'
+                          }}>
+                            {exp.rawStatus === 'accounts_rejected'
+                              ? (exp.paidByName ? `Accounts: ${exp.paidByName}` : 'By Accounts')
+                              : (exp.opsApprovedByName ? `Ops: ${exp.opsApprovedByName}` : 'By Operations')}
+                          </span>
                         ) : null}
                       </div>
                     </td>
@@ -1717,8 +1728,14 @@ const DailyExpenses = () => {
               </p>
               <p style={{ color: 'var(--text-secondary)', fontSize: '0.8rem', marginTop: '0.25rem' }}>
                 Paid to: {viewReceiptModal.paidTo || 'Local Vendor'} • Amount: ₹{viewReceiptModal.amount.toLocaleString()}
-                {viewReceiptModal.opsApprovedByName && ` • Ops Approved by: ${viewReceiptModal.opsApprovedByName}`}
-                {viewReceiptModal.paidByName && ` • Paid by Accounts: ${viewReceiptModal.paidByName}`}
+                {viewReceiptModal.status === 'Paid' && viewReceiptModal.paidByName && ` • Paid by Accounts: ${viewReceiptModal.paidByName}`}
+                {viewReceiptModal.status === 'Approved' && viewReceiptModal.opsApprovedByName && ` • Ops Approved by: ${viewReceiptModal.opsApprovedByName}`}
+                {viewReceiptModal.status === 'Rejected' && (
+                  viewReceiptModal.rawStatus === 'accounts_rejected'
+                    ? ` • Rejected by Accounts: ${viewReceiptModal.paidByName || 'Accountant'}`
+                    : ` • Rejected by Ops: ${viewReceiptModal.opsApprovedByName || 'Operations'}`
+                )}
+                {viewReceiptModal.opsRemarks && ` • Reason: ${viewReceiptModal.opsRemarks}`}
               </p>
             </div>
 

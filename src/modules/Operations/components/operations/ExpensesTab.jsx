@@ -1171,47 +1171,71 @@ const ExpensesTab = ({
                             )}
                           </div>
                         ) : isAccountsRejected ? (
-                          <span
-                            title="Rejected by Accounts"
-                            style={{
-                              display: 'inline-flex',
-                              alignItems: 'center',
-                              gap: '4px',
-                              padding: '4px 10px',
-                              borderRadius: '20px',
-                              backgroundColor: 'rgba(249, 115, 22, 0.12)',
-                              border: '1px solid rgba(249, 115, 22, 0.3)',
-                              color: '#ea580c',
-                              fontSize: '0.72rem',
-                              fontWeight: '700',
-                              whiteSpace: 'nowrap',
-                              cursor: 'default'
-                            }}
-                          >
-                            <AlertCircle size={13} />
-                            Accounts Rejected
-                          </span>
+                          <div style={{ display: 'inline-flex', flexDirection: 'column', alignItems: 'center', gap: '3px' }}>
+                            <span
+                              title="Rejected by Accounts"
+                              style={{
+                                display: 'inline-flex',
+                                alignItems: 'center',
+                                gap: '4px',
+                                padding: '4px 10px',
+                                borderRadius: '20px',
+                                backgroundColor: 'rgba(249, 115, 22, 0.12)',
+                                border: '1px solid rgba(249, 115, 22, 0.3)',
+                                color: '#ea580c',
+                                fontSize: '0.72rem',
+                                fontWeight: '700',
+                                whiteSpace: 'nowrap',
+                                cursor: 'default'
+                              }}
+                            >
+                              <AlertCircle size={13} />
+                              Accounts Rejected
+                            </span>
+                            {exp.paidByName && (
+                              <span style={{
+                                fontSize: '0.68rem',
+                                fontWeight: '700',
+                                color: '#ea580c',
+                                whiteSpace: 'nowrap'
+                              }}>
+                                Accounts: {exp.paidByName}
+                              </span>
+                            )}
+                          </div>
                         ) : (
-                          <span
-                            title="Rejected"
-                            style={{
-                              display: 'inline-flex',
-                              alignItems: 'center',
-                              gap: '4px',
-                              padding: '4px 10px',
-                              borderRadius: '20px',
-                              backgroundColor: 'rgba(239, 68, 68, 0.12)',
-                              border: '1px solid rgba(239, 68, 68, 0.3)',
-                              color: '#ef4444',
-                              fontSize: '0.72rem',
-                              fontWeight: '700',
-                              whiteSpace: 'nowrap',
-                              cursor: 'default'
-                            }}
-                          >
-                            <X size={13} />
-                            Rejected
-                          </span>
+                          <div style={{ display: 'inline-flex', flexDirection: 'column', alignItems: 'center', gap: '3px' }}>
+                            <span
+                              title="Rejected"
+                              style={{
+                                display: 'inline-flex',
+                                alignItems: 'center',
+                                gap: '4px',
+                                padding: '4px 10px',
+                                borderRadius: '20px',
+                                backgroundColor: 'rgba(239, 68, 68, 0.12)',
+                                border: '1px solid rgba(239, 68, 68, 0.3)',
+                                color: '#ef4444',
+                                fontSize: '0.72rem',
+                                fontWeight: '700',
+                                whiteSpace: 'nowrap',
+                                cursor: 'default'
+                              }}
+                            >
+                              <X size={13} />
+                              Rejected
+                            </span>
+                            {exp.opsApprovedByName && (
+                              <span style={{
+                                fontSize: '0.68rem',
+                                fontWeight: '700',
+                                color: '#ef4444',
+                                whiteSpace: 'nowrap'
+                              }}>
+                                Ops: {exp.opsApprovedByName}
+                              </span>
+                            )}
+                          </div>
                         )}
                       </div>
                     </td>

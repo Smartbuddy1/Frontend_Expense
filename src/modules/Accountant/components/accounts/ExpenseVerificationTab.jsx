@@ -652,19 +652,26 @@ const ExpenseVerificationTab = ({
                           
                           if (isRejected) {
                             return (
-                              <div style={{
-                                display: 'inline-flex',
-                                alignItems: 'center',
-                                gap: '0.3rem',
-                                fontSize: '0.72rem',
-                                fontWeight: '700',
-                                color: '#ef4444',
-                                backgroundColor: 'rgba(239, 68, 68, 0.1)',
-                                padding: '0.2rem 0.55rem',
-                                borderRadius: '20px'
-                              }}>
-                                <AlertCircle size={13} />
-                                Ops Rejected
+                              <div style={{ display: 'inline-flex', flexDirection: 'column', gap: '3px' }}>
+                                <div style={{
+                                  display: 'inline-flex',
+                                  alignItems: 'center',
+                                  gap: '0.3rem',
+                                  fontSize: '0.72rem',
+                                  fontWeight: '700',
+                                  color: '#ef4444',
+                                  backgroundColor: 'rgba(239, 68, 68, 0.1)',
+                                  padding: '0.2rem 0.55rem',
+                                  borderRadius: '20px'
+                                }}>
+                                  <AlertCircle size={13} />
+                                  Ops Rejected
+                                </div>
+                                {approval?.rejectedBy && (
+                                  <span style={{ fontSize: '0.7rem', fontWeight: '700', color: '#ef4444', paddingLeft: '0.2rem' }}>
+                                    {approval.rejectedBy}
+                                  </span>
+                                )}
                               </div>
                             );
                           }
@@ -757,19 +764,27 @@ const ExpenseVerificationTab = ({
                           </span>
                         )}
                         {isRejected && (
-                          <span style={{
-                            display: 'inline-flex',
-                            alignItems: 'center',
-                            gap: '0.3rem',
-                            fontSize: '0.75rem',
-                            fontWeight: '700',
-                            padding: '0.25rem 0.65rem',
-                            borderRadius: '20px',
-                            backgroundColor: 'rgba(239, 68, 68, 0.15)',
-                            color: '#ef4444'
-                          }}>
-                            <XCircle size={12} /> Accounts Rejected
-                          </span>
+                          <div style={{ display: 'inline-flex', flexDirection: 'column', gap: '3px' }}>
+                            <span style={{
+                              display: 'inline-flex',
+                              alignItems: 'center',
+                              gap: '0.3rem',
+                              fontSize: '0.75rem',
+                              fontWeight: '700',
+                              padding: '0.25rem 0.65rem',
+                              borderRadius: '20px',
+                              backgroundColor: 'rgba(239, 68, 68, 0.15)',
+                              color: '#ef4444',
+                              width: 'fit-content'
+                            }}>
+                              <XCircle size={12} /> Accounts Rejected
+                            </span>
+                            {exp.paidByName && (
+                              <span style={{ fontSize: '0.7rem', fontWeight: '700', color: '#dc2626', paddingLeft: '0.2rem' }}>
+                                Accounts: {exp.paidByName}
+                              </span>
+                            )}
+                          </div>
                         )}
                       </td>
 

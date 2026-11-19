@@ -62,6 +62,7 @@ export const WalletProvider = ({ children }) => {
       opsApprovedAt: e.opsApprovedAt ? new Date(e.opsApprovedAt).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }) : null,
       paidByName: e.paidBy?.name || '',
       paidAt: e.paidAt ? new Date(e.paidAt).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }) : null,
+      opsRemarks: e.opsRemarks || '',
       paymentRef: e.paymentRef || '',
       paidTo: e.vendorName || 'Local Vendor',
       receiptName: e.receiptUrl ? e.receiptUrl.split('/').pop() : null,
@@ -78,7 +79,16 @@ export const WalletProvider = ({ children }) => {
     date: new Date(a.createdAt).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }),
     urgency: a.urgency || 'Regular',
     status: a.status.charAt(0).toUpperCase() + a.status.slice(1),
+    rawStatus: a.status,
     note: a.purpose || '',
+    approvedByName: a.approvedBy?.name || '',
+    approvedAt: a.approvedAt ? new Date(a.approvedAt).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }) : null,
+    disbursedByName: a.disbursedBy?.name || '',
+    disbursedAt: a.disbursedAt ? new Date(a.disbursedAt).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }) : null,
+    rejectedByName: a.rejectedBy?.name || '',
+    rejectedByRole: a.rejectedBy?.role || '',
+    rejectedAt: a.rejectedAt ? new Date(a.rejectedAt).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }) : null,
+    rejectionReason: a.rejectionReason || '',
   });
 
   const lastProjectKey = user ? `supervisor_last_project_${user.id}` : null;

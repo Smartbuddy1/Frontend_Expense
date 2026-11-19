@@ -33,7 +33,7 @@ const ReconciliationTab = ({
   // Advance Requisitions — real supervisor-submitted advance requests from the backend.
   const advanceRequisitions = useMemo(() => advances.map(a => ({
     id: a.id,
-    displayId: a.displayId || `REQ-${a.id.slice(0, 4).toUpperCase()}`,
+    displayId: a.displayId || (a.requisitionNumber ? `REQ-${a.requisitionNumber}` : `REQ-${a.id.slice(0, 4).toUpperCase()}`),
     supervisor: a.supervisor,
     supervisorId: a.supervisorId,
     site: a.site || a.projectName,
@@ -45,6 +45,10 @@ const ReconciliationTab = ({
     status: a.status,
     rawStatus: a.rawStatus,
     projectId: a.projectId,
+    approvedByName: a.approvedByName || '',
+    disbursedByName: a.disbursedByName || '',
+    rejectedByName: a.rejectedByName || '',
+    rejectedByRole: a.rejectedByRole || '',
   })), [advances]);
 
   const handleApproveRequisition = async (id) => {
@@ -1376,23 +1380,40 @@ const ReconciliationTab = ({
                                 </button>
                               </>
                             ) : req.status === 'Rejected' ? (
-                              <span
-                                title="Rejected"
-                                style={{
-                                  padding: '0.45rem',
-                                  borderRadius: '8px',
-                                  border: '1px solid #fecdd3',
-                                  backgroundColor: '#fff1f2',
-                                  color: '#e11d48',
-                                  display: 'inline-flex',
-                                  alignItems: 'center',
-                                  justifyContent: 'center'
-                                }}
-                              >
-                                <X size={16} />
-                              </span>
+                              <div style={{ display: 'inline-flex', flexDirection: 'column', alignItems: 'center', gap: '3px' }}>
+                                <span
+                                  title="Rejected"
+                                  style={{
+                                    display: 'inline-flex',
+                                    alignItems: 'center',
+                                    gap: '4px',
+                                    padding: '4px 10px',
+                                    borderRadius: '20px',
+                                    backgroundColor: 'rgba(239, 68, 68, 0.12)',
+                                    border: '1px solid rgba(239, 68, 68, 0.3)',
+                                    color: '#ef4444',
+                                    fontSize: '0.72rem',
+                                    fontWeight: '700',
+                                    whiteSpace: 'nowrap',
+                                    cursor: 'default'
+                                  }}
+                                >
+                                  <X size={13} />
+                                  Rejected
+                                </span>
+                                {req.rejectedByName && (
+                                  <span style={{
+                                    fontSize: '0.68rem',
+                                    fontWeight: '700',
+                                    color: req.rejectedByRole === 'accountant' ? '#ea580c' : '#ef4444',
+                                    whiteSpace: 'nowrap'
+                                  }}>
+                                    {req.rejectedByRole === 'accountant' ? `Accounts: ${req.rejectedByName}` : `Ops: ${req.rejectedByName}`}
+                                  </span>
+                                )}
+                              </div>
                             ) : (
-                              <>
+                              <div style={{ display: 'inline-flex', flexDirection: 'column', alignItems: 'center', gap: '3px' }}>
                                 {/* Approved — clearly labelled for Operations user */}
                                 <span
                                   title={req.status === 'Approved' ? 'Approved by Operations — Pending Accountant Disbursal' : req.status === 'Disbursed' ? 'Disbursed by Accounts' : 'Approved'}
@@ -1414,7 +1435,26 @@ const ReconciliationTab = ({
                                   <CheckCircle2 size={13} />
                                   {req.status === 'Disbursed' ? '✓ Paid Out' : '✓ Approved'}
                                 </span>
-                              </>
+                                {req.status === 'Disbursed' && req.disbursedByName ? (
+                                  <span style={{
+                                    fontSize: '0.68rem',
+                                    fontWeight: '700',
+                                    color: '#0284c7',
+                                    whiteSpace: 'nowrap'
+                                  }}>
+                                    Accounts: {req.disbursedByName}
+                                  </span>
+                                ) : req.status === 'Approved' && req.approvedByName ? (
+                                  <span style={{
+                                    fontSize: '0.68rem',
+                                    fontWeight: '700',
+                                    color: '#059669',
+                                    whiteSpace: 'nowrap'
+                                  }}>
+                                    Ops: {req.approvedByName}
+                                  </span>
+                                ) : null}
+                              </div>
                             )}
                           </div>
                         </td>

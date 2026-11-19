@@ -104,6 +104,8 @@ const mapExpense = (e) => {
     accountsRejected: e.status === 'accounts_rejected',
     billPhotoUrl: sanitizeUrl(e.receiptUrl),
     reviewNotes: e.opsRemarks || '',
+    opsApprovedByName: e.opsApprovedBy?.name || '',
+    opsApprovedAt: e.opsApprovedAt ? new Date(e.opsApprovedAt).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }) : null,
     paidByName: e.paidBy?.name || '',
     paidAt: e.paidAt ? new Date(e.paidAt).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }) : null,
     paymentRef: e.paymentRef || '',
@@ -119,7 +121,7 @@ const ADVANCE_STATUS_TO_DISPLAY = {
 };
 
 const mapAdvance = (a) => ({
-  displayId: `REQ-${a.id.slice(0, 4).toUpperCase()}`,
+  displayId: a.requisitionNumber ? `REQ-${a.requisitionNumber}` : `REQ-${a.id.slice(0, 4).toUpperCase()}`,
   id: a.id,
   projectId: a.projectId,
   projectName: a.project?.name || 'Unknown Project',
@@ -133,6 +135,12 @@ const mapAdvance = (a) => ({
   urgencyType: (a.urgency || 'Regular').toLowerCase() === 'immediate' ? 'high' : 'medium',
   status: ADVANCE_STATUS_TO_DISPLAY[a.status] || 'Pending',
   rawStatus: a.status,
+  approvedByName: a.approvedBy?.name || '',
+  approvedAt: a.approvedAt ? new Date(a.approvedAt).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }) : null,
+  disbursedByName: a.disbursedBy?.name || '',
+  disbursedAt: a.disbursedAt ? new Date(a.disbursedAt).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }) : null,
+  rejectedByName: a.rejectedBy?.name || '',
+  rejectedByRole: a.rejectedBy?.role || '',
   date: a.createdAt,
 });
 

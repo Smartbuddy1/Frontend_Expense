@@ -103,9 +103,16 @@ const mapExpenseForAccounts = (e) => {
   hasBill: !!e.receiptUrl,
   billUrl: sanitizeUrl(e.receiptUrl),
   status: EXPENSE_STATUS_TO_DISPLAY[e.status] || 'Pending Operations Approval',
-  opsApproval: e.opsApprovedById ? { status: 'Approved', approvedBy: e.opsApprovedBy?.name || 'Operations' } : (e.status === 'ops_rejected' ? { status: 'Rejected' } : null),
+  opsApproval: e.opsApprovedById
+    ? (e.status === 'ops_rejected'
+        ? { status: 'Rejected', rejectedBy: e.opsApprovedBy?.name || 'Operations' }
+        : { status: 'Approved', approvedBy: e.opsApprovedBy?.name || 'Operations' })
+    : (e.status === 'ops_rejected' ? { status: 'Rejected', rejectedBy: e.opsApprovedBy?.name || 'Operations' } : null),
   opsVerificationStatus: e.status === 'submitted' ? 'Pending' : (e.status === 'ops_rejected' ? 'Rejected' : 'Verified'),
   accountsRejected: e.status === 'rejected' || e.status === 'accounts_rejected',
+  paidByName: e.paidBy?.name || '',
+  paidAt: e.paidAt || null,
+  opsRemarks: e.opsRemarks || '',
   urgency: 'Regular', // Expenses don't have urgency in schema, default to Regular
   submittedAt: e.createdAt,
   };
@@ -130,6 +137,10 @@ const mapAdvanceForAccounts = (a) => ({
   urgency: a.urgency || 'Regular',
   opsVerificationStatus: a.status === 'requested' ? 'Pending' : (a.status === 'rejected' ? 'Rejected' : 'Verified'),
   status: ADVANCE_STATUS_TO_DISPLAY[a.status] || 'Pending Operations Approval',
+  approvedByName: a.approvedBy?.name || '',
+  disbursedByName: a.disbursedBy?.name || '',
+  rejectedByName: a.rejectedBy?.name || '',
+  rejectedByRole: a.rejectedBy?.role || '',
   paymentDetails: a.status === 'disbursed' ? { amountPaid: Number(a.amount) } : null,
 });
 

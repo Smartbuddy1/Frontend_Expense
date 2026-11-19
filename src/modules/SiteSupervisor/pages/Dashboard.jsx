@@ -794,6 +794,17 @@ const Dashboard = () => {
                           }}>
                             Ops: {exp.opsApprovedByName}
                           </span>
+                        ) : exp.status === 'Rejected' ? (
+                          <span style={{
+                            fontSize: '0.7rem',
+                            fontWeight: '700',
+                            color: '#dc2626',
+                            paddingLeft: '0.2rem'
+                          }}>
+                            {exp.rawStatus === 'accounts_rejected'
+                              ? (exp.paidByName ? `Accounts: ${exp.paidByName}` : 'By Accounts')
+                              : (exp.opsApprovedByName ? `Ops: ${exp.opsApprovedByName}` : 'By Operations')}
+                          </span>
                         ) : null}
                       </div>
                     </td>

@@ -370,33 +370,49 @@ const AdvanceDisbursalTab = ({
                             <Clock size={12} /> Ready for Disbursal
                           </span>
                         ) : isRejected ? (
-                          <span style={{
-                            display: 'inline-flex',
-                            alignItems: 'center',
-                            gap: '0.3rem',
-                            fontSize: '0.75rem',
-                            fontWeight: '700',
-                            padding: '0.25rem 0.65rem',
-                            borderRadius: '20px',
-                            backgroundColor: 'rgba(239, 68, 68, 0.15)',
-                            color: '#ef4444'
-                          }}>
-                            <X size={12} /> Rejected
-                          </span>
+                          <div style={{ display: 'inline-flex', flexDirection: 'column', gap: '3px' }}>
+                            <span style={{
+                              display: 'inline-flex',
+                              alignItems: 'center',
+                              gap: '0.3rem',
+                              fontSize: '0.75rem',
+                              fontWeight: '700',
+                              padding: '0.25rem 0.65rem',
+                              borderRadius: '20px',
+                              backgroundColor: 'rgba(239, 68, 68, 0.15)',
+                              color: '#ef4444',
+                              width: 'fit-content'
+                            }}>
+                              <X size={12} /> Rejected
+                            </span>
+                            {adv.rejectedByName && (
+                              <span style={{ fontSize: '0.7rem', fontWeight: '700', color: '#dc2626', paddingLeft: '0.2rem' }}>
+                                {adv.rejectedByRole === 'accountant' ? `Accounts: ${adv.rejectedByName}` : `Ops: ${adv.rejectedByName}`}
+                              </span>
+                            )}
+                          </div>
                         ) : (
-                          <span style={{
-                            display: 'inline-flex',
-                            alignItems: 'center',
-                            gap: '0.3rem',
-                            fontSize: '0.75rem',
-                            fontWeight: '700',
-                            padding: '0.25rem 0.65rem',
-                            borderRadius: '20px',
-                            backgroundColor: 'rgba(16, 185, 129, 0.15)',
-                            color: '#10b981'
-                          }}>
-                            <CheckCircle2 size={12} /> Disbursed {adv.paymentDetails?.paymentMode ? `(${adv.paymentDetails.paymentMode})` : ''}
-                          </span>
+                          <div style={{ display: 'inline-flex', flexDirection: 'column', gap: '3px' }}>
+                            <span style={{
+                              display: 'inline-flex',
+                              alignItems: 'center',
+                              gap: '0.3rem',
+                              fontSize: '0.75rem',
+                              fontWeight: '700',
+                              padding: '0.25rem 0.65rem',
+                              borderRadius: '20px',
+                              backgroundColor: 'rgba(16, 185, 129, 0.15)',
+                              color: '#10b981',
+                              width: 'fit-content'
+                            }}>
+                              <CheckCircle2 size={12} /> Disbursed {adv.paymentDetails?.paymentMode ? `(${adv.paymentDetails.paymentMode})` : ''}
+                            </span>
+                            {adv.disbursedByName && (
+                              <span style={{ fontSize: '0.7rem', fontWeight: '700', color: '#0284c7', paddingLeft: '0.2rem' }}>
+                                Accounts: {adv.disbursedByName}
+                              </span>
+                            )}
+                          </div>
                         )}
                       </td>
 

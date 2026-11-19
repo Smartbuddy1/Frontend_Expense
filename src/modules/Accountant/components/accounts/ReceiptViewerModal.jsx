@@ -79,7 +79,9 @@ const ReceiptViewerModal = ({ expense, onClose, onApprove, onReject }) => {
                 return (
                   <p style={{ fontSize: '0.78rem', color: 'var(--text-secondary)', margin: '0.1rem 0 0' }}>
                     {expense.projectName} • <strong style={{ color: 'var(--text-primary)' }}>{expense.category}</strong>{subDisp ? ` (${subDisp})` : ''} • Indented by {expense.supervisor} (Site In-Charge)
-                    {expense.opsApproval?.approvedBy && expense.opsApproval?.approvedBy !== 'Operations' && ` • Ops Approved by: ${expense.opsApproval.approvedBy}`}
+                    {expense.opsApproval?.status === 'Rejected' && expense.opsApproval?.rejectedBy && ` • Ops Rejected by: ${expense.opsApproval.rejectedBy}`}
+                    {expense.opsApproval?.status !== 'Rejected' && expense.opsApproval?.approvedBy && expense.opsApproval?.approvedBy !== 'Operations' && ` • Ops Approved by: ${expense.opsApproval.approvedBy}`}
+                    {expense.accountsRejected && expense.paidByName && ` • Accounts Rejected by: ${expense.paidByName}`}
                   </p>
                 );
               })()}
